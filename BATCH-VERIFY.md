@@ -353,3 +353,27 @@ the shipped bytes, both gates PASS) and both are independently revertible by the
 this is a low-exposure clear — but if racks or phase state ever look wrong across two deployments,
 **start here**: `git revert 9d9b371` (.348 data fix) and `git revert 1734dc9` (.350 split) are
 independent of each other.
+
+---
+
+# ▶ OPEN BATCH — starts at `.351` (count 1 of 6)
+
+## v1.14.351 — desktop nav edge-to-edge + phase-strip clearance (`c2a0da1`) · rollback: revert commit
+**CSS only** — no JS, no markup, no data path. Ships §1 + §2 of `design/FIX-DESKTOP-NAV-CARDS.md`;
+§3/§4 held for a separate ship. Both gates PASS. **Two shells to check — this one is not desktop-only.**
+
+**⭐ The §2 bug was mis-diagnosed by the spec and it affects your PHONE too.** The phase strip
+(`#ph-dock`) is a *second* fixed strip stacked above the nav on rack detail, and page clearance only
+ever paid for the nav — so the bottom ~51px of every rack detail has been sitting behind the phase
+strip at full scroll, in both shells. It was only ever reported from the laptop.
+
+- [ ] **PHONE** — open a rack detail (phase strip MECH/PWR/NET/COMP/VAL visible), scroll to the absolute bottom: **LOG NOTE / ASSIGNED TO / the QR button now clear the strip completely** and are fully tappable. This is the one that has been broken all along.
+- [ ] **DESKTOP ≥1024** — bottom nav is ONE black strip edge to edge; no page content visible either side of it; it reads as a floor, not a floating box
+- [ ] Desktop: the four icons (HOME · BUILD · TOOLS · EXIT) are still centered as a group at their **current spacing** — they should NOT have spread across the monitor
+- [ ] Desktop BUILD scrolled to the bottom: same clearance check as the phone
+- [ ] **Home and TOOLS scroll exactly as before** — the extra clearance must NOT appear where the phase strip is absent (this is the regression to watch)
+- [ ] Deploy STAGE SCOPE picker: cab rows still tap, action bar still sits just above the nav (`.212`/`.214` surface — verified mutually exclusive with the new rule, but eyeball it)
+- [ ] Phase strip itself is unchanged in height and look (the new `min-height` is a derived no-op)
+- [ ] `?legacy=1` pixel-identical
+
+**Batch `.351` = 1 of 6.**
