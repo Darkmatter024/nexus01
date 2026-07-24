@@ -9229,9 +9229,9 @@ body.rd #ph-sheet.open {
 #shiftend-sheet .se-clear{display:block;width:calc(100% - 40px);margin:14px 20px 12px;min-height:var(--tap-xl,56px);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--slate);font-family:var(--mono);font-size:13px;letter-spacing:1px;cursor:pointer;-webkit-appearance:none}
 /* v1.14.335 Command v2 D12: the Command ghost hero (.ghosthero/#cc-ghost) is removed — the rack is the identity object now. Assistant stays reachable via the header ghost menu button. */
 /* v1.14.330 INSPECT-3D LANDING — first Master rack live in the Command hero. Bare #pg-cmd (redesign-only page, never rendered under legacy). Height-capped so it never eats the phone screen; hidden until a Master loads. */
-#pg-cmd .cc-rackhero{position:relative;width:100%;height:clamp(240px,36vh,340px);margin:0 0 10px;border:1px solid var(--cyan-border-lo);border-radius:14px;overflow:hidden;background:radial-gradient(120% 90% at 50% 0,var(--cyan-dim),rgba(4,6,10,0) 60%),#04060a;cursor:pointer;-webkit-tap-highlight-color:transparent}   /* v1.14.335 Command v2 D6: 36vh (min240/max340) so Z0-Z4 incl. the NBA button clear the fold on 390x844; hero is now tap-to-bay (cursor). */
+#pg-cmd .cc-rackhero{position:relative;width:100%;height:clamp(240px,36vh,340px);margin:0 0 10px;border:1px solid var(--cyan-border-lo);border-radius:14px;overflow:hidden;background:var(--rd-cardfill);cursor:pointer;-webkit-tap-highlight-color:transparent}   /* v1.14.335 Command v2 D6: 36vh (min240/max340) so Z0-Z4 incl. the NBA button clear the fold on 390x844; hero is now tap-to-bay (cursor). */
 #pg-cmd .cc-rackhero[hidden]{display:none}
-#pg-cmd .cc-rackhero-mount{position:absolute;inset:0;width:100%;height:100%}
+#pg-cmd .cc-rackhero-mount{position:absolute;inset:0;width:100%;height:100%;background:radial-gradient(90% 70% at 50% 45%,rgba(92,242,255,.14),rgba(4,6,10,0) 70%)}   /* v1.14.352 §4: the STAGE moved off the card and onto the mount. rackElevation_render3D builds its renderer with alpha:true and never sets scene.background (:33586), so this transparent canvas composites straight onto whatever is behind it — the backdrop IS the lever, and it is hero-mount-local, so the LOCKED §A exposure/lights are untouched. Was --cyan-dim (.08) anchored at 50% 0, i.e. a faint wash at the TOP EDGE, above the rack rather than behind it; recentred to 50% 45% and lifted to .14 so the silhouette reads. Card fill itself is now the shared --rd-cardfill (§3) — unified at the edges, lit only where the rack stands. */
 #pg-cmd .cc-rackhero-cap{position:absolute;left:12px;bottom:10px;z-index:2;pointer-events:none;font-family:var(--mono,'Chakra Petch',monospace);font-size:10px;letter-spacing:2px;color:var(--cyan);text-shadow:0 1px 6px rgba(0,0,0,0.7)}
 /* v1.14.338 — OPEN BAY full-width (spec §2.5): cyan-outline secondary, >=52px gloved target. JS-toggled with the rack. */
 #pg-cmd .cc-openbay{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;min-height:52px;padding:10px 18px;white-space:nowrap;margin:0 0 10px;border:1px solid var(--cyan-border-lo);border-radius:12px;background:rgba(92,242,255,0.06);color:var(--cyan);font-family:var(--raj);font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;-webkit-appearance:none;-webkit-tap-highlight-color:transparent}   /* v1.14.340: +padding & nowrap so the label/arrow never clip (was 0 padding → letter-spacing pushed the → to the edge) */
@@ -12349,7 +12349,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.351';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.352';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
