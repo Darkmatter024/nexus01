@@ -384,3 +384,22 @@ with the same commit. Ship stays in the open batch as `1 of 6` rather than being
 a batch of one has nothing to gain from an early release.
 
 **Batch `.351` = 1 of 6.**
+
+## v1.14.352 — hero card: unified fill + the stage moved onto the mount (`bc5c24f`) · rollback: revert commit
+**CSS only, two declarations.** §3 (partial) + §4 of `design/FIX-DESKTOP-NAV-CARDS.md`. Both gates PASS —
+rd-review verified the load-bearing claim against live code (the hero canvas is `alpha:true` with no
+`scene.background`, so it composites onto the card and both declarations genuinely render).
+**LOCKED reh3d exposure/lights/fog NOT touched** — the lift is hero-mount-local.
+
+- [ ] Home with a Master loaded: the hero rack's **populated trays are distinguishable from empty space at a glance, at arm's length** (they read as void today)
+- [ ] The hero card's **EDGES** are the same black as the 98 RACKS stat tile and the assistant card — no blue or grey cast
+- [ ] The glow sits **behind the rack**, not as a band across the top of the card (it was anchored at the top edge before, above the rack rather than behind it)
+- [ ] ⭐ **JUDGE THE VALUE:** the stage is `.14`. Too dark, too washed, or correct? If the trays still do not read, say so — the next lever is the LOCKED exposure and that needs your ruling, I will not touch it. If it reads hazy, it drops toward `.10`. One-number change either way.
+- [ ] OPEN BAY still opens from the hero tap; rack still mounts/tears down cleanly leaving and re-entering Home
+- [ ] `?legacy=1` pixel-identical (`#pg-cmd` is redesign-only)
+
+**Still held:** the "DEVICES section" card fill — the spec never identifies it, best match is the COMPONENTS
+card (`~:35331`, inline `background:var(--surf-1)`), owner ID outstanding. The 22-site inline `--surf-1`
+sweep stays parked.
+
+**Batch `.351–.352` = 2 of 6.**
