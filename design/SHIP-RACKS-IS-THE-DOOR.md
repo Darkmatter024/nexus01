@@ -38,14 +38,19 @@ New:
 function racks_door() {
   try {
     var ctx = (typeof activeContext_get === 'function') ? activeContext_get() : null;
-    if (ctx && ctx.deployment) { deploy_showDetail(ctx.deployment.id); return; }
-    deploy_goToDashboard(null);
+    if (ctx && ctx.deployment && ctx.deployment.status !== 'closed') {
+      deploy_showDetail(ctx.deployment.id); return;
+    }
+    deploy_goToDashboard(null);   // no context OR closed deployment → dashboard
   } catch (e) { try { deploy_goToDashboard(null); } catch (e2) {} }
 }
 ```
 
-RULE: racks_door NEVER opens a single rack. Resume-to-rack is DEPLOY's job (`deploy_quick`
-unchanged). One door per intent; names say what the door opens.
+RULE: racks_door NEVER opens a single rack, and NEVER lands on a tombstone. Resume-to-rack is
+DEPLOY's job (`deploy_quick` unchanged). Closed deployment → dashboard (RULING, John 2026-07-24:
+the tile's contract is current work; the dashboard shows closed state honestly and history stays
+one deliberate tap away). Bad-id is already handled INSIDE deploy_showDetail (:32250 guard —
+toast + showList); racks_door adds no redundant guard for it.
 
 ## 3. RIDERS (same ship — they close the trap from the other side)
 
@@ -83,9 +88,11 @@ at rest. Both shells.
 ## 4. WHAT DOES NOT CHANGE
 
 - `deploy_quick()` — untouched. DEPLOY still resumes.
-- The rackmap ops TOOL — code stays. Legacy house still uses it; search route (L20815) and the
-  not-in-deployment fallback (L20616) still reach it. This ship removes its BUILD-hub door only.
-  It becomes reachable-but-doorless under body.rd — acceptable; census-gated retirement later.
+- The rackmap ops TOOL — code stays. Legacy house still uses it. CORRECTION (Code recon vs live,
+  2026-07-24): the spec's earlier claim of a "search route" second door was wrong — live has
+  exactly ONE non-tile, non-stat call (:20640, the not-in-deployment fallback). After this ship
+  the tool has ONE door under body.rd. That moves the retirement census closer than this spec
+  originally implied; noted for the census, not actioned here.
 - ?legacy=1 — byte-identical (tile markup is redesign-grid; confirm before ship).
 
 ## 5. STEP 0 (Code, before edits)
@@ -101,9 +108,10 @@ at rest. Both shells.
 ## 6. GATES
 
 Standing gates (JS ×3, CSS brace, lockstep, legacy byte-diff, two WebGLRenderer) PLUS:
-- grep: exactly one `rd_openOpsTool('rackmap')` remaining in body.rd paths (the L20616 fallback);
-  the tile and _cc_statRoute hits are gone.
-- grep: `racks_door` defined once, referenced ≥2 (tile + stat route).
+- grep: exactly one non-tile `rd_openOpsTool('rackmap')` call remaining in body.rd paths
+  (the :20640 fallback); tile and _cc_statRoute hits are gone.
+- grep: `racks_door` defined once, referenced ≥2 (tile + stat route); contains the
+  `status !== 'closed'` check.
 
 ## 7. DEVICE VERIFY (both shells: 390px + ≥1024px)
 
@@ -114,6 +122,7 @@ Standing gates (JS ×3, CSS brace, lockstep, legacy byte-diff, two WebGLRenderer
 5. Rack strip → ALL chip → rack list.
 6. Command page → RACKS stat → rack list.
 7. No deployment at all (fresh profile) → RACKS → dashboard, no error.
+7b. Active context pointing at a CLOSED deployment → RACKS → dashboard (never the tombstone).
 8. Master FILE panel → no orphaned FILE pill; static MASTER FILE title; toolbar row shows all
    items fully at rest (or scrolls with visible affordance), no left clip.
 9. ?legacy=1 → byte-identical, legacy Rack Map tool untouched, both Master pills still present.
