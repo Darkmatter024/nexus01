@@ -1084,8 +1084,20 @@ body {
    + safe-area). The .339 icon bump made the nav taller than the legacy :root --tabnav-h (72), which can't
    change (legacy pages consume it). Redesign-only (body.rd) → legacy .page padding byte-identical. The fixed
    #ph-dock phase strip anchors to the SAME var so it sits ABOVE the nav, not behind it. ━━━ */
-body.rd { --rd-navclear: calc(96px + var(--safe-bottom)); }
+body.rd { --rd-navclear: calc(96px + var(--safe-bottom)); --rd-dockclear: 51px; }
 body.rd .page { padding-bottom: calc(var(--rd-navclear) + 20px); }
+/* ━━━ v1.14.351 — SECOND STRIP, SECOND CLEARANCE. #ph-dock is a second fixed strip stacked ABOVE the nav
+   on rack detail, and nothing was paying for its height: .page cleared the nav ONLY, so at max scroll the
+   last ~51px of a rack detail (LOG NOTE / ASSIGNED TO / QR) stayed buried behind the dock. Reported as a
+   desktop bug; the cause is shell-independent — the dock is fixed in BOTH compositions, so this one rule
+   fixes both. Gated on the exact body classes that mount the dock (9101), so every other surface is
+   byte-identical and the phone's normal scroll runway does not grow. Specificity (0,4,1) > the base
+   body.rd .page (0,2,1) → no !important needed.
+   --rd-dockclear is the dock's OWN height, consumed by #ph-dock itself (min-height, 9101) — NOT a
+   constant that merely describes it. That is the .341 lesson applied: --tabnav-h went stale at 72 while
+   the nav grew to 96, and the clearance silently under-paid. A height and its clearance that read from
+   one token cannot drift apart. ━━━ */
+body.rd.ops-detail.ph-dock-on .page { padding-bottom: calc(var(--rd-navclear) + var(--rd-dockclear) + 20px); }
 
 /* search results page */
 #page-search {
@@ -8775,6 +8787,17 @@ body.rd #pg-work:not(.wk-grid) .work-sub.stab-active { animation: rf-fade .22s e
   /* v1.14.164 — Command page grows up on desktop: cap + center its column at 1080 like Work/Ref (was ~⅔-width Ask + sprawling telemetry). */
   #pg-cmd .lens, #pg-cmd .trow, #pg-cmd .nba, body.rd .ask, #pg-cmd .statusrow { max-width: 1080px; margin-left: auto; margin-right: auto; }
 }
+/* v1.14.351 — DESKTOP SHELL §1: from 1024 up the nav is a full-viewport-width strip, edge to edge.
+   It was capped in three places (base :9430, the ≥640 rule above, the ≥980 rule above), so on a laptop it
+   read as a floating dark box with page content visible either side of it. Releasing the cap here wins on
+   later source at equal specificity — no !important — and beats the unscoped base rule on specificity.
+   The GROUP stays 1080 wide and centered (justify-content on fixed tracks), so the four icons keep the
+   spacing they have today and only the black surface extends: the strip becomes a floor, not a raft.
+   Surface/opacity needed nothing — .338 already put the solid stat-card gradient on this element.
+   Phone and tablet compositions are below this breakpoint and are untouched. */
+@media (min-width: 1024px) {
+  body.rd #rd-botnav { max-width: none; margin-inline: 0; grid-template-columns: repeat(4, minmax(0, 270px)); justify-content: center; }
+}
 body.rd .rf-cnr { display: none; }   /* unified recipe has no corner brackets */
 
 /* v1.14.110 — deploy dashboard glass (New-UI only). Inline styles stay for legacy;
@@ -9100,6 +9123,7 @@ body.rd #ver-stamp { display: inline-flex; align-items: center; align-self: cent
 #ph-dock { display: none; }
 body.rd.ops-detail.ph-dock-on #ph-dock {
   position: fixed; left: 0; right: 0; bottom: var(--rd-navclear); z-index: 30;   /* v1.14.341: --rd-navclear (real nav footprint) — was --tabnav-h (72, stale) so the dock's bottom hid behind the taller .339 nav */
+  min-height: var(--rd-dockclear);   /* v1.14.351: the dock's height IS the clearance token the pages pay for (declared at :1087), so the two cannot drift. border-box + the existing 6px/6px padding and 1px border-top means 51px resolves to the same 38px chip content box this rule already produced — no visual change, the token just becomes load-bearing. */
   display: flex; align-items: stretch; gap: 5px;
   padding: 6px calc(10px + var(--safe-right)) 6px calc(10px + var(--safe-left));
   background: linear-gradient(180deg, rgba(4,7,11,0.80), rgba(8,14,22,0.96));
@@ -12325,7 +12349,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.350';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.351';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
