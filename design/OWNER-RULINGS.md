@@ -9,6 +9,43 @@ spec, and a ruling recorded inside it would be silently lost.
 
 ---
 
+## 2026-07-24 — SHIP B: FLAT dies, 3D IS the view, one door out
+**B4.2 RULING (supersedes the spec's a/b/c menu):** option (a), and deeper than the spec asked.
+
+- With FLAT gone, **3D is not a door — it is THE view.** Always mounted. **No mode control at
+  all.** The `.reh-3d-toggle` pill dies **entirely** (FLAT + 3D + AISLE buttons).
+- **One control remains on this page: `OPEN AISLE`**, styled as what it is — a door to another
+  surface, not a segment in a toggle.
+- `forge3d_close` returns to the rack-detail **3D view**, which is now the only defined state.
+  That makes the contract honest instead of implicit.
+
+**B4.4 RULING:** keep the **NEXT ACTION chip**, drop the standalone **PHASE RUNNING LONG** card
+(`dct-ios.html:35613`). One fact, one surface, and it lives in the actionable card.
+
+**Sequencing:** Ship B takes its **own batch slot** — not stacked. Agreed because of the two
+Step 0 findings below.
+
+### Step 0 findings this ruling must respect (from live recon, 2026-07-24)
+1. **This is an inversion, not a deletion.** `.reh-flat-wrap` is visible by default (`:10548`)
+   and `.reh-3d-mount` is `display:none` until `.is-3d` lands on the host (`:10549`/`:10551`).
+   3D becoming the always-on view inverts both the CSS gate and the `reh3d_setMode` contract.
+2. ⚠️ **`display:contents` trap.** `.reh-flat-wrap` is `display:contents` (`:10548`). Do NOT
+   leave the 3D mount under a `display:contents` ancestor — that is the `.337`→`.338` bug
+   (a JS-measured WebGL mount goes invisible on iOS). See [[feedback_display_contents_breaks_webgl_mount]].
+3. **`forge3d_close` hard-depends on `'flat'`** (`:18607`, `reh3d_setMode('flat')` reset) —
+   must be rewired, or closing AISLE lands on a mode that no longer exists.
+4. **Persisted state retires with the mode:** `reh3d_prefOn()` / `REH3D_PREF_KEY`
+   (`:33429`, consumed `:33442`) exists only to choose between flat and 3D.
+5. **The minimap survives** — `.rack-hybrid-minimap` is a sibling of `.rack-hybrid-canvas`
+   (`:35423`), not a child of `#rehFlatWrap`.
+6. **A third composition exists** — `:35421`, a non-3D branch with no flat wrap and no 3D host.
+   Needs its own answer.
+
+**Ship note must state:** no RACK SCENE LOCK value is touched — lights, exposure, fog, tone
+mapping and type colours are untouched; this ship changes the **mount reveal path only.**
+
+---
+
 ## 2026-07-24 — SHIP A (deployment page clearance) is CLOSED, not shipped
 **Ruling:** John chose option 1 — close Ship A, go straight to Ship B.
 
