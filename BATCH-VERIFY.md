@@ -376,4 +376,11 @@ strip at full scroll, in both shells. It was only ever reported from the laptop.
 - [ ] Phase strip itself is unchanged in height and look (the new `min-height` is a derived no-op)
 - [ ] `?legacy=1` pixel-identical
 
+### ✅ `.351` PHONE-VERIFIED by owner 2026-07-24 ("yes looks good on the phone")
+The §2 phase-strip clearance — the half that was actually broken, and broken on the phone the
+whole time — is confirmed fixed on device. Desktop §1 (edge-to-edge strip, centered icon group)
+was eyeballed but **not separately confirmed on a ≥1024 browser**; it is CSS-only and reverts
+with the same commit. Ship stays in the open batch as `1 of 6` rather than being released, since
+a batch of one has nothing to gain from an early release.
+
 **Batch `.351` = 1 of 6.**
