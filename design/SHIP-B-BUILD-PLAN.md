@@ -1,7 +1,15 @@
 # SHIP B — BUILD PLAN (FLAT dies, 3D is the view)
 **Author:** Claude Code, from live recon of `dct-ios.html` at v1.14.352, 2026-07-25.
 **Rulings this executes:** `design/OWNER-RULINGS.md` (2026-07-24, SHIP B block).
-**Status:** recon COMPLETE. Three findings below change the ruling's premise — read them first.
+**Status:** recon COMPLETE, findings RULED ON, cleared to execute top-to-bottom. Read findings first.
+
+> **OWNER SIGN-OFF (John, 2026-07-25):**
+> - **F1 CONFIRMED** — mode segments die; `.reh-3d-toggle` container STAYS as the control strip,
+>   reseeded with the single OPEN AISLE door; the 3D view keeps its own camera/EXPLODE/CABLES
+>   controls. Build it exactly as F1's resolution states.
+> - **F2 APPROVED** — FLAT stays as the hidden no-WebGL fallback ONLY (never a selectable mode).
+>   Approved deviation from spec B4.1; state it in the ship note.
+> - No open questions remain. Execute the EDIT LIST in order; standing gates + both agents apply.
 **Scope note:** SHIP B's "deployment page" = the **rack detail** page (`deploy_showRackDetail`,
 `:35228`). The FLAT|3D|AISLE pill (`:35405`) AND the PHASE RUNNING LONG card (`:35613`) both
 live there. This ship is confined to that one function + the reh3d module it drives.
