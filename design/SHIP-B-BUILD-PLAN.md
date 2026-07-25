@@ -1,7 +1,21 @@
 # SHIP B — BUILD PLAN (FLAT dies, 3D is the view)
 **Author:** Claude Code, from live recon of `dct-ios.html` at v1.14.352, 2026-07-25.
 **Rulings this executes:** `design/OWNER-RULINGS.md` (2026-07-24, SHIP B block).
-**Status:** recon COMPLETE, findings RULED ON, cleared to execute top-to-bottom. Read findings first.
+**Status:** ✅ **edits 1–8 SHIPPED as v1.14.353 (`4f84c65`), both gates PASS, awaiting device verify.**
+Edit 9 (the B4.3 reflow) is **HELD** for an owner placement call (see below) + its own micro-ship `.354`.
+
+> **EDIT-9 HOLD (why, 2026-07-25):** recon during execution proved NEXT ACTION is rendered by a
+> SEPARATE function — `nerve_buildRackCard` (`:49212`), emitted at `:35476` — not inline in
+> `deploy_showRackDetail` as the plan assumed. So "open on NEXT ACTION" is a multi-block layout
+> judgement (3D block just below NERVE? or NERVE lifted above the COMPONENTS card / phase dots
+> too?) on a surface only the owner sees. It is pure html-ordering, 100% separable from the WebGL
+> inversion; shipping it inside the HIGH-risk `.353` would make that ship's device verify
+> unbisectable (the spec's own do-not-combine principle). Ship `.354` = move the 3D elevation
+> block (`deploy_showRackDetail`, currently emitted before NERVE) to the owner-chosen position;
+> verify the double-rAF init (`rackHybrid_initSync`, `rackFlat_applyFit`) still fires after the
+> moved markup. Everything else in this plan is done.
+
+**Status (original):** recon COMPLETE, findings RULED ON, cleared to execute top-to-bottom. Read findings first.
 
 > **OWNER SIGN-OFF (John, 2026-07-25):**
 > - **F1 CONFIRMED** — mode segments die; `.reh-3d-toggle` container STAYS as the control strip,

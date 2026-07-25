@@ -403,3 +403,23 @@ card (`~:35331`, inline `background:var(--surf-1)`), owner ID outstanding. The 2
 sweep stays parked.
 
 **Batch `.351–.352` = 2 of 6.**
+
+## v1.14.353 — SHIP B core: FLAT dies, 3D is the rack-detail view, one OPEN AISLE door (`4f84c65`) · rollback: revert commit
+**HIGH-risk (LR-2) — WebGL mount inversion. This ship CAPS the batch: per the CALL-0 rule a HIGH-risk ship
+triggers the device pass, so run `.351–.353` as one consolidated pass now rather than stacking further.**
+Executes `design/SHIP-B-BUILD-PLAN.md` edits 1–8 (owner rulings F1/F2). Edit 9 (the B4.3 reflow) is HELD —
+needs your placement call (below). Both gates PASS (ship-gate 6/6, rd-review 10/10). **RACK SCENE LOCK not
+touched** — mount reveal path + control-strip contents + one card only.
+
+- [ ] **Open a rack in a deployment** → it opens straight into the **3D elevation** (not flat, and there is **no FLAT|3D|AISLE pill**)
+- [ ] A single **OPEN AISLE** door (cyan, ›) sits above the rack; tapping it opens the FORGE aisle
+- [ ] In 3D the **CABLES chip + FRONT/ISO/TOP/REAR + EXPLODE** controls still appear in/under the strip (the container was kept as their anchor)
+- [ ] Tapping a **device in the 3D rack** still opens its detail sheet (raycast wiring untouched)
+- [ ] **Close the aisle** → returns to the **3D rack** (not flat)
+- [ ] The phase-overrun warning ("… min on POWER … Unlogged blocker?") appears **once** — inside NEXT ACTION — not twice
+- [ ] **No-WebGL check** (if you can force it / an old device): the rack shows the **flat elevation**, not a black box — this is the F2 fallback
+- [ ] ⭐ **PLACEMENT CALL (edit 9, held):** right now the page order is unchanged — 3D elevation still sits mid-page, above NEXT ACTION. B4.3 wants "opens on NEXT ACTION." Tell me where the 3D block should land: (a) just below the NERVE/NEXT ACTION card, or (b) NEXT ACTION lifted above the COMPONENTS card too. One word and I ship the reorder as `.354`.
+- [ ] ⚠️ **Advisory (not a hold):** the OPEN AISLE door is ~25px tall — below the 44px gloved floor, though a hair taller than the segments it replaced. Same family as the parked `.reh-3d-seg` 22→44px backlog. Want it bumped to a full gloved target? Your ruling.
+- [ ] `?legacy=1` pixel-identical (the reh3d block is redesign-only; the legacy flat branch is untouched)
+
+**Batch `.351–.353` = 3 of 6 — HIGH-risk `.353` caps it; ready for the consolidated device pass.**
