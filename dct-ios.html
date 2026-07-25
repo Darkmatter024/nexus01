@@ -10539,6 +10539,12 @@ body.rd .reh-3d-seg.reh-3d-cables { margin-left: 12px; }   /* v1.14.256 — CABL
    than hiding (Cold Aisle: show the capability exists and why it is off). Additive: no other
    .reh-3d-seg is ever disabled, so this rule cannot touch FLAT|3D. */
 body.rd .reh-3d-seg:disabled { opacity: 0.45; cursor: default; border-color: rgba(255,255,255,0.10); }
+/* v1.14.353 — OPEN AISLE door: the single control that replaced the retired FLAT|3D|AISLE pill.
+   A door to another surface (the FORGE aisle), NOT a segment — filled cyan ring + › arrow. It seeds
+   .reh-3d-toggle, which still hosts the CABLES filter chip + the VIEW RAIL row injected in 3D. */
+body.rd .reh-aisle-door { font-family: var(--mono); font-size: var(--fs-caption, 10px); letter-spacing: 1px; padding: 6px 14px; border: 1px solid var(--cyan); border-radius: 6px; background: rgba(40,224,255,0.12); color: var(--cyan); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+body.rd .reh-aisle-door .rad-arrow { font-size: 13px; line-height: 1; }
+body.rd .reh-aisle-door:active { background: rgba(40,224,255,0.22); }
 /* v1.14.271 (R1/R4) — VIEW RAIL + EXPLODE get their OWN row. Appending them to .reh-3d-toggle would
    put 7 buttons on one no-wrap flex row and push the viewport on a 390px phone (Rule 1). flex-wrap is
    the belt in case a future button lands here; the row is ~210px today. Shown only in 3D — the rail is
@@ -12349,7 +12355,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.352';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.353';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -18603,8 +18609,10 @@ function forge3d_close() {
   if (mount && mount._forge3dDispose) {
     try { mount._forge3dDispose(); } catch (e) { phantom_logErr('forge3d_close:dispose', e); }
   }
-  // N-09: return to a clean live FLAT rack detail (forge3d_open disposed any live 3D context).
-  if (typeof reh3d_setMode === 'function') { try { reh3d_setMode('flat'); } catch (e) { phantom_logErr('forge3d_close:flatReset', e); } }
+  // v1.14.353 — return to the rack-detail 3D view, the only defined state now (forge3d_open
+  // disposed the live reh3d context; reh3d_activate3D re-mounts it, or shows the flat fallback
+  // if WebGL is unavailable). No-op when no #reh3dCanvasHost exists (opened from elsewhere).
+  if (typeof reh3d_activate3D === 'function') { try { reh3d_activate3D(); } catch (e) { phantom_logErr('forge3d_close:reactivate3D', e); } }
 }
 
 function forge3d_fail(mount) {
@@ -33423,11 +33431,7 @@ function rackHybrid_initSync(rack) {
 // the Part A status overlay ships (see trayMaterial hook). One live GL context at
 // a time — disposed on toggle-to-FLAT or when a new context opens (iOS ceiling).
 // ══════════════════════════════════════════════════════════════════════════
-var REH3D_PREF_KEY = 'phantom_rackview_3d';   // per-session opt-in (default FLAT)
 var _reh3dActive = null;                       // { mount, dispose } — bounds live GL contexts to 1
-
-function reh3d_prefOn()  { try { return sessionStorage.getItem(REH3D_PREF_KEY) === '1'; } catch (e) { return false; } }
-function reh3d_prefSet(on) { try { sessionStorage.setItem(REH3D_PREF_KEY, on ? '1' : '0'); } catch (e) {} }
 
 function reh3d_webglOK() {
   try {
@@ -33436,40 +33440,27 @@ function reh3d_webglOK() {
   } catch (e) { return false; }
 }
 
-// Restore the session's FLAT|3D choice after the panel paints (rack in scope).
+// v1.14.353 — 3D is THE rack-detail view. Called after the panel paints (rack in scope): stash the
+// rack and activate 3D unconditionally. No per-session pref, no FLAT|3D toggle — both retired.
 function reh3d_restore(rack) {
   window._reh3dRack = rack;
-  if (reh3d_prefOn()) reh3d_setMode('3d');
+  reh3d_activate3D();
 }
 
-// FLAT|3D segmented-toggle handler (bound via onclick in the panel header).
-function reh3d_setMode(mode) {
+// Mount the 3D rack view. WebGL absent → leave .is-3d off so #rehFlatWrap (the flat elevation)
+// stays visible as the involuntary fallback; the rack still renders, so this is a graceful
+// fallback, not a silent failure (console.warn documents it; no toast churn on every cold open).
+// Runs automatically on rack-detail open, so it fires NO haptic (haptic is user-tap feedback).
+function reh3d_activate3D() {
   var rack = window._reh3dRack;
   var host = document.getElementById('reh3dCanvasHost');
   if (!host) return;
-  var flatBtn = document.getElementById('reh3dBtnFlat');
-  var d3Btn   = document.getElementById('reh3dBtn3d');
-  if (mode === '3d') {
-    if (!reh3d_webglOK()) {
-      console.warn('[PHANTOM] 3D rack view: WebGL unavailable — staying on FLAT');
-      if (typeof phantomToast === 'function') phantomToast('3D unavailable on this device — showing flat view', 'warn');
-      return;
-    }
-    host.classList.add('is-3d');
-    if (flatBtn) flatBtn.classList.remove('is-on');
-    if (d3Btn)   d3Btn.classList.add('is-on');
-    reh3d_prefSet(true);
-    if (typeof haptic === 'function') haptic(15);
-    rackElevation_ensure3D(rack, document.getElementById('reh3dMount'));
-  } else {
-    host.classList.remove('is-3d');
-    if (d3Btn)   d3Btn.classList.remove('is-on');
-    if (flatBtn) flatBtn.classList.add('is-on');
-    reh3d_prefSet(false);
-    if (typeof haptic === 'function') haptic(15);
-    var m = document.getElementById('reh3dMount');
-    if (m && m._rm3dDispose) { try { m._rm3dDispose(); } catch (e) {} }
+  if (!reh3d_webglOK()) {
+    console.warn('[PHANTOM] 3D rack view: WebGL unavailable — showing flat elevation fallback');
+    return;
   }
+  host.classList.add('is-3d');
+  rackElevation_ensure3D(rack, document.getElementById('reh3dMount'));
 }
 
 // Lazy-load three.js (SW-precached, same-origin) then render. Never blank: on any
@@ -33490,14 +33481,12 @@ function rackElevation_ensure3D(rack, mountEl) {
 }
 
 function reh3d_fail(mountEl) {
+  // three.js failed to load — drop .is-3d so #rehFlatWrap (the flat elevation) reappears as the
+  // fallback. This IS a failure of an attempted load (distinct from no-WebGL-at-all), so toast.
   var host = document.getElementById('reh3dCanvasHost');
   if (host) host.classList.remove('is-3d');
-  var d3Btn = document.getElementById('reh3dBtn3d'), flatBtn = document.getElementById('reh3dBtnFlat');
-  if (d3Btn)   d3Btn.classList.remove('is-on');
-  if (flatBtn) flatBtn.classList.add('is-on');
-  reh3d_prefSet(false);
   if (mountEl) mountEl.innerHTML = '';
-  console.warn('[PHANTOM] 3D rack view: three.js unavailable — fell back to FLAT');
+  console.warn('[PHANTOM] 3D rack view: three.js unavailable — fell back to flat elevation');
   if (typeof phantomToast === 'function') phantomToast('3D unavailable — showing flat view', 'warn');
 }
 
@@ -35377,35 +35366,30 @@ function deploy_showRackDetail(deployId, rackId) {
   // with viewport-scroll semantics. rackHybrid_initSync handles all touch interaction.
   try {
     if (rack.slots && rack.slots.length > 0) {
-      // v1.14.236 — RETIRED: the .218 opt-in FLAT|3D toggle. FORGE 3D supersedes this
-      // wireframe rack view; two 3D doors onto the same rack violates "one door per
-      // feature", and the old view competes for the single GL context. Per the
-      // re-home law the toggle + its 3D mount are UNWIRED from the rd house, not
-      // deleted: the reh3d_* functions and .reh-3d-* CSS stay resident (physical
-      // removal waits for the R1 deletion pass). FLAT remains the rack-detail
-      // default, unchanged; #rehFlatWrap is display:contents so the fitted
-      // elevation renders exactly as before. Legacy (else) emits the original
+      // ── Rack Elevation — 3D is THE view (v1.14.353, owner ruling) ──
+      // History: .218 shipped an opt-in FLAT|3D toggle; .236 unwired it; .254 rewired it as a
+      // per-session opt-in with FLAT the instant default. .353 finishes the arc: the mode toggle
+      // is gone, 3D is the unconditional rack-detail view (mounted by reh3d_restore below), and
+      // FLAT survives ONLY as the involuntary no-WebGL fallback (#rehFlatWrap, shown when .is-3d
+      // is absent — reh3d_fail removes .is-3d and the flat elevation reappears). The solo-rack 3D
+      // view and the FORGE aisle stay two distinct features (bench vs walk-through); OPEN AISLE is
+      // the door between them. GL-context safety is UNCHANGED: _reh3dActive bounds live contexts to
+      // 1 and forge3d_open cross-disposes this view (see :17676). Scene internals and the
+      // raycast->openRmDevice wiring are LOCKED, untouched. Legacy (else) emits the original flat
       // line verbatim — ?legacy=1 untouched.
-      // ── v1.14.254 — REVERSED (John's ruling, standing since 2026-07-12; executed per
-      // HANDOFF-reh3d-rewire-REV2.md). The SOLO-RACK 3D INSPECT VIEW IS A DISTINCT SURFACE
-      // FROM THE FORGE AISLE — FORGE is the cold-aisle walk-through, this is one rack on the
-      // bench — so the "one door per feature" objection above does NOT apply: they are two
-      // features, not two doors onto one. The GL-context objection is answered by machinery
-      // that already exists and is UNCHANGED: _reh3dActive bounds live contexts to exactly 1
-      // and forge3d_open cross-disposes this view symmetrically (see :17676). FLAT REMAINS THE
-      // INSTANT DEFAULT — 3D is a per-session opt-in (REH3D_PREF_KEY), never auto-entered on a
-      // cold open. Scene internals and the raycast->openRmDevice wiring are LOCKED, untouched.
       var _rehRd = (typeof redesign_isOn === 'function' && redesign_isOn());
       if (_rehRd) {
-        // PLACEMENT — full-width BEFORE .rack-hybrid, NOT inside it. The handoff left this to
-        // device-verify, but the CSS decides it outright: .rack-hybrid is `display:flex;
-        // align-items:stretch`, so a toggle emitted as its child becomes a THIRD FLEX COLUMN
-        // and breaks the 85/15 canvas/minimap split. Above the container it spans full width
-        // and disturbs no existing geometry.
+        // v1.14.353 — FLAT|3D mode toggle RETIRED (owner ruling): 3D is now THE rack-detail view,
+        // always mounted (reh3d_restore below), never a per-session opt-in. The .reh-3d-toggle
+        // container STAYS — it is the runtime injection anchor for the CABLES filter (appended in)
+        // and the VIEW RAIL + EXPLODE (its sibling row), both built by rackElevation_render3D.
+        // It is reseeded with the single OPEN AISLE door → forge3d_open(), a door to the cold-aisle
+        // walk-through (a distinct surface), styled as a door, NOT a segment. FLAT survives ONLY as
+        // the involuntary no-WebGL fallback (#rehFlatWrap, shown when .is-3d is absent). PLACEMENT
+        // unchanged: full-width BEFORE .rack-hybrid (emitting inside its display:flex would make a
+        // third flex column and break the 85/15 canvas/minimap split).
         html += '<div class="reh-3d-toggle">' +
-                  '<button type="button" id="reh3dBtnFlat" class="reh-3d-seg is-on" onclick="reh3d_setMode(\'flat\')">FLAT</button>' +
-                  '<button type="button" id="reh3dBtn3d" class="reh-3d-seg" onclick="reh3d_setMode(\'3d\')">3D</button>' +
-                  '<button type="button" id="reh3dBtnAisle" class="reh-3d-seg" onclick="forge3d_open()" aria-label="Open the 3D aisle">AISLE</button>' +
+                  '<button type="button" class="reh-aisle-door" onclick="forge3d_open()" aria-label="Open the 3D aisle walk-through">OPEN AISLE <span class="rad-arrow" aria-hidden="true">›</span></button>' +
                 '</div>';
       }
       html += '<div class="rack-hybrid">';
@@ -35426,15 +35410,10 @@ function deploy_showRackDetail(deployId, rackId) {
         rackHybrid_initSync(rack);
         rackFlat_applyFit(rack.totalU || 42);
       railSel_bindFlat();
-        // v1.14.236 — reh3d_restore() unwired with the toggle above. A stale
-        // sessionStorage phantom_rackview_3d='1' from a pre-.236 session must not be
-        // able to resurrect the retired 3D view into a mount that no longer exists.
-        // v1.14.254 — REWIRED: the mount exists again, so the session pref is safe to honour.
-        // reh3d_restore() also sets window._reh3dRack, which reh3d_setMode() reads — so this
-        // call is NOT optional even when the pref is off: without it the FIRST tap on 3D would
-        // render a rack of `undefined`. It runs AFTER rackFlat_applyFit so a restored 3D view
-        // never races the flat fit. rd-only: under ?legacy=1 the toggle is not emitted, and
-        // reh3d_setMode() is unreachable with no #reh3dCanvasHost to find.
+        // v1.14.353 — reh3d_restore() sets window._reh3dRack and unconditionally activates the 3D
+        // view (3D is THE view now — no pref, no toggle). It runs AFTER rackFlat_applyFit so the
+        // mount never races the flat fit that backs it as the no-WebGL fallback. rd-only: under
+        // ?legacy=1 no #reh3dCanvasHost is emitted, so activate is a safe no-op there.
         if (_rehRd && typeof reh3d_restore === 'function') reh3d_restore(rack);
       }); });
     }
@@ -35602,22 +35581,9 @@ function deploy_showRackDetail(deployId, rackId) {
     html += '<button class="pt-btn pt-btn-ghost" style="width:100%;box-sizing:border-box;margin-top:10px;color:var(--cyan);border-color:rgba(92,242,255,0.25)" onclick="stripeRack_logNote(\'' + deployId + '\',\'' + rackId + '\')">' + _ico.file('#5cf2ff', 13) + ' &nbsp;LOG NOTE</button>';
   }
 
-  // ── Anomaly Detection — flag any in-progress phase running long ──
-  var anomalyHtml = '';
-  rackPhases.forEach(function(ph) {
-    if (ph.status === 'in_progress') {
-      var anom = deploy_checkPhaseAnomaly(deployId, rackId, ph.type);
-      if (anom) {
-        anomalyHtml += '<div style="background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.22);border-radius:8px;padding:9px 14px;margin-top:8px;display:flex;gap: 8px;align-items:flex-start">';
-        anomalyHtml += '<span style="font-size:14px;flex-shrink:0">⏱</span>';
-        anomalyHtml += '<div><div style="font-family:var(--orb);font-size: var(--fs-micro);letter-spacing:2px;color:var(--gold)">PHASE RUNNING LONG</div>';
-        anomalyHtml += '<div style="font-family:var(--raj);font-size:12px;color:var(--white);margin-top:2px">' + (DEPLOY_PHASE_LABELS_FULL[ph.type] || ph.type) + ' — ' + anom.elapsedMins + ' min elapsed (typical: ' + anom.baseline + ' min)</div>';
-        anomalyHtml += '<div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);margin-top:2px">Is there an unlogged blocker on this rack?</div>';
-        anomalyHtml += '</div></div>';
-      }
-    }
-  });
-  if (anomalyHtml) html += anomalyHtml;
+  // ── Anomaly Detection ── v1.14.353 (B4.4): the standalone "PHASE RUNNING LONG" card was REMOVED
+  // here — the same overrun fact renders in the NERVE card's NEXT ACTION chip above (one fact, one
+  // surface). deploy_checkPhaseAnomaly still feeds that chip; only this duplicate card is gone.
 
   // ── SOP Auto-Selection ──
   try {
