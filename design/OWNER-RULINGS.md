@@ -9,6 +9,20 @@ spec, and a ruling recorded inside it would be silently lost.
 
 ---
 
+## 2026-07-25 — FIX-DESKTOP-NAV-CARDS §3: the "DEVICES" card is COMPONENTS (:35331)
+**Ruling (John):** the spec's "DEVICES section surface" was a **stale name**. The real card is
+**COMPONENTS at `dct-ios.html:~35331`**, which carries an inline `background:var(--surf-1)`.
+Question CLOSED.
+
+**State:** §3 (card-surface unification) shipped PARTIAL in `.352` — the hero card was unified,
+this COMPONENTS card was held back pending the ID. The ID is now known, so the §3 finish is
+**unblocked but not yet shipped**: swap the COMPONENTS card's inline `--surf-1` → `--rd-cardfill`
+(the one Home/Command card surface — real source is the SURFACE-GLOW `!important` block + GLASS-
+SKIN, per [[feedback_grep_cascade_before_background]]). Small ship, not started; no owner action
+pending. The broader 22-site inline `--surf-1` sweep stays parked (edits JS-generated HTML).
+
+---
+
 ## 2026-07-24 — SHIP B: FLAT dies, 3D IS the view, one door out
 **B4.2 RULING (supersedes the spec's a/b/c menu):** option (a), and deeper than the spec asked.
 
