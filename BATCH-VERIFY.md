@@ -436,3 +436,16 @@ Both gates PASS on the fix. **RACK SCENE LOCK not touched.** Verify on the SAME 
 - [ ] ⚠️ **`?legacy=1` rack detail** — section order is **UNCHANGED** from `.353` (elevation still ABOVE Ghost Echo/NERVE). This is the byte-identity the gates flagged and the fix restored — worth an explicit eyeball on `?legacy=1`.
 
 **Batch `.351–.354` = 4 of 6 — SHIP B complete (.353 core + .354 reflow); still capped by the HIGH-risk .353, consolidated device pass ready.**
+
+---
+## ✅ BATCH `.351–.354` — CLEARED by owner 2026-07-25 (iPhone PWA, offline)
+Recorded verbatim (not "all good"). Full per-ship detail + gate marks are in `INTEGRATION-STATE.md` →
+**DEVICE-PASS CLEAR** block. Summary:
+- `.351` PASS (phone rack-detail clearance + Home/TOOLS unregressed) · **desktop §1 PARTIAL** (≥1024 not tested)
+- `.352` PASS (hero trays readable, edges match stat-tile black, `.14` verdict correct, OPEN BAY opens)
+- `.353` PASS (3D-is-the-view, OPEN AISLE→forge, CABLES/rail/EXPLODE, device-tap→sheet, close→3D, overrun once) · **no-WebGL fallback PARTIAL** (not iPhone-testable)
+- `.354` PASS (3D below NEXT ACTION, nothing doubled, ~44px door, `?legacy=1` order unchanged)
+- Gates: `?legacy=1` byte-identical PASS · three-stamp on device (badge v1.14.354) PASS · offline relaunch data intact PASS
+
+**PARTIAL revert anchors:** `.351` desktop §1 → `git revert c2a0da1` · `.353` no-WebGL fallback → `git revert 4f84c65`.
+CALL-0 count cap **reset** — next ship opens a new batch at 1 of 6. **`.355` (§3 Option A) is unblocked but owner-deferred ("not tonight").**

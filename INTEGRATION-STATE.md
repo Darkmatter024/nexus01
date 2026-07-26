@@ -4,12 +4,12 @@
 > is superseded narrative kept for history. Per-ship truth = `git log` + `version.json` notes; this is the index.
 
 ## QUEUE (read first)
-1. **DEVICE PASS — batch `.351–.354` (4 of 6, capped by HIGH-risk .353). HARD STOP, owner-run.**
-   Open items: .352 `.14` hero-stage value + rack-detail clearance reconfirm · .353 rack-detail
-   (3D-is-the-view, OPEN AISLE, CABLES/rail/EXPLODE, no-WebGL flat fallback) · .354 (3D below
-   NEXT ACTION under redesign, 44px door, `?legacy=1` section order UNCHANGED). Detail in `BATCH-VERIFY.md`.
+1. **✅ DEVICE PASS — batch `.351–.354` CLEARED by owner 2026-07-25 (iPhone PWA, offline).**
+   Two PARTIALs carried forward (`.351` desktop §1, `.353` no-WebGL fallback — neither iPhone-testable).
+   Full per-ship detail + gate marks in the **DEVICE-PASS CLEAR** block below.
 2. **`.355` = FIX-DESKTOP-NAV-CARDS §3 COMPONENTS — RULED: Option A (owner, 2026-07-25).**
-   Card-scoped, reversible, ready to build. **Ships AFTER the .351–.354 pass clears — NOT stacked onto it.**
+   Card-scoped, reversible, ready to build. Batch cleared 2026-07-25 so it is **unblocked** — but owner
+   **deferred it ("not tonight")**; it is the next ship when work resumes.
    Note: the inline `--surf-1`→`--rd-cardfill` swap the old plan named is DEAD (overridden by
    `body.rd .gsk{background:…!important}`, ~L11852). A = redesign-gated `gsk-flat` marker + one rule
    `body.rd .gsk.gsk-flat{background:var(--rd-cardfill)!important}`; blast radius = 1 card; `?legacy=1`
@@ -26,13 +26,29 @@
   caught by BOTH gates as a `?legacy=1` Rule-11 break (naive block-move in the SHARED `deploy_showRackDetail`)
   → redone redesign-gated. (lesson: shared-render-reorder-gate)
 - **`deploy_` surface:** 110 unique `function deploy_*` definitions in dct-ios.html.
-- **Unverified & why:** batch `.351–.354` (4 of 6) awaiting owner's consolidated device pass — capped
-  early by the HIGH-risk (LR-2) .353 WebGL-mount inversion per CALL-0. `.340–.345` and `.346–.350`
-  already owner-CLEARED. `.355` (§3 A) is ruled but WAITS on this pass.
+- **Verified:** batch `.351–.354` CLEARED on device by owner 2026-07-25 (iPhone PWA, offline) — see the
+  DEVICE-PASS CLEAR block below; two PARTIALs (`.351` desktop §1, `.353` no-WebGL fallback). `.340–.345`
+  and `.346–.350` previously cleared. `.355` (§3 A) is ruled + unblocked but owner deferred it ("not tonight").
 - **RACK SCENE LOCK ARMED:** lights/exposure/fog/tone-mapping/type-colours/geometry — no change without
   a new owner ruling; if a task would touch it, STOP AND ASK.
 - **Redesign is default UI** since .101 (bare URL boots `body.rd`; `?legacy=1` rip-cord). `?legacy`
   byte-identical is a hard gate.
+
+## DEVICE-PASS CLEAR — batch `.351–.354` (owner, 2026-07-25)
+**Owner-reported device pass — iPhone, installed PWA, offline. Recorded verbatim, not "all good."**
+
+- **.351** — rack-detail scroll-to-bottom confirmed: LOG NOTE / ASSIGNED / QR all clear the phase strip. Home + TOOLS scroll unregressed. **Desktop §1 (≥1024 nav/spacing/BUILD clearance) NOT tested — PARTIAL.**
+- **.352** — hero trays readable at arm's length, edges match stat-tile black, `.14` value verdict correct, OPEN BAY opens. **PASS.**
+- **.353** — opens straight to 3D, no FLAT|3D pill. OPEN AISLE → forge. CABLES + FRONT/ISO/TOP/REAR/EXPLODE present. device-tap → sheet. close aisle → back to 3D. overrun warning fires once. **No-WebGL flat fallback NOT forced (not iPhone-testable) — PARTIAL.**
+- **.354** — 3D sits below NEXT ACTION, nothing doubled, door ~44px, `?legacy=1` section order unchanged. **PASS.**
+
+**Gates:** `?legacy=1` byte-identical **PASS** · three-stamp lockstep on device, badge reads **v1.14.354 PASS** · offline relaunch, data intact **PASS**.
+
+**Two PARTIALs carried (both non-iPhone-testable, both revert with their own commit):**
+- `.351` desktop §1 — the ≥1024 edge-to-edge nav + centered icon group + desktop BUILD clearance; never confirmed on a ≥1024 browser (eyeballed at ship). CSS-only. Revert = `git revert c2a0da1`.
+- `.353` no-WebGL flat fallback (F2) — the safety net that shows the flat elevation when three.js can't load; not force-able on the iPhone. If a WebGL-less device ever shows a black box on rack detail, this path is unverified — start at `git revert 4f84c65`.
+
+CALL-0 count cap **reset** — the next ship (`.355`) opens a new batch at 1 of 6.
 
 ## COMPRESSED LEDGER — .287 → .354 (one line per ship; git-log truth)
 _Gap: **.306–.309 never shipped** (no commits)._
