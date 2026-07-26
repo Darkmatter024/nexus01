@@ -423,3 +423,16 @@ touched** — mount reveal path + control-strip contents + one card only.
 - [ ] `?legacy=1` pixel-identical (the reh3d block is redesign-only; the legacy flat branch is untouched)
 
 **Batch `.351–.353` = 3 of 6 — HIGH-risk `.353` caps it; ready for the consolidated device pass.**
+
+## v1.14.354 — SHIP B edit 9: 3D elevation below NEXT ACTION (redesign-gated) + OPEN AISLE 44px (`9c0c4de`) · rollback: revert commit
+Finishes SHIP B. Two owner rulings (a) 3D just below NEXT ACTION, and 44px door. **A naive first pass was
+CAUGHT BY BOTH GATES as a `?legacy=1` byte-identity break** (deploy_showRackDetail is a SHARED function —
+an ungated reorder moved the legacy page too); reverted and redone with the reorder **redesign-gated**.
+Both gates PASS on the fix. **RACK SCENE LOCK not touched.** Verify on the SAME rack detail as `.353`:
+
+- [ ] **REDESIGN rack detail** — the page now leads with header/nav/phase-dots/COMPONENTS, then the **NERVE card (NEXT ACTION)**, and the **3D elevation sits BELOW NEXT ACTION** (it was above it on `.353`)
+- [ ] Nothing doubled or dropped — the elevation renders exactly once; 3D still mounts, tap a device → sheet, OPEN AISLE still opens the aisle, CABLES/rail/EXPLODE present
+- [ ] The **OPEN AISLE door is now ~44px tall** (a full gloved target); the CABLES chip beside it is the same height, text centered
+- [ ] ⚠️ **`?legacy=1` rack detail** — section order is **UNCHANGED** from `.353` (elevation still ABOVE Ghost Echo/NERVE). This is the byte-identity the gates flagged and the fix restored — worth an explicit eyeball on `?legacy=1`.
+
+**Batch `.351–.354` = 4 of 6 — SHIP B complete (.353 core + .354 reflow); still capped by the HIGH-risk .353, consolidated device pass ready.**

@@ -1,8 +1,16 @@
 # SHIP B — BUILD PLAN (FLAT dies, 3D is the view)
 **Author:** Claude Code, from live recon of `dct-ios.html` at v1.14.352, 2026-07-25.
 **Rulings this executes:** `design/OWNER-RULINGS.md` (2026-07-24, SHIP B block).
-**Status:** ✅ **edits 1–8 SHIPPED as v1.14.353 (`4f84c65`), both gates PASS, awaiting device verify.**
-Edit 9 (the B4.3 reflow) is **HELD** for an owner placement call (see below) + its own micro-ship `.354`.
+**Status:** ✅ **SHIP B COMPLETE. Edits 1–8 = v1.14.353 (`4f84c65`); edit 9 (B4.3 reflow) + the 44px
+door = v1.14.354 (`9c0c4de`). Both ships gate-PASS, awaiting the consolidated `.351–.354` device pass.**
+
+> **EDIT 9 SHIPPED (.354, owner ruling a):** the 3D elevation now renders just below NEXT ACTION under
+> redesign. NOTE for the record: a naive whole-block move was caught by BOTH gates as a `?legacy=1`
+> Rule-11 break (deploy_showRackDetail is a SHARED function — the reorder hit legacy too). Redone with
+> the reorder **redesign-gated** (the elevation builds into `rehHybridHtml` and is flushed before Ghost
+> Echo for legacy / after NERVE for redesign). Lesson: any reorder inside a shared deploy_* render
+> function must be `redesign_isOn()`-gated or it silently reorders `?legacy=1`. Option (b) — lifting
+> NEXT ACTION above COMPONENTS/phase-dots — was NOT chosen; owner picked (a).
 
 > **EDIT-9 HOLD (why, 2026-07-25):** recon during execution proved NEXT ACTION is rendered by a
 > SEPARATE function — `nerve_buildRackCard` (`:49212`), emitted at `:35476` — not inline in
