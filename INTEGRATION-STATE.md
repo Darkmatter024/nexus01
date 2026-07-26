@@ -4,31 +4,32 @@
 > is superseded narrative kept for history. Per-ship truth = `git log` + `version.json` notes; this is the index.
 
 ## QUEUE (read first)
-1. **✅ DEVICE PASS — batch `.351–.354` CLEARED by owner 2026-07-25 (iPhone PWA, offline).**
-   Two PARTIALs carried forward (`.351` desktop §1, `.353` no-WebGL fallback — neither iPhone-testable).
-   Full per-ship detail + gate marks in the **DEVICE-PASS CLEAR** block below.
-2. **`.355` = FIX-DESKTOP-NAV-CARDS §3 COMPONENTS — RULED: Option A (owner, 2026-07-25).**
-   Card-scoped, reversible, ready to build. Batch cleared 2026-07-25 so it is **unblocked** — but owner
-   **deferred it ("not tonight")**; it is the next ship when work resumes.
-   Note: the inline `--surf-1`→`--rd-cardfill` swap the old plan named is DEAD (overridden by
-   `body.rd .gsk{background:…!important}`, ~L11852). A = redesign-gated `gsk-flat` marker + one rule
-   `body.rd .gsk.gsk-flat{background:var(--rd-cardfill)!important}`; blast radius = 1 card; `?legacy=1`
-   byte-identical. Precedent: the .343 `.sigrow` override (~L12113). (lesson: grep-cascade-before-background)
+1. **DEVICE VERIFY — `.355` (§3 COMPONENTS, Option A). Own batch, 1 of 6. HARD STOP, owner-run.**
+   Redesign rack detail: COMPONENTS card now reads the 98 RACKS stat-tile black (no lighter cast),
+   border/corners/shadow unchanged; `?legacy=1` COMPONENTS card unchanged (pixel-identical to .354).
+   ⭐Advisory to eyeball: the card is now darker than its sibling `.gsk` phase cards on the same page
+   (accepted Option-A tradeoff — reverts in one commit if it reads wrong). Checklist in `BATCH-VERIFY.md`.
+   (Prior batch `.351–.354` CLEARED 2026-07-25 — see DEVICE-PASS CLEAR block below.)
+2. **✅ SHIPPED `.355` `e0bcfad` (2026-07-26) — §3 COMPONENTS card unified (Option A).** Both gates PASS;
+   now in device verify (item 1). Mechanism: the inline `--surf-1`→`--rd-cardfill` swap was DEAD (overridden
+   by `body.rd .gsk{background:…!important}`, ~L11852); shipped instead a redesign-gated `gsk-flat` marker +
+   `body.rd .gsk.gsk-flat{background:var(--rd-cardfill)!important}` (~L11864), blast radius 1 card,
+   `?legacy=1` byte-identical. Precedent: the .343 `.sigrow` override. (lesson: grep-cascade-before-background)
 3. **Gated — no autonomous start, each needs a ruling:** §4 hero-tray visibility (STOP-AND-FLAG if it
    needs LOCKED reh3d lights) · 22-site inline `--surf-1` sweep (PARKED) · Stage 5–6 legacy cold-delete
    (owner census sign-off) · prism header mark · ghost-FAB polish · Post-Stage-6 backlog (BUILD-3,
    Master/RackMap consolidation, HEALTH C4 dead-code, Section D audit).
 
 ## CURRENT STATE
-- **Live: `v1.14.354`** — code `9c0c4de`, docs tip `e43eee8`. Three-stamp lockstep confirmed
-  (dct-ios.html `PHANTOM_APP_VERSION` · sw.js `CACHE_VERSION` · version.json all `phantom-v1.14.354`).
+- **Live: `v1.14.355`** — code `e0bcfad`. Three-stamp lockstep confirmed
+  (dct-ios.html `PHANTOM_APP_VERSION` · sw.js `CACHE_VERSION` · version.json all `phantom-v1.14.355`).
 - **Gates:** .353 + .354 both `phantom-ship-gate` + `phantom-rd-reviewer` PASS. .354's first pass was
   caught by BOTH gates as a `?legacy=1` Rule-11 break (naive block-move in the SHARED `deploy_showRackDetail`)
   → redone redesign-gated. (lesson: shared-render-reorder-gate)
 - **`deploy_` surface:** 110 unique `function deploy_*` definitions in dct-ios.html.
 - **Verified:** batch `.351–.354` CLEARED on device by owner 2026-07-25 (iPhone PWA, offline) — see the
   DEVICE-PASS CLEAR block below; two PARTIALs (`.351` desktop §1, `.353` no-WebGL fallback). `.340–.345`
-  and `.346–.350` previously cleared. `.355` (§3 A) is ruled + unblocked but owner deferred it ("not tonight").
+  and `.346–.350` previously cleared. `.355` (§3 A) SHIPPED `e0bcfad` 2026-07-26 — awaiting its own device verify (own batch, 1 of 6).
 - **RACK SCENE LOCK ARMED:** lights/exposure/fog/tone-mapping/type-colours/geometry — no change without
   a new owner ruling; if a task would touch it, STOP AND ASK.
 - **Redesign is default UI** since .101 (bare URL boots `body.rd`; `?legacy=1` rip-cord). `?legacy`
@@ -129,11 +130,12 @@ _Gap: **.306–.309 never shipped** (no commits)._
 - .349 saver rename cleanup: all four → `deploy_saveAll*`
 - .350 loader arity split: .347/.348 bug class made unrepresentable
 
-**Desktop-nav-cards + SHIP B (current OPEN batch) — .351–.354**
+**Desktop-nav-cards + SHIP B + §3 finish — .351–.355**
 - .351 desktop nav edge-to-edge + second fixed strip gets its clearance
 - .352 hero card: unify the fill, move the stage onto the mount
 - .353 SHIP B core: FLAT dies, 3D IS the rack-detail view, one OPEN AISLE door **[HIGH-risk / LR-2]**
 - .354 SHIP B edit 9: 3D elevation below NEXT ACTION (redesign-gated) + OPEN AISLE 44px
+- .355 §3 COMPONENTS card → stat-tile black (Option A): redesign-gated `gsk-flat` marker + `body.rd .gsk.gsk-flat` override
 
 ═══════════ ARCHIVE BELOW — S1–S63 (.168 → .286), superseded by the ledger above ═══════════
 

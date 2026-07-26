@@ -449,3 +449,22 @@ Recorded verbatim (not "all good"). Full per-ship detail + gate marks are in `IN
 
 **PARTIAL revert anchors:** `.351` desktop §1 → `git revert c2a0da1` · `.353` no-WebGL fallback → `git revert 4f84c65`.
 CALL-0 count cap **reset** — next ship opens a new batch at 1 of 6. **`.355` (§3 Option A) is unblocked but owner-deferred ("not tonight").**
+
+---
+# ▶ OPEN BATCH — starts at `.355` (count 1 of 6)
+
+## v1.14.355 — §3 COMPONENTS card → stat-tile black (Option A) (`e0bcfad`) · rollback: revert commit
+**CSS + one redesign-gated class marker.** FIX-DESKTOP-NAV-CARDS §3, owner-ruled Option A (2026-07-25).
+The COMPONENTS card on the rack-detail page (`deploy_showRackDetail`) was the last card still on the
+lighter `.gsk` glass skin; it now renders the 98 RACKS stat-tile black (`--rd-cardfill`) under redesign.
+Both gates PASS (ship-gate 7/7; rd-review all rules, one non-blocking advisory below). The old
+"swap the inline `--surf-1`" mechanism was DEAD (overridden by `body.rd .gsk{…!important}`); fixed via a
+higher-specificity `body.rd .gsk.gsk-flat` rule + a redesign-gated `gsk-flat` marker. **RACK SCENE LOCK not touched.**
+
+- [ ] **REDESIGN rack detail** (open a rack in a deployment): the **COMPONENTS card** (COMPONENTS / N DEVICES header + the GPU / NETWORK SWITCHES / STORAGE / … category bars) reads the **same near-black** as the 98 RACKS stat tile and the assistant card — **no lighter blue/grey cast**
+- [ ] The card's **border, corners, and shadow are unchanged** — only the fill went darker (fill-only)
+- [ ] ⭐ **JUDGE THE LOCAL CONTRAST (advisory, not a hold):** this card is now darker than its **sibling phase/state cards on the same page** (they stay on the lighter glass skin — they were never in §3's scope). Option A was card-scoped by design. If that contrast reads wrong on device, say so — it reverts in one commit and we reconsider (close it, or take the whole `.gsk` set as a bigger ship).
+- [ ] `?legacy=1` rack detail: the COMPONENTS card is **UNCHANGED** (lighter glass skin — plain `.gsk` + inline `--surf-1`) — pixel-identical to `.354`
+- [ ] three-stamp on device: badge reads **v1.14.355**
+
+**Batch `.355` = 1 of 6.**
