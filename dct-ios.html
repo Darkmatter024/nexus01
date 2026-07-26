@@ -11861,6 +11861,15 @@ body.rd .gsk {
     inset 0 -1px 0 rgba(160,190,220,.07),
     0 5px 12px rgba(0,0,0,.45) !important;
 }
+body.rd .gsk.gsk-flat {
+  background: var(--rd-cardfill) !important;
+  /* v1.14.355: FIX-DESKTOP-NAV-CARDS §3 — the COMPONENTS card (deploy_showRackDetail) unified to the
+     98 RACKS stat-tile black (Option A, owner ruling). Overrides ONLY the .gsk glass-skin fill on this
+     one card; .gsk border/radius/box-shadow are kept (fill only, per §3). The .gsk-flat marker is
+     redesign-gated in JS, so ?legacy=1 emits plain .gsk + its inline --surf-1 → byte-identical.
+     Specificity (0,3,1) beats body.rd .gsk (0,2,1); both !important → this wins. Precedent: the .343
+     body.rd #pg-cmd .sigrow override that repointed a glass card to --rd-cardfill. */
+}
 /* ━━━ end GLASS SKIN v1 (G-1c2) ━━━ */
 
 /* ━━━ v1.14.193 A-1 TICKET INTAKE — Ask PHANTOM paste/import chips ━━━
@@ -12355,7 +12364,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.354';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.355';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -35329,7 +35338,7 @@ function deploy_showRackDetail(deployId, rackId) {
       ].filter(function(c) { return c.count > 0; });
       if (compCats.length > 0) {
         var compTotal = compCats.reduce(function(a,c){ return a + c.count; }, 0);
-        html += '<div class="gsk" style="background:var(--surf-1);border:1px solid rgba(255,255,255,0.06);border-radius:var(--hud-r12);padding:12px 14px;margin-bottom:14px">';
+        html += '<div class="gsk' + ((typeof redesign_isOn === 'function' && redesign_isOn()) ? ' gsk-flat' : '') + '" style="background:var(--surf-1);border:1px solid rgba(255,255,255,0.06);border-radius:var(--hud-r12);padding:12px 14px;margin-bottom:14px">';   // v1.14.355 §3 Option A: redesign-only .gsk-flat marker → stat-tile black; legacy stays plain .gsk (byte-identical)
         html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
         html += '<span style="font-family:var(--mono);font-size:var(--fs-micro);letter-spacing:1.5px;color:var(--slate)">COMPONENTS</span>';
         html += '<span style="font-family:var(--orb);font-size:13px;color:var(--white)">' + compTotal + ' <span style="font-size:10px;color:var(--slate)">DEVICES</span></span>';
