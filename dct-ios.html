@@ -10542,7 +10542,7 @@ body.rd .reh-3d-seg:disabled { opacity: 0.45; cursor: default; border-color: rgb
 /* v1.14.353 — OPEN AISLE door: the single control that replaced the retired FLAT|3D|AISLE pill.
    A door to another surface (the FORGE aisle), NOT a segment — filled cyan ring + › arrow. It seeds
    .reh-3d-toggle, which still hosts the CABLES filter chip + the VIEW RAIL row injected in 3D. */
-body.rd .reh-aisle-door { font-family: var(--mono); font-size: var(--fs-caption, 10px); letter-spacing: 1px; padding: 6px 14px; border: 1px solid var(--cyan); border-radius: 6px; background: rgba(40,224,255,0.12); color: var(--cyan); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+body.rd .reh-aisle-door { font-family: var(--mono); font-size: var(--fs-caption, 10px); letter-spacing: 1px; min-height: 44px; box-sizing: border-box; padding: 0 16px; border: 1px solid var(--cyan); border-radius: 6px; background: rgba(40,224,255,0.12); color: var(--cyan); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }   /* v1.14.354: 44px gloved tap-target floor (owner ruling) */
 body.rd .reh-aisle-door .rad-arrow { font-size: 13px; line-height: 1; }
 body.rd .reh-aisle-door:active { background: rgba(40,224,255,0.22); }
 /* v1.14.271 (R1/R4) — VIEW RAIL + EXPLODE get their OWN row. Appending them to .reh-3d-toggle would
@@ -12355,7 +12355,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.353';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.354';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -35364,6 +35364,14 @@ function deploy_showRackDetail(deployId, rackId) {
   // Bidirectional scroll sync: Canvas scroll → minimap handle, minimap drag → Canvas scroll.
   // Note: scrubbar_init() is NOT called in hybrid mode — its snap-to-slot logic conflicts
   // with viewport-scroll semantics. rackHybrid_initSync handles all touch interaction.
+  // v1.14.354 (B4.3) — the elevation builds into rehHybridHtml so its PLACEMENT can be
+  // redesign-gated: redesign emits it AFTER NEXT ACTION (below NERVE); ?legacy=1 keeps its
+  // ORIGINAL position (right here, before Ghost Echo) byte-identical. deploy_showRackDetail is a
+  // SHARED function, so the reorder MUST be gated or it silently reorders the legacy page too
+  // (rd-review .354 P1). The double-rAF init is position-independent — it fires after the whole
+  // html string is injected — so only the string's placement moves, never the mount timing.
+  var rehHybridHtml = '';
+  var _rehPageRd = (typeof redesign_isOn === 'function' && redesign_isOn());
   try {
     if (rack.slots && rack.slots.length > 0) {
       // ── Rack Elevation — 3D is THE view (v1.14.353, owner ruling) ──
@@ -35377,7 +35385,7 @@ function deploy_showRackDetail(deployId, rackId) {
       // 1 and forge3d_open cross-disposes this view (see :17676). Scene internals and the
       // raycast->openRmDevice wiring are LOCKED, untouched. Legacy (else) emits the original flat
       // line verbatim — ?legacy=1 untouched.
-      var _rehRd = (typeof redesign_isOn === 'function' && redesign_isOn());
+      var _rehRd = _rehPageRd;
       if (_rehRd) {
         // v1.14.353 — FLAT|3D mode toggle RETIRED (owner ruling): 3D is now THE rack-detail view,
         // always mounted (reh3d_restore below), never a per-session opt-in. The .reh-3d-toggle
@@ -35388,24 +35396,24 @@ function deploy_showRackDetail(deployId, rackId) {
         // the involuntary no-WebGL fallback (#rehFlatWrap, shown when .is-3d is absent). PLACEMENT
         // unchanged: full-width BEFORE .rack-hybrid (emitting inside its display:flex would make a
         // third flex column and break the 85/15 canvas/minimap split).
-        html += '<div class="reh-3d-toggle">' +
+        rehHybridHtml += '<div class="reh-3d-toggle">' +
                   '<button type="button" class="reh-aisle-door" onclick="forge3d_open()" aria-label="Open the 3D aisle walk-through">OPEN AISLE <span class="rad-arrow" aria-hidden="true">›</span></button>' +
                 '</div>';
       }
-      html += '<div class="rack-hybrid">';
+      rehHybridHtml += '<div class="rack-hybrid">';
       if (_rehRd) {
         // #reh3dMount rejoins as a sibling of the flat wrap. Safe when FLAT: .reh-3d-mount is
         // display:none until .rack-hybrid-canvas gets .is-3d, and #rehFlatWrap is
         // display:contents, so the fitted elevation lays out byte-for-byte as it does today.
-        html += '<div class="rack-hybrid-canvas" id="reh3dCanvasHost">' +
+        rehHybridHtml += '<div class="rack-hybrid-canvas" id="reh3dCanvasHost">' +
                   '<div id="rehFlatWrap" class="reh-flat-wrap">' + rackElevation_buildHtml(rack) + '</div>' +
                   '<div id="reh3dMount" class="reh-3d-mount"></div>' +
                 '</div>';
       } else {
-        html += '<div class="rack-hybrid-canvas">' + rackElevation_buildHtml(rack) + '</div>';
+        rehHybridHtml += '<div class="rack-hybrid-canvas">' + rackElevation_buildHtml(rack) + '</div>';
       }
-      html += '<div class="rack-hybrid-minimap">' + scrubbar_buildHtml(rack) + '</div>';
-      html += '</div>';
+      rehHybridHtml += '<div class="rack-hybrid-minimap">' + scrubbar_buildHtml(rack) + '</div>';
+      rehHybridHtml += '</div>';
       requestAnimationFrame(function() { requestAnimationFrame(function() {
         rackHybrid_initSync(rack);
         rackFlat_applyFit(rack.totalU || 42);
@@ -35420,6 +35428,9 @@ function deploy_showRackDetail(deployId, rackId) {
   } catch (rhErr) {
     if (typeof console !== 'undefined') console.warn('[rack-hybrid] render skipped:', rhErr);
   }
+  // ?legacy=1: the elevation keeps its ORIGINAL position — before Ghost Echo — byte-identical to
+  // .353. (Empty string when no slots, so this is a harmless no-op then.)
+  if (!_rehPageRd) html += rehHybridHtml;
 
   // ── Ghost Echo Retrieval Banner ──
   // Show a slate whisper under the phase dots if any quirks match this
@@ -35453,6 +35464,10 @@ function deploy_showRackDetail(deployId, rackId) {
 
   // ── NERVE: Rack Arrival Card ──
   html += nerve_buildRackCard(deployId, rackId, dep, rack, ru, rackPhases);
+
+  // v1.14.354 (B4.3, redesign-only): the 3D elevation renders AFTER NEXT ACTION (owner ruling a).
+  // Legacy already emitted it above, in its original position — this branch only fires under rd.
+  if (_rehPageRd) html += rehHybridHtml;
 
   // ── Phase Cards ──
   // v1.14.268 (PHASE DOCK): the cards build into their OWN string so the dock sheet can host them
