@@ -1,3 +1,128 @@
+# ⟦ LIVE STATE — reconciled 2026-07-25 · covers .287 → .354 ⟧
+
+> This block is the current source of truth. Everything below the ARCHIVE divider (S1–S63, .168→.286)
+> is superseded narrative kept for history. Per-ship truth = `git log` + `version.json` notes; this is the index.
+
+## QUEUE (read first)
+1. **DEVICE PASS — batch `.351–.354` (4 of 6, capped by HIGH-risk .353). HARD STOP, owner-run.**
+   Open items: .352 `.14` hero-stage value + rack-detail clearance reconfirm · .353 rack-detail
+   (3D-is-the-view, OPEN AISLE, CABLES/rail/EXPLODE, no-WebGL flat fallback) · .354 (3D below
+   NEXT ACTION under redesign, 44px door, `?legacy=1` section order UNCHANGED). Detail in `BATCH-VERIFY.md`.
+2. **`.355` = FIX-DESKTOP-NAV-CARDS §3 COMPONENTS — RULED: Option A (owner, 2026-07-25).**
+   Card-scoped, reversible, ready to build. **Ships AFTER the .351–.354 pass clears — NOT stacked onto it.**
+   Note: the inline `--surf-1`→`--rd-cardfill` swap the old plan named is DEAD (overridden by
+   `body.rd .gsk{background:…!important}`, ~L11852). A = redesign-gated `gsk-flat` marker + one rule
+   `body.rd .gsk.gsk-flat{background:var(--rd-cardfill)!important}`; blast radius = 1 card; `?legacy=1`
+   byte-identical. Precedent: the .343 `.sigrow` override (~L12113). (lesson: grep-cascade-before-background)
+3. **Gated — no autonomous start, each needs a ruling:** §4 hero-tray visibility (STOP-AND-FLAG if it
+   needs LOCKED reh3d lights) · 22-site inline `--surf-1` sweep (PARKED) · Stage 5–6 legacy cold-delete
+   (owner census sign-off) · prism header mark · ghost-FAB polish · Post-Stage-6 backlog (BUILD-3,
+   Master/RackMap consolidation, HEALTH C4 dead-code, Section D audit).
+
+## CURRENT STATE
+- **Live: `v1.14.354`** — code `9c0c4de`, docs tip `e43eee8`. Three-stamp lockstep confirmed
+  (dct-ios.html `PHANTOM_APP_VERSION` · sw.js `CACHE_VERSION` · version.json all `phantom-v1.14.354`).
+- **Gates:** .353 + .354 both `phantom-ship-gate` + `phantom-rd-reviewer` PASS. .354's first pass was
+  caught by BOTH gates as a `?legacy=1` Rule-11 break (naive block-move in the SHARED `deploy_showRackDetail`)
+  → redone redesign-gated. (lesson: shared-render-reorder-gate)
+- **`deploy_` surface:** 110 unique `function deploy_*` definitions in dct-ios.html.
+- **Unverified & why:** batch `.351–.354` (4 of 6) awaiting owner's consolidated device pass — capped
+  early by the HIGH-risk (LR-2) .353 WebGL-mount inversion per CALL-0. `.340–.345` and `.346–.350`
+  already owner-CLEARED. `.355` (§3 A) is ruled but WAITS on this pass.
+- **RACK SCENE LOCK ARMED:** lights/exposure/fog/tone-mapping/type-colours/geometry — no change without
+  a new owner ruling; if a task would touch it, STOP AND ASK.
+- **Redesign is default UI** since .101 (bare URL boots `body.rd`; `?legacy=1` rip-cord). `?legacy`
+  byte-identical is a hard gate.
+
+## COMPRESSED LEDGER — .287 → .354 (one line per ship; git-log truth)
+_Gap: **.306–.309 never shipped** (no commits)._
+
+**FIX-2 / B-03 / Ship 4 (Command Center final) — .287–.294**
+- .287 FIX-2 (B-01/H2): bottom nav dead from Crash Cart — fixed
+- .288 B-03: ghost position polish (refines B-02)
+- .289 Ship 4 c1: NBA mag→violet + delete dead `.pbar-glow-*`
+- .290 Ship 4 c2: blocker modal red→mag, CTA green→cyan
+- .291 Ship 4 #1: OK/pass status dot → mint `#3DDC84`
+- .292 Ship 4 #2: one-emitter glow-normalize on Command
+- .293 Ship 4 #3: retire the Command askrow (owner Option A)
+- .294 Ship 4 #4: hero fault mag strip + BLOCKER verb accent
+
+**CLEAN + N-series features — .295–.305**
+- .295 CLEAN part 1: remove dead askrow CSS
+- .296 N-13 P1: APC/UPC "insertion loss" → return loss
+- .297 cheap-fix polish: opaque nav backdrop + label consistency
+- .298 N-09: FORGE 3D-aisle door re-home
+- .299 N-06 Rail Compass S0: shared hole-position source of truth
+- .300 N-06 Rail Compass S1: flat U-map (span band + hole ticks)
+- .301 N-06 Rail Compass S2/3: additive 3D selection emitters
+- .302 Black-Glass surfaces + new Ghost asset (web-Claude drop)
+- .303 N-10 Crash Cart search-first v1 (sticky tile-filter + no-result)
+- .304 Black-at-rest Command glow cleanup (web-Claude drop)
+- .305 FIX: N-10 no-result recovery was inverted (stack-verify catch)
+
+**Surface / parity / EXIT / nav-icon campaign — .310–.324**
+- .310 Surface obsidian + aqua `#1BFFE4` lens edge (finished-file, wholesale)
+- .311 fix .310 filter artifact + add `--teal` to :root (SCANNED-tile)
+- .312 N-11 Work Active-Workspace v1: job/resume hero + idle-dark library
+- .313 phone↔laptop parity: one 390px column every viewport
+- .314 recovery: revert .313 parity cap, fix ghost via z-index, un-dim tiles
+- .315 Hold-to-Exit (freeze & wake)
+- .316 EXIT button matches the nav bar
+- .317 red glow on the EXIT letters (owner EXIT red/green exception)
+- .318 move Command ghost + EXIT left ~½ inch
+- .319 icon refresh batch 1: install 8 of 9 web-Claude icons
+- .320 bottom-nav fit pass (reconciled from web-Claude bundle)
+- .321 Option C nav: icon-forward CSS-grid (wholesale swap)
+- .322 nav polish: glass fill + large icons (on .321)
+- .323 pnav: glass WebP icons, per-color, always-labels, underbar
+- .324 rename page headers to match pnav (Home/Build/Tools)
+
+**Feature-hero art + boot mascot — .325–.329**
+- .325 PLATFORMS feature-hero art on Site Profile sheet (files-not-inline)
+- .326 HANDOFF feature-hero art on Work→Handoff (owner honesty-lock override)
+- .327 Boot → PHANTOM ghost mascot (GPU-code eyes + chrome lockup)
+- .328 FIX black box around boot ghost (transparent knockout)
+- .329 clean white halo under .326 HANDOFF art panel
+
+**INSPECT-3D Command hero + Command v2 — .330–.335**
+- .330 INSPECT-3D landing: first Master rack live in Command hero
+- .331 fold in 2 rd-review nits on the INSPECT-3D hero (polish)
+- .332 INSPECT-3D hero control strip (VIEW RAIL + EXPLODE + CABLES)
+- .333 rack reads SOLID: opaque trays + back panel (REH3D-GEOMETRY 2a+2c)
+- .334 FIX "stuck on Loading 3D…": hero lazy-load no longer strands
+- .335 Command v2 (layout + NEXT-U) per SPEC-COMMAND-V2-FINAL
+
+**FINAL-LOOK + device fix passes — .336–.342**
+- .336 FINAL-LOOK (Option 2) phone assistant-first [1 of 2]
+- .337 FINAL-LOOK desktop 3-region (assistant rail | center)
+- .338 FINAL-LOOK phone fix pass (4 owner-flagged fixes)
+- .339 asset polish pass (clean ghost + re-cut nav icons)
+- .340 device fix pass (OPEN BAY clip + back-to-Home, ghost, nav clearance)
+- .341 device fix pass #2 (global nav clearance + ghost co-star)
+- .342 device fix pass #3 (hero=bay truth, land-3D, nav-icon baseline, pill sizing)
+
+**Card-surface unify + assistant door — .343–.345**
+- .343 Home card-surface unification (one token = 98 RACKS stat-tile black)
+- .344 restore AI ASSISTANT card fn (`#cc-asst` taps openVaSheet + CHAT→ chip)
+- .345 GHOST IS THE DOOR: assistant doors land on the intent menu
+
+**MASTER ingest + data-loss fix chain — .346–.350**
+- .346 MASTER FULL-INGEST Phase 2: SITE-VARS
+- .347 FIX OPERATOR WIPE: site-profile save destroyed the tech's name
+- .348 FIX ASSIGN RACK destroyed other deployments' rack records
+- .349 saver rename cleanup: all four → `deploy_saveAll*`
+- .350 loader arity split: .347/.348 bug class made unrepresentable
+
+**Desktop-nav-cards + SHIP B (current OPEN batch) — .351–.354**
+- .351 desktop nav edge-to-edge + second fixed strip gets its clearance
+- .352 hero card: unify the fill, move the stage onto the mount
+- .353 SHIP B core: FLAT dies, 3D IS the rack-detail view, one OPEN AISLE door **[HIGH-risk / LR-2]**
+- .354 SHIP B edit 9: 3D elevation below NEXT ACTION (redesign-gated) + OPEN AISLE 44px
+
+═══════════ ARCHIVE BELOW — S1–S63 (.168 → .286), superseded by the ledger above ═══════════
+
+---
+
 # INTEGRATION-STATE.md — FORGE HYBRID AISLE v2.9.2
 
 **Standing rule (brief A2):** update at the END of every working session, and IMMEDIATELY
