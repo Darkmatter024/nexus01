@@ -76,13 +76,28 @@ on a word-versus-value distinction. Do not treat "a legible word survived to shi
 anyway" as the general rule — §5.5's intent is that text dissolves into texture. A future render
 whose surviving text asserts anything is still a fail.
 
-**Measurement lesson of record:** an automated pass first returned FAILS on this title at 17px.
-That was a raw connected-component bounding box taken on the MASTER against the superseded
-percent-of-master rule. The tablet sits in perspective at ~4.8 degrees, so a box around a tilted
-glyph includes the tilt term and overstates height by roughly width x sin(theta) — the glyphs
-appeared to grow left-to-right (H smallest, final F largest) purely because the right side of the
-tablet is nearer the camera. Measure in the SHIP CUT, per §5.5, and measure stem height rather
-than a bounding box on tilted type.
+**Measurement lesson of record — DO NOT BOUNDING-BOX TILTED TYPE.** An automated pass first
+returned FAILS on this title at 17px. The dominant cause was **methodology, not frame**: a raw
+whole-word connected-component bounding box. The tablet sits in perspective at ~4.8 degrees, so a
+box around tilted type absorbs the tilt and overstates height by roughly width x sin(theta) — the
+glyphs appear to grow left-to-right (H smallest, final F largest) purely because the right edge of
+the tablet is nearer the camera. **Measure per-glyph STEM height, not a bounding box.**
+
+An earlier draft of this entry blamed "measured on the master against the superseded
+percent-of-master rule". That was wrong, and the gate caught it: the naive bounding box reproduces
+~17px *even on the correct 1170x403 ship cut*. Wrong frame was a secondary factor at most. Corrected
+here rather than left to teach the wrong fix.
+
+⚠ **Do not cross-cite figures measured by different methods.** The 8.6px quoted for the glove-cuff
+wordmark came from a stem measurement; a naive vertical column-extent on that mark reads 24-30px,
+because it sits at a ~45 degree diagonal — far steeper than the tablet's 4.8. It does not matter for
+shipping (in-scene marks are categorically exempt, not size-tested), but the number must not be
+quoted as if it came from the same method used on the tablet text.
+
+**Source doc:** §5.5 lives in `design/BANNER-RENDER-DIRECTIVE.md`, checked into the repo with this
+entry. It was previously cited from a `Downloads/` copy that existed nowhere in the repo or its
+history, so the paraphrase above could not be cross-checked against the original. Chat rulings
+recorded here outrank any spec file regardless — but the source is now auditable.
 
 ---
 

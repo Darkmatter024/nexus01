@@ -451,7 +451,20 @@ Recorded verbatim (not "all good"). Full per-ship detail + gate marks are in `IN
 CALL-0 count cap **reset** — next ship opens a new batch at 1 of 6. **`.355` (§3 Option A) is unblocked but owner-deferred ("not tonight").**
 
 ---
-# ▶ OPEN BATCH — starts at `.355` (count 1 of 6)
+# ▶ OPEN BATCH — starts at `.355` (count 4 of 6)
+
+> **READ THIS FIRST — the visual checklist below is `.355`'s ALONE.**
+> `.356`, `.357` and `.358` are **asset-and-stamp ships with ZERO markup change** — the entire
+> `dct-ios.html` diff in each is one version constant. The rendered app has been identical to
+> `.355` throughout. So: verify `.355`'s items on the CURRENT build and you have verified the
+> whole batch. The three asset ships add exactly **one** check of their own (offline boot,
+> listed under `.358`).
+>
+> ⚠ **`.355`'s last checkbox is stale.** It says "badge reads **v1.14.355**". The device will
+> read **v1.14.358**. Read that line as "badge reads the current live stamp."
+>
+> Carried over from the `.351`–`.354` pass, same rack-detail screen, cheap to fold in:
+> the `.352` rack-detail clearance reconfirm and the `.352` `.14` hero-stage value.
 
 ## v1.14.355 — §3 COMPONENTS card → stat-tile black (Option A) (`e0bcfad`) · rollback: revert commit
 **CSS + one redesign-gated class marker.** FIX-DESKTOP-NAV-CARDS §3, owner-ruled Option A (2026-07-25).
@@ -465,6 +478,46 @@ higher-specificity `body.rd .gsk.gsk-flat` rule + a redesign-gated `gsk-flat` ma
 - [ ] The card's **border, corners, and shadow are unchanged** — only the fill went darker (fill-only)
 - [ ] ⭐ **JUDGE THE LOCAL CONTRAST (advisory, not a hold):** this card is now darker than its **sibling phase/state cards on the same page** (they stay on the lighter glass skin — they were never in §3's scope). Option A was card-scoped by design. If that contrast reads wrong on device, say so — it reverts in one commit and we reconsider (close it, or take the whole `.gsk` set as a bigger ship).
 - [ ] `?legacy=1` rack detail: the COMPONENTS card is **UNCHANGED** (lighter glass skin — plain `.gsk` + inline `--surf-1`) — pixel-identical to `.354`
-- [ ] three-stamp on device: badge reads **v1.14.355**
+- [ ] three-stamp on device: badge reads **v1.14.355** — ⚠ STALE, see the batch header. Reads **v1.14.358** now.
 
-**Batch `.355` = 1 of 6.**
+---
+
+## v1.14.356 — stage 3 BUILD banner rasters (`6a852ac`) · rollback: revert commit
+**Assets + precache only. ZERO markup change.** Adds `phantom-banner-{scan,master,ops}-1170.webp`
+(1170×403) to `icons/` and registers all three in `sw.js` `PRECACHE_URLS`. Nothing in the app
+references them. Both gates PASS.
+Prepared with five assets, shipped with three — `phantom-rd-reviewer` returned CHANGES-REQUESTED on
+`deploy` and `handoff` and the owner ruled to ship the clean three. Those two shipped separately
+in `.357`/`.358` after their own rulings.
+Also fixed here: the MASTER master is letterboxed (22 dead bottom rows, real content aspect 2.99174),
+which the first cut baked into the banner as a black band. The cutter now de-letterboxes before
+fitting.
+
+- [ ] Nothing to see. **No visual change is expected anywhere** — if anything looks different, that
+      is a bug, not a feature.
+
+## v1.14.357 — DEPLOY banner raster + record three owner rulings (`88a5296`) · rollback: revert commit
+**Assets + precache + docs. ZERO markup change.** Adds `phantom-banner-deploy-1170.webp`. Records
+§5.5, B5 and the HANDOFF scoped overrule in `design/OWNER-RULINGS.md`. Both gates PASS.
+Shipped because the owner ruled away both holds on 2026-07-30: §5.5 (baked text is a size rule
+measured in the ship cut, 10px bar; hardware faceplate markings pass) and B5 ("GB300 stays, it's
+aspiration not a defect"). DEPLOY measures 6.6px in the cut and nothing resolves at 390px.
+
+- [ ] Nothing to see. **No visual change expected.**
+
+## v1.14.358 — HANDOFF banner raster, completes the phone set (`5011b87`) · rollback: revert commit
+**Assets + precache + docs. ZERO markup change.** Adds `phantom-banner-handoff-1170.webp`, completing
+the five-row phone set (~247KB, precached, referenced by nothing). Both gates PASS.
+Shipped after the owner ruled on the tablet screen title, which measures **exactly 10px** in the ship
+cut against §5.5's "no text taller than 10px" bar — at the limit, not over it. Read that case
+narrowly; see `design/OWNER-RULINGS.md`.
+
+- [ ] Nothing to see. **No visual change expected.**
+- [ ] ⭐ **THE ONE REAL CHECK FOR ALL THREE ASSET SHIPS — clear the service worker → airplane mode →
+      hard reload → app boots fully offline.** This exercises the enlarged precache (74 entries).
+      An online eyeball check does NOT test this. If the app boots offline, the banner precache is good.
+- [ ] Badge reads **v1.14.358**
+
+**Batch `.355`–`.358` = 4 of 6.** Two positions left before the CALL-0 cap forces a pass.
+Note `.356`/`.357`/`.358` carry no UI risk of their own — the only failure they can cause is an
+offline-boot regression, which is the checkbox above.
