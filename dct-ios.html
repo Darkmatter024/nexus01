@@ -8848,6 +8848,82 @@ body.rd #ref-grid .rf-card .rf-cmeta, body.rd #work-grid .rf-card .rf-cmeta, bod
 body.rd #ref-grid .rf-card:active, body.rd #work-grid .rf-card:active, body.rd .deploy-tools-grid .rf-card:active { border-color:color-mix(in srgb, var(--rfac) 85%, white 8%); box-shadow:inset 0 1px 0 rgba(255,255,255,.08), inset 0 0 40px -6px color-mix(in srgb, var(--rfac) 30%, transparent), 0 0 20px -1px color-mix(in srgb, var(--rfac) 55%, transparent), 0 0 46px -6px color-mix(in srgb, var(--rfac) 30%, transparent), 0 18px 40px -16px rgba(0,0,0,.9); }
 body.rd #ref-grid .rf-card:active .rf-i-img, body.rd #work-grid .rf-card:active .rf-i-img, body.rd .deploy-tools-grid .rf-card:active .rf-i-img { opacity:1; filter:saturate(1.1) drop-shadow(0 0 12px color-mix(in srgb, var(--rfac) 85%, transparent)) drop-shadow(0 4px 12px rgba(0,0,0,.5)); }
 @keyframes rfCardSweep { 0%,68%{ transform:translateX(-120%); } 100%{ transform:translateX(120%); } }
+/* ══ v1.14.359 — BUILD BANNER ROWS (SHIP-BUILD-BANNER-ROWS) ═════════════════════════
+   The 12-tile BUILD grid is replaced by five full-width 2.90:1 banner rows
+   (DEPLOY · SCAN · HANDOFF · MASTER FILE · OPS). OPS expands IN PLACE into a 3x3
+   nine-cell tool wall. Class contract + markup structure ported from the web-Claude
+   mock phantom-BUILD-phone.html; NOTHING else travels from it (see the three notes).
+   SCOPE / ?legacy=1: every selector here is body.rd-scoped or lives inside #work-grid,
+   which is `display:none` outside body.rd (:8740) — so the legacy house cannot paint
+   any of it. Legacy stays byte-identical.
+   NOTE 1 — NAV GEOMETRY DOES NOT TRAVEL. The mock is standalone at a 64px nav with a
+   100px page pad. The live footprint is var(--rd-navclear) and `body.rd .page` already
+   pays it (:1088). No bottom padding is re-declared here. [[feedback_every_fixed_strip_needs_clearance]]
+   NOTE 2 — THE MOCK'S SAMPLE STATE DOES NOT TRAVEL. Its status pills and its 10-monitor
+   readout console were driven by a hardcoded sample-state object — port counts, manifest
+   counts, verified totals, serials, a PDU load. Not one of those values reaches this file,
+   in any form: not as a default, not as a fallback, not commented out. §8.
+   NOTE 3 — MOCK-TOKEN TRAP. Accents are LITERAL HEX, exactly like the .rf-card grid
+   these rows replace: :root defines --cyan as #5cf2ff and --gold as #ffd60a, NOT the
+   Design-Law-5 #28e0ff/#ffcb45 the mock's own :root block used. var(--rfac)/var(--tac)
+   are set inline per row/cell, so no undefined custom property can silently kill a
+   declaration here. */
+body.rd #work-grid .brow-stack { display:flex; flex-direction:column; gap:12px; width:100%; max-width:100%; }
+.bnr { position:relative; display:block; width:100%; max-width:100%; aspect-ratio:2.90; border-radius:16px; overflow:hidden; cursor:pointer;
+  border:1px solid color-mix(in srgb, var(--rfac) 38%, transparent);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 12px 26px -14px #000;
+  transition:transform .14s ease, border-color .2s; -webkit-tap-highlight-color:transparent;
+  /* §9.1 SILENT-FAILURE GUARD. .bnr carries alt="" and no text fallback, so a row whose
+     raster 404s would otherwise render as a clean empty card that looks DELIBERATE. This
+     accent hatch makes a missing asset look WRONG instead of empty. DEPLOY and HANDOFF
+     ship on this surface by design — their art is HELD (§10), not broken. */
+  background:
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--rfac) 13%, transparent) 0 11px, transparent 11px 22px),
+    linear-gradient(158deg, color-mix(in srgb, var(--rfac) 9%, #05070b), #020304 70%);
+}
+.bnr:active { transform:scale(.985); border-color:color-mix(in srgb, var(--rfac) 85%, white 8%); }
+.bnr > img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; }
+/* §3 — LOCKED scrim. The scrim is a CSS overlay and is NEVER baked into art; the mock's
+   rgba(4,6,10,...) value is overridden to the token: rgba(2,4,7,.72) -> transparent @55%. */
+.bnr .bscrim { position:absolute; inset:0; z-index:1; background:linear-gradient(90deg, rgba(2,4,7,.72), transparent 55%); }
+/* §6 — the label zone clamps to the LEFT 45%. The mock ran .btxt to 74%, which puts text
+   over subject mass on every row; the scrim ramp above assumes 45% too. */
+.bnr .btxt { position:absolute; left:15px; bottom:13px; z-index:3; max-width:45%; }
+.bnr .rf-cname { font-family:var(--mono); font-weight:700; letter-spacing:.14em; font-size:16px; line-height:1.1; color:var(--white); text-shadow:0 2px 8px #000, 0 0 4px #000; }
+.bnr .rf-cmeta { font-family:var(--mono); font-weight:600; font-size:10px; letter-spacing:.03em; line-height:1.3; color:var(--slate); text-shadow:0 2px 6px #000; margin-top:3px; }
+.bnr .rf-cnr { z-index:3; }   /* geometry/colour inherited from the shared .rf-cnr rule (:8814) */
+/* OPS — §4 ruling: the collapsed head is a .bnr at the SAME 2.90 geometry as the other
+   four rows. The mock's fixed `height:96px` .opshead (a 3.771:1 box) was the defect; the
+   1170x403 asset was never the problem and is NOT re-cut. */
+.opsrow { position:relative; border-radius:16px; overflow:hidden; background:#020203;
+  border:1px solid color-mix(in srgb, var(--rfac) 38%, transparent);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 12px 26px -14px #000; }
+.opsrow > .bnr { border:0; border-radius:0; box-shadow:none; }
+.opsrow > .bnr:active { transform:none; }
+.opsrow .bnr > img { transition:filter .35s ease; }
+.opsrow.open .bnr > img { filter:brightness(.45) saturate(.85); }
+.opsrow .chev { position:absolute; right:14px; top:50%; transform:translateY(-50%); z-index:3; font-size:24px; line-height:1; color:var(--rfac); opacity:.75; transition:transform .3s ease; }
+.opsrow.open .chev { transform:translateY(-50%) rotate(90deg); }
+.opsbody { max-height:0; overflow:hidden; transition:max-height .45s cubic-bezier(.4,0,.2,1); }
+.opsrow.open .opsbody { max-height:1200px; }
+.opswall { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:10px; }
+/* Wall cells. Cold Aisle Filter: at 390px each cell is ~108px wide x 88px min — a gloved
+   target — and every tool in the wall is ONE tap from the BUILD landing (was two: grid ->
+   card). Selected STRUCTURALLY rather than by class: .opswall's only children are the
+   cells, which keeps the cell's class name a pure markup hook occurring exactly once per
+   cell and nowhere else in the file — that count is this ship's acceptance check. Don't
+   "tidy" this into a class selector without re-reading that check. */
+.opswall > div { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  min-height:88px; padding:10px 6px; border-radius:10px; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  border:1px solid color-mix(in srgb, var(--tac) 34%, transparent);
+  background:radial-gradient(130% 130% at 28% 12%, color-mix(in srgb, var(--tac) 9%, #04070b), #030507 68%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 22px -8px color-mix(in srgb, var(--tac) 45%, transparent);
+  transition:border-color .2s, box-shadow .2s; }
+.opswall > div:active { border-color:color-mix(in srgb, var(--tac) 85%, white 8%); box-shadow:inset 0 1px 0 rgba(255,255,255,.08), inset 0 0 30px -6px color-mix(in srgb, var(--tac) 40%, transparent), 0 0 18px -2px color-mix(in srgb, var(--tac) 50%, transparent); }
+.opswall .oc-dot { width:5px; height:5px; border-radius:50%; background:var(--tac); box-shadow:0 0 7px var(--tac); flex:0 0 auto; }
+.opswall .oc-n { font-family:var(--mono); font-weight:700; font-size:9.5px; letter-spacing:.12em; line-height:1.15; text-align:center; color:color-mix(in srgb, var(--tac) 80%, var(--white) 32%); }
+.opswall .oc-m { font-family:var(--mono); font-weight:600; font-size:7.5px; letter-spacing:.10em; line-height:1.2; text-align:center; color:var(--slate); }
+@media (prefers-reduced-motion:reduce) { .bnr, .opsrow .chev, .opsrow .bnr > img, .opsbody, .opswall > div { transition:none; } }
 /* ── N-11 (v1.14.312) — Work Active-Workspace: job/resume hero + idle-dark library.
    Redesign-only (body.rd / #pg-work); ?legacy=1 byte-identical (#work-grid is display:none in legacy,
    and every selector below is body.rd-scoped). The hero mirrors the NOW ACTIVE BUILD card's material so
@@ -12364,7 +12440,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.358';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.359';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13198,20 +13274,47 @@ if (typeof window !== 'undefined') {
       </div>
       <div id="work-grid">
         <div id="wk-job-host" aria-live="polite"></div>
+        <!-- ══ v1.14.359 — BUILD BANNER ROWS. The 12-tile .rf-card grid is retired here in
+             favour of five 2.90:1 banner rows; OPS carries the other nine tools in a 3x3 wall
+             that expands IN PLACE, so every tool stays ONE tap from this landing.
+             HANDLERS (§5): every row and every wall cell reuses the EXACT entry point the
+             12 tiles used — deploy_quick / showWorkTab('scan') / handoff_quick /
+             rd_openMasterFile / rd_openOpsTool(tab). No new doors were invented; "one door
+             per feature" holds. A tap that does nothing is a ship failure.
+             ART (§2/§10): -1170 PHONE rasters only, referenced directly. No <picture>, no
+             srcset, no shell mechanism — none exists in this app and this ship does not add
+             one [[reference_no_asset_shell_mechanism]]. The desk shell is a later ship.
+             DEPLOY and HANDOFF carry NO <img> ON PURPOSE: their art is HELD (deploy = legible
+             GB300 NVL72 faceplates on a site-agnostic app; handoff = baked UI text asserting a
+             fabricated completed workflow). They render on the §9.1 accent-hatch fallback,
+             which reads as visibly incomplete rather than silently broken. Do not reference
+             phantom-banner-deploy-1170.webp / -handoff-1170.webp here until they clear.
+             NO FABRICATED STATE (§8): the mock's per-row status pills and its whole
+             sample-state readout console are dropped — every value in them was invented for
+             the mock, and §8 bars any of them from this file in ANY form, including a
+             comment. Nothing on this surface asserts a value the app has not measured. -->
         <div class="rf-glabel"><span class="dot"></span>BUILD<span class="ln"></span></div>
-        <div class="rf-grid-wrap">
-          <div class="rf-card" style="--rfac:#28e0ff" role="button" tabindex="0" onclick="deploy_quick()" aria-label="Deploy"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-action-deploy-upload-256.webp" alt="" loading="eager"></div><div class="rf-cname">DEPLOY</div><div class="rf-cmeta">Build · seed · rack</div></div>
-          <div class="rf-card" style="--rfac:#28e0ff" role="button" tabindex="0" onclick="rd_openMasterFile()" aria-label="Master file — cabinet search, host map and elevation"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-tool-masterdoc-256.webp" alt="" loading="eager"></div><div class="rf-cname">MASTER FILE</div><div class="rf-cmeta">Cabinet · Host map · Elevation</div></div>
-          <div class="rf-card" style="--rfac:#28e0ff" role="button" tabindex="0" onclick="rd_openOpsTool('bom')" aria-label="BOM"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-tool-bom-256.webp" alt="" loading="eager"></div><div class="rf-cname">BOM</div><div class="rf-cmeta">Parts</div></div>
-          <div class="rf-card" style="--rfac:#8a4bff" role="button" tabindex="0" onclick="rd_openOpsTool('manifest')" aria-label="Manifest"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-tool-manifest-256.webp" alt="" loading="eager"></div><div class="rf-cname">MANIFEST</div><div class="rf-cmeta">Gear</div></div>
-          <div class="rf-card" style="--rfac:#30d158" role="button" tabindex="0" onclick="rd_openOpsTool('portmap')" aria-label="Port map"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-tool-portmap-256.webp" alt="" loading="eager"></div><div class="rf-cname">PORT MAP</div><div class="rf-cmeta">Cabling</div></div>
-          <div class="rf-card" style="--rfac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('rackmap')" aria-label="Rack map"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-tool-rackmap-256.webp" alt="" loading="eager"></div><div class="rf-cname">RACK MAP</div><div class="rf-cmeta">Elevation</div></div>
-          <div class="rf-card" style="--rfac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('burndown')" aria-label="BURNDOWN"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-tool-burndown-256.webp" alt="" loading="eager"></div><div class="rf-cname">BURNDOWN</div><div class="rf-cmeta">Progress</div></div>
-          <div class="rf-card" style="--rfac:#ff8a00" role="button" tabindex="0" onclick="rd_openOpsTool('audits')" aria-label="AUDITS"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-tool-audits-256.webp" alt="" loading="eager"></div><div class="rf-cname">AUDITS</div><div class="rf-cmeta">Serials</div></div>
-          <div class="rf-card" style="--rfac:#28e0ff" role="button" tabindex="0" onclick="rd_openOpsTool('sops')" aria-label="SOPS"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-tool-sops-256.webp" alt="" loading="eager"></div><div class="rf-cname">SOPS</div><div class="rf-cmeta">Procedures</div></div>
-          <div class="rf-card" style="--rfac:#ff453a" role="button" tabindex="0" onclick="rd_openOpsTool('blast')" aria-label="BLAST RADIUS"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-tool-power-256.webp" alt="" loading="eager"></div><div class="rf-cname">BLAST RADIUS</div><div class="rf-cmeta">Power map</div></div>
-          <div class="rf-card" style="--rfac:#1fffd0" role="button" tabindex="0" onclick="showWorkTab('scan')" aria-label="Scan"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-action-scan-radar-256.webp" alt="" loading="eager"></div><div class="rf-cname">SCAN</div><div class="rf-cmeta">Racks · optics · serials</div></div>
-          <div class="rf-card" style="--rfac:#8a4bff" role="button" tabindex="0" onclick="handoff_quick()" aria-label="Handoff"><span class="rf-cnr tl"></span><span class="rf-cnr tr"></span><span class="rf-cnr bl"></span><span class="rf-cnr br"></span><div class="rf-cic"><img class="rf-i-img" src="icons/phantom-action-handoff-link-256.webp" alt="" loading="eager"></div><div class="rf-cname">HANDOFF</div><div class="rf-cmeta">Shift pass · notes</div></div>
+        <div class="brow-stack">
+          <div class="bnr" style="--rfac:#28e0ff" role="button" tabindex="0" onclick="deploy_quick()" aria-label="Deploy — build, seed and rack"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">DEPLOY</div><div class="rf-cmeta">Build · seed · rack</div></div></div>
+          <div class="bnr" style="--rfac:#1fffd0" role="button" tabindex="0" onclick="showWorkTab('scan')" aria-label="Scan — racks, optics and serials"><img src="icons/phantom-banner-scan-1170.webp" alt="" width="1170" height="403" loading="eager" decoding="async"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">SCAN</div><div class="rf-cmeta">Racks · optics · serials</div></div></div>
+          <div class="bnr" style="--rfac:#8a4bff" role="button" tabindex="0" onclick="handoff_quick()" aria-label="Handoff — shift pass and notes"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">HANDOFF</div><div class="rf-cmeta">Shift pass · notes</div></div></div>
+          <div class="bnr" style="--rfac:#28e0ff" role="button" tabindex="0" onclick="rd_openMasterFile()" aria-label="Master file — cabinet search, host map and elevation"><img src="icons/phantom-banner-master-1170.webp" alt="" width="1170" height="403" loading="eager" decoding="async"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">MASTER FILE</div><div class="rf-cmeta">Cabinet · Host map · Elevation</div></div></div>
+          <div class="opsrow" id="wk-opsrow" style="--rfac:#ffcb45">
+            <div class="bnr" role="button" tabindex="0" aria-expanded="false" aria-controls="wk-opswall" onclick="wk_toggleOpsWall(this)" aria-label="Ops — expand nine tools for this build"><img src="icons/phantom-banner-ops-1170.webp" alt="" width="1170" height="403" loading="eager" decoding="async"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">OPS</div><div class="rf-cmeta">Nine tools on this build</div></div><div class="chev" aria-hidden="true">&rsaquo;</div></div>
+            <div class="opsbody" id="wk-opswall">
+              <div class="opswall">
+                <div class="ops-cell" style="--tac:#28e0ff" role="button" tabindex="0" onclick="rd_openOpsTool('bom')" aria-label="BOM — parts"><span class="oc-dot"></span><span class="oc-n">BOM</span><span class="oc-m">Parts</span></div>
+                <div class="ops-cell" style="--tac:#8a4bff" role="button" tabindex="0" onclick="rd_openOpsTool('manifest')" aria-label="Manifest — gear"><span class="oc-dot"></span><span class="oc-n">MANIFEST</span><span class="oc-m">Gear</span></div>
+                <div class="ops-cell" style="--tac:#1fffd0" role="button" tabindex="0" onclick="rd_openOpsTool('portmap')" aria-label="Port map — cabling"><span class="oc-dot"></span><span class="oc-n">PORT MAP</span><span class="oc-m">Cabling</span></div>
+                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('rackmap')" aria-label="Rack map — elevation"><span class="oc-dot"></span><span class="oc-n">RACK MAP</span><span class="oc-m">Elevation</span></div>
+                <div class="ops-cell" style="--tac:#28e0ff" role="button" tabindex="0" onclick="rd_openOpsTool('sops')" aria-label="SOPs — procedures"><span class="oc-dot"></span><span class="oc-n">SOPS</span><span class="oc-m">Procedures</span></div>
+                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('burndown')" aria-label="Burndown — progress"><span class="oc-dot"></span><span class="oc-n">BURNDOWN</span><span class="oc-m">Progress</span></div>
+                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('audits')" aria-label="Audits — serials"><span class="oc-dot"></span><span class="oc-n">AUDITS</span><span class="oc-m">Serials</span></div>
+                <div class="ops-cell" style="--tac:#ff2bd6" role="button" tabindex="0" onclick="rd_openOpsTool('blast')" aria-label="Blast radius — power map"><span class="oc-dot"></span><span class="oc-n">BLAST</span><span class="oc-m">Power map</span></div>
+                <div class="ops-cell" style="--tac:#1fffd0" role="button" tabindex="0" onclick="rd_openOpsTool('optics')" aria-label="Optics — fiber, form factors and MPO"><span class="oc-dot"></span><span class="oc-n">OPTICS</span><span class="oc-m">Fiber · MPO</span></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="subtab-strip">
@@ -19770,6 +19873,23 @@ function showWorkTab(target) {
 // v1.14.105 — Work card-grid helpers (mirror the Ref grid). wk_showGrid() returns to the landing.
 function wk_setBackTitle(t) { var e = document.getElementById('work-back-title'); if (e) e.textContent = t || 'Build'; }
 function wk_showGrid() { var pr = document.getElementById('pg-work'); if (pr) pr.classList.add('wk-grid'); if (typeof wk_renderJob === 'function') wk_renderJob(); }
+// ── v1.14.359 — BUILD banner rows: OPS expands IN PLACE into the nine-cell tool wall.
+// The other four rows route straight out to their existing entry point; OPS is the only
+// row whose tap stays on this screen, so it owns the one piece of state here (.open on
+// the .opsrow host) and mirrors it onto aria-expanded for the screen reader.
+// NO SILENT FAILURES: if the host can't be resolved the tap is a loud warn + toast, never
+// a dead tap into a hidden-success path. Redesign-only in practice — the whole #work-grid
+// is display:none outside body.rd — so ?legacy=1 can never reach this.
+function wk_toggleOpsWall(head) {
+  var row = (head && head.closest) ? head.closest('.opsrow') : document.getElementById('wk-opsrow');
+  if (!row) {
+    try { console.warn('wk_toggleOpsWall: no .opsrow host for', head); } catch (e) {}
+    if (typeof phantomToast === 'function') phantomToast('OPS wall failed to open — see SYS > ERRORS', 'error');
+    return;
+  }
+  var open = row.classList.toggle('open');
+  if (head && head.setAttribute) head.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
 // ── N-11 (v1.14.312) — Work's ONE emitter: a stateful job/resume hero above the FIELD WORK library.
 // Resolved from the SAME shared sources as the NOW ACTIVE BUILD hero (nowtab_resolveDep +
 // deploy_computeDeployRollup + activeContext_get) so the two can never contradict. Zero fabrication:
@@ -28085,7 +28205,14 @@ var DEPLOY_TOOLS = [
   { tab:'sops',      name:'SOPS',       meta:'PROCEDURES', ac:'#28e0ff', img:'icons/phantom-tool-sops-256.webp', icon:'<path d="M5 4h11l3 3v13H5z"/><path d="M9 9h6M9 13h6"/>' },
   { tab:'burndown',  name:'BURNDOWN',   meta:'PROGRESS',   ac:'#ffcb45', img:'icons/phantom-tool-burndown-256.webp', icon:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 2 5-7"/>' },
   { tab:'audits',    name:'AUDITS',     meta:'SERIALS',    ac:'#ff8a00', img:'icons/phantom-tool-audits-256.webp', icon:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h4M9 4V3h6v1"/>' },
-  { tab:'blast',     name:'BLAST RADIUS', meta:'POWER MAP',  ac:'#ff453a', img:'icons/phantom-tool-power-256.webp', icon:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>' }
+  { tab:'blast',     name:'BLAST RADIUS', meta:'POWER MAP',  ac:'#ff453a', img:'icons/phantom-tool-power-256.webp', icon:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>' },
+  // v1.14.359 — OPTICS joins the registry because the BUILD banner-row OPS wall routes a
+  // ninth cell at it (rd_openOpsTool('optics')). OPS_TABS.optics already existed (:21077);
+  // without a row here the tool renders fine but its back header reads the 'TOOL' fallback.
+  // Registry-only addition: nothing ITERATES DEPLOY_TOOLS any more (deploy_showTools was
+  // deleted in .179; the Ref platform picker at :20015 renders RD_PLATFORMS, not this), so
+  // this adds a title lookup and paints no new card anywhere.
+  { tab:'optics',    name:'OPTICS',     meta:'FIBER · MPO', ac:'#1fffd0', img:'icons/phantom-ref-optics-256.webp', icon:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>' }
 ];
 function _deploy_toolsBackHdr(title, backOnclick) {
   return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">' +
