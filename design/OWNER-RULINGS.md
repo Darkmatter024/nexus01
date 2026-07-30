@@ -61,12 +61,28 @@ despite §5.5's fail-list naming status words and button labels.
 every future render; do not cite this as precedent.
 
 **State — the overrule never had to fire.** Measured in the ship cut: `Complete` = 4.0px and gone
-entirely at 390px; CTA label = 5.9px and does not resolve. Both clear §5.5 unaided. The only item
-in question is the **tablet screen title "HANDOFF"** — 9.2-11.2px in the cut (median 9.9 against a
-10px bar, a coin flip on size) and the one item that DOES resolve as a readable word at 390px.
-It is a screen title: it asserts no state, no value, no measurement, so it is not obviously in
-§5.5's fail-list either. **OPEN — awaiting a ruling on the title specifically.** HANDOFF is NOT
-shipped as of `.357`.
+entirely at 390px; CTA label = 5.9px and does not resolve. Both clear §5.5 unaided.
+
+**The title question — RULED, ship (John, 2026-07-30). CLOSED.** The tablet screen title
+"HANDOFF" measures **exactly 10px** — tallest glyph, measured directly in the 1170x403 ship cut,
+stable across luminance thresholds 120/160/190. §5.5's bar is "no text taller than 10px", so it
+passes on size AT the limit, not over it. It is also the one item in the frame that resolves as a
+readable WORD at 390px — but §5.5's test names a readable VALUE, and a screen title asserts no
+state, no value and no measurement, so it is outside the fail-list (large display numerals, status
+words sized to be read, button labels). Owner ruled ship. **Shipped in `.358`.**
+
+⚠ **Read the title case narrowly.** It sits ON the 10px bar, not under it, and it clears test 3
+on a word-versus-value distinction. Do not treat "a legible word survived to ship size and shipped
+anyway" as the general rule — §5.5's intent is that text dissolves into texture. A future render
+whose surviving text asserts anything is still a fail.
+
+**Measurement lesson of record:** an automated pass first returned FAILS on this title at 17px.
+That was a raw connected-component bounding box taken on the MASTER against the superseded
+percent-of-master rule. The tablet sits in perspective at ~4.8 degrees, so a box around a tilted
+glyph includes the tilt term and overstates height by roughly width x sin(theta) — the glyphs
+appeared to grow left-to-right (H smallest, final F largest) purely because the right side of the
+tablet is nearer the camera. Measure in the SHIP CUT, per §5.5, and measure stem height rather
+than a bounding box on tilted type.
 
 ---
 
