@@ -12440,7 +12440,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.359';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.360';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13284,20 +13284,23 @@ if (typeof window !== 'undefined') {
              ART (§2/§10): -1170 PHONE rasters only, referenced directly. No <picture>, no
              srcset, no shell mechanism — none exists in this app and this ship does not add
              one [[reference_no_asset_shell_mechanism]]. The desk shell is a later ship.
-             DEPLOY and HANDOFF carry NO <img> ON PURPOSE: their art is HELD (deploy = legible
-             GB300 NVL72 faceplates on a site-agnostic app; handoff = baked UI text asserting a
-             fabricated completed workflow). They render on the §9.1 accent-hatch fallback,
-             which reads as visibly incomplete rather than silently broken. Do not reference
-             phantom-banner-deploy-1170.webp / -handoff-1170.webp here until they clear.
+             ALL FIVE ROWS CARRY ART as of v1.14.360 — the two holds were released by owner
+             ruling 2026-07-30. B5 (deploy: GB300/NVL72 branding legible on a site-agnostic
+             app) = ACCEPT, "the app is site-agnostic but the art does not have to be", CLOSED,
+             do not re-raise. §5.5 (handoff: legible baked workflow text) = WAIVED FOR THIS ONE
+             ASSET, logged as owner-accepted debt and explicitly NOT a precedent — §5.5 stays
+             in force for every future banner render, so do not cite this row as one.
+             The §9.1 hatch fallback stays in the CSS: it is the standing mechanism for ANY
+             future missing asset, not scaffolding that these two rows made obsolete.
              NO FABRICATED STATE (§8): the mock's per-row status pills and its whole
              sample-state readout console are dropped — every value in them was invented for
              the mock, and §8 bars any of them from this file in ANY form, including a
              comment. Nothing on this surface asserts a value the app has not measured. -->
         <div class="rf-glabel"><span class="dot"></span>BUILD<span class="ln"></span></div>
         <div class="brow-stack">
-          <div class="bnr" style="--rfac:#28e0ff" role="button" tabindex="0" onclick="deploy_quick()" aria-label="Deploy — build, seed and rack"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">DEPLOY</div><div class="rf-cmeta">Build · seed · rack</div></div></div>
+          <div class="bnr" style="--rfac:#28e0ff" role="button" tabindex="0" onclick="deploy_quick()" aria-label="Deploy — build, seed and rack"><img src="icons/phantom-banner-deploy-1170.webp" alt="" width="1170" height="403" loading="eager" decoding="async"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">DEPLOY</div><div class="rf-cmeta">Build · seed · rack</div></div></div>
           <div class="bnr" style="--rfac:#1fffd0" role="button" tabindex="0" onclick="showWorkTab('scan')" aria-label="Scan — racks, optics and serials"><img src="icons/phantom-banner-scan-1170.webp" alt="" width="1170" height="403" loading="eager" decoding="async"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">SCAN</div><div class="rf-cmeta">Racks · optics · serials</div></div></div>
-          <div class="bnr" style="--rfac:#8a4bff" role="button" tabindex="0" onclick="handoff_quick()" aria-label="Handoff — shift pass and notes"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">HANDOFF</div><div class="rf-cmeta">Shift pass · notes</div></div></div>
+          <div class="bnr" style="--rfac:#8a4bff" role="button" tabindex="0" onclick="handoff_quick()" aria-label="Handoff — shift pass and notes"><img src="icons/phantom-banner-handoff-1170.webp" alt="" width="1170" height="403" loading="eager" decoding="async"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">HANDOFF</div><div class="rf-cmeta">Shift pass · notes</div></div></div>
           <div class="bnr" style="--rfac:#28e0ff" role="button" tabindex="0" onclick="rd_openMasterFile()" aria-label="Master file — cabinet search, host map and elevation"><img src="icons/phantom-banner-master-1170.webp" alt="" width="1170" height="403" loading="eager" decoding="async"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">MASTER FILE</div><div class="rf-cmeta">Cabinet · Host map · Elevation</div></div></div>
           <div class="opsrow" id="wk-opsrow" style="--rfac:#ffcb45">
             <div class="bnr" role="button" tabindex="0" aria-expanded="false" aria-controls="wk-opswall" onclick="wk_toggleOpsWall(this)" aria-label="Ops — expand nine tools for this build"><img src="icons/phantom-banner-ops-1170.webp" alt="" width="1170" height="403" loading="eager" decoding="async"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">OPS</div><div class="rf-cmeta">Nine tools on this build</div></div><div class="chev" aria-hidden="true">&rsaquo;</div></div>
