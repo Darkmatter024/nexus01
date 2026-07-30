@@ -9,6 +9,67 @@ spec, and a ruling recorded inside it would be silently lost.
 
 ---
 
+## 2026-07-30 — BANNER ART §5.5: baked text is a SIZE rule, measured in the ship cut
+**Ruling (John):** confirmed §5.5 of `BANNER-RENDER-DIRECTIVE.md` as his, in chat. It is the gate.
+
+- **Screen content is ALLOWED and wanted.** A NOC or datacenter photograph with blank monitors
+  reads as fake. The prohibition is on *legible fabricated values*, not on text as such.
+- **The bar: no text taller than 10px in the 1170x403 phone cut.** Measured in the SHIP CUT, not
+  the master. Masters differ in height (DEPLOY 736, HANDOFF 611), so a percent-of-master threshold
+  gates identical art differently depending on how it was rendered — it measures the wrong frame.
+  The cut is fixed at 403px tall for every row, so it is the only stable gate.
+- **Test:** downscale master to exactly 1170x403 → measure tallest glyph, over 10px fails →
+  confirm at 390px wide that nothing resolves as a readable value.
+- **Passes:** dense small screen content, log lines, row labels, chart axis ticks, hardware
+  faceplate markings — the texture that makes a photograph read as real.
+- **Fails:** anything legible asserting a state or value. Large display numerals. Status words
+  like "Complete"/"Ready" sized to be read. Button labels sized for reading.
+- **In-scene marks are NOT composited logos.** A PHANTOM wordmark embroidered on a glove cuff or
+  printed on a chassis is set dressing, allowed. The absolute prohibition covers marks laid *over*
+  the frame in post: title cards, captions, watermarks, corner logos.
+
+**Known gap in the test as written:** step 1 says "downscale the master to 1170x403". A letterboxed
+master must be DE-LETTERBOXED first or the measurement runs against a frame padded with dead black
+(the MASTER row's master carries 22 dead bottom rows). Not owner-ruled; flagged for whoever
+formalises the gate.
+
+**State:** applied 2026-07-30. DEPLOY measured 6.6px largest text in the cut, nothing resolving at
+390px — CLEARS, shipped in `.357`. OPS (shipped `.356`) is retroactively clean under this rule —
+its monitor wall is exactly the "dense small screen content / chart axis ticks" the ruling passes.
+
+---
+
+## 2026-07-30 — B5: GB300 NVL72 on the DEPLOY banner STAYS
+**Ruling (John):** "GB300 stays, it's aspiration not a defect."
+
+The DEPLOY banner art carries legible `GB300 NVL72` on rack faceplates. AUS-01 runs H100/H200 and
+there is no Blackwell on the floor, and the app ships site-agnostic (Design Law 6) — so this was
+raised as a factual-accuracy defect. Owner ruled it is intentional aspiration. **Question CLOSED.**
+Do not re-flag it on future ships.
+
+**Corrects forward:** the shipped `.356` commit message and `version.json` notes state DEPLOY was
+held partly because "the fleet runs H100/H200". That reasoning is SUPERSEDED by this ruling.
+History not rewritten — corrected here and in the `.357` notes.
+
+---
+
+## 2026-07-30 — HANDOFF banner: scoped text overrule (NOT a change to §5.5)
+**Ruling (John):** the `Complete` sublines and the `READY FOR HANDOFF` CTA are overruled — ship
+despite §5.5's fail-list naming status words and button labels.
+
+**This is a scoped exception to §5.5 for ONE asset, not an amendment.** §5.5 stands unchanged for
+every future render; do not cite this as precedent.
+
+**State — the overrule never had to fire.** Measured in the ship cut: `Complete` = 4.0px and gone
+entirely at 390px; CTA label = 5.9px and does not resolve. Both clear §5.5 unaided. The only item
+in question is the **tablet screen title "HANDOFF"** — 9.2-11.2px in the cut (median 9.9 against a
+10px bar, a coin flip on size) and the one item that DOES resolve as a readable word at 390px.
+It is a screen title: it asserts no state, no value, no measurement, so it is not obviously in
+§5.5's fail-list either. **OPEN — awaiting a ruling on the title specifically.** HANDOFF is NOT
+shipped as of `.357`.
+
+---
+
 ## 2026-07-25 — FIX-DESKTOP-NAV-CARDS §3: the "DEVICES" card is COMPONENTS (:35331)
 **Ruling (John):** the spec's "DEVICES section surface" was a **stale name**. The real card is
 **COMPONENTS at `dct-ios.html:~35331`**, which carries an inline `background:var(--surf-1)`.
