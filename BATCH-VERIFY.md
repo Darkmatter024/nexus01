@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Current batch: OPEN, starts at .346 (1 of 6) — see the last section of this file.** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **CURRENT BATCH: OPEN, `.355`-`.359` (5 of 6) — see the last section of this file. ⚠ IT IS DUE NOW: `.359` is HIGH-risk (whole-page markup replacement), and the CALL-0 rule fires the pass before any HIGH-risk ship regardless of count.** · Clear SW cache before the pass.
 
 ---
 
@@ -451,17 +451,27 @@ Recorded verbatim (not "all good"). Full per-ship detail + gate marks are in `IN
 CALL-0 count cap **reset** — next ship opens a new batch at 1 of 6. **`.355` (§3 Option A) is unblocked but owner-deferred ("not tonight").**
 
 ---
-# ▶ OPEN BATCH — starts at `.355` (count 4 of 6)
+# ▶ OPEN BATCH — `.355`–`.359` (count 5 of 6) · ⚠ PASS IS DUE
 
-> **READ THIS FIRST — the visual checklist below is `.355`'s ALONE.**
+> **READ THIS FIRST — this batch is TWO visual checklists, not five.**
 > `.356`, `.357` and `.358` are **asset-and-stamp ships with ZERO markup change** — the entire
-> `dct-ios.html` diff in each is one version constant. The rendered app has been identical to
-> `.355` throughout. So: verify `.355`'s items on the CURRENT build and you have verified the
-> whole batch. The three asset ships add exactly **one** check of their own (offline boot,
-> listed under `.358`).
+> `dct-ios.html` diff in each is one version constant. So the whole batch reduces to:
+>
+> 1. **`.355`** — the COMPONENTS card fill on **rack detail**. Its checklist below.
+> 2. **`.359`** — the **BUILD page**, rebuilt. Its checklist at the end of this file.
+>
+> Verify those two screens and the batch is verified. The three asset ships contribute exactly
+> **one** check of their own — offline boot — and `.359`'s checklist re-runs it anyway, because
+> `.359` is the first ship that actually *references* those rasters.
 >
 > ⚠ **`.355`'s last checkbox is stale.** It says "badge reads **v1.14.355**". The device will
-> read **v1.14.358**. Read that line as "badge reads the current live stamp."
+> read **v1.14.359**. Read that line as "badge reads the current live stamp."
+>
+> ⚠ **Why the pass is due now:** `.359` replaces an entire page's markup — HIGH-risk under
+> CALL-0, which fires the consolidated pass *before* a HIGH-risk ship lands regardless of the
+> 6-count. It has already landed, so run the pass before the next ship rather than stacking.
+> The owner accepted a **coarse rollback** for `.359`: if the BUILD page is wrong, the revert
+> takes the whole banner port, not one edit.
 >
 > Carried over from the `.351`–`.354` pass, same rack-detail screen, cheap to fold in:
 > the `.352` rack-detail clearance reconfirm and the `.352` `.14` hero-stage value.
@@ -478,7 +488,7 @@ higher-specificity `body.rd .gsk.gsk-flat` rule + a redesign-gated `gsk-flat` ma
 - [ ] The card's **border, corners, and shadow are unchanged** — only the fill went darker (fill-only)
 - [ ] ⭐ **JUDGE THE LOCAL CONTRAST (advisory, not a hold):** this card is now darker than its **sibling phase/state cards on the same page** (they stay on the lighter glass skin — they were never in §3's scope). Option A was card-scoped by design. If that contrast reads wrong on device, say so — it reverts in one commit and we reconsider (close it, or take the whole `.gsk` set as a bigger ship).
 - [ ] `?legacy=1` rack detail: the COMPONENTS card is **UNCHANGED** (lighter glass skin — plain `.gsk` + inline `--surf-1`) — pixel-identical to `.354`
-- [ ] three-stamp on device: badge reads **v1.14.355** — ⚠ STALE, see the batch header. Reads **v1.14.358** now.
+- [ ] three-stamp on device: badge reads **v1.14.355** — ⚠ STALE, see the batch header. Reads **v1.14.359** now.
 
 ---
 
@@ -516,8 +526,59 @@ narrowly; see `design/OWNER-RULINGS.md`.
 - [ ] ⭐ **THE ONE REAL CHECK FOR ALL THREE ASSET SHIPS — clear the service worker → airplane mode →
       hard reload → app boots fully offline.** This exercises the enlarged precache (74 entries).
       An online eyeball check does NOT test this. If the app boots offline, the banner precache is good.
-- [ ] Badge reads **v1.14.358**
+- [ ] Badge reads **v1.14.358** — ⚠ STALE, reads **v1.14.359** now. The offline-boot check above
+      is superseded by the `.359` version of it (same test, now with the rasters actually referenced).
 
-**Batch `.355`–`.358` = 4 of 6.** Two positions left before the CALL-0 cap forces a pass.
-Note `.356`/`.357`/`.358` carry no UI risk of their own — the only failure they can cause is an
-offline-boot regression, which is the checkbox above.
+## v1.14.359 — BUILD BANNER ROWS: 12-tile grid retired, five rows + a 3x3 OPS wall (`0c365e5`) · rollback: revert commit
+**HIGH-risk — an entire page's markup replaced.** The BUILD landing's 12 `.rf-card` tiles become
+five full-width 2.90:1 banner rows (DEPLOY · SCAN · HANDOFF · MASTER FILE · OPS); OPS expands **in
+place** into a 3×3 nine-cell tool wall. Every row and cell reuses the **exact handler its tile
+used** — no new doors. `.356`/`.357`/`.358`'s rasters are referenced for the first time here.
+Both gates PASS (three-stamp; 4/4 JS blocks + sw.js compile; braces balanced in all 12 style
+blocks; diff surgical at +142/-15; shared `.rf-*` CSS intact; `?legacy=1` unreachable —
+`#work-grid` is `display:none` outside `body.rd`).
+
+**⭐ ROLLBACK IS COARSE, BY YOUR OWN RULING.** One commit carries markup, CSS, handlers, registry
+and asset refs together. If the BUILD page is wrong, `git revert 0c365e5` takes the whole port
+back to the 12-tile grid — not one edit. That was the trade for one verification cycle instead
+of five.
+
+**Go to BUILD. Everything below is that one screen.**
+
+- [ ] BUILD shows **FIVE full-width rows**, top to bottom: DEPLOY · SCAN · HANDOFF · MASTER FILE · OPS
+- [ ] **SCAN, MASTER FILE and OPS carry photographs.** DEPLOY and HANDOFF show a **diagonal accent
+      hatch** instead — that is **correct and deliberate**, their art is HELD. It should read as
+      *visibly unfinished*, not as a blank card. ⭐ If it reads as broken rather than pending, say so.
+- [ ] ⭐ **EVERY ROW TAPS THROUGH.** DEPLOY → deploy flow · SCAN → scan · HANDOFF → handoff ·
+      MASTER FILE → master file. **A row that does nothing is a ship failure**, not a nit.
+- [ ] Tap **OPS** → the row expands **in place** into a 3×3 grid, and the chevron rotates. Tap again → collapses.
+- [ ] **OPS at 2.90 geometry** — when collapsed it is the same shape as the other four rows, **not
+      a short 96px strip**. (The mock had this wrong; the asset was always right.)
+- [ ] ⭐ **ALL NINE WALL CELLS OPEN THEIR TOOL:** BOM · MANIFEST · PORT MAP · RACK MAP · SOPS ·
+      BURNDOWN · AUDITS · BLAST · OPTICS. Tap every one. Back returns to BUILD each time.
+- [ ] **No label text crosses the middle of any row** (labels clamp to the left 45%, over the scrim).
+      Check DEPLOY and MASTER FILE especially — those two labels are the longest.
+- [ ] **Nothing on this page states a number.** No "3 staged", no port counts, no percentages. The
+      mock had them; every one was invented. If you see a value anywhere on BUILD, that is a bug.
+- [ ] Gloved test: the nine wall cells are ~108×88px. **Tap each with a glove on.** If any is fiddly, say so.
+- [ ] ⭐ **THE REAL GATE — clear the service worker → airplane mode → hard reload → app boots fully
+      offline, and the three banner photographs still render.** This is the check that matters: the
+      rasters are precached but were referenced by nothing until now. **An online eyeball does NOT
+      test this.** If the rows go blank offline, the precache is broken.
+- [ ] Badge reads **v1.14.359**
+- [ ] `?legacy=1` → the old 5-tab app is **unchanged**; none of this exists there
+
+**⚠ EXPECTED, NOT A BUG — flagged for a separate ruling:** the Deploy/Scan/Handoff/Issues subtab
+strip still sits below the rows, so **three of the five rows now have a duplicate door** on the
+same screen. Left alone deliberately — resolving it is its own ship and needs your call on which
+door survives.
+
+**Known gaps, deliberate, both reversible:** the wall cells show **name + meta only, no live data**
+(binding nine Master accessors is a bigger ship than this one — the alternative was the mock's
+fabricated readouts, which were dropped). DEPLOY and HANDOFF art is still **HELD** pending a re-cut
+or a ruling. Four now-orphaned tile icons and their precache entries were **retained**, not deleted
+— they fold into the same cleanup ship as the 16 pre-existing dead entries.
+
+**Batch `.355`–`.359` = 5 of 6, and HIGH-risk `.359` caps it. Run the consolidated pass now.**
+Two screens: rack detail (`.355`) and BUILD (`.359`), plus the offline boot. On release, the
+CALL-0 count cap resets and the next ship opens a new batch at 1 of 6.
