@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **CURRENT BATCH: OPEN, `.355`-`.359` (5 of 6) — see the last section of this file. ⚠ IT IS DUE NOW: `.359` is HIGH-risk (whole-page markup replacement), and the CALL-0 rule fires the pass before any HIGH-risk ship regardless of count.** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **CURRENT BATCH: OPEN, `.355`-`.360` (6 of 6) — see the last section of this file. ⛔ IT IS DUE NOW, twice over: `.360` puts the batch AT the 6-count cap, and `.359` is HIGH-risk (whole-page markup replacement), which fires the pass regardless of count. No further ships until it clears.** · Clear SW cache before the pass.
 
 ---
 
@@ -451,27 +451,34 @@ Recorded verbatim (not "all good"). Full per-ship detail + gate marks are in `IN
 CALL-0 count cap **reset** — next ship opens a new batch at 1 of 6. **`.355` (§3 Option A) is unblocked but owner-deferred ("not tonight").**
 
 ---
-# ▶ OPEN BATCH — `.355`–`.359` (count 5 of 6) · ⚠ PASS IS DUE
+# ▶ OPEN BATCH — `.355`–`.360` (count 6 of 6) · ⛔ AT THE CAP · ⚠ PASS IS DUE
 
-> **READ THIS FIRST — this batch is TWO visual checklists, not five.**
+> **READ THIS FIRST — this batch is TWO visual checklists, not six.**
 > `.356`, `.357` and `.358` are **asset-and-stamp ships with ZERO markup change** — the entire
-> `dct-ios.html` diff in each is one version constant. So the whole batch reduces to:
+> `dct-ios.html` diff in each is one version constant. `.360` adds two `<img>` references to a
+> page `.359` already built. So the whole batch reduces to:
 >
 > 1. **`.355`** — the COMPONENTS card fill on **rack detail**. Its checklist below.
-> 2. **`.359`** — the **BUILD page**, rebuilt. Its checklist at the end of this file.
+> 2. **`.359` + `.360`** — the **BUILD page**, rebuilt and then completed. Both checklists at
+>    the end of this file. **Verify them together, on one screen, in `.360`'s state.**
 >
 > Verify those two screens and the batch is verified. The three asset ships contribute exactly
-> **one** check of their own — offline boot — and `.359`'s checklist re-runs it anyway, because
-> `.359` is the first ship that actually *references* those rasters.
+> **one** check of their own — offline boot — and the BUILD checklist re-runs it anyway, because
+> `.359`/`.360` are the ships that actually *reference* those rasters.
 >
-> ⚠ **`.355`'s last checkbox is stale.** It says "badge reads **v1.14.355**". The device will
-> read **v1.14.359**. Read that line as "badge reads the current live stamp."
+> ⚠ **STALE BADGE LINES.** `.355` says "badge reads **v1.14.355**" and `.358` says
+> "**v1.14.358**". The device will read **v1.14.360**. Read both as "the current live stamp."
 >
-> ⚠ **Why the pass is due now:** `.359` replaces an entire page's markup — HIGH-risk under
-> CALL-0, which fires the consolidated pass *before* a HIGH-risk ship lands regardless of the
-> 6-count. It has already landed, so run the pass before the next ship rather than stacking.
+> ⛔ **`.359`'S HATCH INSTRUCTION IS SUPERSEDED BY `.360`.** `.359`'s checklist told you DEPLOY
+> and HANDOFF *should* show a diagonal accent hatch instead of a photograph, because their art
+> was held. The owner released both holds in `.360`. **All five rows now carry a photograph.**
+> If you see the hatch on any row, that is a FAILURE — see the `.360` block.
+>
+> ⚠ **Why the pass is due now, twice over:** `.359` replaces an entire page's markup — HIGH-risk
+> under CALL-0, which fires the consolidated pass regardless of count — **and** `.360` puts the
+> batch at 6 of 6, the count cap itself. **No further ships until this clears.**
 > The owner accepted a **coarse rollback** for `.359`: if the BUILD page is wrong, the revert
-> takes the whole banner port, not one edit.
+> takes the whole banner port, not one edit. `.360` reverts independently of it.
 >
 > Carried over from the `.351`–`.354` pass, same rack-detail screen, cheap to fold in:
 > the `.352` rack-detail clearance reconfirm and the `.352` `.14` hero-stage value.
@@ -488,7 +495,7 @@ higher-specificity `body.rd .gsk.gsk-flat` rule + a redesign-gated `gsk-flat` ma
 - [ ] The card's **border, corners, and shadow are unchanged** — only the fill went darker (fill-only)
 - [ ] ⭐ **JUDGE THE LOCAL CONTRAST (advisory, not a hold):** this card is now darker than its **sibling phase/state cards on the same page** (they stay on the lighter glass skin — they were never in §3's scope). Option A was card-scoped by design. If that contrast reads wrong on device, say so — it reverts in one commit and we reconsider (close it, or take the whole `.gsk` set as a bigger ship).
 - [ ] `?legacy=1` rack detail: the COMPONENTS card is **UNCHANGED** (lighter glass skin — plain `.gsk` + inline `--surf-1`) — pixel-identical to `.354`
-- [ ] three-stamp on device: badge reads **v1.14.355** — ⚠ STALE, see the batch header. Reads **v1.14.359** now.
+- [ ] three-stamp on device: badge reads **v1.14.355** — ⚠ STALE, see the batch header. Reads **v1.14.360** now.
 
 ---
 
@@ -526,8 +533,8 @@ narrowly; see `design/OWNER-RULINGS.md`.
 - [ ] ⭐ **THE ONE REAL CHECK FOR ALL THREE ASSET SHIPS — clear the service worker → airplane mode →
       hard reload → app boots fully offline.** This exercises the enlarged precache (74 entries).
       An online eyeball check does NOT test this. If the app boots offline, the banner precache is good.
-- [ ] Badge reads **v1.14.358** — ⚠ STALE, reads **v1.14.359** now. The offline-boot check above
-      is superseded by the `.359` version of it (same test, now with the rasters actually referenced).
+- [ ] Badge reads **v1.14.358** — ⚠ STALE, reads **v1.14.360** now. The offline-boot check above
+      is superseded by the `.360` version of it (same test, now with all five rasters referenced).
 
 ## v1.14.359 — BUILD BANNER ROWS: 12-tile grid retired, five rows + a 3x3 OPS wall (`0c365e5`) · rollback: revert commit
 **HIGH-risk — an entire page's markup replaced.** The BUILD landing's 12 `.rf-card` tiles become
@@ -546,9 +553,9 @@ of five.
 **Go to BUILD. Everything below is that one screen.**
 
 - [ ] BUILD shows **FIVE full-width rows**, top to bottom: DEPLOY · SCAN · HANDOFF · MASTER FILE · OPS
-- [ ] **SCAN, MASTER FILE and OPS carry photographs.** DEPLOY and HANDOFF show a **diagonal accent
-      hatch** instead — that is **correct and deliberate**, their art is HELD. It should read as
-      *visibly unfinished*, not as a blank card. ⭐ If it reads as broken rather than pending, say so.
+- [ ] ~~SCAN, MASTER FILE and OPS carry photographs; DEPLOY and HANDOFF show a diagonal accent
+      hatch~~ ⛔ **SUPERSEDED BY `.360` — all five rows now carry photographs. See the `.360`
+      block below; check it there, not here.**
 - [ ] ⭐ **EVERY ROW TAPS THROUGH.** DEPLOY → deploy flow · SCAN → scan · HANDOFF → handoff ·
       MASTER FILE → master file. **A row that does nothing is a ship failure**, not a nit.
 - [ ] Tap **OPS** → the row expands **in place** into a 3×3 grid, and the chevron rotates. Tap again → collapses.
@@ -561,11 +568,9 @@ of five.
 - [ ] **Nothing on this page states a number.** No "3 staged", no port counts, no percentages. The
       mock had them; every one was invented. If you see a value anywhere on BUILD, that is a bug.
 - [ ] Gloved test: the nine wall cells are ~108×88px. **Tap each with a glove on.** If any is fiddly, say so.
-- [ ] ⭐ **THE REAL GATE — clear the service worker → airplane mode → hard reload → app boots fully
-      offline, and the three banner photographs still render.** This is the check that matters: the
-      rasters are precached but were referenced by nothing until now. **An online eyeball does NOT
-      test this.** If the rows go blank offline, the precache is broken.
-- [ ] Badge reads **v1.14.359**
+- [ ] ⭐ **THE REAL GATE** — ⛔ superseded by `.360`'s version of the same check (five photographs,
+      not three). Run it once, in the `.360` block.
+- [ ] Badge reads **v1.14.359** — ⚠ STALE, reads **v1.14.360** now.
 - [ ] `?legacy=1` → the old 5-tab app is **unchanged**; none of this exists there
 
 **⚠ EXPECTED, NOT A BUG — flagged for a separate ruling:** the Deploy/Scan/Handoff/Issues subtab
@@ -575,10 +580,57 @@ door survives.
 
 **Known gaps, deliberate, both reversible:** the wall cells show **name + meta only, no live data**
 (binding nine Master accessors is a bigger ship than this one — the alternative was the mock's
-fabricated readouts, which were dropped). DEPLOY and HANDOFF art is still **HELD** pending a re-cut
-or a ruling. Four now-orphaned tile icons and their precache entries were **retained**, not deleted
+fabricated readouts, which were dropped). ~~DEPLOY and HANDOFF art is still HELD~~ — **released in
+`.360`.** Four now-orphaned tile icons and their precache entries were **retained**, not deleted
 — they fold into the same cleanup ship as the 16 pre-existing dead entries.
 
-**Batch `.355`–`.359` = 5 of 6, and HIGH-risk `.359` caps it. Run the consolidated pass now.**
-Two screens: rack detail (`.355`) and BUILD (`.359`), plus the offline boot. On release, the
-CALL-0 count cap resets and the next ship opens a new batch at 1 of 6.
+## v1.14.360 — the two held banners release, all five rows carry art (`1f29d44`) · rollback: revert commit
+**Two `<img>` references. Nothing else.** Owner rulings 2026-07-30 released both holds: **B5 =
+ACCEPT** (DEPLOY ships as-is with GB300 / NVL72 branding legible — "the app is site-agnostic but
+the art does not have to be"; CLOSED, not to be re-raised) and **§5.5 = WAIVED FOR THE HANDOFF
+BANNER ONLY** (its legible baked workflow text ships as owner-accepted debt — logged, and
+explicitly **not a precedent**; §5.5 still binds every future banner render).
+
+The `.359` rows, OPS wall, handlers, registry and CSS are **untouched** — the gate proved it
+mechanically: each changed row line is byte-identical to its predecessor once the `<img>` is
+removed, and no other added line contains markup. `PRECACHE_URLS` needed no change (both rasters
+were registered by `.357`/`.358` when they were staged). The hatch fallback **stays in the CSS**
+by instruction — it is the standing mechanism for any future missing asset, now dormant, not dead.
+
+**This block supersedes the `.359` art and offline-boot items. Run these instead.**
+
+- [ ] ⭐ **ALL FIVE ROWS CARRY A PHOTOGRAPH.** DEPLOY and HANDOFF must **no longer show the
+      diagonal accent hatch**. If either still does, its raster is not loading — that is the
+      failure this ship exists to remove, and the hatch is doing exactly its job by showing you.
+- [ ] **DEPLOY art:** GB300 / NVL72 branding is visible on the faceplates. **That is accepted and
+      closed** — it is not a bug, do not re-flag it.
+- [ ] **HANDOFF art:** baked workflow text is legible. **Accepted debt under a one-asset §5.5
+      waiver** — also not a bug here. ⭐ If it reads badly *at arm's length on the phone*, say so:
+      the waiver was for the asset as-cut, and a re-cut is still open to you.
+- [ ] Both rows still tap through (DEPLOY → deploy flow, HANDOFF → handoff). Nothing about the
+      handlers changed, but it is a two-second regression check.
+- [ ] The five rows are the **same height and alignment** — all five rasters are 1170×403, so
+      nothing should shift or letterbox.
+- [ ] ⭐ **THE REAL GATE — clear the service worker → airplane mode → hard reload → all FIVE
+      photographs still render offline.** This exercises the full ~247KB banner set for the first
+      time; until `.359`/`.360` the rasters were precached but referenced by nothing. **An online
+      eyeball does NOT test this.** If rows go blank offline, the precache is broken.
+- [ ] Badge reads **v1.14.360**
+- [ ] `?legacy=1` unchanged
+
+**⚠ FILENAME DEVIATION, on the record:** the ruling named the deploy asset `DEPLOY-phone@3x.webp`.
+No such file exists in the repo, in Downloads, or in git history — `.357` shipped
+`icons/phantom-banner-deploy-1170.webp`, which is what the ruling's own "already in the repo from
+.357 and .358" identifies, and what is referenced. Nothing was renamed or re-cut. Consequence:
+`grep -c 'DEPLOY-phone' dct-ios.html` returns **0**, because satisfying it literally would mean
+renaming a shipped raster and rewriting its precache entry — which the same ruling forbade. **If
+that filename is wanted it is a one-line rename plus a precache line in a follow-up ship.**
+
+**Not done in `.360`, deliberately out of its scope:** the two rulings are logged in full in
+`version.json` but were **not** mirrored into `design/OWNER-RULINGS.md`, where `.357`/`.358`
+recorded theirs. Separate docs commit if you want them there.
+
+**Batch `.355`–`.360` = 6 of 6 — AT THE CALL-0 COUNT CAP, and HIGH-risk `.359` caps it
+independently. Run the consolidated pass now; no further ships until it clears.**
+Two screens: rack detail (`.355`) and BUILD (`.359` + `.360`), plus the offline boot. On release
+the cap resets and the next ship opens a new batch at 1 of 6.
