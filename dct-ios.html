@@ -8923,6 +8923,13 @@ body.rd #work-grid .brow-stack { display:flex; flex-direction:column; gap:12px; 
 .opswall .oc-dot { width:5px; height:5px; border-radius:50%; background:var(--tac); box-shadow:0 0 7px var(--tac); flex:0 0 auto; }
 .opswall .oc-n { font-family:var(--mono); font-weight:700; font-size:9.5px; letter-spacing:.12em; line-height:1.15; text-align:center; color:color-mix(in srgb, var(--tac) 80%, var(--white) 32%); }
 .opswall .oc-m { font-family:var(--mono); font-weight:600; font-size:7.5px; letter-spacing:.10em; line-height:1.2; text-align:center; color:var(--slate); }
+/* v1.14.365 — live readout line (§8). Sized so the cell does NOT grow: four children
+   total 35.2px + 3x6px gap + 20px padding = 73.2px, still under the 88px min-height
+   floor above, so binding data shifts no layout. `.oc-nil` is the honest-empty state —
+   it is a VISIBLE marker, never an absence, because a blank cell reads as an erase. */
+.opswall .oc-v { font-family:var(--mono); font-weight:700; font-size:8.5px; letter-spacing:.09em; line-height:1.2; text-align:center; color:color-mix(in srgb, var(--tac) 58%, var(--white) 50%); }
+.opswall > div.oc-nil .oc-v { font-weight:600; color:var(--slate); opacity:.7; }
+.opswall > div.oc-nil .oc-dot { opacity:.3; box-shadow:none; }
 @media (prefers-reduced-motion:reduce) { .bnr, .opsrow .chev, .opsrow .bnr > img, .opsbody, .opswall > div { transition:none; } }
 /* ── N-11 (v1.14.312) — Work Active-Workspace: job/resume hero + idle-dark library.
    Redesign-only (body.rd / #pg-work); ?legacy=1 byte-identical (#work-grid is display:none in legacy,
@@ -12445,7 +12452,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.364';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.365';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13311,15 +13318,15 @@ if (typeof window !== 'undefined') {
             <div class="bnr" role="button" tabindex="0" aria-expanded="false" aria-controls="wk-opswall" onclick="wk_toggleOpsWall(this)" aria-label="Ops — expand nine tools for this build"><img src="icons/OPS-phone@3x.webp" alt="" width="1170" height="403" loading="eager" decoding="async"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">OPS</div><div class="rf-cmeta">Nine tools on this build</div></div><div class="chev" aria-hidden="true">&rsaquo;</div></div>
             <div class="opsbody" id="wk-opswall">
               <div class="opswall">
-                <div class="ops-cell" style="--tac:#28e0ff" role="button" tabindex="0" onclick="rd_openOpsTool('bom')" aria-label="BOM — parts"><span class="oc-dot"></span><span class="oc-n">BOM</span><span class="oc-m">Parts</span></div>
-                <div class="ops-cell" style="--tac:#8a4bff" role="button" tabindex="0" onclick="rd_openOpsTool('manifest')" aria-label="Manifest — gear"><span class="oc-dot"></span><span class="oc-n">MANIFEST</span><span class="oc-m">Gear</span></div>
-                <div class="ops-cell" style="--tac:#1fffd0" role="button" tabindex="0" onclick="rd_openOpsTool('portmap')" aria-label="Port map — cabling"><span class="oc-dot"></span><span class="oc-n">PORT MAP</span><span class="oc-m">Cabling</span></div>
-                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('rackmap')" aria-label="Rack map — elevation"><span class="oc-dot"></span><span class="oc-n">RACK MAP</span><span class="oc-m">Elevation</span></div>
-                <div class="ops-cell" style="--tac:#28e0ff" role="button" tabindex="0" onclick="rd_openOpsTool('sops')" aria-label="SOPs — procedures"><span class="oc-dot"></span><span class="oc-n">SOPS</span><span class="oc-m">Procedures</span></div>
-                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('burndown')" aria-label="Burndown — progress"><span class="oc-dot"></span><span class="oc-n">BURNDOWN</span><span class="oc-m">Progress</span></div>
-                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('audits')" aria-label="Audits — serials"><span class="oc-dot"></span><span class="oc-n">AUDITS</span><span class="oc-m">Serials</span></div>
-                <div class="ops-cell" style="--tac:#ff2bd6" role="button" tabindex="0" onclick="rd_openOpsTool('blast')" aria-label="Blast radius — power map"><span class="oc-dot"></span><span class="oc-n">BLAST</span><span class="oc-m">Power map</span></div>
-                <div class="ops-cell" style="--tac:#1fffd0" role="button" tabindex="0" onclick="rd_openOpsTool('optics')" aria-label="Optics — fiber, form factors and MPO"><span class="oc-dot"></span><span class="oc-n">OPTICS</span><span class="oc-m">Fiber · MPO</span></div>
+                <div class="ops-cell" style="--tac:#28e0ff" role="button" tabindex="0" onclick="rd_openOpsTool('bom')" aria-label="BOM — parts" data-oc="bom"><span class="oc-dot"></span><span class="oc-n">BOM</span><span class="oc-m">Parts</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#8a4bff" role="button" tabindex="0" onclick="rd_openOpsTool('manifest')" aria-label="Manifest — gear" data-oc="manifest"><span class="oc-dot"></span><span class="oc-n">MANIFEST</span><span class="oc-m">Gear</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#1fffd0" role="button" tabindex="0" onclick="rd_openOpsTool('portmap')" aria-label="Port map — cabling" data-oc="portmap"><span class="oc-dot"></span><span class="oc-n">PORT MAP</span><span class="oc-m">Cabling</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('rackmap')" aria-label="Rack map — elevation" data-oc="rackmap"><span class="oc-dot"></span><span class="oc-n">RACK MAP</span><span class="oc-m">Elevation</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#28e0ff" role="button" tabindex="0" onclick="rd_openOpsTool('sops')" aria-label="SOPs — procedures" data-oc="sops"><span class="oc-dot"></span><span class="oc-n">SOPS</span><span class="oc-m">Procedures</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('burndown')" aria-label="Burndown — progress" data-oc="burndown"><span class="oc-dot"></span><span class="oc-n">BURNDOWN</span><span class="oc-m">Progress</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('audits')" aria-label="Audits — serials" data-oc="audits"><span class="oc-dot"></span><span class="oc-n">AUDITS</span><span class="oc-m">Serials</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#ff2bd6" role="button" tabindex="0" onclick="rd_openOpsTool('blast')" aria-label="Blast radius — power map" data-oc="blast"><span class="oc-dot"></span><span class="oc-n">BLAST</span><span class="oc-m">Power map</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#1fffd0" role="button" tabindex="0" onclick="rd_openOpsTool('optics')" aria-label="Optics — fiber, form factors and MPO" data-oc="optics"><span class="oc-dot"></span><span class="oc-n">OPTICS</span><span class="oc-m">Fiber · MPO</span><span class="oc-v"></span></div>
               </div>
             </div>
           </div>
@@ -19913,6 +19920,148 @@ function wk_toggleOpsWall(head) {
   }
   var open = row.classList.toggle('open');
   if (head && head.setAttribute) head.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) wk_paintOpsWall();   // v1.14.365 §8 — read live state at render time, on every open
+}
+
+// ── v1.14.365 — OPS WALL LIVE DATA (SHIP-BUILD-BANNER-ROWS-SPEC §8) ────────────────
+// Every cell reads its tool's real store at render time. No value in this block is a
+// literal, a default or a fallback — if a source has nothing, the cell says so.
+//
+// PROVENANCE, stated plainly because §8's wording is "reads phantomMaster": only RACK
+// MAP is Master-backed. The other eight tools keep state in their OWN stores, so each
+// cell binds to the source of the tool it opens. A cell that counted the Master instead
+// would print a number the tool behind it does not have — the spec's intent is a true
+// readout, and that is served by binding to the real source, not the named one.
+//
+// PORT MAP has no store at all — it is a paste-and-validate tool, never a data view —
+// so it carries its call-to-action permanently. That is §8's empty state applied
+// honestly, not a hole in the binding.
+//
+// DEGRADATION IS DELIBERATE: a stat that throws downgrades that ONE cell to its empty
+// marker and warns. The wall still opens and all nine doors still tap, so the readout is
+// an enhancement over a control that already works — it warns rather than toasting,
+// because a toast for a cosmetic degradation trains the operator to ignore toasts. Only
+// a missing wall host, which is a structural bug, is loud.
+var _wkOpsPaintGen  = 0;
+var _wkOpsAriaBase  = {};
+
+function wk_opsPlural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+
+// The honest-empty marker. NEVER blank: a blank cell reads as an erase, and several of
+// these are a call to action rather than a shortage.
+function wk_opsNilLabel(tab) {
+  if (tab === 'portmap') return 'PASTE TO RUN';
+  if (tab === 'optics')  return 'SCAN TO SEED';
+  if (tab === 'rackmap') return 'NO MASTER';
+  if (tab === 'blast')   return 'NO DEPLOY';
+  return 'NO DATA';
+}
+
+// Live readout for a cell, or null when the tool genuinely has nothing to report.
+// Zero and unavailable both return null: both mean "nothing here" to a gloved tech, and
+// neither may be dressed up as a measurement.
+function wk_opsCellStat(tab) {
+  var n, m, dep;
+  switch (tab) {
+    case 'rackmap':
+      m = (typeof window !== 'undefined') ? window._lastPhantomMaster : null;
+      n = (m && m.racksByCab && typeof m.racksByCab === 'object') ? Object.keys(m.racksByCab).length : 0;
+      return n ? wk_opsPlural(n, 'CAB', 'CABS') : null;
+    case 'sops':
+      n = (typeof loadSOPs === 'function') ? (loadSOPs() || []).length : 0;
+      return n ? wk_opsPlural(n, 'DOC', 'DOCS') : null;
+    case 'optics':
+      n = (typeof loadOpticInventory === 'function') ? (loadOpticInventory() || []).length : 0;
+      return n ? wk_opsPlural(n, 'OPTIC', 'OPTICS') : null;
+    case 'manifest':
+      // Mirrors manifest_render's own status filter so the cell and the tool never disagree.
+      n = (typeof deploy_loadAll === 'function') ? deploy_loadAll().filter(function(d) {
+            return d && (d.status === 'active' || d.status === 'paused' || d.status === 'complete');
+          }).length : 0;
+      return n ? wk_opsPlural(n, 'BUILD', 'BUILDS') : null;
+    case 'burndown':
+      // BD.renderList counts !archived and labels that "active". Match it exactly, or the
+      // cell over-counts every job the tool itself has already put away.
+      n = (typeof BD !== 'undefined' && BD && typeof BD.count === 'function') ? BD.count() : 0;
+      return n ? wk_opsPlural(n, 'JOB', 'JOBS') : null;
+    case 'audits':
+      n = (typeof AUDIT !== 'undefined' && AUDIT && typeof AUDIT.count === 'function') ? AUDIT.count() : 0;
+      return n ? wk_opsPlural(n, 'AUDIT', 'AUDITS') : null;
+    case 'blast':
+      // Computed against the ACTIVE deployment; with none, renderBlastRadius shows its own
+      // empty state, so the cell says so up front rather than promising a map.
+      dep = (typeof omni_getActiveDeployment === 'function') ? omni_getActiveDeployment() : null;
+      if (!dep || !dep.id) return null;
+      n = (typeof deploy_loadRacksFor === 'function') ? deploy_loadRacksFor(dep.id).length : 0;   // SCOPED door (.350), never the whole store
+      return n ? wk_opsPlural(n, 'RACK', 'RACKS') : null;
+    case 'portmap':
+      return null;   // no store by design — see the note above
+    case 'bom':
+      return null;   // IndexedDB; resolved asynchronously by wk_opsPaintBom
+  }
+  return null;
+}
+
+function wk_opsSetCell(cell, slot, v, nilText) {
+  var tab = cell.getAttribute('data-oc');
+  if (_wkOpsAriaBase[tab] === undefined) _wkOpsAriaBase[tab] = cell.getAttribute('aria-label') || '';
+  var isNil = (v === null || v === undefined);
+  var text  = isNil ? (nilText || wk_opsNilLabel(tab)) : v;
+  slot.textContent = text;
+  if (isNil) cell.classList.add('oc-nil'); else cell.classList.remove('oc-nil');
+  // aria-label overrides the cell's text for a screen reader, so without this the readout
+  // would be visible but unspoken.
+  if (_wkOpsAriaBase[tab]) cell.setAttribute('aria-label', _wkOpsAriaBase[tab] + ' — ' + text);
+}
+
+function wk_paintOpsWall() {
+  var wall = document.querySelector('#wk-opswall .opswall');
+  if (!wall) {
+    try { console.warn('wk_paintOpsWall: no .opswall host under #wk-opswall'); } catch (e) {}
+    if (typeof phantomToast === 'function') phantomToast('OPS readouts unavailable — see SYS > ERRORS', 'warn');
+    return;
+  }
+  var gen = ++_wkOpsPaintGen;
+  var cells = wall.querySelectorAll('div[data-oc]');
+  for (var i = 0; i < cells.length; i++) {
+    var cell = cells[i];
+    var tab  = cell.getAttribute('data-oc');
+    var slot = cell.querySelector('.oc-v');
+    if (!slot) { try { console.warn('wk_paintOpsWall: no .oc-v slot on cell', tab); } catch (e) {} continue; }
+    if (tab === 'bom') { wk_opsSetCell(cell, slot, null, '—'); continue; }   // pending, not "NO DATA" — see below
+    var v = null;
+    try { v = wk_opsCellStat(tab); }
+    catch (e2) { try { console.warn('wk_paintOpsWall: stat failed for ' + tab, e2); } catch (e3) {} v = null; }
+    wk_opsSetCell(cell, slot, v);
+  }
+  wk_opsPaintBom(gen);
+}
+
+// BOM is the one async source: it lives in IndexedDB, not localStorage. It paints '—'
+// (pending) in the sync pass rather than 'NO DATA', because asserting "no data" before
+// the read returns would be a fabricated state for however long the read takes. The
+// generation token drops a late resolve if the wall has been re-opened since.
+function wk_opsPaintBom(gen) {
+  var cell = document.querySelector('#wk-opswall .opswall div[data-oc="bom"]');
+  if (!cell) { try { console.warn('wk_opsPaintBom: no BOM cell in the wall'); } catch (e) {} return; }
+  var slot = cell.querySelector('.oc-v');
+  if (!slot) { try { console.warn('wk_opsPaintBom: BOM cell has no .oc-v slot'); } catch (e) {} return; }
+  var settle = function(v) { if (gen === _wkOpsPaintGen) wk_opsSetCell(cell, slot, v); };
+  if (typeof bom_isAvailable !== 'function' || typeof bom_dep_listAll !== 'function') { settle(null); return; }
+  try {
+    bom_isAvailable().then(function(ok) {
+      return ok ? bom_dep_listAll() : null;
+    }).then(function(list) {
+      var n = Array.isArray(list) ? list.length : 0;
+      settle(n ? wk_opsPlural(n, 'BOM', 'BOMS') : null);
+    }).catch(function(e) {
+      try { console.warn('wk_opsPaintBom: BOM read failed', e); } catch (_) {}
+      settle(null);
+    });
+  } catch (e) {
+    try { console.warn('wk_opsPaintBom: BOM read threw synchronously', e); } catch (_) {}
+    settle(null);
+  }
 }
 // ── N-11 (v1.14.312) — Work's ONE emitter: a stateful job/resume hero above the FIELD WORK library.
 // Resolved from the SAME shared sources as the NOW ACTIVE BUILD hero (nowtab_resolveDep +
@@ -46326,7 +46475,12 @@ const BD = (() => {
     showOpsTab('burndown'); setTimeout(()=>openJob(job.id),80);
   }
 
-  return { renderList, openJob, tapPort, archiveJob, showNewForm, hideNewForm, submitNew, createFromPortMap, setPri };
+  // v1.14.365 — read-only count for the BUILD OPS wall readout. Exposed here rather than
+  // letting the wall read BURNDOWN_KEY itself, so this module keeps sole knowledge of its
+  // storage shape. Filters !archived to match what renderList above labels "active" — a
+  // raw length would count every job the tool has already put away.
+  function count() { try { return loadJobs().filter(j => !j.archived).length; } catch (e) { return 0; } }
+  return { renderList, openJob, tapPort, archiveJob, showNewForm, hideNewForm, submitNew, createFromPortMap, setPri, count };
 })();
 
 // Load voices
@@ -48144,11 +48298,17 @@ const AUDIT = (() => {
     }
   }
 
+  // v1.14.365 — read-only count for the BUILD OPS wall readout. Exposed here rather than
+  // letting the wall read this module's KEY, which is a literal local to this closure.
+  // No archive filter: renderList above shows load() unfiltered, so an unfiltered count is
+  // what agrees with the tool.
+  function count() { try { return load().length; } catch (e) { return 0; } }
+
   return {
     renderList, showNewForm, hideNewForm, createNew,
     openAudit, manualEntry, scanEntry, saveEntry, saveEntryFromScan, cameraToSerial,
     removeEntry, deleteAudit, pickType, aiIdentify, importFile, exportCSV,
-    rapidScan, rapidSubmit, rapidClose, rapidCamera, rapidUndo,
+    rapidScan, rapidSubmit, rapidClose, rapidCamera, rapidUndo, count,
     setPri: () => {},
     getCurrentId: () => currentAuditId || localStorage.getItem(ACTIVE_AUDIT_KEY),
     OPTIC_TYPES,
