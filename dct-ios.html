@@ -8906,7 +8906,21 @@ body.rd #work-grid .brow-stack { display:flex; flex-direction:column; gap:12px; 
 .opsrow.open .chev { transform:translateY(-50%) rotate(90deg); }
 .opsbody { max-height:0; overflow:hidden; transition:max-height .45s cubic-bezier(.4,0,.2,1); }
 .opsrow.open .opsbody { max-height:1200px; }
-.opswall { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:10px; }
+.opswall { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:10px;
+  /* v1.14.366 — VEIL ALPHAS ARE SHELL-SCOPED TUNING KNOBS, declared per shell so the two can
+     diverge without one inheriting the other's value. Both shells START at the same numbers by
+     ruling; the desk block below exists so raising or lowering one NEVER silently moves the
+     other. Phone cells are small and text-dense; desk cells are far wider with more art showing,
+     so these are expected to part company after the two-device verify. Text legibility wins over
+     art visibility in every cell, both shells, no exceptions. */
+  --veil-t:.55; --veil-b:.85; --tfit:cover; }
+/* v1.14.366 — ART FIT IS PER-SHELL BY OWNER RULING, and it is a geometry fix, not a resolution one.
+   The cell is 3.95:1 on desk while every source raster is 1:1, so `cover` there fills the width and
+   then discards 75% of the icon's height — a soft band through its middle, and a 512 master would
+   only have made that band sharper. Phone keeps `cover`: at 107x88 it still shows 82% of the icon
+   and filling the cell reads better. Desk takes `contain`: an 88x88 icon centred in a 348px cell,
+   DOWNscaled from 256 and therefore sharp, with the .359 accent tint showing around it. */
+@media (min-width:640px) { .opswall { --veil-t:.55; --veil-b:.85; --tfit:contain; } }   /* desk shell — veils start equal, independent knobs */
 /* Wall cells. Cold Aisle Filter: at 390px each cell is ~108px wide x 88px min — a gloved
    target — and every tool in the wall is ONE tap from the BUILD landing (was two: grid ->
    card). Selected STRUCTURALLY rather than by class: .opswall's only children are the
@@ -8916,7 +8930,18 @@ body.rd #work-grid .brow-stack { display:flex; flex-direction:column; gap:12px; 
 .opswall > div { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
   min-height:88px; padding:10px 6px; border-radius:10px; cursor:pointer; -webkit-tap-highlight-color:transparent;
   border:1px solid color-mix(in srgb, var(--tac) 34%, transparent);
-  background:radial-gradient(130% 130% at 28% 12%, color-mix(in srgb, var(--tac) 9%, #04070b), #030507 68%);
+  /* v1.14.366 — tool raster behind the content. THREE LAYERS, top to bottom: the veil that
+     protects text contrast, then the art, then the ORIGINAL .359 accent tint kept as the base
+     layer. Keeping the tint underneath is deliberate: a cell whose image fails to load renders
+     exactly as it did before this ship instead of dropping to flat black — the same standing
+     "a missing asset must not look deliberate" mechanism the banner rows use. Background layers
+     always paint behind a box's own content, so the four text children sit above the veil with
+     no z-index and no markup restructure; only the background declaration changed. --tim carries
+     the per-cell raster and the `none` fallback keeps this rule valid on a cell with no art. */
+  background:
+    linear-gradient(180deg, rgba(4,6,10,var(--veil-t,.55)), rgba(4,6,10,var(--veil-b,.85))),
+    var(--tim, none) center / var(--tfit, cover) no-repeat,
+    radial-gradient(130% 130% at 28% 12%, color-mix(in srgb, var(--tac) 9%, #04070b), #030507 68%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 22px -8px color-mix(in srgb, var(--tac) 45%, transparent);
   transition:border-color .2s, box-shadow .2s; }
 .opswall > div:active { border-color:color-mix(in srgb, var(--tac) 85%, white 8%); box-shadow:inset 0 1px 0 rgba(255,255,255,.08), inset 0 0 30px -6px color-mix(in srgb, var(--tac) 40%, transparent), 0 0 18px -2px color-mix(in srgb, var(--tac) 50%, transparent); }
@@ -12452,7 +12477,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.365';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.366';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13318,15 +13343,15 @@ if (typeof window !== 'undefined') {
             <div class="bnr" role="button" tabindex="0" aria-expanded="false" aria-controls="wk-opswall" onclick="wk_toggleOpsWall(this)" aria-label="Ops — expand nine tools for this build"><img src="icons/OPS-phone@3x.webp" alt="" width="1170" height="403" loading="eager" decoding="async"><div class="bscrim"></div><span class="rf-cnr tl"></span><span class="rf-cnr br"></span><div class="btxt"><div class="rf-cname">OPS</div><div class="rf-cmeta">Nine tools on this build</div></div><div class="chev" aria-hidden="true">&rsaquo;</div></div>
             <div class="opsbody" id="wk-opswall">
               <div class="opswall">
-                <div class="ops-cell" style="--tac:#28e0ff" role="button" tabindex="0" onclick="rd_openOpsTool('bom')" aria-label="BOM — parts" data-oc="bom"><span class="oc-dot"></span><span class="oc-n">BOM</span><span class="oc-m">Parts</span><span class="oc-v"></span></div>
-                <div class="ops-cell" style="--tac:#8a4bff" role="button" tabindex="0" onclick="rd_openOpsTool('manifest')" aria-label="Manifest — gear" data-oc="manifest"><span class="oc-dot"></span><span class="oc-n">MANIFEST</span><span class="oc-m">Gear</span><span class="oc-v"></span></div>
-                <div class="ops-cell" style="--tac:#1fffd0" role="button" tabindex="0" onclick="rd_openOpsTool('portmap')" aria-label="Port map — cabling" data-oc="portmap"><span class="oc-dot"></span><span class="oc-n">PORT MAP</span><span class="oc-m">Cabling</span><span class="oc-v"></span></div>
-                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('rackmap')" aria-label="Rack map — elevation" data-oc="rackmap"><span class="oc-dot"></span><span class="oc-n">RACK MAP</span><span class="oc-m">Elevation</span><span class="oc-v"></span></div>
-                <div class="ops-cell" style="--tac:#28e0ff" role="button" tabindex="0" onclick="rd_openOpsTool('sops')" aria-label="SOPs — procedures" data-oc="sops"><span class="oc-dot"></span><span class="oc-n">SOPS</span><span class="oc-m">Procedures</span><span class="oc-v"></span></div>
-                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('burndown')" aria-label="Burndown — progress" data-oc="burndown"><span class="oc-dot"></span><span class="oc-n">BURNDOWN</span><span class="oc-m">Progress</span><span class="oc-v"></span></div>
-                <div class="ops-cell" style="--tac:#ffcb45" role="button" tabindex="0" onclick="rd_openOpsTool('audits')" aria-label="Audits — serials" data-oc="audits"><span class="oc-dot"></span><span class="oc-n">AUDITS</span><span class="oc-m">Serials</span><span class="oc-v"></span></div>
-                <div class="ops-cell" style="--tac:#ff2bd6" role="button" tabindex="0" onclick="rd_openOpsTool('blast')" aria-label="Blast radius — power map" data-oc="blast"><span class="oc-dot"></span><span class="oc-n">BLAST</span><span class="oc-m">Power map</span><span class="oc-v"></span></div>
-                <div class="ops-cell" style="--tac:#1fffd0" role="button" tabindex="0" onclick="rd_openOpsTool('optics')" aria-label="Optics — fiber, form factors and MPO" data-oc="optics"><span class="oc-dot"></span><span class="oc-n">OPTICS</span><span class="oc-m">Fiber · MPO</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#28e0ff;--tim:url(icons/phantom-tool-bom-256.webp)" role="button" tabindex="0" onclick="rd_openOpsTool('bom')" aria-label="BOM — parts" data-oc="bom"><span class="oc-dot"></span><span class="oc-n">BOM</span><span class="oc-m">Parts</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#8a4bff;--tim:url(icons/phantom-tool-manifest-256.webp)" role="button" tabindex="0" onclick="rd_openOpsTool('manifest')" aria-label="Manifest — gear" data-oc="manifest"><span class="oc-dot"></span><span class="oc-n">MANIFEST</span><span class="oc-m">Gear</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#1fffd0;--tim:url(icons/phantom-tool-portmap-256.webp)" role="button" tabindex="0" onclick="rd_openOpsTool('portmap')" aria-label="Port map — cabling" data-oc="portmap"><span class="oc-dot"></span><span class="oc-n">PORT MAP</span><span class="oc-m">Cabling</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#ffcb45;--tim:url(icons/phantom-tool-rackmap-256.webp)" role="button" tabindex="0" onclick="rd_openOpsTool('rackmap')" aria-label="Rack map — elevation" data-oc="rackmap"><span class="oc-dot"></span><span class="oc-n">RACK MAP</span><span class="oc-m">Elevation</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#28e0ff;--tim:url(icons/phantom-tool-sops-256.webp)" role="button" tabindex="0" onclick="rd_openOpsTool('sops')" aria-label="SOPs — procedures" data-oc="sops"><span class="oc-dot"></span><span class="oc-n">SOPS</span><span class="oc-m">Procedures</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#ffcb45;--tim:url(icons/phantom-tool-burndown-256.webp)" role="button" tabindex="0" onclick="rd_openOpsTool('burndown')" aria-label="Burndown — progress" data-oc="burndown"><span class="oc-dot"></span><span class="oc-n">BURNDOWN</span><span class="oc-m">Progress</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#ffcb45;--tim:url(icons/phantom-tool-audits-256.webp)" role="button" tabindex="0" onclick="rd_openOpsTool('audits')" aria-label="Audits — serials" data-oc="audits"><span class="oc-dot"></span><span class="oc-n">AUDITS</span><span class="oc-m">Serials</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#ff2bd6;--tim:url(icons/phantom-tool-power-256.webp)" role="button" tabindex="0" onclick="rd_openOpsTool('blast')" aria-label="Blast radius — power map" data-oc="blast"><span class="oc-dot"></span><span class="oc-n">BLAST</span><span class="oc-m">Power map</span><span class="oc-v"></span></div>
+                <div class="ops-cell" style="--tac:#1fffd0;--tim:url(icons/phantom-ref-optics-256.webp)" role="button" tabindex="0" onclick="rd_openOpsTool('optics')" aria-label="Optics — fiber, form factors and MPO" data-oc="optics"><span class="oc-dot"></span><span class="oc-n">OPTICS</span><span class="oc-m">Fiber · MPO</span><span class="oc-v"></span></div>
               </div>
             </div>
           </div>
