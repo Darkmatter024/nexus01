@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **CURRENT BATCH: OPEN, `.355`-`.362` (8 of 6, two past the cap) — see the last section of this file. ⛔ IT IS OVERDUE: `.362` puts the batch TWO PAST the 6-count cap (stacked on direct owner instruction), and `.359` is HIGH-risk (whole-page markup replacement), which fires the pass regardless of count. No further ships until it clears.** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. NO OPEN BATCH: the next ship opens a new one at 1 of 6.** · Clear SW cache before the pass.
 
 ---
 
@@ -451,7 +451,7 @@ Recorded verbatim (not "all good"). Full per-ship detail + gate marks are in `IN
 CALL-0 count cap **reset** — next ship opens a new batch at 1 of 6. **`.355` (§3 Option A) is unblocked but owner-deferred ("not tonight").**
 
 ---
-# ▶ OPEN BATCH — `.355`–`.362` (count 8 of 6) · ⛔ TWO PAST THE CAP · ⚠ PASS IS OVERDUE
+# ✅ RELEASED BATCH — `.355`–`.363` · CLEARED by owner 2026-07-30 · cap RESET
 
 > **READ THIS FIRST — this batch is TWO visual checklists, not six.**
 > `.356`, `.357` and `.358` are **asset-and-stamp ships with ZERO markup change** — the entire
@@ -668,8 +668,54 @@ its stem is `master`, its row label is **MASTER FILE**, and DEPLOY gave no signa
 label were identical). Shipped as `MASTER-phone@3x.webp`, preserving the stem. **One line to change
 if you meant the label form.**
 
-**Batch `.355`–`.362` = 8 of 6 — ⛔ TWO PAST THE CALL-0 CAP.** Stacked on direct owner instruction
-(precedent: `.208`–`.212` ran to eleven by owner decision 2026-07-08). The pass was already due on
-two grounds — the cap and HIGH-risk `.359` — and is now **two ships overdue**. Run it before
-anything else ships. Two screens: rack detail (`.355`) and BUILD (`.359`–`.362`), plus the offline
-boot. On release the cap resets and the next ship opens a new batch at 1 of 6.
+## v1.14.363 — FIX: MASTER FILE had no exit under redesign (`736a44e`) · rollback: revert commit
+**Found by the owner mid-pass.** `rd_openMasterFile()` calls `showPage('master')` raw; `#pg-master`
+is a LEGACY page with no per-page back header, and Rule A (v1.14.122) hides `#nav-back-btn` under
+`body.rd` — so the surface the MASTER FILE row opens had **zero back affordance**. Fixed with a
+`#master-back` header mirroring `#ref-back`, base `display:none`, `body.rd` the only gate.
+
+⚠ **The spec said `showMode('build')`; there is no `'build'` key** (the map is
+`{command,work,ref}`, and the function returns early on an unknown key). That would have shipped a
+**dead** back button — "no exit" replaced by "an exit that lies". Shipped as `showMode('work')`,
+the mode key for the page the nav *labels* BUILD. The gate now asserts the back target's key exists
+in `showMode`'s own map, so this cannot silently regress.
+
+- [ ] rd: BUILD → MASTER FILE row → back chevron top-left → tap → lands on the BUILD banner rows
+- [ ] `?legacy=1`: `pg-master` unchanged, no `#master-back`, legacy header chevron still works
+
+---
+## ✅ BATCH `.355`–`.363` — CLEARED by owner 2026-07-30 ("everything is good to go all ships clear")
+**Nine ships cleared in one call.** CALL-0 count cap **RESET** — the next ship opens a new batch at
+1 of 6. The `.359` HIGH-risk gate is **cleared**; the coarse-rollback exposure it carried is closed.
+
+**Recorded honestly, same as the `.346`–`.350` clear:** the owner cleared in chat rather than
+checking the boxes above item-by-item. The batch ran **three past the cap** (9 of 6) and contained
+one HIGH-risk ship, so the exposure is worth naming rather than burying:
+
+- `.359` replaced an entire page's markup. Its per-row and per-cell tap checks were **not reported
+  back individually**; the owner reported the page working. If a single row or wall cell turns out
+  dead later, **start at `git revert 0c365e5`** — but note that takes the whole banner port.
+- `.361`/`.362` moved five served asset paths and five precache keys. The owner ran the offline
+  pass, which is the only check that can catch a bad cache key, and reported it good. If a banner
+  row ever goes blank offline, `917d523` (four) and `3842fd5` (DEPLOY) revert independently.
+- `.363` landed mid-pass and was verified in the same session.
+
+**Advisory judgement calls, all resolved by the blanket clear** (each was phrased "say so if it
+reads wrong"; nothing was said, so each stands as shipped — **veto any one and it reverts alone**):
+`.352` hero-stage `.14` value · `.355` COMPONENTS card darker than its sibling phase cards
+(Option A, card-scoped by design) · HANDOFF's baked workflow text at arm's length, which was the
+one thing the §5.5 waiver left open to the device.
+
+**Still open, not part of this batch — each needs its own word:**
+- The `.subtab-strip` (Deploy/Scan/Handoff/Issues) **duplicates three banner rows** on BUILD.
+  Flagged since `.359`, deliberately never resolved. Which door survives?
+- `MASTER-phone@3x.webp` kept the file **stem**, not the row label — `MASTER-FILE-phone@3x.webp`
+  if you meant the label form. One line.
+- Four orphaned tile icons + their `PRECACHE_URLS` entries, retained not deleted, to fold into the
+  same cleanup ship as the 16 pre-existing dead entries.
+- The `.359` OPS wall cells carry **no live data** — name + meta only. Binding nine Master
+  accessors was scoped out; it is a ship of its own if wanted.
+
+---
+
+<!-- next ship opens a NEW batch below this line — 1 of 6 -->
