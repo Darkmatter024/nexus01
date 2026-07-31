@@ -8960,12 +8960,17 @@ body.rd #wk-job-host:empty { display:none; }
    neighbours. Its class toggle was also removed from wk_renderJob (it had no other consumer). */
 @media (prefers-reduced-motion:reduce) { body.rd #ref-grid .rf-card::before, body.rd #work-grid .rf-card::before, body.rd .deploy-tools-grid .rf-card::before { animation:none; opacity:.10; transform:translateX(-30%); } }
 #ref-back { align-items:center; gap:12px; margin:4px 0 12px; }
+/* v1.14.363 — MASTER FILE back header. Same rule shape as #ref-back above: base display:none is
+   the legacy guarantee (?legacy=1 reaches #pg-master through its own nav with #nav-back-btn
+   visible, and must stay byte-identical), body.rd is the ONLY gate that reveals it. */
+#master-back { display:none; }
+body.rd #master-back { display:flex; align-items:center; gap:12px; margin:4px 0 12px; }
 .rf-back-btn { position:relative; width:56px; height:56px; border:0; background:none; display:grid; place-items:center; cursor:pointer; flex:0 0 auto; color:var(--slate-readable,#8ea3c4); -webkit-tap-highlight-color:transparent; }   /* Rule A (v1.14.124): 56px hit target kept for gloves. v1.14.212 (adopt web-Claude .204 opt-4 small-soft-square, fleet-wide): visible chrome shrunk to a 34px chip via ::before so BACK stops out-weighing header actions; icon slate, lights cyan on press. */
 .rf-back-btn::before { content:""; position:absolute; width:34px; height:34px; border-radius:10px; border:1px solid rgba(120,150,200,.18); background:rgba(16,22,34,.55); transition:border-color .12s ease; }
 .rf-back-btn svg { position:relative; z-index:1; width:19px; height:19px; }
 .rf-back-btn:active { color:var(--cyan); }
 .rf-back-btn:active::before { border-color:rgba(40,224,255,.5); }
-#ref-back .rf-back-title { font-family:var(--orb); font-weight:700; letter-spacing:.14em; font-size:18px; color:var(--white); }
+#ref-back .rf-back-title, #master-back .rf-back-title { font-family:var(--orb); font-weight:700; letter-spacing:.14em; font-size:18px; color:var(--white); }   /* v1.14.363: #master-back joins the selector — .rf-back-title carries NO unscoped styling, so reusing the class alone would render the title in the default face (which is why #work-back's title is unstyled today). Selector extension only; no new declaration, #ref-back unchanged. */
 body.rd #pg-ref:not(.rf-grid) .ref-sub.stab-active { animation:rf-fade .22s ease both; }
 @keyframes rf-fade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 /* ━━━ v1.14.175 — R-3b PLATFORMS drill-in (redesign-only). A platform tap swaps the
@@ -12440,7 +12445,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.362';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.363';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -15649,6 +15654,22 @@ if (typeof window !== 'undefined') {
            #master-empty-state   — no Master loaded → CTA to load
            #master-loaded-state  — banner + search + suggestions + results -->
     <div class="page" id="pg-master">
+      <!-- v1.14.363 — MASTER FILE had NO EXIT under redesign. rd_openMasterFile() calls
+           showPage('master') raw; #pg-master is a LEGACY page with no per-page back header, and
+           Rule A (v1.14.122, :9568) hides the legacy header chevron #nav-back-btn under body.rd.
+           Net effect: zero back affordance on the surface the BUILD MASTER FILE row opens.
+           Rule A mandates ONE back control per surface — this one had none. Mirrors #ref-back
+           (:13356) exactly: same .rf-back-btn chevron, same .rf-back-title, base display:none so
+           ?legacy=1 (which reaches pg-master through its own nav, with #nav-back-btn VISIBLE)
+           renders byte-identical. Back target is showMode('work') — the BUILD banner rows the
+           user came from. NOT history.back()/nav_back(): this is a grid-back to a known parent,
+           the same contract #work-back and #ref-back carry. ⚠ 'work' is the MODE KEY for the
+           page the nav LABELS "BUILD" — showMode's map is {command,work,ref} and has no 'build'
+           key, so showMode('build') would hit its `if (!pid) return` and be a DEAD BUTTON. -->
+      <div id="master-back">
+        <button class="rf-back-btn" onclick="showMode('work')" aria-label="Back to Build"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <span class="rf-back-title">MASTER FILE</span>
+      </div>
       <!-- v1.6.46: section toggle — site reference now consolidated under MASTER -->
       <div class="master-section-bar" id="master-section-bar">
         <button class="master-section-pill active" data-section="file" onclick="master_showSection('file')" aria-label="Master file — cabinet and host map">File</button>
