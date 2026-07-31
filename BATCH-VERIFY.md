@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. NO OPEN BATCH: the next ship opens a new one at 1 of 6.** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: OPEN, starts at .364 (1 of 6) — see the last section of this file.** · Clear SW cache before the pass.
 
 ---
 
@@ -718,4 +718,35 @@ one thing the §5.5 waiver left open to the device.
 
 ---
 
-<!-- next ship opens a NEW batch below this line — 1 of 6 -->
+# ▶ OPEN BATCH — starts at `.364` (count 1 of 6)
+
+## v1.14.364 — CLEANUP: 20 dead precache entries purged, 4 orphan icons deleted (`bbfcf33`) · rollback: revert commit
+**Owner-approved cleanup ship**, run to his method: read-only sweep first, then one commit, nothing
+else rides along. `PRECACHE_URLS` 74 → 54 — **228.4 KB** that every cold install was fetching and
+storing for nothing. His two figures reconciled exactly: 4 files + 16 entries = the 20 dead entries
+found, because the four `.359` orphans still carried entries of their own. **File deletions are
+exactly the four he named**; the other 16 files stay on disk, orphaned-but-retained — only their
+precache entry went.
+
+**Nothing should look different anywhere. This ship removes only bytes nothing asked for.**
+
+- [ ] Badge reads **v1.14.364**
+- [ ] ⭐ **THE REAL CHECK — clear SW → airplane mode → hard reload → then WALK THE APP:** Home ·
+      BUILD and all five banner rows · the nine OPS wall cells · TOOLS and its seven cards · the
+      platform picker · rack detail. **Every icon must still render.** A wrongly-purged entry is
+      invisible online — the network fills the gap silently — so offline is the only way it shows.
+- [ ] Any visual change at all is a **bug**, not a feature. Report what changed and where.
+- [ ] `?legacy=1` unchanged
+
+**Verified before push:** every asset any consumer references is still on disk AND still precached ·
+every surviving entry resolves to a real file · the 4 deletions gone with zero residual references ·
+the 16 retained files confirmed present · `dct-ios.html`'s diff is the version stamp ONLY (1 line).
+
+**⚠ Finding, out of scope, NOT actioned:** six PWA install icons / favicons (`apple-touch-icon`,
+`icon-192`, `icon-512`, `icon-512-maskable`, `favicon-16`, `favicon-32`) are referenced but have
+**never** been in `PRECACHE_URLS` — verified against HEAD, so this predates the ship and is not a
+hole it opened. Left alone per "nothing else rides along". Needs its own decision.
+
+**Batch `.364` = 1 of 6.**
+
+<!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->

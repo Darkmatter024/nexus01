@@ -9,6 +9,48 @@ spec, and a ruling recorded inside it would be silently lost.
 
 ---
 
+## 2026-07-30 — THE FOUR CARRIED ITEMS, all ruled after the `.355`–`.363` batch cleared
+
+**1. SUBTAB STRIP — kill it, the banner rows win. CONFIRMED.**
+The `.subtab-strip` (Deploy/Scan/Handoff/Issues) below the BUILD banner rows duplicates three of
+the five rows. Owner: *"already ruled: kill it, banner rows win. Confirmed."* — a re-confirmation of
+a standing ruling, not a new one. **Ruled but NOT sequenced**; no ship assigned. ⚠ Note for whoever
+takes it: `.subtab-strip` is a SHARED class — `#pg-ref` has its own strip at `:13273` and other
+surfaces use it too. Only the `#pg-work` instance dies, and the strip's `showStab` targets
+(`wk-deploy`/`wk-scan`/`wk-handoff`/`wk-issues`) are still the render hosts several doors write
+into, so this is a nav-surface removal, **not** a panel deletion. `?legacy=1` reaches those panels
+through its own nav and must keep working.
+
+**2. `MASTER-phone@3x` — KEEP THE STEM. CLOSED.**
+Owner: *"Renaming rasters again to match a display label is cache churn for zero function. The stem
+follows the file, the label follows the row."* So `MASTER-phone@3x.webp` stands; `MASTER-FILE-` is
+rejected. **Do not re-raise.** The general principle is worth keeping: a raster's filename tracks
+the FILE's identity, not whatever a row happens to be captioned this month — and every rename costs
+a full three-stamp bump plus a cold-cache rebuild for every device in the field.
+
+**3. ORPHANS + DEAD PRECACHE — approved as its own ship. SHIPPED `.364` (`bbfcf33`).**
+Owner approved it as the next ship after the batch cleared, and specified the method: *"Read-only
+sweep first, then one commit. Nothing else rides along."* Executed as ruled.
+⭐ **His two figures reconciled exactly:** he authorised deleting **4** orphaned tile icons and
+purging **16** dead precache entries; the sweep found **20** entries on disk and referenced by
+nothing — and 20 = 16 + 4, because the four `.359` orphans still carried entries of their own. No
+scope expansion was needed or taken. `PRECACHE_URLS` went 74 → 54 (**228.4 KB** off every cold
+install). The 4 named files were deleted; the other 16 stay on disk, orphaned-but-retained.
+📌 **Method note worth reusing:** the sweep caught two of its own bugs before anything was touched —
+an entry regex that paired apostrophes inside a *comment* and invented a phantom entry, and a
+reference check that consulted only `manifest.json` and would have un-cached three **live** brand
+assets (`cc-ghost.webp`, `phantom-prism.png`, `phantom-shield.png`) that other shell files
+reference. A cleanup ship's failure mode is silent and offline-only, so the sweep is the gate.
+
+**4. OPS WALL LIVE DATA — its own ship, BLOCKED on a spec.**
+Owner: nine cells bind to real Master accessors, **empty state when no data — "blank is never an
+erase"** — and *"do not start until the spec lands"* (incoming from web-Claude). **Do not begin
+this work, including recon, until the spec is in hand.** The empty-state clause is the same law
+that governs [[feedback_fresh_literal_destroys_user_data]]: a cell with no data renders the empty
+state, it never renders a zero or a blank that reads as a measured value.
+
+---
+
 ## 2026-07-30 — BOTH HELD BANNERS RELEASE (shipped `.360`)
 **Ruling (John), issued to release the two holds blocking the last two BUILD banner rows.**
 
