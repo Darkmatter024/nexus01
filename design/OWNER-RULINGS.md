@@ -9,6 +9,53 @@ spec, and a ruling recorded inside it would be silently lost.
 
 ---
 
+## 2026-07-30 — BOTH HELD BANNERS RELEASE (shipped `.360`)
+**Ruling (John), issued to release the two holds blocking the last two BUILD banner rows.**
+
+Both halves were **re-issued in chat**, not invented here. Each already had an entry below from
+when it was first ruled; this entry is the **release record** — what changed is that the art is
+now *referenced by the app*, not merely staged in `icons/`. Read this entry together with the two
+below it; where they differ, this one is later.
+
+**B5 — ACCEPT. Unchanged from the entry below, restated verbatim by the owner:** DEPLOY commits
+as-is with `GB300 / NVL72` legible on the faceplates. *"The app is site-agnostic but the art does
+not have to be."* **CLOSED — do not re-raise.**
+
+**§5.5 — WAIVED FOR THE HANDOFF BANNER ONLY. ⚠ This is BROADER than the scoped overrule recorded
+below, and the difference matters.** The earlier entry overruled three *named* items (the
+`Complete` sublines, the `READY FOR HANDOFF` CTA, the tablet title) and then recorded that the
+overrule "never had to fire", because each measured clear of the 10px bar unaided. The owner has
+now waived §5.5 for **the asset's legible baked workflow text as a whole**, and framed it as
+**owner-accepted debt** rather than as a pass on measurement. Those are different positions: the
+old one says nothing was actually in breach, the new one accepts that something is and ships it
+anyway. **The new framing governs.** Do not cite the measurements below as evidence the waiver
+was unnecessary — the owner has decided it on acceptance, not on arithmetic.
+
+⛔ **NOT A PRECEDENT, and this is the load-bearing part of the ruling.** §5.5 stays in force,
+unamended, for **every** future banner render. This waiver attaches to **one asset**. A later
+render does not inherit it, and this row must not be cited by one. The standing narrow-reading
+warning in the §5.5 entry below applies to this waiver with more force, not less.
+
+**State:** applied in `.360` (`1f29d44`) — `phantom-banner-deploy-1170.webp` and
+`phantom-banner-handoff-1170.webp` are now referenced by the DEPLOY and HANDOFF `.bnr` rows, so
+all five BUILD banner rows carry art. Both rasters were already in `PRECACHE_URLS` from `.357`/
+`.358`. Awaiting the consolidated `.355`–`.360` device pass.
+
+**Open, needs a call — the deploy asset's FILENAME.** The ruling named the file
+`DEPLOY-phone@3x.webp`. **No such file exists** in the repo, in `Downloads/`, or anywhere in git
+history; `.357` shipped `icons/phantom-banner-deploy-1170.webp`, which is what the ruling's own
+"already in the repo from `.357` and `.358`" identifies, and what `.360` references. Nothing was
+renamed or re-cut, per the same ruling's "do not re-stage". Consequence: the ruling's stated check
+`grep -c 'DEPLOY-phone'` returns **0**, and cannot return anything else without renaming a raster
+that shipped three versions ago and rewriting its precache entry. **If the `DEPLOY-phone` name is
+wanted, it is a one-line rename plus a precache line in a follow-up ship — owner's call, not
+actioned.**
+
+**Judgement left open to the device pass:** whether HANDOFF's baked text reads badly *at arm's
+length on the phone*. The waiver covers the asset as cut; a re-cut remains available to the owner.
+
+---
+
 ## 2026-07-30 — BANNER ART §5.5: baked text is a SIZE rule, measured in the ship cut
 **Ruling (John):** confirmed §5.5 of `BANNER-RENDER-DIRECTIVE.md` as his, in chat. It is the gate.
 
@@ -51,9 +98,18 @@ Do not re-flag it on future ships.
 held partly because "the fleet runs H100/H200". That reasoning is SUPERSEDED by this ruling.
 History not rewritten — corrected here and in the `.357` notes.
 
+▶ **Re-issued and RELEASED in `.360`** — see the release entry at the top of this file. This entry
+is still accurate; `.360` is where the art actually reaches the app.
+
 ---
 
 ## 2026-07-30 — HANDOFF banner: scoped text overrule (NOT a change to §5.5)
+▶ ⚠ **SUPERSEDED IN PART by the `.360` release entry at the top of this file.** The owner has
+since waived §5.5 for **this asset's baked workflow text as a whole**, framed as accepted debt
+rather than as a measurement pass. The item-by-item overrule and the measurements below remain
+accurate as history, but the **broader waiver governs** — do not quote "the overrule never had to
+fire" as evidence that nothing was waived.
+
 **Ruling (John):** the `Complete` sublines and the `READY FOR HANDOFF` CTA are overruled — ship
 despite §5.5's fail-list naming status words and button labels.
 
