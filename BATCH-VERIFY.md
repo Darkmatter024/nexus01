@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: OPEN, .364-.365 (2 of 6) — see the last section of this file.** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: OPEN, .364-.366 (3 of 6) — see the last section of this file. ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
 
 ---
 
@@ -779,5 +779,36 @@ draft deployments excluded), hostile (three sources throwing → each degrades a
 stay correct, failures warned not swallowed).
 
 **Batch `.364`–`.365` = 2 of 6.**
+
+## v1.14.366 — OPS WALL CELL ART, BOTH SHELLS (`b5b8a9a`) · rollback: revert commit (cells return to flat tint, doors + readouts intact)
+The nine wall cells now carry their tool raster behind the content. **⚠ TWO-DEVICE VERIFY — this is
+the first ship in the batch whose correctness differs by shell.**
+
+- [ ] Badge reads **v1.14.366**
+- [ ] **iPhone 390px:** nine cells show art *filling* the cell behind the labels · every label legible
+- [ ] **Laptop shell:** nine cells show the **WHOLE icon, centred and sharp** — NOT a cropped
+      horizontal band. If you see a band, `--tfit` is not reaching the desk block
+- [ ] ⭐ **ALL NINE CELLS STILL TAP THROUGH, both shells.** Art must never cost a door
+- [ ] Cell height unchanged in both shells — **no growth, no reflow**. The wall must sit exactly
+      where it did in `.365`
+- [ ] `?legacy=1` unchanged
+
+**If a label is marginal over art:** the lever is that shell's `--veil-b` (bottom alpha), **and only
+that shell's** — the two shells declare their own veil values precisely so tuning one cannot move the
+other. Phone base is on `.opswall`; desk is in the `@media (min-width:640px)` block. Both start at
+`.55` top / `.85` bottom. Text legibility wins over art visibility, no exceptions.
+
+**Why the fit differs by shell** (recorded so it is not "tidied" into one rule later): the cell is
+**3.95:1 on desk** (348×88 at a 1280px viewport) while every source raster is **1:1**. Under `cover`
+that fills the width then discards **75%** of the icon's height. It is an *aspect* problem, not a
+resolution one — a 512 master would only have made the cropped band sharper. Phone keeps `cover`
+because at 107×88 it still shows **82%** of the icon and filling the cell reads better there.
+
+**Verified before push:** 62 checks green — wall confirmed **ONE shared markup block** (no second
+block to half-ship into) · all nine rasters present on disk · all nine **already precached**, so
+`sw.js` changed by the cache version *alone* (asserted as a 1-line diff) · `ops-cell` still exactly 9 ·
+all nine doors and every text child byte-unchanged · `min-height` untouched · `DEPLOY_TOOLS` untouched.
+
+**Batch `.364`–`.366` = 3 of 6.**
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->

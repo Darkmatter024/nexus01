@@ -333,3 +333,49 @@ covers "no deployment at all."
 pulled before `racks_door` is written. Verify the corrected spec actually encodes this
 ruling; if it doesn't, this ruling still governs — report the mismatch, don't silently
 follow the spec.
+
+---
+
+## 2026-07-31 — OPS WALL CELL ART, AND ART FIT IS PER-SHELL (shipped `.366`)
+
+**Ruling (John):** the nine wall rasters wire in as **background art behind the content** — cell
+layout, heights and every text child stay structurally byte-identical, no growth, no line
+replacement, no reflow. Accent tints and borders stay exactly as they are, rendering over and around
+the art. Then, on the measurement below: **"contain on desk, ship it."**
+
+**The finding that produced that ruling, recorded because it corrects a premise that will otherwise
+come back.** The original spec expected the 256 sources to merely *soft-scale* on the desk shell and
+asked whether 512 masters were warranted. They are not, and cutting them would not have helped:
+
+> The wall cell is **3.95:1 on desk** (348×88 at a 1280px viewport) while every source raster is
+> **1:1**. Under `cover` that fills the width and then discards **75% of the icon's height**, leaving
+> a soft band through its middle. **This is an aspect-ratio problem, not a resolution one — a 512
+> master would only have made the cropped band sharper.**
+
+**Durable rule: when art looks wrong at a larger size, measure the CELL ASPECT against the SOURCE
+ASPECT before reaching for a bigger master.** Resolution and fit are separate axes, and the expensive
+fix is usually aimed at the wrong one.
+
+Settled values: phone keeps `cover` (at 107×88 it still shows **82%** of the icon and filling the cell
+reads better); desk takes `contain` (an 88×88 icon centred in a 348px cell, **downscaled** from 256
+and therefore sharp). Net effect is that the existing 256 masters are now *correct* on both shells
+rather than merely adequate.
+
+**Standing structural facts confirmed by this ship, so they need not be re-derived:**
+- **The OPS wall is ONE shared markup block, not duplicated per shell** — one `.opswall`, one
+  `#wk-opswall`, one render path. The "lands on laptop, missing on phone" half-ship is *structurally
+  impossible* here. Do not add a second block.
+- **Shells switch by CSS media query ONLY** — no body class, no separate render path, and still **no
+  asset-shell machinery** (the file's single `<picture>`/`srcset` are both inside a comment saying so).
+  Breakpoints act on `#work-grid` max-width: base full · 640px → 760px · 980px → 1080px. See
+  [[reference_no_asset_shell_mechanism]].
+- **Per-shell values get their own declaration site.** `--veil-t`/`--veil-b`/`--tfit` are declared for
+  phone and again in the 640px block. Both shells *start* at the same veil alphas by ruling; the
+  duplication is the point, so tuning one shell can never silently move the other. **Do not "tidy"
+  these into a single rule.**
+- **`phantom-tool-blastradius-256.webp` does not exist and never has.** BLAST's raster is
+  `phantom-tool-power-256.webp`. The name appears in the ship request but no file on disk has ever
+  carried it — do not create one to match.
+- Until `.366` the eight tool rasters rendered on **no surface at all**: their only reference was the
+  dormant `DEPLOY_TOOLS.img` field, which nothing reads. The wall is their first real consumer.
+  `DEPLOY_TOOLS` stays untouched — that cleanup is still its own ship.
