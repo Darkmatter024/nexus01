@@ -34,7 +34,7 @@
 // a clean v1.13.3 — dropping the prior -N cache-iteration suffix — so this real
 // version bump busts every client's cache and the three stamps (app const /
 // version.json / this key) line up again. Patch bumps continue from here.
-const CACHE_VERSION = 'phantom-v1.14.363';
+const CACHE_VERSION = 'phantom-v1.14.364';
 
 // Assets to precache on install. Keep this minimal — single-file PWA means
 // most of PHANTOM is in dct-ios.html itself.
@@ -55,12 +55,15 @@ const PRECACHE_URLS = [
   'phantom-prism.png',
   'phantom-shield.png',
   'icons/phantom-shield-256.webp',
-  // v1.14.132: branded icon system (Stage 1 ships the 6 Ref glyphs; full 17-file
-  // batch precached up front so Stages 2-3 are HTML-only). Offline-first: without
-  // these the cards 404 in the cold aisle.
-  'icons/phantom-nav-command-96.webp',
-  'icons/phantom-nav-work-96.webp',
-  'icons/phantom-nav-ref-96.webp',
+  // v1.14.364 CLEANUP (owner-approved): 20 dead entries purged from this list — every one
+  // was on disk but referenced by NOTHING in any consumer (dct-ios.html, index.html,
+  // forge.html, manifest.json, the docs shell). 228.4 KB that every cold install was
+  // fetching and storing for nothing. Superseded families removed here: the .132 nav-96
+  // glyphs (replaced by the .323 -v2-256 set below), the mode-256 trio, the status-96 trio,
+  // the dom-256 pair, crashcart (RETIRED by owner), assistant-mark + ui-assistant-v2, the
+  // blocker/issues-alert actions, and the four tiles the .359 banner rows orphaned.
+  // Four of those FILES were deleted in the same commit (the .359 orphans); the rest stay
+  // on disk, orphaned-but-retained per repo precedent — only their precache entry went.
   // v1.14.323: glass WebP nav icons (pnav look) — Home/Build/Tools/Exit bottom nav
   'icons/phantom-nav-home-v2-256.webp',
   'icons/phantom-nav-build-v2-256.webp',
@@ -72,10 +75,6 @@ const PRECACHE_URLS = [
   // v1.14.326: HANDOFF feature-hero art (mounted on the redesign Work->Handoff screen).
   // Owner override of the honesty-lock hold ('no use it') — ships with baked decorative text.
   'icons/phantom-feat-handoff-v2.webp',
-  'icons/phantom-action-deploy-upload-256.webp',
-  'icons/phantom-action-scan-radar-256.webp',
-  'icons/phantom-action-handoff-link-256.webp',
-  'icons/phantom-action-issues-alert-256.webp',
   'icons/phantom-ref-optics-256.webp',
   'icons/phantom-ref-hardware-256.webp',
   'icons/phantom-ref-cli-256.webp',
@@ -83,10 +82,6 @@ const PRECACHE_URLS = [
   'icons/phantom-ref-know-256.webp',
   'icons/phantom-ref-compass-256.webp',
   'icons/phantom-ref-ghostecho-256.webp',
-  'icons/phantom-mode-command-256.webp',
-  'icons/phantom-mode-work-256.webp',
-  'icons/phantom-mode-ref-256.webp',
-  'icons/phantom-ui-assistant-v2-256.webp',
   'icons/phantom-optic-om3-256.webp',
   'icons/phantom-optic-om4-256.webp',
   'icons/phantom-optic-om5-256.webp',
@@ -96,18 +91,11 @@ const PRECACHE_URLS = [
   'icons/phantom-tool-manifest-256.webp',
   'icons/phantom-tool-portmap-256.webp',
   'icons/phantom-tool-rackmap-256.webp',
-  'icons/phantom-tool-crashcart-256.webp',
   'icons/phantom-tool-sops-256.webp',
   'icons/phantom-tool-bom-256.webp',
   'icons/phantom-tool-power-256.webp',
-  'icons/phantom-tool-masterdoc-256.webp',
   'icons/phantom-tool-burndown-256.webp',
   'icons/phantom-tool-audits-256.webp',
-  'icons/phantom-action-blocker-256.webp',
-  'icons/phantom-status-racks-cabinet-96.webp',
-  'icons/phantom-status-blockers-stack-96.webp',
-  'icons/phantom-status-deploys-stack-96.webp',
-  'icons/phantom-assistant-mark-256.webp',
 // v1.14.175: R-3b platform-first icon batch (5 GPU platforms + SHARED)
   'icons/phantom-plat-h100-256.webp',
   'icons/phantom-plat-h200-256.webp',
@@ -115,8 +103,6 @@ const PRECACHE_URLS = [
   'icons/phantom-plat-gb200-256.webp',
   'icons/phantom-plat-gb300-256.webp',
   'icons/phantom-plat-shared-256.webp',
-  'icons/phantom-dom-power-256.webp',
-  'icons/phantom-dom-cooling-256.webp',
   'icons/SCAN-phone@3x.webp',
   'icons/MASTER-phone@3x.webp',
   'icons/OPS-phone@3x.webp',
