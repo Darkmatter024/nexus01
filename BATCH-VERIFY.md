@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: OPEN, starts at .364 (1 of 6) — see the last section of this file.** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: OPEN, .364-.365 (2 of 6) — see the last section of this file.** · Clear SW cache before the pass.
 
 ---
 
@@ -748,5 +748,36 @@ the 16 retained files confirmed present · `dct-ios.html`'s diff is the version 
 hole it opened. Left alone per "nothing else rides along". Needs its own decision.
 
 **Batch `.364` = 1 of 6.**
+
+## v1.14.365 — OPS WALL LIVE DATA (`bbebf7c`) · rollback: revert commit (wall returns to static labels, doors intact)
+Owner ruled SHIP-BUILD-BANNER-ROWS-SPEC §8 IS the spec, releasing the block. Nine cells now read
+their tool's real store on every open, with an explicit marker when there is nothing.
+
+- [ ] Badge reads **v1.14.365**
+- [ ] BUILD → tap **OPS**: wall opens as before, each cell now carries a readout line under its label
+- [ ] ⭐ **ALL NINE CELLS STILL TAP THROUGH.** A readout must never cost a door — this is the one
+      check that matters most, because the nine doors were the whole point of `.359`
+- [ ] Cells with data show a count; cells without show a **dimmed marker, never a blank**
+- [ ] With no Master loaded: **RACK MAP** reads `NO MASTER` · **PORT MAP** always reads `PASTE TO RUN`
+      (it is a paste-and-validate tool — it has no store and never will, so that is correct, not a bug)
+- [ ] Load a Master → re-open the wall → cabinet count appears **with no reload** (reads on every open)
+- [ ] Cell height unchanged — the wall must not have grown taller (value line was sized to fit the
+      existing 88px floor; if rows moved, that calculation was wrong)
+- [ ] `?legacy=1` unchanged
+
+**Where each number comes from** (only RACK MAP is Master-backed — the rest read the store belonging
+to the tool that cell opens): RACK MAP → `racksByCab` · SOPS → SOP library · OPTICS → scan inventory ·
+BURNDOWN → jobs, `!archived` · AUDITS → audits · MANIFEST → deployments (active/paused/complete) ·
+BLAST → active deployment's racks via the scoped `.350` door · BOM → IndexedDB (async, paints `—` then
+resolves) · PORT MAP → no store by design.
+
+**Verified before push:** 76 mechanical checks green (three-stamp lockstep · 4 inline JS blocks + sw.js
+compile · 12 style blocks balanced · `ops-cell` still exactly 9 · all nine handlers byte-unchanged ·
+exactly 3 files touched) **plus a functional smoke test** running the shipped code against stub stores
+in three scenarios — cold (nine non-blank markers), loaded (correct counts, correct singular/plural,
+draft deployments excluded), hostile (three sources throwing → each degrades alone, unaffected cells
+stay correct, failures warned not swallowed).
+
+**Batch `.364`–`.365` = 2 of 6.**
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->

@@ -42,12 +42,31 @@ reference check that consulted only `manifest.json` and would have un-cached thr
 assets (`cc-ghost.webp`, `phantom-prism.png`, `phantom-shield.png`) that other shell files
 reference. A cleanup ship's failure mode is silent and offline-only, so the sweep is the gate.
 
-**4. OPS WALL LIVE DATA — its own ship, BLOCKED on a spec.**
+**4. OPS WALL LIVE DATA — ~~its own ship, BLOCKED on a spec~~ → RELEASED 2026-07-31, SHIPPED `.365`.**
 Owner: nine cells bind to real Master accessors, **empty state when no data — "blank is never an
-erase"** — and *"do not start until the spec lands"* (incoming from web-Claude). **Do not begin
-this work, including recon, until the spec is in hand.** The empty-state clause is the same law
-that governs [[feedback_fresh_literal_destroys_user_data]]: a cell with no data renders the empty
-state, it never renders a zero or a blank that reads as a measured value.
+erase"** — and *"do not start until the spec lands"* (incoming from web-Claude). The empty-state
+clause is the same law that governs [[feedback_fresh_literal_destroys_user_data]]: a cell with no
+data renders the empty state, it never renders a zero or a blank that reads as a measured value.
+
+**BLOCK RELEASED 2026-07-31 (John, in chat): "§8 is the spec, build the OPS wall live data."**
+The awaited document turned out to be a section of a doc already in hand — `SHIP-BUILD-BANNER-ROWS-SPEC.md`
+§8, whose positive half ("every wall cell reads live state at render time; no data renders the empty
+state") had never been built, only its prohibition half (no sample literals) honoured. Shipped `.365`.
+
+**One deviation, ruled by intent rather than letter and recorded here because it is a standing
+precedent for any future "bind to the Master" instruction:** §8's wording is *"reads `phantomMaster`"*,
+but **only RACK MAP is Master-backed in this app.** The other eight tools keep state in their own
+stores. Each cell was therefore bound to the source of the tool it opens — a cell that counted the
+Master would print a number the tool behind it does not have. The mock's own provenance map labelled
+five of these "Master" and was simply wrong about the live app. **Rule: "bind it to the Master" means
+bind it to the truth the surface claims to show; verify where that truth actually lives before
+wiring.** Two consequences worth carrying:
+- **PORT MAP has no store at all** and never will — it is paste-and-validate, and the Master's
+  `cables[]` is not even persisted. Its permanent call-to-action is §8's empty state applied
+  correctly, **not** an unfinished cell. Do not "fix" it later.
+- **A count must match its own tool's definition.** BURNDOWN filters `!archived` because its own list
+  view does; AUDITS does not, because its list view does not. A single convenient rule across all nine
+  would have made cells disagree with the screens they open.
 
 ---
 
