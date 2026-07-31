@@ -49,11 +49,20 @@ mismatch rather than guessing. **Owner ruled the NAME, not the file (2026-07-30)
 DEPLOY-phone@3x.webp".** Done in `.361` (`3842fd5`) — `git mv`, 100% similarity, **zero byte change
 to the raster**; only the path, the `<img src>` and the `PRECACHE_URLS` entry moved.
 
-⚠ **Naming is now MIXED across the banner set, by this ruling.** The other four keep
-`phantom-banner-{scan,master,ops,handoff}-1170.webp`. DEPLOY alone carries the new name and is the
-only asset in `icons/` using either an `@Nx` suffix or SCREAMING-CASE. **If the intent was a new
-convention for the whole set rather than one file, the other four are a four-line sweep — not
-assumed, and it needs its own word.**
+✅ **The whole set now follows it — CONVENTION COMPLETE.** `.361` renamed DEPLOY alone, which left
+the set mixed and was flagged as needing its own word; the owner gave it ("rename the other four to
+match") and `.362` (`917d523`) finished the job. The five banners are
+`icons/{DEPLOY,SCAN,HANDOFF,MASTER,OPS}-phone@3x.webp` — all `git mv`, all 100% similarity, **zero
+byte change to any raster**. `phantom-banner-` now appears **zero** times in `dct-ios.html` and
+`sw.js`; remaining mentions in this file and `BATCH-VERIFY.md` are history and stay as written.
+
+**The one judgement call in `.362`, recorded because the ruling did not cover it:** the pattern
+read off DEPLOY is "uppercase the existing stem, keep the suffix", which maps scan/ops/handoff
+unambiguously. **MASTER did not** — its stem is `master` but its row label is **MASTER FILE**, and
+DEPLOY gave no signal because its stem and label were already identical. Shipped as
+`MASTER-phone@3x.webp`, **preserving the stem**, as the least-inference reading;
+`MASTER-FILE-phone@3x.webp` would have invented a name the ruling never used. **One line to change
+if the label form was intended.**
 
 📌 **Durable note for any future asset rename:** a rename changes a *served path and a precache
 key*, so it needs the full three-stamp bump. Without it, a client on the old service worker holds
