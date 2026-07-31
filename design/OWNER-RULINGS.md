@@ -41,15 +41,26 @@ warning in the §5.5 entry below applies to this waiver with more force, not les
 all five BUILD banner rows carry art. Both rasters were already in `PRECACHE_URLS` from `.357`/
 `.358`. Awaiting the consolidated `.355`–`.360` device pass.
 
-**Open, needs a call — the deploy asset's FILENAME.** The ruling named the file
-`DEPLOY-phone@3x.webp`. **No such file exists** in the repo, in `Downloads/`, or anywhere in git
-history; `.357` shipped `icons/phantom-banner-deploy-1170.webp`, which is what the ruling's own
-"already in the repo from `.357` and `.358`" identifies, and what `.360` references. Nothing was
-renamed or re-cut, per the same ruling's "do not re-stage". Consequence: the ruling's stated check
-`grep -c 'DEPLOY-phone'` returns **0**, and cannot return anything else without renaming a raster
-that shipped three versions ago and rewriting its precache entry. **If the `DEPLOY-phone` name is
-wanted, it is a one-line rename plus a precache line in a follow-up ship — owner's call, not
-actioned.**
+**The deploy asset's FILENAME — RULED, renamed, CLOSED.** The release ruling named
+`DEPLOY-phone@3x.webp`, a file that existed nowhere in the repo, in `Downloads/`, or in git
+history; `.357` had shipped `icons/phantom-banner-deploy-1170.webp`, which is what the ruling's own
+"already in the repo from `.357` and `.358`" identified, so `.360` referenced that and reported the
+mismatch rather than guessing. **Owner ruled the NAME, not the file (2026-07-30): "yes rename it to
+DEPLOY-phone@3x.webp".** Done in `.361` (`3842fd5`) — `git mv`, 100% similarity, **zero byte change
+to the raster**; only the path, the `<img src>` and the `PRECACHE_URLS` entry moved.
+
+⚠ **Naming is now MIXED across the banner set, by this ruling.** The other four keep
+`phantom-banner-{scan,master,ops,handoff}-1170.webp`. DEPLOY alone carries the new name and is the
+only asset in `icons/` using either an `@Nx` suffix or SCREAMING-CASE. **If the intent was a new
+convention for the whole set rather than one file, the other four are a four-line sweep — not
+assumed, and it needs its own word.**
+
+📌 **Durable note for any future asset rename:** a rename changes a *served path and a precache
+key*, so it needs the full three-stamp bump. Without it, a client on the old service worker holds
+the old URL cached and 404s the new one — an offline-boot break that is **invisible online**,
+because the network serves the file regardless. `@` is legal unencoded in a path segment (RFC 3986
+`pchar`); the `<img src>` and `PRECACHE_URLS` strings must stay **byte-identical** or the Cache API
+misses and the row silently falls back to the hatch offline.
 
 **Judgement left open to the device pass:** whether HANDOFF's baked text reads badly *at arm's
 length on the phone*. The waiver covers the asset as cut; a re-cut remains available to the owner.

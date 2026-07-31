@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **CURRENT BATCH: OPEN, `.355`-`.360` (6 of 6) — see the last section of this file. ⛔ IT IS DUE NOW, twice over: `.360` puts the batch AT the 6-count cap, and `.359` is HIGH-risk (whole-page markup replacement), which fires the pass regardless of count. No further ships until it clears.** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **CURRENT BATCH: OPEN, `.355`-`.361` (7 of 6, one past the cap) — see the last section of this file. ⛔ IT IS OVERDUE: `.361` puts the batch ONE PAST the 6-count cap (stacked on direct owner instruction), and `.359` is HIGH-risk (whole-page markup replacement), which fires the pass regardless of count. No further ships until it clears.** · Clear SW cache before the pass.
 
 ---
 
@@ -451,7 +451,7 @@ Recorded verbatim (not "all good"). Full per-ship detail + gate marks are in `IN
 CALL-0 count cap **reset** — next ship opens a new batch at 1 of 6. **`.355` (§3 Option A) is unblocked but owner-deferred ("not tonight").**
 
 ---
-# ▶ OPEN BATCH — `.355`–`.360` (count 6 of 6) · ⛔ AT THE CAP · ⚠ PASS IS DUE
+# ▶ OPEN BATCH — `.355`–`.361` (count 7 of 6) · ⛔ ONE PAST THE CAP · ⚠ PASS IS OVERDUE
 
 > **READ THIS FIRST — this batch is TWO visual checklists, not six.**
 > `.356`, `.357` and `.358` are **asset-and-stamp ships with ZERO markup change** — the entire
@@ -467,7 +467,7 @@ CALL-0 count cap **reset** — next ship opens a new batch at 1 of 6. **`.355` (
 > `.359`/`.360` are the ships that actually *reference* those rasters.
 >
 > ⚠ **STALE BADGE LINES.** `.355` says "badge reads **v1.14.355**" and `.358` says
-> "**v1.14.358**". The device will read **v1.14.360**. Read both as "the current live stamp."
+> "**v1.14.358**". The device will read **v1.14.361**. Read them as "the current live stamp."
 >
 > ⛔ **`.359`'S HATCH INSTRUCTION IS SUPERSEDED BY `.360`.** `.359`'s checklist told you DEPLOY
 > and HANDOFF *should* show a diagonal accent hatch instead of a photograph, because their art
@@ -618,19 +618,37 @@ by instruction — it is the standing mechanism for any future missing asset, no
 - [ ] Badge reads **v1.14.360**
 - [ ] `?legacy=1` unchanged
 
-**⚠ FILENAME DEVIATION, on the record:** the ruling named the deploy asset `DEPLOY-phone@3x.webp`.
-No such file exists in the repo, in Downloads, or in git history — `.357` shipped
-`icons/phantom-banner-deploy-1170.webp`, which is what the ruling's own "already in the repo from
-.357 and .358" identifies, and what is referenced. Nothing was renamed or re-cut. Consequence:
-`grep -c 'DEPLOY-phone' dct-ios.html` returns **0**, because satisfying it literally would mean
-renaming a shipped raster and rewriting its precache entry — which the same ruling forbade. **If
-that filename is wanted it is a one-line rename plus a precache line in a follow-up ship.**
+**⚠ FILENAME DEVIATION — reported in `.360`, RULED and RESOLVED in `.361`.** The release ruling
+named `DEPLOY-phone@3x.webp`, a file that existed nowhere; `.360` referenced the real `.357` asset
+and reported the mismatch instead of guessing. Owner then ruled the name — see `.361` below.
 
-**Not done in `.360`, deliberately out of its scope:** the two rulings are logged in full in
-`version.json` but were **not** mirrored into `design/OWNER-RULINGS.md`, where `.357`/`.358`
-recorded theirs. Separate docs commit if you want them there.
+**Both rulings are now mirrored into `design/OWNER-RULINGS.md`** (`f9ad297`), alongside where
+`.357`/`.358` recorded theirs.
 
-**Batch `.355`–`.360` = 6 of 6 — AT THE CALL-0 COUNT CAP, and HIGH-risk `.359` caps it
-independently. Run the consolidated pass now; no further ships until it clears.**
-Two screens: rack detail (`.355`) and BUILD (`.359` + `.360`), plus the offline boot. On release
-the cap resets and the next ship opens a new batch at 1 of 6.
+## v1.14.361 — rename the deploy raster to `DEPLOY-phone@3x.webp` (`3842fd5`) · rollback: revert commit
+**A rename. Three things moved and nothing else:** the file (`git mv`, 100% similarity — **zero
+byte change to the raster**, still 1170×403 / 43134 bytes), the `<img src>` in the DEPLOY row, and
+the `PRECACHE_URLS` entry. Owner ruling 2026-07-30: *"yes rename it to DEPLOY-phone@3x.webp"*.
+The gate asserts the whole ship as one equality — the DEPLOY row line is byte-identical to its
+predecessor apart from the filename inside `src=""`.
+
+**This block folds into the `.360` checks above — it is the same row on the same screen.**
+
+- [ ] **BUILD: the DEPLOY row still shows its photograph.** If it shows the diagonal hatch, the
+      rename broke the reference and the fallback is doing its job by telling you.
+- [ ] The other four rows are unchanged.
+- [ ] ⭐ **THE CHECK THAT MATTERS FOR THIS SHIP — clear the service worker → airplane mode → hard
+      reload → all five photographs still render.** An online browser fetches the new path from the
+      network **even if the precache entry were wrong**, so an online eyeball proves nothing here.
+      Only the offline pass proves the cache key actually matches the reference.
+- [ ] Badge reads **v1.14.361**
+
+⚠ **Naming is now MIXED across the set, by ruling.** The other four keep
+`phantom-banner-{scan,master,ops,handoff}-1170.webp`; DEPLOY alone carries the new name. If a
+whole-set convention was the intent, that is a four-line sweep needing its own word — not assumed.
+
+**Batch `.355`–`.361` = 7 of 6 — ⛔ ONE PAST THE CALL-0 CAP.** Stacked on direct owner instruction
+(precedent: `.208`, stacked one past the cap by owner decision 2026-07-08). The pass was already
+due on two grounds — the cap and HIGH-risk `.359` — and is now **overdue**. Run it before anything
+else ships. Two screens: rack detail (`.355`) and BUILD (`.359` + `.360` + `.361`), plus the
+offline boot. On release the cap resets and the next ship opens a new batch at 1 of 6.
