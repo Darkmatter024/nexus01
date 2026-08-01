@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: .364-.369 (6 of 6) — ⛔CAP REACHED, this pass is MANDATORY before any further ship stacks — see the last section of this file. ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: .364-.370 (7 of 6) — ⛔PAST THE CAP, this pass is MANDATORY — see the last section of this file. ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
 
 ---
 
@@ -917,7 +917,51 @@ repo · all 9 tiles already in PRECACHE, so no `sw.js` list edit was needed · d
 `quality 82 / alphaQuality 95 / effort 6` — the drop's locked `cwebp -q 82 -alpha_q 95 -m 6` knobs.
 Precache cost +88KB (~124KB → ~212KB across the seven).
 
-**⛔ Batch `.364`–`.369` = 6 of 6. CAP REACHED — this consolidated device pass is now MANDATORY
-before any further ship stacks. ⚠ `.366` still needs its TWO-DEVICE pass (phone AND laptop shell).**
+## v1.14.370 — OPS tile filenames renamed `-256` → `-384` (`PENDING`) · rollback: revert commit
+- [ ] Badge reads **v1.14.370** (fully quit the PWA and relaunch)
+- [ ] ⭐ **THE REAL TEST IS OFFLINE.** Relaunch online once so the new SW installs, then go
+      **airplane mode and reopen.** All nine OPS wall tiles must still render. A missed reference
+      404s to a blank tile **here and only here** — online, the network silently serves the new
+      path and hides the bug
+- [ ] Ref grid → **OPTICS card art renders** (that card is a real `<img src>`, the only one of the
+      seven that is not a `--tim` background — the easiest ref to miss)
+- [ ] Deploy tool grid: **no blank or broken tiles** (the `DEPLOY_TOOLS` table carries 7 of the 22)
+- [ ] All nine wall cells still **tap through**, both shells
+- [ ] Art itself is **unchanged from `.369`** — same pixels, new filenames. If a tile looks
+      *different*, something re-encoded and that is a defect
+- [ ] `?legacy=1` unchanged
+
+**Owner ruling this ship implements:** *"rename them to -384."* Closes the naming debt `.369`
+accepted and flagged.
+
+**Why it could not ride on `.369`:** a rename changes a served **path** *and* a **precache key**.
+Without its own three-stamp bump, an old-SW client keeps requesting the `-256` URL and 404s —
+**an offline-only break that is invisible online.** Own version by rule, not preference.
+
+**⚠ The sweep found more than `.369` estimated.** `.369`'s note said fourteen reference edits. The
+real count is **22 across THREE consumers** — the two missed were the **`DEPLOY_TOOLS` table**
+(7 `img:` fields, ~L28393–28407) and the **Ref-grid OPTICS card** (~L13397). Per file:
+`dct-ios.html` 15, `sw.js` PRECACHE 7. This is exactly why the standing rule says check *every*
+consumer, not just the one you already know about.
+
+**NOT renamed, deliberately:** `phantom-tool-portmap-256.webp` and `phantom-tool-power-256.webp`.
+Both really *are* 256 — PORT MAP is still the placeholder, BLAST still has no family render — so
+their names are already honest. The other 40 `-256` files on disk are untouched.
+
+**Verified before push:** dynamic icon paths **ruled out first** (grep for template-literal and
+concatenated paths returns empty, so a literal sweep is provably complete) · lockstep 3/3 ·
+`node --check` ×3 + 4 inline blocks · CSS braces 4197/4197 · **orphan check CLEAN BOTH DIRECTIONS**
+across `dct-ios.html`/`sw.js`/`index.html`/`forge.html`/`manifest.json` — 7 files on disk, 7
+distinct refs, no orphan file and no dangling ref · all 7 in PRECACHE · byte-length unchanged by
+construction and CRLF count asserted equal before/after · **git recorded all seven as pure renames
+with zero byte change**, proving the art did not re-encode.
+
+**Docs left alone on purpose:** `design/SHIP-RACKS-IS-THE-DOOR.md` and `INTEGRATION-STATE.md`
+2500/2554 still say `-256`. They record what was true at those ships and are corrected *forward*
+by this entry, not rewritten.
+
+**⛔ Batch `.364`–`.370` = 7 of 6. PAST THE CALL 0 CAP — `.369` reached it and this ship crossed it
+on a direct owner instruction. Flagged, not assumed. The consolidated pass below was already
+mandatory and remains so. ⚠ `.366` still needs its TWO-DEVICE pass (phone AND laptop shell).**
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->

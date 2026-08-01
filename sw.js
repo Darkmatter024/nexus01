@@ -34,7 +34,7 @@
 // a clean v1.13.3 — dropping the prior -N cache-iteration suffix — so this real
 // version bump busts every client's cache and the three stamps (app const /
 // version.json / this key) line up again. Patch bumps continue from here.
-const CACHE_VERSION = 'phantom-v1.14.369';
+const CACHE_VERSION = 'phantom-v1.14.370';
 
 // Assets to precache on install. Keep this minimal — single-file PWA means
 // most of PHANTOM is in dct-ios.html itself.
@@ -75,7 +75,7 @@ const PRECACHE_URLS = [
   // v1.14.326: HANDOFF feature-hero art (mounted on the redesign Work->Handoff screen).
   // Owner override of the honesty-lock hold ('no use it') — ships with baked decorative text.
   'icons/phantom-feat-handoff-v2.webp',
-  'icons/phantom-ref-optics-256.webp',
+  'icons/phantom-ref-optics-384.webp',
   'icons/phantom-ref-hardware-256.webp',
   'icons/phantom-ref-cli-256.webp',
   'icons/phantom-ref-hwref-256.webp',
@@ -88,14 +88,14 @@ const PRECACHE_URLS = [
   'icons/phantom-optic-os2-256.webp',
   'icons/phantom-optic-lc-256.webp',
   'icons/phantom-optic-iec-256.webp',
-  'icons/phantom-tool-manifest-256.webp',
+  'icons/phantom-tool-manifest-384.webp',
   'icons/phantom-tool-portmap-256.webp',
-  'icons/phantom-tool-rackmap-256.webp',
-  'icons/phantom-tool-sops-256.webp',
-  'icons/phantom-tool-bom-256.webp',
+  'icons/phantom-tool-rackmap-384.webp',
+  'icons/phantom-tool-sops-384.webp',
+  'icons/phantom-tool-bom-384.webp',
   'icons/phantom-tool-power-256.webp',
-  'icons/phantom-tool-burndown-256.webp',
-  'icons/phantom-tool-audits-256.webp',
+  'icons/phantom-tool-burndown-384.webp',
+  'icons/phantom-tool-audits-384.webp',
 // v1.14.175: R-3b platform-first icon batch (5 GPU platforms + SHARED)
   'icons/phantom-plat-h100-256.webp',
   'icons/phantom-plat-h200-256.webp',
