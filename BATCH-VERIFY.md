@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: OPEN, .364-.367 (4 of 6) — see the last section of this file. ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: OPEN, .364-.368 (5 of 6) — ⚠ONE FROM THE CAP — see the last section of this file. ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
 
 ---
 
@@ -843,5 +843,40 @@ stands and **no CSS changed**.
 Net the icon set got **~47 KB smaller**. Zero files were already identical — genuinely new art.
 
 **Batch `.364`–`.367` = 4 of 6.**
+
+## v1.14.368 — ART-FIRST OPS WALL TILES (`fcf4843`) · rollback: revert commit (restores the veiled treatment, doors + bindings intact)
+Owner ruling: **the render IS the tile.** Veil, accent wash, accent dot and the decorative subtitle
+are all gone; text collapses to a corner block, bottom-left.
+
+- [ ] Badge reads **v1.14.368** (fully quit the PWA and relaunch first)
+- [ ] ⭐ **STAND-BACK TEST:** the wall should read as **nine finished renders with quiet corner
+      labels** — not nine labels with art leaking through
+- [ ] Cells are **square** and the wall is **taller than in `.367`**. That is the intended layout
+      change, *not* a regression
+- [ ] Corner block = **title (accent) + live status only**. The old subtitles (Parts, Gear, Cabling,
+      Elevation, Procedures, Progress, Serials, Power map, Fiber · MPO) and the accent dot are gone
+- [ ] Live values still correct and still update on each open — `NO MASTER`, `PASTE TO RUN`,
+      `SCAN TO SEED`, counts. Only their **position** changed
+- [ ] All nine cells still **tap through**, both shells. Art must never cost a door
+- [ ] Both shells (phone + laptop)
+- [ ] 👁 **Watch OPTICS** — it has bright slabs bottom-left exactly where the corner text now sits.
+      If its status line fights the render, that **one cell** gets a text-shadow nudge. **Never** a
+      gradient over the art, and never a wall-wide change
+- [ ] `?legacy=1` unchanged
+
+**⚠ Geometry note carried forward, checked not assumed:** the wall lives inside `.opsbody`, a
+`max-height` collapsible. Square cells make the widest shell **1080px tall against a 1200px
+ceiling** — it fits, with **120px headroom**, and the gate now asserts this every ship. It was *not*
+raised (that changes the open animation, and the spec barred out-of-scope edits), but the margin is
+thin: **widening `#work-grid` in future would clip the wall silently.**
+
+**Verified before push:** 55 checks. Four initial failures were all *gate* bugs, not ship bugs, and
+both of the same kind as [[feedback_grep_c_counts_lines_not_uses]] — `--tfit` still appeared in the
+comment explaining its own removal, and `Parts`/`Gear`/`Elevation` are live labels **elsewhere** in
+the app (a Ref subtab, a table header, a Master button). Checks now test declaration-and-usage and
+scope the subtitle sweep to the wall block.
+
+**Batch `.364`–`.368` = 5 of 6. ⚠ ONE SHIP FROM THE CAP — the next ship triggers a mandatory
+consolidated device pass before anything further stacks.**
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
