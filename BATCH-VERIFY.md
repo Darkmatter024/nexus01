@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: OPEN, .364-.366 (3 of 6) — see the last section of this file. ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: OPEN, .364-.367 (4 of 6) — see the last section of this file. ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
 
 ---
 
@@ -810,5 +810,38 @@ block to half-ship into) · all nine rasters present on disk · all nine **alrea
 all nine doors and every text child byte-unchanged · `min-height` untouched · `DEPLOY_TOOLS` untouched.
 
 **Batch `.364`–`.366` = 3 of 6.**
+
+## v1.14.367 — ART DROP: 9 curated OPS wall rasters, final bytes (`5d16f6b`) · rollback: revert commit (restores the 9 previous rasters + stamps together)
+Asset-only. `.366` wired the cells; the files behind them were stale bytes from **three** eras
+(`.160` / `.185` / `.319`), so the wall was rendering a mix of two generations. All nine replaced.
+
+- [ ] Badge reads **v1.14.367**
+- [ ] ⭐ **THE SW MUST TURN OVER FIRST — nothing here is visible until it does.** Fully **quit** the
+      PWA (swipe it out of the app switcher, *not* background it) and relaunch. The first launch
+      after a ship routinely still serves the old cache. **Filenames did not change, so the cache
+      bump is the ONLY thing pushing the new bytes** — an unchanged URL with changed bytes is served
+      from the old cache indefinitely
+- [ ] ⛔ **Do NOT "Clear History and Website Data" to force it** — that wipes `localStorage`: the
+      Master file, every deployment, SOP, audit and optic record. Removing/re-adding the PWA is the
+      same hazard. The cache bump lands on its own
+- [ ] **AUDITS** and **BURNDOWN** first — they carried the oldest stale vintage, so the before/after
+      is clearest there
+- [ ] All nine cells still **tap through**. Art must never cost a door
+- [ ] Both shells: phone art **fills** the cell · desk shows the **whole icon**, centred and sharp
+- [ ] `?legacy=1` unchanged
+
+**Verified before push:** 48 checks. Each of the nine base64 blocks was decoded in memory and checked
+on **three independent axes** — exact byte length, sha256 against the drop's per-file checksum, and
+RIFF/WEBP magic (bytes that decode cleanly are not necessarily a WebP). All 27 passed *before*
+anything was written. Nothing generated, substituted or modified.
+
+**Extra check the drop did not ask for — all nine confirmed 256×256, 1:1.** `.366`'s per-shell fit
+was *derived* from a square-source assumption; a render arriving at a different aspect would have
+required re-deriving that ruling rather than inheriting it. They are square, so `cover`/`contain`
+stands and **no CSS changed**.
+
+Net the icon set got **~47 KB smaller**. Zero files were already identical — genuinely new art.
+
+**Batch `.364`–`.367` = 4 of 6.**
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
