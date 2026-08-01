@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: OPEN, .364-.368 (5 of 6) — ⚠ONE FROM THE CAP — see the last section of this file. ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: .364-.369 (6 of 6) — ⛔CAP REACHED, this pass is MANDATORY before any further ship stacks — see the last section of this file. ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
 
 ---
 
@@ -876,7 +876,48 @@ comment explaining its own removal, and `Parts`/`Gear`/`Elevation` are live labe
 the app (a Ref subtab, a table header, a Master button). Checks now test declaration-and-usage and
 scope the subtitle sweep to the wall block.
 
-**Batch `.364`–`.368` = 5 of 6. ⚠ ONE SHIP FROM THE CAP — the next ship triggers a mandatory
-consolidated device pass before anything further stacks.**
+## v1.14.369 — OPS wall rasters re-cut at 384 (`PENDING`) · rollback: revert commit (assets only)
+- [ ] Badge reads **v1.14.369** — ⚠ **fully quit the PWA and relaunch.** Filenames did not change,
+      so the `CACHE_VERSION` bump is the *only* thing pushing these bytes. A soft reopen serves the
+      old cache and will read as a failed ship
+- [ ] ⭐ **STAND-BACK TEST:** seven tiles — BOM, MANIFEST, RACK MAP, SOPS, BURNDOWN, AUDITS,
+      OPTICS — are **visibly sharper** than in `.368`
+- [ ] ⭐ **PORT MAP and BLAST are visibly SOFTER by comparison.** That contrast is the *proof* the
+      swap landed. Both are **known gaps, not defects** — PORT MAP still carries the 1024 JPEG
+      placeholder (family-style regen prompt is open), BLAST still carries
+      `phantom-tool-power-256.webp` (no family-style BLAST render exists yet)
+- [ ] Layout is **unchanged** — cells still square, wall still the same height. This ship moved
+      raster bytes only: no markup, no CSS, no precache edit
+- [ ] All nine cells still **tap through**, both shells. Art must never cost a door
+- [ ] Live values still correct and still update on each open (`NO MASTER`, `PASTE TO RUN`,
+      `SCAN TO SEED`, counts)
+- [ ] Both shells (phone + laptop)
+- [ ] 👁 **Watch OPTICS again** — the `.368` note stands, and the re-cut raises slab detail exactly
+      where the corner text sits. If its status line now fights the render, that is a **one-cell**
+      text-shadow nudge. **Never** a gradient over the art
+- [ ] `?legacy=1` unchanged
+
+**Owner ruling this ship implements:** *"384, ship it as .369."* Sizing was derived, not guessed —
+`.368` squared the cell, the wall is `repeat(3,1fr)` with 8px gap inside 10px padding, so a cell is
+**~108px CSS at a 390pt shell = ~324 device px at 3x**. The live 256 rasters were under-resolved by
+roughly a quarter. Source renders are 1254².
+
+**Two items carried, both owner calls, neither blocking:**
+1. **PORT MAP regen** — the drop ships a family-style prompt (`PORTMAP-REGEN-PROMPT.md`, sha256
+   `470ff9e4…`). On arrival it replaces the placeholder.
+2. **NAMING DEBT** — the files keep their `-256` suffix while carrying **384px** content. Renaming
+   means fourteen reference edits across `dct-ios.html` and `sw.js` PRECACHE for zero user-visible
+   gain and real orphan-reference risk, so it was **not** taken on unasked. Rule as its own pass.
+
+**Verified before push:** three-stamp lockstep 3/3 · `node --check` ×3 on `sw.js` + 4 inline script
+blocks parse · CSS braces 4197/4197 balanced · surgical diff (1 line `dct-ios.html`, 1 line `sw.js`,
+4 lines `version.json`, 7 binary swaps) · no line-ending damage · all 7 confirmed **384×384** in the
+repo · all 9 tiles already in PRECACHE, so no `sw.js` list edit was needed · drop integrity
+**sha256 12/12** against its own manifest. Encoded sharp 0.35.3 / libwebp 1.6.0 at
+`quality 82 / alphaQuality 95 / effort 6` — the drop's locked `cwebp -q 82 -alpha_q 95 -m 6` knobs.
+Precache cost +88KB (~124KB → ~212KB across the seven).
+
+**⛔ Batch `.364`–`.369` = 6 of 6. CAP REACHED — this consolidated device pass is now MANDATORY
+before any further ship stacks. ⚠ `.366` still needs its TWO-DEVICE pass (phone AND laptop shell).**
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
