@@ -50,3 +50,13 @@ PHANTOM is an offline-first, single-file iOS Safari PWA (`dct-ios.html`, ~48.5k 
 
 ## Communication style
 John is terse and field-operational. Match it: lead with status, state deviations plainly, no cheerleading, no hedging. Push back with evidence when the spec or the ask conflicts with live code or these rules — he rewards honest pushback and penalizes churn. When parked, say exactly what you're waiting on and from whom, in one line.
+
+## Subagent delegation
+
+During implementation, delegate to these subagents based on expertise — do not do their checks yourself in the main context:
+- Use `lockstep-auditor` before every commit or ship to verify the three-stamp version lockstep.
+- Use `surgical-edit-reviewer` before applying any multi-line edit to dct-ios.html.
+- Use `data-honesty-auditor` before shipping any OPS terminal or dashboard change.
+- Use `cold-aisle-qa` after any CSS/layout/tap-target change.
+`phantom-ship-gate` and `phantom-rd-reviewer` remain the mechanical/doctrine gate; the four above are advisory pre-checks.
+A ship is blocked until lockstep-auditor and data-honesty-auditor both report PASS. iPhone device-verify remains the final hard gate.
