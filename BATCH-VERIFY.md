@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. Batch .364-.370: RELEASED by owner 2026-08-03 ("all good") — seven ships, one past the cap, incl. the .366 two-device pass and the .370 offline pass. Cap RESET. CURRENT BATCH: OPEN, empty (0 of 6). ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. Batch .364-.370: RELEASED by owner 2026-08-03 ("all good") — seven ships, one past the cap, incl. the .366 two-device pass and the .370 offline pass. Cap RESET. CURRENT BATCH: OPEN, .371-.372 (2 of 6) — Ship 4 tile retokenise + OPS wall unify @384; .372 needs an OFFLINE pass (two stems renamed). ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
 
 ---
 
@@ -964,5 +964,66 @@ by this entry, not rewritten.
 one consolidated pass, including `.366`'s two-device check and `.370`'s offline (airplane-mode)
 check — the one that proves no reference was missed in the `-256`→`-384` rename. CAP RESET; the
 next ship opens a fresh batch at 1 of 6.**
+
+## v1.14.371 — SHIP 4: `.tile` state family retokenised (`35e6a29`) · rollback: revert commit
+- [ ] Badge reads **v1.14.371** (fully quit the PWA and relaunch)
+- [ ] ⭐ **Complete a build step** → tile fill, underline, LED **and the card glow** all read **TEAL**.
+      No green anywhere on the tile
+- [ ] ⭐ **Block a step** → LED, border, **fill and underline** all read **MAGENTA**. No red
+- [ ] An **in-progress** tile still reads **CYAN**, unchanged — `is-active` was already correct and
+      was deliberately not touched
+- [ ] PORT MAP tile accent matches the OPS wall (both teal); no green left in the Deploy tool grid
+- [ ] **EXIT still reads RED** — `.317` exception survives this ship
+- [ ] `?legacy=1` unchanged
+
+**⚠️ MY STEP-0 INVENTORY WAS WRONG — worth reading, it nearly shipped a defect.** The `.tile` family
+is **13 sites, not the 6** Step 0 catalogued. The first pass fixed the 6; a residual-token assertion
+inside the block then flagged **7 more** — a second `.tile.is-blocked` border rule, the blocked
+**fill** and blocked **underline**, `.tile-flag`, both `.tile-pip` states, and
+`body.rd .tile-active-hdr .blk`. Both Step-0 greps were shaped by symptoms already seen: one filtered
+for `box-shadow` (these have none), one for literal hex (these use `var()` tokens). Shipping on that
+inventory would have produced **a blocked tile with a magenta LED and border sitting on a red fill
+and underline** — visibly half-migrated, worse than not shipping. Caught because the assertion tested
+the BLOCK for residual tokens rather than confirming the planned edits applied. **Lesson: assert the
+absence of what must be gone, not just the presence of what you changed.**
+
+**Two traps this ship was built around:** (1) every glow is a hard-coded `rgba()`, not a `var()` —
+changing the token alone leaves a green glow under a teal fill, so both halves moved on every line.
+(2) **Two different reds were in play** — `.tile.is-blocked` used `rgba(255,45,85)`, *not* the
+`#ff453a` found elsewhere; a pattern-match on `#ff453a` would have missed the family entirely.
+
+**Rule 7 checked, not assumed:** `.tile` is not `body.rd`-scoped, so legacy leak was a real risk. The
+three emitters (`#tt-deploy`/`#tt-scan`/`#tt-handoff`) were confirmed inside `#pg-cmd`, routed via
+`cmd_route()` — redesign house only.
+
+## v1.14.372 — OPS wall unify @ 384 (`e81a766`) · rollback: revert commit
+- [ ] Badge reads **v1.14.372** (fully quit and relaunch — four of the six filenames are unchanged,
+      so the cache bump is the only thing pushing those bytes)
+- [ ] ⭐ **OFFLINE PASS REQUIRED — two stems were renamed** (`portmap`, `power`, `-256`→`-384`).
+      Relaunch online once so the SW installs, then **airplane-mode and reopen**: all nine tiles must
+      still render. A missed reference 404s to a blank tile *there and only there*
+- [ ] ⭐ **WALL TEST: nine renders, one photographer, one resolution.** No tile should look like it
+      came from a different set
+- [ ] ⭐ **PORT MAP and BLAST are no longer the soft ones** — they were the placeholder and the
+      no-art tile through `.371`; they should now match their neighbours
+- [ ] Watermark zones clean: bottom-right of **PORT MAP / OPTICS / BURNDOWN**, bottom edges of
+      **BOM / BLAST**
+- [ ] All nine cells still tap through, both shells. Art must never cost a door
+- [ ] `?legacy=1` unchanged
+
+**Closes N-08 (PORT MAP family regen) and N-09 (BLAST art)** — both blocked on art since 2026-08-01.
+The wall no longer carries a placeholder.
+
+**Verified before push:** all six decoded from base64 and **sha256-matched the package manifest**,
+then confirmed **384×384 RIFF/WEBP**, before anything was committed · ref counts asserted per file
+before writing (2 in `dct-ios.html`, 1 in `sw.js`, per renamed stem) · old `-256` files `git rm`'d,
+not orphaned · **orphan check CLEAN BOTH WAYS** across all five consumers — 9 tiles, 9 refs · stamps
+3/3 · `node --check` ×3 · CSS 4197/4197 · CRLF and byte-length preserved.
+
+**The `.369` package was refused first, and correctly** — it targeted `-256` names that `.370` had
+renamed, asked to stamp an already-shipped version, and would have reverted the 384 ruling. Both of
+the re-issued package's own gates fired as designed on the two stems that were still 256.
+
+**Batch `.371`–`.372` = 2 of 6.** Room for four more before the cap.
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
