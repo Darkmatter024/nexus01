@@ -1076,6 +1076,38 @@ green means *Server*, `#ff2d55` means *UPS*. Different taxonomy from the state c
 **RACK SCENE LOCK**. Forcing Server→teal would collide with `storage:#00bcd4` and break
 legend-to-faceplate agreement. Left locked, deliberately.
 
-**Batch `.371`–`.373` = 3 of 6.** Room for three more before the cap.
+---
+
+## v1.14.374 — no silent failure on boot entry (`6e514c5`) · rollback: revert commit
+- [ ] Badge reads **v1.14.374**
+- [ ] ⭐ **TAP TO ENTER still enters normally** — cold launch AND relaunch. This is the only check
+      that really matters; everything else here is the failure path
+- [ ] Hint still reads **ENTERING…** during the dive, exactly as before
+- [ ] ⛔ **`ENTRY FAILED — RETRY` must NEVER appear in normal use.** If you see it entering the app
+      normally, that is a **regression — revert**
+- [ ] `?legacy=1` unchanged
+
+**What changed:** the tap handler swallowed its throw and silently reset, so a real failure looked
+exactly like a missed tap — that is what cost the audit on 2026-08-03. Now: the bind guard warns
+which element was missing, a new `bootFail(e)` warns the real error, and the splash *says* it
+failed. `throw 0` replaced with a real `Error`. **Four lines + one helper, all inside the existing
+`.64` IIFE.** No change to `fire()` structure, timings, the reduced-motion branch, the
+`pe-dive`/`pe-flash` sequence, `launch()`, or any CSS.
+
+**Visible text, not just a log — deliberate:** there is no console in a cold aisle. `phantomToast`
+was rejected because the splash is a fixed full-screen layer and a toast under it is unverifiable.
+20 chars, `inline-block` in a centred block with 26px padding → wraps, never overflows (Rule 1
+holds at 320px).
+
+**Correction carried from the audit:** I claimed a precache 404 would make `cache.addAll()` reject
+and block install. **Not true for this SW** — v1.6.29 already moved to per-URL `cache.add()` under
+`Promise.allSettled` for exactly that reason.
+
+**Verified before push:** stamps 3/3 · 4/4 inline blocks compile (`vm.Script`) · `sw.js`
+`node --check` · valid JSON · CSS brace delta **0** across 12 style blocks · all-LF preserved ·
+diff **-4/+15** `dct-ios.html`, 1/1 `sw.js`, 3/3 `version.json`. ⚠ Agents barred — ship-gate and
+rd-reviewer NOT invoked; equivalents run inline.
+
+**Batch `.371`–`.374` = 4 of 6.** Two left before the cap.
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
