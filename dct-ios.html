@@ -12471,7 +12471,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.373';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.374';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -12844,7 +12844,7 @@ if (typeof window !== 'undefined') {
   var flash = document.getElementById('pe-flash');
   var hint  = document.getElementById('pe-taphint');
   var tap   = document.getElementById('pe-tapcatch');
-  if (!boot || !tap) return;
+  if (!boot || !tap) { try { console.warn('[PHANTOM] boot tap handler NOT bound: #boot=' + !!boot + ' #pe-tapcatch=' + !!tap); } catch(_) {} return; }
 
   var fired = false;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -12856,18 +12856,29 @@ if (typeof window !== 'undefined') {
     if (hint) { hint.textContent = 'TAP TO ENTER'; }
   }
 
+  // v1.14.374: this catch used to swallow the throw and silently reset, which made a
+  // real entry failure indistinguishable from a missed tap — it cost a full live audit
+  // on 2026-08-03 before the cause turned out to be a stale SW. There is no console in
+  // the aisle, so log it AND say so on the splash. softReset() has already cleared
+  // `fired`, so the retry path is live.
+  function bootFail(e){
+    try { console.warn('[PHANTOM] boot entry failed:', e); } catch(_) {}
+    softReset();
+    if (hint) { hint.textContent = 'ENTRY FAILED — RETRY'; }
+  }
+
   function fire(){
     if (fired) return;
     fired = true;
     if (hint) { hint.textContent = 'ENTERING…'; }
     if (reduce) {
       if (flash) { flash.classList.add('pe-expose'); }
-      setTimeout(function(){ try { if (typeof launch === 'function') { launch(false); } else { throw 0; } } catch(e){ softReset(); } }, 120);
+      setTimeout(function(){ try { if (typeof launch === 'function') { launch(false); } else { throw new Error('launch() is not defined'); } } catch(e){ bootFail(e); } }, 120);
       return;
     }
     boot.classList.add('pe-dive');
     setTimeout(function(){ if (flash) { flash.classList.add('pe-expose'); } }, 520);
-    setTimeout(function(){ try { if (typeof launch === 'function') { launch(true); } else { throw 0; } } catch(e){ softReset(); } }, 600);
+    setTimeout(function(){ try { if (typeof launch === 'function') { launch(true); } else { throw new Error('launch() is not defined'); } } catch(e){ bootFail(e); } }, 600);
   }
 
   // whole-frame tap. The catcher is a <button>, so Enter/Space activate it for free.
