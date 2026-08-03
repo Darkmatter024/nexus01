@@ -1,7 +1,7 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. CURRENT BATCH: .364-.370 (7 of 6) — ⛔PAST THE CAP, this pass is MANDATORY — see the last section of this file. ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. Batch .364-.370: RELEASED by owner 2026-08-03 ("all good") — seven ships, one past the cap, incl. the .366 two-device pass and the .370 offline pass. Cap RESET. CURRENT BATCH: OPEN, empty (0 of 6). ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
 
 ---
 
@@ -960,8 +960,9 @@ with zero byte change**, proving the art did not re-encode.
 2500/2554 still say `-256`. They record what was true at those ships and are corrected *forward*
 by this entry, not rewritten.
 
-**⛔ Batch `.364`–`.370` = 7 of 6. PAST THE CALL 0 CAP — `.369` reached it and this ship crossed it
-on a direct owner instruction. Flagged, not assumed. The consolidated pass below was already
-mandatory and remains so. ⚠ `.366` still needs its TWO-DEVICE pass (phone AND laptop shell).**
+**✅ Batch `.364`–`.370` = 7 of 6 — RELEASED by owner 2026-08-03 ("all good"). All seven verified in
+one consolidated pass, including `.366`'s two-device check and `.370`'s offline (airplane-mode)
+check — the one that proves no reference was missed in the `-256`→`-384` rename. CAP RESET; the
+next ship opens a fresh batch at 1 of 6.**
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
