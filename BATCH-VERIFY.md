@@ -1024,6 +1024,58 @@ not orphaned · **orphan check CLEAN BOTH WAYS** across all five consumers — 9
 renamed, asked to stamp an already-shipped version, and would have reverted the 384 ruling. Both of
 the re-issued package's own gates fired as designed on the two stems that were still 256.
 
-**Batch `.371`–`.372` = 2 of 6.** Room for four more before the cap.
+---
+
+## v1.14.373 — Ship 5: channel retokenise (`e2f930d`) · rollback: revert commit
+- [ ] Badge reads **v1.14.373**
+- [ ] **MANIFEST**, active deployment: the **VERIFIED** pill and the meta block's **left rail** read
+      teal, not green
+- [ ] **DISCREPANCY sheet**: `DRAFT`/`READY` status, the **HIGH** severity chip when active,
+      **Save Discrepancy**, and the photo **Remove** button — HIGH and Remove read **magenta**,
+      Save reads **teal**
+- [ ] ⭐ **PRESS TEST — this is the ruling that was folded in mid-ship.** Press and *hold*
+      **Save Discrepancy** and the photo **Remove** button. The flash underneath must be **teal**
+      and **magenta**. Any green or red frame, even for a moment, means a press state was missed
+- [ ] **RESOLVE a discrepancy**: resolved eyebrow, **Mark Resolved** button, and the resolved-note
+      rail all read teal
+- [ ] **BLOCKER launcher** (deploy tools row): text, border **and the icon glyph** all magenta — the
+      glyph is a separate hard-coded hex passed as a JS argument, so it can miss independently of
+      the text. Tap it and confirm `blocker_quick` still opens
+- [ ] ⛔ **EXIT and BLAST must still be RED.** Either one turning magenta is a **P0 revert**
+- [ ] `?legacy=1` unchanged
+
+**Scope, stated honestly: 10 of the 25 edits change nothing on screen.** The entire `.rd-` half of
+the fence has **zero emitters** — every apparent one was a *substring artifact* (`rd-` matches
+inside `card-`/`board-`, so `bp-card-status` and `disc-card-row` read as `rd-status`/`rd-row` under
+a naive grep). Those lines are on-palette if ever wired. **The 15 that render are exactly what the
+checklist above walks.** Nothing else should have moved.
+
+**Owner ruling captured mid-ship:** three `:active` press states sat inside the standing
+"all press states stay" fence, but each paints its *own* base rule's channel — leaving them would
+have flashed the old colour under a gloved thumb. Ruled in, 22 → 25 sites. The blanket fence still
+holds wherever the base rule is not moving.
+
+**Verified before push:** stamps 3/3 · **4/4 inline script blocks compile** (`vm.Script`) ·
+`sw.js` `node --check` OK · `version.json` valid JSON · **CSS braces balanced across all 12 style
+blocks** · line endings unchanged (repo is all-LF at HEAD; `core.autocrlf=true` explains git's
+warning) · diff **exactly 26/26** `dct-ios.html` (25 sites + stamp), 1/1 `sw.js`, 3/3
+`version.json` · EXIT/BLAST confirmed **absent from the diff** · zero `!important` rules touch any
+of the 15 live selectors, and both `body.rd` overrides lose on specificity or paint a different box.
+⚠ **Agents were barred this session — `phantom-ship-gate` and `phantom-rd-reviewer` were NOT
+invoked;** the gates above were run inline in their place.
+
+**Residue declared, not done:** red/green is *reduced, not eliminated*. Thirteen sites outside this
+fence still carry it (canvas `strokeStyle` L19090 · severity data L22166/22174 · issue chips
+L22245/22247/22578/22616/22619 · BLOCKED display L32771 · advance-phase L35861 · `gx-green`
+L8807/L32645 · qa-icon L13491 · inline L30892 · **`.bp-card-status.complete` L9731, which is
+semantically the *complete* channel and should be teal**). All need a ruling.
+
+**Correction to `SHIP4-STEP0-FINDINGS`:** it listed the `.rm-*` legend and type bars as green
+breaches. **They are not.** `TYPE_COLORS` (L43227) is a nine-colour **type-identity** vocabulary —
+green means *Server*, `#ff2d55` means *UPS*. Different taxonomy from the state channel, under
+**RACK SCENE LOCK**. Forcing Server→teal would collide with `storage:#00bcd4` and break
+legend-to-faceplate agreement. Left locked, deliberately.
+
+**Batch `.371`–`.373` = 3 of 6.** Room for three more before the cap.
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
