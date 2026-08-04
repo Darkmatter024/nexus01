@@ -72,6 +72,30 @@ function scopeOf(index, line) {
 
 function emitters(tokens, cls) { return tokens[cls] || 0; }
 
+const CHANNELS = {
+  red: /var\(--red\b|#ff453a|#ff3b30|#ff2d55|rgba\(\s*255,\s*(69|45|59)\s*,/i,
+  green: /var\(--green\b|#30d158|#34c759|#32d74b|rgba\(\s*(48|52|50),\s*(209|199|215)\s*,/i
+};
+
+function colorRefs(ctx, opts) {
+  const above = opts.above || 0, want = opts.channel || 'all', rows = [];
+  for (let i = 0; i < ctx.lines.length; i++) {
+    const n = i + 1;
+    if (n < above) continue;
+    const l = ctx.lines[i];
+    const r = CHANNELS.red.test(l), g = CHANNELS.green.test(l);
+    if (!r && !g) continue;
+    const ch = r && g ? 'both' : (r ? 'red' : 'green');
+    if (want !== 'all' && ch !== want && ch !== 'both') continue;
+    rows.push({ line: n, channel: ch, scope: scopeOf(ctx.scopes, n), evidence: l.trim().slice(0, 110) });
+  }
+  return rows;
+}
+
+function colorRefsIn(ctx, from, to) {
+  return colorRefs(ctx, { above: from }).filter(function (r) { return r.line <= to; }).length;
+}
+
 const FIXTURES = [
   { name: 'root-defines-teal', run: function (ctx) {
       const a = rootHas(ctx.src, '--teal');
@@ -97,7 +121,10 @@ const FIXTURES = [
       return { ok: a === 'logCrash()', expected: 'logCrash()', actual: a }; } },
   { name: 'indented-fn-logo_goHome-is-scoped', run: function (ctx) {
       const a = scopeOf(ctx.scopes, 18015);
-      return { ok: a === 'logo_goHome()', expected: 'logo_goHome()', actual: a }; } }
+      return { ok: a === 'logo_goHome()', expected: 'logo_goHome()', actual: a }; } },
+  { name: 'sw_pillTap-has-no-color-refs', run: function (ctx) {
+      const a = colorRefsIn(ctx, 12617, 12633);
+      return { ok: a === 0, expected: '0', actual: String(a) }; } }
 ];
 
 function runFixtures(ctx) {
@@ -139,6 +166,23 @@ function main() {
     if (!n) { console.error('usage: inventory scope <line>'); process.exit(2); }
     console.log('L' + n + '  ' + scopeOf(ctx.scopes, n) + '  |  ' +
       (ctx.lines[n - 1] || '').trim().slice(0, 110));
+    process.exit(0);
+  }
+  if (cmd === 'colors') {
+    const opts = { above: 0, channel: 'all' };
+    for (let i = 3; i < process.argv.length; i++) {
+      if (process.argv[i] === '--above') opts.above = parseInt(process.argv[++i], 10) || 0;
+      else if (process.argv[i] === '--channel') opts.channel = process.argv[++i];
+    }
+    if (['red', 'green', 'all'].indexOf(opts.channel) === -1) {
+      console.error('usage: inventory colors [--above N] [--channel red|green|all]'); process.exit(2);
+    }
+    const rows = colorRefs(ctx, opts);
+    rows.forEach(function (r) {
+      console.log('L' + String(r.line).padEnd(7) + r.channel.padEnd(6) +
+        r.scope.padEnd(30) + r.evidence);
+    });
+    console.log('-- ' + rows.length + ' ref(s)');
     process.exit(0);
   }
   console.error('inventory: unknown subcommand "' + cmd + '"'); process.exit(2);
