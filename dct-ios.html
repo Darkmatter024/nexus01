@@ -8418,27 +8418,27 @@ textarea.hud-input {
 .pp-build { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; color:var(--white); font-weight:600; }
 .pp-row { position:relative; display:flex; }
 .pp-track { position:absolute; left:10%; right:10%; top:18px; height:3px; background:rgba(255,255,255,0.07); border-radius:3px; }
-.pp-fill { position:absolute; left:0; top:0; height:100%; border-radius:3px; background:linear-gradient(90deg,rgba(48,209,88,0.45),var(--green)); box-shadow:0 0 10px rgba(48,209,88,0.7); transition:width 0.5s ease; }
+.pp-fill { position:absolute; left:0; top:0; height:100%; border-radius:3px; background:linear-gradient(90deg,rgba(31,255,208,0.45),var(--teal)); box-shadow:0 0 10px rgba(31,255,208,0.7); transition:width 0.5s ease; }
 .pp-track.is-act .pp-fill { background:linear-gradient(90deg,rgba(92,242,255,0.45),var(--cyan)); box-shadow:0 0 10px rgba(92,242,255,0.7); }
-.pp-track.is-blk .pp-fill { background:var(--red); box-shadow:0 0 10px rgba(255,45,85,0.7); }
+.pp-track.is-blk .pp-fill { background:#ff2bd6; box-shadow:0 0 10px rgba(255,43,214,0.7); }
 .pp-node { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:9px; z-index:1; }
 .pp-dot { position:relative; width:38px; height:38px; border-radius:50%; border:2px solid rgba(255,255,255,0.16); background:radial-gradient(circle at 50% 32%, #1a2030, #0b0f1c); display:flex; align-items:center; justify-content:center; font-family:var(--orb); font-weight:700; font-size:14px; color:var(--slate); transition:all 0.3s ease; }
 .pp-lbl { font-family:var(--mono); font-size:8.5px; letter-spacing:0.04em; color:var(--slate); text-align:center; line-height:1.1; transition:color 0.3s ease; }
-.pp-node.is-done .pp-dot { border-color:var(--green); color:#04140a; background:radial-gradient(circle at 50% 32%, #5bf0a0, var(--green)); box-shadow:0 0 14px rgba(48,209,88,0.5), inset 0 0 6px rgba(255,255,255,0.3); }
+.pp-node.is-done .pp-dot { border-color:var(--teal); color:#04140a; background:radial-gradient(circle at 50% 32%, #5bf0a0, var(--teal)); box-shadow:0 0 14px rgba(31,255,208,0.5), inset 0 0 6px rgba(255,255,255,0.3); }
 .pp-node.is-done .pp-lbl { color:#a8e8c4; }
 .pp-node.is-active .pp-dot { border-color:var(--cyan); color:var(--cyan); background:radial-gradient(circle at 50% 32%, #16384a, #0b1c26); animation:pp-pulse 1.7s ease-in-out infinite; }
 .pp-node.is-active .pp-lbl { color:var(--cyan); }
-.pp-node.is-blocked .pp-dot { border-color:var(--red); color:var(--red); background:radial-gradient(circle at 50% 32%, #3a1018, #200810); animation:pp-pulse-r 1.4s ease-in-out infinite; }
+.pp-node.is-blocked .pp-dot { border-color:#ff2bd6; color:#ff2bd6; background:radial-gradient(circle at 50% 32%, #3a1018, #200810); animation:pp-pulse-r 1.4s ease-in-out infinite; }
 .pp-node.is-blocked .pp-lbl { color:#ff8aa0; }
-.pp-node.pp-seal.is-done .pp-dot { box-shadow:0 0 20px rgba(48,209,88,0.7), inset 0 0 8px rgba(255,255,255,0.4); }
+.pp-node.pp-seal.is-done .pp-dot { box-shadow:0 0 20px rgba(31,255,208,0.7), inset 0 0 8px rgba(255,255,255,0.4); }
 .pp-foot { position:relative; display:flex; justify-content:space-between; align-items:center; margin-top:20px; font-family:var(--mono); font-size:var(--fs-caption); letter-spacing:1px; }
 .pp-stat { letter-spacing:2px; font-weight:600; }
-.pp-stat.is-done { color:var(--green); text-shadow:0 0 8px rgba(48,209,88,0.4); }
+.pp-stat.is-done { color:var(--teal); text-shadow:0 0 8px rgba(31,255,208,0.4); }
 .pp-stat.is-act { color:var(--cyan); text-shadow:0 0 8px rgba(92,242,255,0.4); }
-.pp-stat.is-blk { color:var(--red); text-shadow:0 0 8px rgba(255,45,85,0.4); }
+.pp-stat.is-blk { color:#ff2bd6; text-shadow:0 0 8px rgba(255,43,214,0.4); }
 .pp-meta { color:var(--slate); }
 @keyframes pp-pulse { 0%,100% { box-shadow:0 0 12px rgba(92,242,255,0.4), inset 0 0 8px rgba(92,242,255,0.2); } 50% { box-shadow:0 0 22px rgba(92,242,255,0.75), inset 0 0 10px rgba(92,242,255,0.3); } }
-@keyframes pp-pulse-r { 0%,100% { box-shadow:0 0 12px rgba(255,45,85,0.4); } 50% { box-shadow:0 0 22px rgba(255,45,85,0.75); } }
+@keyframes pp-pulse-r { 0%,100% { box-shadow:0 0 12px rgba(255,43,214,0.4); } 50% { box-shadow:0 0 22px rgba(255,43,214,0.75); } }
 @media (prefers-reduced-motion: reduce) { .pp-node.is-active .pp-dot, .pp-node.is-blocked .pp-dot { animation:none; } }
 .trace-run { display:flex; align-items:flex-start; margin-bottom:10px; }
 .trace-node-wrap { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; position:relative; }
@@ -8446,13 +8446,13 @@ textarea.hud-input {
 .trace-seg.is-hot { background:var(--cyan); box-shadow:0 0 6px var(--cyan); }
 .trace-node-wrap:first-child .trace-seg { display:none; }
 .trace-node { position:relative; width:18px; height:18px; transform:rotate(45deg); border:2px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.04); border-radius:3px; z-index:1; cursor:pointer; }
-.trace-node.is-done { border-color:var(--green); background:var(--green); box-shadow:0 0 8px rgba(48,209,88,0.55); }
+.trace-node.is-done { border-color:var(--teal); background:var(--teal); box-shadow:0 0 8px rgba(31,255,208,0.55); }
 .trace-node.is-active { border-color:var(--cyan); background:rgba(92,242,255,0.15); box-shadow:0 0 8px var(--cyan); animation:tracePulse 1.6s ease-in-out infinite; }
-.trace-node.is-blocked { border-color:var(--red); background:var(--red); box-shadow:0 0 8px rgba(255,45,85,0.55); }
+.trace-node.is-blocked { border-color:#ff2bd6; background:#ff2bd6; box-shadow:0 0 8px rgba(255,43,214,0.55); }
 @keyframes tracePulse { 0%,100%{box-shadow:0 0 4px var(--cyan)} 50%{box-shadow:0 0 12px var(--cyan)} }
 .trace-label { max-width:100%; font-family:var(--mono); font-size:8px; letter-spacing:0.5px; color:var(--slate); margin-top:8px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .trace-label.is-active { color:var(--white); }
-.trace-label.is-done { color:var(--green); }
+.trace-label.is-done { color:var(--teal); }
 .tile-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,120px)); gap:8px; justify-content:start; margin-bottom:10px; }
 .tile-rowhdr { grid-column:1 / -1; font-family:var(--mono); font-size:var(--fs-micro); letter-spacing:2px; color:var(--cyan); margin:6px 0 2px; }
 .tile { position:relative; aspect-ratio:1 / 1.6; min-height:var(--tap-xl); background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.10); border-radius:6px; padding:6px; cursor:pointer; -webkit-appearance:none; display:flex; flex-direction:column; overflow:hidden; -webkit-tap-highlight-color:transparent; }
@@ -9261,11 +9261,11 @@ body.rd.ops-detail.ph-dock-on #ph-dock {
 #ph-dock .phd-chip.is-active { border-color: rgba(92,242,255,0.45); background: rgba(92,242,255,0.10); }
 #ph-dock .phd-chip.is-active .d { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
 #ph-dock .phd-chip.is-active .t { color: var(--cyan); }
-#ph-dock .phd-chip.is-done .d { background: var(--green); }
-#ph-dock .phd-chip.is-done .t { color: var(--green); }
-#ph-dock .phd-chip.is-blocked { border-color: rgba(255,69,58,0.45); }
-#ph-dock .phd-chip.is-blocked .d { background: var(--red); }
-#ph-dock .phd-chip.is-blocked .t { color: var(--red); }
+#ph-dock .phd-chip.is-done .d { background: var(--teal); }
+#ph-dock .phd-chip.is-done .t { color: var(--teal); }
+#ph-dock .phd-chip.is-blocked { border-color: rgba(255,43,214,0.45); }
+#ph-dock .phd-chip.is-blocked .d { background: #ff2bd6; }
+#ph-dock .phd-chip.is-blocked .t { color: #ff2bd6; }
 #ph-dock .phd-chip.is-gated { opacity: 0.45; }
 #ph-dock .phd-chip.is-gated .d { background: transparent; box-shadow: none; }
 
@@ -9728,7 +9728,7 @@ body.rd #rd-botnav{display:grid}
   text-transform: uppercase;
   margin-top: 6px;
 }
-.bp-card-status.complete      { color: var(--green); }
+.bp-card-status.complete      { color: var(--teal); }
 .bp-card-status.partial       { color: var(--orange, #ff9a3c); }
 .bp-card-status.uncategorized { color: var(--amber, #ffb547); }
 .bp-card-bar {
@@ -9744,7 +9744,7 @@ body.rd #rd-botnav{display:grid}
   border-radius: 2px;
   transition: width 200ms ease;
 }
-.bp-card-bar-fill.complete { background: var(--green); }
+.bp-card-bar-fill.complete { background: var(--teal); }
 
 /* ━━━ BOM PROGRESS — LIST + MODAL (Cut 4b) ━━━━━━━━━━━━━━━━━━━━━━━ */
 .bp-back-row {
@@ -9817,7 +9817,7 @@ body.rd #rd-botnav{display:grid}
   color: var(--cyan);
   white-space: nowrap;
 }
-.bp-item-counts.complete { color: var(--green); }
+.bp-item-counts.complete { color: var(--teal); }
 .bp-item-row2 {
   display: flex;
   justify-content: space-between;
@@ -9840,7 +9840,7 @@ body.rd #rd-botnav{display:grid}
   text-transform: uppercase;
   white-space: nowrap;
 }
-.bp-item-status.complete { color: var(--green); }
+.bp-item-status.complete { color: var(--teal); }
 .bp-item-status.partial  { color: var(--orange, #ff9a3c); }
 .bp-item-status.pending  { color: var(--slate-readable); }
 .bp-empty-list {
@@ -9971,7 +9971,7 @@ body.rd #rd-botnav{display:grid}
   background: rgba(92,242,255,0.10);
   color: var(--cyan);
 }
-.bp-status-btn.active.complete { border-color: var(--green);              color: var(--green);              background: rgba(120,255,120,0.08); }
+.bp-status-btn.active.complete { border-color: var(--teal);              color: var(--teal);              background: rgba(120,255,120,0.08); }
 .bp-status-btn.active.partial  { border-color: var(--orange, #ff9a3c);    color: var(--orange, #ff9a3c);    background: rgba(255,150,60,0.08); }
 .bp-modal-textarea {
   width: 100%;
@@ -12471,7 +12471,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.375';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.376';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
