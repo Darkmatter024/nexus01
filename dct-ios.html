@@ -9617,7 +9617,7 @@ body.rd #hdr-overflow-wrap { display: none !important; }   /* v1.14.165 — !imp
 body.rd .hdr-agg-pill { position: relative; overflow: hidden; border-radius: var(--hud-r8); }
 body.rd .hdr-agg-pill[data-state="ok"]       { box-shadow: 0 0 15px -3px rgba(92,242,255,0.55), inset 0 1px 0 rgba(255,255,255,0.06); border-color: rgba(92,242,255,0.5); }
 body.rd .hdr-agg-pill[data-state="warn"]     { box-shadow: 0 0 15px -3px rgba(255,214,10,0.55), inset 0 1px 0 rgba(255,255,255,0.06); border-color: rgba(255,214,10,0.6); }
-body.rd .hdr-agg-pill[data-state="critical"] { box-shadow: 0 0 16px -2px rgba(255,59,59,0.60), inset 0 1px 0 rgba(255,255,255,0.06); border-color: rgba(255,59,59,0.7); }
+body.rd .hdr-agg-pill[data-state="critical"] { box-shadow: 0 0 16px -2px rgba(255,43,214,0.60), inset 0 1px 0 rgba(255,255,255,0.06); border-color: rgba(255,43,214,0.7); }
 body.rd .hdr-agg-pill[data-state="checking"] { box-shadow: none; }
 body.rd .hdr-agg-label { text-shadow: 0 0 8px currentColor; }
 .hdr-agg-sweep { display: none; }
@@ -12424,7 +12424,7 @@ body.rd .pcl-line{display:flex;align-items:center;gap:10px;min-height:44px}
 body.rd .pcl-chk{flex:0 0 auto;width:20px;height:20px;border-radius:50%;
   border:1.5px solid rgba(120,140,160,.55);cursor:pointer;-webkit-tap-highlight-color:transparent;
   position:relative;transition:border-color .15s,background .15s}
-body.rd .pcl-chk-on{border-color:var(--green);background:var(--green)}
+body.rd .pcl-chk-on{border-color:var(--teal);background:var(--teal)}
 body.rd .pcl-chk-on::after{content:'';position:absolute;left:6px;top:2.5px;width:5px;height:10px;
   border:solid #04060a;border-width:0 2px 2px 0;transform:rotate(45deg)}
 body.rd .pcl-label{flex:1;font-family:var(--mono);font-size:var(--fs-caption);color:#c8d6e4;
@@ -12461,7 +12461,7 @@ body.rd .pql-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 11p
   box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 1px 3px rgba(0,0,0,.4)}
 body.rd .pql-chip:active{border-color:var(--cyan);background:linear-gradient(180deg,#12203a,#0a1220)}
 body.rd .pql-chip-edit{border-color:rgba(255,203,69,.35);color:#e7d9b5}
-body.rd .pql-x{color:var(--red);font-size:11px;line-height:1}
+body.rd .pql-x{color:#ff2bd6;font-size:11px;line-height:1}
 body.rd .pql-ctl{padding:6px 9px;font-family:var(--mono);font-size:var(--fs-micro);letter-spacing:1px;
   color:var(--slate);cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
 body.rd .pql-ctl-on{color:var(--gold)}
@@ -12471,7 +12471,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.374';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.375';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
