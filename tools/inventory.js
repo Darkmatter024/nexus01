@@ -73,9 +73,28 @@ function scopeOf(index, line) {
 function emitters(tokens, cls) { return tokens[cls] || 0; }
 
 const CHANNELS = {
-  red: /var\(--red\b|#ff453a|#ff3b30|#ff2d55|rgba\(\s*255,\s*(69|45|59)\s*,/i,
-  green: /var\(--green\b|#30d158|#34c759|#32d74b|rgba\(\s*(48|52|50),\s*(209|199|215)\s*,/i
+  red: /var\(--red(?=[\s,)])|#ff453a|#ff3b30|#ff2d55|rgba\(\s*255,\s*(69|45|59)\s*,/i,
+  green: /var\(--green(?=[\s,)])|#30d158|#34c759|#32d74b|rgba\(\s*(48|52|50),\s*(209|199|215)\s*,/i
 };
+
+// Centre the evidence window on the actual match. A fixed slice from column 0
+// silently omits the match on long lines, leaving a real row with unrelated
+// evidence - the exact "looks right, is wrong" failure this tool exists to stop.
+function evidenceFor(line, ch) {
+  const t = line.trim();
+  let idx = -1;
+  if (ch === 'red' || ch === 'both') {
+    const m = t.match(CHANNELS.red);
+    if (m && m.index !== undefined) idx = m.index;
+  }
+  if (ch === 'green' || ch === 'both') {
+    const m = t.match(CHANNELS.green);
+    if (m && m.index !== undefined && (idx < 0 || m.index < idx)) idx = m.index;
+  }
+  if (idx < 0) idx = 0;
+  const start = Math.max(0, idx - 30);
+  return (start > 0 ? '...' : '') + t.slice(start, start + 110);
+}
 
 function colorRefs(ctx, opts) {
   const above = opts.above || 0, want = opts.channel || 'all', rows = [];
@@ -87,7 +106,7 @@ function colorRefs(ctx, opts) {
     if (!r && !g) continue;
     const ch = r && g ? 'both' : (r ? 'red' : 'green');
     if (want !== 'all' && ch !== want && ch !== 'both') continue;
-    rows.push({ line: n, channel: ch, scope: scopeOf(ctx.scopes, n), evidence: l.trim().slice(0, 110) });
+    rows.push({ line: n, channel: ch, scope: scopeOf(ctx.scopes, n), evidence: evidenceFor(l, ch) });
   }
   return rows;
 }
@@ -124,7 +143,13 @@ const FIXTURES = [
       return { ok: a === 'logo_goHome()', expected: 'logo_goHome()', actual: a }; } },
   { name: 'sw_pillTap-has-no-color-refs', run: function (ctx) {
       const a = colorRefsIn(ctx, 12617, 12633);
-      return { ok: a === 0, expected: '0', actual: String(a) }; } }
+      return { ok: a === 0, expected: '0', actual: String(a) }; } },
+  { name: 'channels-reject-neon-variants', run: function () {
+      const ok = CHANNELS.green.test('color:var(--green-neon)') === false
+              && CHANNELS.red.test('color:var(--red-neon)') === false
+              && CHANNELS.green.test('color:var(--green)') === true
+              && CHANNELS.red.test('color:var(--red, #ff453a)') === true;
+      return { ok: ok, expected: 'true', actual: String(ok) }; } }
 ];
 
 function runFixtures(ctx) {
