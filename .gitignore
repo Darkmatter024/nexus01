@@ -5,3 +5,6 @@
 /.omc/
 /docs/superpowers/
 /graphify-out/
+
+# SDD scratch workspace (ledger, briefs, review packages) - never shipped
+.superpowers/
