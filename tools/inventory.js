@@ -10,9 +10,10 @@ function loadTarget() {
 }
 
 function rootHas(src, name) {
-  const m = src.match(/:root\s*\{([\s\S]*?)\}/);
-  if (!m) return false;
-  return new RegExp('(^|[;\\s])' + name.replace(/-/g, '\\-') + '\\s*:').test(m[1]);
+  const blocks = src.match(/:root\s*\{([\s\S]*?)\}/g);
+  if (!blocks) return false;
+  const content = blocks.map(function (b) { return b.match(/:root\s*\{([\s\S]*?)\}/)[1]; }).join(' ');
+  return new RegExp('(^|[;\\s])' + name + '\\s*:').test(content);
 }
 
 const FIXTURES = [
