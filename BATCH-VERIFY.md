@@ -1108,6 +1108,9 @@ and block install. **Not true for this SW** — v1.6.29 already moved to per-URL
 diff **-4/+15** `dct-ios.html`, 1/1 `sw.js`, 3/3 `version.json`. ⚠ Agents barred — ship-gate and
 rd-reviewer NOT invoked; equivalents run inline.
 
-**Batch `.371`–`.374` = 4 of 6.** Two left before the cap.
+**Batch `.371`–`.375` = 5 of 6 — ✅ RELEASED by owner 2026-08-04 ("all good").** All five verified
+in one consolidated pass, including `.374`'s boot-path front door, `.372`'s offline check, `.373`'s
+press test, and both of `.375`'s INVERTED checks (EXIT still red, CRAC still green). **CALL 0 cap
+RESET — next ship opens a fresh batch at 1 of 6.**
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
