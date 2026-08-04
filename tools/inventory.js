@@ -7,7 +7,7 @@ function loadTarget() {
   try { src = fs.readFileSync(TARGET, 'utf8'); }
   catch (e) { console.error('inventory: cannot read ' + TARGET + ': ' + e.message); process.exit(1); }
   const lines = src.split(/\r?\n/);
-  return { src: src, lines: lines, tokens: buildClassTokens(src) };
+  return { src: src, lines: lines, tokens: buildClassTokens(src), scopes: buildScopeIndex(lines) };
 }
 
 function rootHas(src, name) {
@@ -30,6 +30,37 @@ function buildClassTokens(src) {
   return tok;
 }
 
+// Track brace depth so a function's scope ENDS at its closing brace.
+function buildScopeIndex(lines) {
+  const out = [];
+  let cur = null, depth = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (cur === null) {
+      const m = l.match(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/);
+      if (m) { cur = { name: m[1], start: i + 1, end: -1 }; depth = 0; }
+    }
+    if (cur !== null) {
+      depth += (l.match(/\{/g) || []).length - (l.match(/\}/g) || []).length;
+      if (depth <= 0 && l.indexOf('}') !== -1) { cur.end = i + 1; out.push(cur); cur = null; }
+    }
+  }
+  if (cur !== null) { cur.end = lines.length; out.push(cur); }
+  return out;
+}
+
+function spanOf(index, name) {
+  for (let i = 0; i < index.length; i++) if (index[i].name === name) return index[i];
+  return null;
+}
+
+function scopeOf(index, line) {
+  for (let i = 0; i < index.length; i++) {
+    if (line >= index[i].start && line <= index[i].end) return index[i].name + '()';
+  }
+  return '(markup)';
+}
+
 function emitters(tokens, cls) { return tokens[cls] || 0; }
 
 const FIXTURES = [
@@ -47,7 +78,11 @@ const FIXTURES = [
       return { ok: a > 0, expected: '> 0', actual: String(a) }; } },
   { name: 'tile-is-live', run: function (ctx) {
       const a = emitters(ctx.tokens, 'tile');
-      return { ok: a > 0, expected: '> 0', actual: String(a) }; } }
+      return { ok: a > 0, expected: '> 0', actual: String(a) }; } },
+  { name: 'sw_pillTap-span', run: function (ctx) {
+      const s = spanOf(ctx.scopes, 'sw_pillTap');
+      const a = s ? ('L' + s.start + '-L' + s.end) : 'not found';
+      return { ok: a === 'L12617-L12633', expected: 'L12617-L12633', actual: a }; } }
 ];
 
 function runFixtures(ctx) {
@@ -82,6 +117,13 @@ function main() {
       console.log('  NOTE: UNPROVEN is not a claim of unused. Classes toggled at');
       console.log('  runtime via classList.add never appear in a class="..." attribute.');
     }
+    process.exit(0);
+  }
+  if (cmd === 'scope') {
+    const n = parseInt(process.argv[3], 10);
+    if (!n) { console.error('usage: inventory scope <line>'); process.exit(2); }
+    console.log('L' + n + '  ' + scopeOf(ctx.scopes, n) + '  |  ' +
+      (ctx.lines[n - 1] || '').trim().slice(0, 110));
     process.exit(0);
   }
   console.error('inventory: unknown subcommand "' + cmd + '"'); process.exit(2);
