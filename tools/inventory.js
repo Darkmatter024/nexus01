@@ -30,23 +30,26 @@ function buildClassTokens(src) {
   return tok;
 }
 
-// Track brace depth so a function's scope ENDS at its closing brace.
+// Detect functions at ANY indentation, and track nesting with a stack so an
+// inner function's closing brace cannot close its parent. Each frame records
+// the brace depth it opened at; it closes when depth returns to that base.
 function buildScopeIndex(lines) {
   const out = [];
-  let cur = null, depth = 0;
+  const stack = [];
+  let depth = 0;
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
-    if (cur === null) {
-      const m = l.match(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/);
-      if (m) { cur = { name: m[1], start: i + 1, end: -1 }; depth = 0; }
-    }
-    if (cur !== null) {
-      depth += (l.match(/\{/g) || []).length - (l.match(/\}/g) || []).length;
-      if (depth <= 0 && l.indexOf('}') !== -1) { cur.end = i + 1; out.push(cur); cur = null; }
+    const m = l.match(/^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/);
+    if (m) stack.push({ name: m[1], start: i + 1, base: depth, end: -1 });
+    depth += (l.match(/\{/g) || []).length - (l.match(/\}/g) || []).length;
+    while (stack.length && depth <= stack[stack.length - 1].base) {
+      const f = stack.pop();
+      f.end = i + 1;
+      out.push(f);
     }
   }
-  if (cur !== null) { cur.end = lines.length; out.push(cur); }
-  return out;
+  while (stack.length) { const f = stack.pop(); f.end = lines.length; out.push(f); }
+  return out.sort(function (a, b) { return a.start - b.start; });
 }
 
 function spanOf(index, name) {
@@ -54,11 +57,17 @@ function spanOf(index, name) {
   return null;
 }
 
+// Innermost enclosing function wins - the one with the LATEST start that still
+// contains the line. Without this, a nested line reports its outer function.
 function scopeOf(index, line) {
+  let best = null;
   for (let i = 0; i < index.length; i++) {
-    if (line >= index[i].start && line <= index[i].end) return index[i].name + '()';
+    const f = index[i];
+    if (line >= f.start && line <= f.end) {
+      if (best === null || f.start > best.start) best = f;
+    }
   }
-  return '(markup)';
+  return best === null ? '(markup)' : best.name + '()';
 }
 
 function emitters(tokens, cls) { return tokens[cls] || 0; }
@@ -82,7 +91,13 @@ const FIXTURES = [
   { name: 'sw_pillTap-span', run: function (ctx) {
       const s = spanOf(ctx.scopes, 'sw_pillTap');
       const a = s ? ('L' + s.start + '-L' + s.end) : 'not found';
-      return { ok: a === 'L12617-L12633', expected: 'L12617-L12633', actual: a }; } }
+      return { ok: a === 'L12617-L12633', expected: 'L12617-L12633', actual: a }; } },
+  { name: 'indented-fn-logCrash-is-scoped', run: function (ctx) {
+      const a = scopeOf(ctx.scopes, 17295);
+      return { ok: a === 'logCrash()', expected: 'logCrash()', actual: a }; } },
+  { name: 'indented-fn-logo_goHome-is-scoped', run: function (ctx) {
+      const a = scopeOf(ctx.scopes, 18015);
+      return { ok: a === 'logo_goHome()', expected: 'logo_goHome()', actual: a }; } }
 ];
 
 function runFixtures(ctx) {
