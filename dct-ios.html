@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.383';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.384';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13265,7 +13265,8 @@ if (typeof window !== 'undefined') {
              domains / network fabric / documentation rows have no data source in
              PHANTOM, and inventing them would be fake telemetry. -->
         <div class="cs-card cs-dpanel" id="cs-health">
-          <div class="cs-ph"><span class="cs-pt">Site health</span></div>
+          <div class="cs-ph"><span class="cs-pt">Local system state</span></div>
+          <div class="cs-pcap">Read from this device. PHANTOM receives no facility telemetry.</div>
           <div id="cs-health-rows"></div>
         </div>
         <!-- §9.11 Build Progress. Five-step rail over the REAL DEPLOY_PHASE_TYPES
@@ -13310,6 +13311,7 @@ if (typeof window !== 'undefined') {
           </div>
           <div class="cs-card cs-dpanel" id="cs-ready">
             <div class="cs-ph"><span class="cs-pt">Shift readiness</span></div>
+            <div class="cs-pcap">Calculated on this device from the four gates below.</div>
             <div class="cs-ring">
               <div class="cs-ringw"><canvas id="cs-ringc" width="152" height="152" style="width:76px;height:76px"></canvas><div class="cs-ringn" id="cs-ringn">0%</div></div>
               <div class="cs-rk" id="cs-ready-k">&mdash;</div>
@@ -18759,7 +18761,13 @@ function redesign_isOn() {
 // preview, and a sticky preview is exactly the trap .380 had to ship a way out of.
 // Close the tab and the shell is gone.
 function cshell_isOn() {
-  try { return location.search.indexOf('cshell=1') !== -1; } catch (_) { return false; }
+  // v1.14.384: BOTH spellings are accepted. The owner's verification order calls it
+  // ?shell=1 and the ship calls it ?cshell=1; a flag that silently does nothing on the
+  // URL someone actually types is a guaranteed field failure, not a naming quibble.
+  try {
+    var s = location.search;
+    return s.indexOf('cshell=1') !== -1 || s.indexOf('shell=1') !== -1;
+  } catch (_) { return false; }
 }
 // v1.14.380 - THE RIP-CORD'S WAY BACK. ?legacy=1 pins phantom_legacy in localStorage,
 // and until now nothing in the legacy house could clear it: the only escape was
@@ -20863,10 +20871,15 @@ function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, on
   }
 
   // ── §9.10 Site Health: only signals that actually exist ──
+  // Every row below is a value PHANTOM can answer from LOCAL state. There is no
+  // power-domain, cooling, or network-fabric row because the app receives no such
+  // telemetry, and a panel that implies otherwise is worse than a smaller panel.
   var rows = [
-    ['Connection', online ? 'Reachable' : 'Offline mode', online ? 'ONLINE' : 'OFFLINE', online ? '' : 'warn'],
-    ['Storage', storageOk ? 'Local store writable' : 'Local store blocked', storageOk ? 'READY' : 'FAULT', storageOk ? '' : 'bad'],
+    ['Connection', online ? 'Reachable' : 'Working offline', online ? 'ONLINE' : 'OFFLINE', online ? '' : 'warn'],
+    ['Local store', storageOk ? 'Writable on this device' : 'Blocked on this device', storageOk ? 'READY' : 'FAULT', storageOk ? '' : 'bad'],
     ['Site profile', confirmed ? 'Confirmed for this device' : 'Not set up yet', confirmed ? 'SET' : 'UNSET', confirmed ? '' : 'warn'],
+    ['Master file', masterLoaded ? 'Ingested on this device' : 'Not loaded yet', masterLoaded ? 'LOADED' : 'NONE', masterLoaded ? '' : 'warn'],
+    ['Active deployment', activeDep ? (activeDep.name || 'Selected') : 'None selected', activeDep ? 'SET' : 'NONE', activeDep ? '' : 'warn'],
     ['Open blockers', blockerCount > 0 ? 'Resolve before handoff' : 'Nothing blocking', String(blockerCount || 0), blockerCount > 0 ? 'bad' : '']
   ];
   var host = E('cs-health-rows');
@@ -20968,9 +20981,10 @@ function cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handof
 
   var num = E('cs-ringn'); if (num) num.textContent = pct + '%';
   var kk = E('cs-ready-k');
-  if (kk) kk.textContent = met === gates.length
-    ? 'Ready to hand off.'
-    : (gates.length - met) + ' of ' + gates.length + ' readiness gates still open.';
+  // state it as "N of 4 ready" - the score is a count, and phrasing it as a count is
+  // what makes it legible as a local calculation rather than a monitoring readout.
+  if (kk) kk.textContent = met + ' of ' + gates.length + ' ready' +
+    (met === gates.length ? ' — clear to hand off.' : '.');
 
   var host = E('cs-ready-rows');
   if (host) {
@@ -52676,8 +52690,12 @@ body.rd.cshell .cs-hero-cta:active { transform: scale(.985); filter: brightness(
 
 /* inert everywhere until the desktop query turns them on */
 #cs-side, #cs-top { display: none; }
-/* the desktop-only panels never render on phone - mobile stays as approved */
-body.rd.cshell .cs-dpanel { display: none; }
+/* The desktop-only panels never render on phone - mobile stays as approved.
+   UNSCOPED on purpose: .cs-dpanel is a brand-new class that matches nothing that
+   already exists, and scoping the HIDE to body.rd.cshell made these panels rely on
+   #cmd-shell being display:none to stay hidden on the bare URL. Correct by accident
+   is not correct; this hides them on their own terms. */
+.cs-dpanel { display: none; }
 
 @media (min-width: 851px) {
 
@@ -52812,6 +52830,9 @@ body.rd.cshell .cs-dpanel { display: none; }
   /* shared desktop panel chrome */
   body.rd.cshell .cs-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
   body.rd.cshell .cs-pt { font-size: 11px; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; color: var(--white); }
+  /* v1.14.384: says out loud where a panel's numbers come from, so nothing on this
+     dashboard can be mistaken for external monitoring or AI telemetry. */
+  body.rd.cshell .cs-pcap { font-size: 9px; line-height: 1.4; color: var(--slate); margin: -6px 0 10px; }
   body.rd.cshell .cs-pa { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); background: none; border: 0; cursor: pointer; padding: 4px; }
   body.rd.cshell .cs-dpanel { padding: 16px 17px; }
 

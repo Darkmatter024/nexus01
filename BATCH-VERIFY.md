@@ -1174,4 +1174,73 @@ revert, and needs no recut. (6) Empty state must read *No active deployment* wit
 **⛔ BATCH `.377`–`.382` is now 6 of 6 — CALL 0 CAP REACHED. Consolidated device pass required before
 the next ship.**
 
+## v1.14.383 — COMMAND SHELL DESKTOP (`52fb96d`) · rollback: revert commit (mobile was never touched)
+
+Owner on device: *"the desktop layout is still behaving like a stretched mobile interface."* Correct — `.382`
+shipped only the phone composition, so at desktop the shell had no rules of its own and inherited the legacy
+Command layout. Desktop is now a **separate composition** per spec §9: 246px persistent left nav, 76px topbar,
+three-column dashboard with the hero spanning two rows, three-column lower grid, **no bottom nav above 851px**.
+
+**All artwork existing and approved**, each confirmed on disk AND in `PRECACHE_URLS` before use. Both documented
+naming traps honoured: **BLAST is fed by the POWER raster, OPTICS is a `ref-` file.** Items with no approved
+icon use a two-letter mono token rather than a substitute icon. Every control routes to an existing door.
+
+**Five defects found by the in-browser pass, not by reading.** The load-bearing one: the legacy desktop rules
+target `#cc-center` **by ID** (two ids), out-specifying any class-scoped shell rule — the shell was trapped in a
+226px grid row with legacy content overlapping it. Also: `.page` is `position:absolute;inset:0` so padding on
+`.main` moved it zero pixels; `cs_renderReady` sat behind two early returns and silently never ran on cold start;
+Field Ops spans ran together on one line; readiness warn dots targeted the wrong class so every OPEN gate showed
+a healthy mint dot.
+
+---
+
+## v1.14.384 — HONEST NAMING + SCOPE-FREEZE VERIFICATION (`PENDING`) · rollback: revert commit
+
+Owner froze the batch: no new features, correct the defects, prove no desktop styling leaks into the phone.
+**This ship adds no features.** Three corrections, then the owner's seven-step verification end to end.
+
+1. **The panel name was dishonest.** *Site Health* implied facility/power/cooling/fabric telemetry PHANTOM does
+   not receive and has no path to receive. Now **LOCAL SYSTEM STATE**, captioned in-panel *"Read from this device.
+   PHANTOM receives no facility telemetry."* Rows are only what the app genuinely knows locally. **Zero** power,
+   cooling, fabric or infrastructure rows exist anywhere in the shell region (verified by grep, not by eye).
+2. **Readiness is transparent and clearly local.** Still four real gates, still no hardcoded 82%. The summary now
+   reads as a **count** — *"N of 4 ready"* — because a count reads as a calculation rather than a monitoring
+   readout, and the panel is captioned *"Calculated on this device from the four gates below."* Every gate shows
+   its own OK/OPEN so the number can be checked against its inputs.
+3. **The flag accepts both spellings.** The owner's verification order says `?shell=1`; the ship said `?cshell=1`.
+   `cshell_isOn()` now accepts either. A flag that silently does nothing on the URL someone actually types is a
+   guaranteed field failure. Still non-persistent either way.
+
+**Hardening:** the `.cs-dpanel` hide was scoped to `body.rd.cshell`, so the desktop-only panels relied on
+`#cmd-shell` being `display:none` to stay hidden on the bare URL. That worked by inheritance rather than on their
+own terms — correct-by-accident is not correct. Now unscoped.
+
+**SEVEN-STEP VERIFICATION — ALL PASSED, MEASURED:** (1) phone at `?shell=1`, all six desktop panels + both chrome
+elements `display:none`. (2) Command Deck unchanged from `.382` — hero 334×343 @26px, 20/18/17 padding, shell
+362×634 @0/14/118, bottom nav + app header + phone header + microbar present, `#pg-cmd` still `flex` at `left:0`,
+zero overflow. (3) **851 boundary clean both sides** — at 850 full mobile with bottom nav and `left:0`; at 851 full
+desktop compact, 82px rail, no bottom nav, `left:82px`. No bleed either way. (4) 1200/1440 — 246px sidebar, labels
+visible, grid `minmax(520,1.55fr)/minmax(300,.8fr)/minmax(270,.68fr)`, lower `1.1/1.1/.8`, bottom nav `none`.
+(5) Bare URL clean, legacy Command layout untouched at `display:grid`/720px/`left:0`; `?legacy=1` clean, body class
+empty, every shell element `none`, RETURN TO NEW UI present. (6) Command→Build→Tools→Command all route, sidebar and
+topbar persist at 246px on every page, bottom nav hidden throughout, active item follows, panels re-render, 6 tool
+tiles, **zero console errors**. (7) No new feature started.
+
+**⚠ ONE FALSE ALARM WORTH RECORDING FOR ANYONE REPEATING THIS.** Mid-verification the body class went completely
+empty and the shell vanished — it looked like a serious regression. It was **test contamination, not a bug**:
+step 5 loads `?legacy=1`, which pins `phantom_legacy` in localStorage **for the whole origin**, so the next tab
+booted into legacy exactly as designed. The `.380` rip-cord was working correctly. **Clear `phantom_legacy`
+between step 5 and step 6, or run them in separate browser profiles.**
+
+**Verified before push:** stamps 3/3 · 3/3 inline blocks compile · `node --check sw.js` · valid JSON · CSS brace
+delta **0** · all-LF · no precache change. ⚠ Agents barred — equivalents run inline.
+
+**⛔ BATCH `.377`–`.384` is 8 deep, PAST the 6-ship CALL 0 cap.** `.383` and `.384` were owner-directed corrections
+during his verify rather than new scope, but the batch still needs a consolidated device pass before anything else
+ships. **Scope is frozen; no further feature work until this passes.**
+
+**Deferred to their own batches, deliberately:** Live Activity (§9.12) — needs the offline-first append-only local
+event log the owner specified, with existing actions writing real events; **never fake events**. Desktop scanner
+modal (§9.17). The open `#6c2bd6` fault value.
+
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
