@@ -13226,6 +13226,19 @@ if (typeof window !== 'undefined') {
           <div class="cs-sitepill" id="cs-sitepill"><span class="cs-sitedot" aria-hidden="true"></span><span id="cs-site">&mdash;</span></div>
         </div>
         <div class="cs-microbar"><span>&#128274; Secure session &middot; On device</span><span id="cs-shift"></span></div>
+        <div class="cs-card cs-hero" id="cs-hero">
+          <div class="cs-hero-art" aria-hidden="true"></div>
+          <div class="cs-hero-scrim" aria-hidden="true"></div>
+          <div class="cs-hero-eyebrow" id="cs-hero-eyebrow">Active deployment</div>
+          <div class="cs-hero-title" id="cs-hero-title">&mdash;</div>
+          <div class="cs-hero-prog" id="cs-hero-prog"><div class="cs-hero-bar"><div class="cs-hero-fill" id="cs-hero-fill"></div></div></div>
+          <div class="cs-hero-kpis">
+            <div class="cs-kpi"><div class="cs-kpi-n" id="cs-kpi-racks">0</div><div class="cs-kpi-k">Racks</div></div>
+            <div class="cs-kpi" id="cs-kpi-block-cell"><div class="cs-kpi-n" id="cs-kpi-block">0</div><div class="cs-kpi-k">Blockers</div></div>
+            <div class="cs-kpi"><div class="cs-kpi-n" id="cs-kpi-pct">0%</div><div class="cs-kpi-k">Complete</div></div>
+          </div>
+          <button class="cs-hero-cta" id="cs-hero-cta" type="button" onclick="cmd_route('work','deploy')">Continue deployment</button>
+        </div>
       </div>
       <div class="cc-z0" id="cc-z0">
         <span class="cc-z0-site" id="cc-z0-site">&mdash;</span>
@@ -20659,6 +20672,7 @@ function cmd_render() {
     sw.innerHTML = '<div class="sig-empty">No signals — you&rsquo;re clear.</div>';
   }
   cmd_telemetry(activeDep, activePct, handoffDraft);
+  cs_renderHero(activeDep, activePct, rackCount, blockerCount);
   cmd_setSiteLabel();
   cmd_clock();
   cmd_renderZ0(site, masterLoaded);   // v1.14.335 Command v2: Z0 site + Master-age chip + S0/S1 data-master gate
@@ -20667,6 +20681,38 @@ function cmd_render() {
 // v1.14.159 D3 — Shift Telemetry: read-only over live state (reuses cmd_render's
 // activeDep/activePct/handoffDraft). DEPLOY shows activePct+bar (the dep object carries
 // no rack done/total). SCANNED counts today from phantom_scan_collection items (ts:Date.now()).
+// v1.14.382 COMMAND SHELL §8.7 — the Active Deployment hero. Takes the SAME
+// honest values cmd_render already computed for the NBA and the telemetry tiles;
+// it introduces no new data source and invents nothing. Values are written with
+// textContent, never interpolated into innerHTML, so a deployment name can never
+// become markup. The CTA reuses cmd_route('work','deploy') — the same door the
+// NBA's "continue deployment" uses. One door per feature.
+function cs_renderHero(activeDep, activePct, rackCount, blockerCount) {
+  var host = document.getElementById('cs-hero');
+  if (!host) {
+    try { console.warn('[PHANTOM] cs_renderHero: #cs-hero is missing from #pg-cmd — the Command Shell hero cannot render'); } catch (_) {}
+    return;
+  }
+  var E = function(id) { return document.getElementById(id); };
+  var live = !!activeDep;
+  var pct = Math.max(0, Math.min(100, activePct || 0));
+
+  E('cs-hero-eyebrow').textContent = live ? 'Active deployment' : 'No active deployment';
+  E('cs-hero-title').textContent = live ? (activeDep.name || 'Deployment') : 'Nothing deploying yet';
+  // an empty state gets NO progress bar rather than a 0% one — a bar at zero
+  // reads as "started and stalled", which would be a lie about the floor.
+  E('cs-hero-prog').style.display = live ? '' : 'none';
+  E('cs-hero-fill').style.width = pct + '%';
+
+  E('cs-kpi-racks').textContent = String(rackCount || 0);
+  E('cs-kpi-block').textContent = String(blockerCount || 0);
+  E('cs-kpi-pct').textContent = pct + '%';
+  var bcell = E('cs-kpi-block-cell');
+  if (blockerCount > 0) bcell.classList.add('hot'); else bcell.classList.remove('hot');
+
+  E('cs-hero-cta').textContent = live ? 'Continue deployment' : 'Start a deployment';
+}
+
 function cmd_telemetry(activeDep, activePct, handoffDraft) {
   function E2(id){ return document.getElementById(id); }
   var td = E2('tt-deploy'), ts = E2('tt-scan'), th = E2('tt-handoff');
@@ -52227,6 +52273,52 @@ body.rd.cshell .cs-microbar {
   font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--slate); margin-top: 10px;
 }
 body.rd.cshell .cs-microbar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* §8.7 — Active Deployment hero. The art is the EXISTING approved
+   icons/DEPLOY-phone@3x.webp (1170x403, already in PRECACHE_URLS, already the
+   BUILD banner's art). It is never stretched: background-size:cover preserves
+   its aspect and CROPS, which is the adjustment ruling 6 explicitly permits.
+   Two overlays keep the type legible - a left-to-right scrim for the text
+   column and a bottom-up scrim for the action row. */
+body.rd.cshell .cs-hero {
+  position: relative; min-height: 343px; border-radius: 26px; overflow: hidden;
+  padding: 20px 18px 17px; display: flex; flex-direction: column; justify-content: flex-end;
+}
+body.rd.cshell .cs-hero-art {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: url(icons/DEPLOY-phone@3x.webp);
+  background-size: cover; background-position: 78% center; background-repeat: no-repeat;
+}
+body.rd.cshell .cs-hero-scrim {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(2,3,5,0.94) 0%, rgba(2,3,5,0.72) 46%, rgba(2,3,5,0.12) 100%),
+              linear-gradient(to top, rgba(2,3,5,0.92) 0%, rgba(2,3,5,0) 42%);
+}
+body.rd.cshell .cs-hero > *:not(.cs-hero-art):not(.cs-hero-scrim) { position: relative; }
+body.rd.cshell .cs-hero-eyebrow { font-size: 9.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--cyan); }
+body.rd.cshell .cs-hero-title { font-size: 30px; font-weight: 800; letter-spacing: -.01em; color: var(--white); line-height: 1.05; margin-top: 6px; }
+body.rd.cshell .cs-hero-prog { width: 72%; margin-top: 12px; }
+body.rd.cshell .cs-hero-bar { height: 6px; border-radius: 3px; background: rgba(176,207,255,0.14); overflow: hidden; }
+body.rd.cshell .cs-hero-fill { height: 100%; width: 0; border-radius: 3px; background: linear-gradient(90deg, var(--cyan), var(--violet)); }
+body.rd.cshell .cs-hero-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+body.rd.cshell .cs-kpi {
+  background: rgba(8,12,18,0.62); border: 1px solid var(--cyan-border-lo); border-radius: 12px;
+  padding: 8px 9px; min-width: 0;
+}
+body.rd.cshell .cs-kpi-n { font-family: var(--mono); font-size: 18px; font-weight: 800; color: var(--white); line-height: 1.1; }
+body.rd.cshell .cs-kpi-k { font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--slate); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* fault is the LITERAL #ff2bd6, matching all 40 live fault sites. Never
+   var(--mag): that token is #boot-scoped with zero consumers and silently
+   invalidates the whole declaration outside it. */
+body.rd.cshell .cs-kpi.hot .cs-kpi-n { color: #ff2bd6; }
+body.rd.cshell .cs-kpi.hot { border-color: rgba(255,43,214,0.45); }
+body.rd.cshell .cs-hero-cta {
+  min-height: 49px; border-radius: 14px; border: 0; width: 100%; margin-top: 12px;
+  background: linear-gradient(90deg, var(--cyan), var(--violet)); color: #04060a;
+  font-weight: 800; font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+body.rd.cshell .cs-hero-cta:active { transform: scale(.985); filter: brightness(1.08); }
 </style>
 
 <!-- Crash-Cart Mode overlay — populated by crashcart_render() on activate -->
