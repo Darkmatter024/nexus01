@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.387';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.388';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20397,6 +20397,79 @@ function bw_render() {
     var b = E('button', 'bw-act' + a[2], a[0]); b.type = 'button'; b.onclick = a[1]; acts.appendChild(b);
   });
   host.appendChild(acts);
+
+  // ── desktop-only contextual columns. They are display:none on phone, so the
+  //    approved phone composition is unchanged; CSS Grid places them on desktop
+  //    without touching DOM order, which is why the phone order still holds. ──
+  var q = E('div', 'bw-side', null); q.id = 'bw-queue';
+  q.appendChild(E('div', 'bw-k', 'Rack queue'));
+  var dn = 0, da = 0, db = 0, dp = 0;
+  c.rows.forEach(function(row) {
+    if (row.ru.currentPhase === 'complete') dn++;
+    else if (row.ru.isBlocked) db++;
+    else if (row.ru.hasInProgress || (row.ru.pctComplete || 0) > 0) da++;
+    else dp++;
+  });
+  var tally = E('div', 'bw-tally');
+  [['Complete', dn, 'done'], ['Active', da, 'act'], ['Blocked', db, 'blk'], ['Pending', dp, 'pen']].forEach(function(x) {
+    var cell = E('div', 'bw-ty ' + x[2]);
+    cell.appendChild(E('div', 'bw-ty-n', String(x[1])));
+    cell.appendChild(E('div', 'bw-ty-k', x[0]));
+    tally.appendChild(cell);
+  });
+  q.appendChild(tally);
+  var qlist = E('div', 'bw-qlist');
+  c.rows.forEach(function(row) {
+    var b = bw_queueRow(c.dep, row);
+    if (row.rack.id === rack.id) b.classList.add('is-cur');
+    qlist.appendChild(b);
+  });
+  if (!c.rows.length) qlist.appendChild(E('div', 'bw-zero-p', 'No racks captured yet.'));
+  q.appendChild(qlist);
+  host.appendChild(q);
+
+  var cx = E('div', 'bw-side', null); cx.id = 'bw-ctx';
+  // active blockers across the deployment — real phase state, never a count of nothing
+  cx.appendChild(E('div', 'bw-k', 'Active blockers'));
+  var blist = E('div', 'bw-qlist');
+  var anyBlocked = 0;
+  c.rows.forEach(function(row) {
+    if (!row.ru.isBlocked) return;
+    anyBlocked++;
+    var note = null;
+    try { (row.ru.phases || []).forEach(function(p) { if (!note && p && p.status === 'blocked' && p.blockerNote) note = p.blockerNote; }); } catch (_) {}
+    var bb = document.createElement('button'); bb.type = 'button'; bb.className = 'bw-blkrow';
+    var bn = E('div', 'bw-q-n', row.rack.rackId || row.rack.name || row.rack.id || '—');
+    var bs = E('div', 'bw-q-s', note || 'No note recorded');
+    bb.appendChild(bn); bb.appendChild(bs);
+    bb.onclick = function() { try { deploy_showRackDetail(c.dep.id, row.rack.id); } catch (e) { phantom_logErr('bw:blkrow', e); } };
+    blist.appendChild(bb);
+  });
+  if (!anyBlocked) blist.appendChild(E('div', 'bw-zero-p', 'Nothing blocking this deployment.'));
+  cx.appendChild(blist);
+
+  // local save state. PHANTOM writes straight through to on-device storage, so there
+  // is no pending-changes queue and no sync target - both are stated honestly and
+  // positively rather than shown as a spinner or a fake "synced" tick.
+  cx.appendChild(E('div', 'bw-k', 'Local state'));
+  var ls = E('div', 'bw-ls');
+  var lastSave = null;
+  try {
+    var t0 = c.dep && (c.dep.lastUpdated || c.dep.updatedAt || c.dep.createdAt);
+    if (t0) lastSave = new Date(t0).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  } catch (_) {}
+  [['Saved locally', 'All changes written to this device'],
+   ['Pending changes', 'None \u2014 writes are immediate'],
+   ['Last local save', lastSave || '\u2014'],
+   ['Synchronization', 'On-device only \u2014 no sync target configured']
+  ].forEach(function(r) {
+    var row = E('div', 'bw-lsrow');
+    row.appendChild(E('div', 'bw-ls-k', r[0]));
+    row.appendChild(E('div', 'bw-ls-v', r[1]));
+    ls.appendChild(row);
+  });
+  cx.appendChild(ls);
+  host.appendChild(cx);
 }
 
 // Mounts the EXISTING rack scene. Scene internals - lighting, materials, fog, tone
@@ -53137,6 +53210,96 @@ body.rd .bw-q-s { font-size: 10.5px; color: var(--slate); margin-top: 3px; lette
 body.rd .bw-q-p { margin-left: auto; font-family: var(--mono); font-size: 13px; font-weight: 800; color: var(--cyan); }
 body.rd .bw-q.blocked .bw-q-p { color: #ff2bd6; }
 body.rd .bw-q.done .bw-q-p { color: var(--teal); }
+
+/* the two contextual columns are PHONE-INVISIBLE. The approved phone Build
+   composition is untouched by everything below. */
+.bw-side { display: none; }
+
+/* ═══ PHASE 2 DESKTOP BUILD — inside the Phase 1 persistent shell ═══════════
+   Requires body.rd.cshell, so it only composes when the Command Shell chrome
+   (sidebar + topbar) is actually on screen. CSS Grid places the blocks; DOM
+   order never changes, which is what keeps the phone composition byte-identical.
+   ─────────────────────────────────────────────────────────────────────────── */
+@media (min-width: 851px) {
+  body.rd.cshell #pg-work { padding: 24px 28px 46px; }
+  /* #pg-work is LOAD-BEARING here: the phone rule is body.rd #pg-work #bw-shell,
+     which carries TWO ids and out-specifies a class-scoped selector. Without it
+     display:grid never applies and every block silently spans full width. Third
+     time this pattern has bitten in this shell - id-scoped legacy rules win. */
+  body.rd.cshell #pg-work #bw-shell {
+    display: grid; max-width: 1640px; margin: 0 auto; gap: 15px; align-items: start;
+    grid-template-columns: minmax(0, 1fr) minmax(290px, 320px);
+    grid-template-areas:
+      'hd    hd'
+      'state state'
+      'hero  na'
+      'prev  ctx'
+      'mx    ctx'
+      'acts  ctx'
+      'queue queue';
+  }
+  body.rd.cshell #pg-work #bw-shell > .bw-hd    { grid-area: hd; margin: 0; }
+  body.rd.cshell #pg-work #bw-shell > .bw-state { grid-area: state; margin: 0; }
+  body.rd.cshell #pg-work #bw-shell > .bw-hero  { grid-area: hero; margin: 0; }
+  body.rd.cshell #pg-work #bw-shell > .bw-card:not(.bw-hero):not(.bw-prev) { grid-area: na; margin: 0; }
+  body.rd.cshell #pg-work #bw-shell > .bw-prev  { grid-area: prev; margin: 0; }
+  body.rd.cshell #pg-work #bw-shell > .bw-mx    { grid-area: mx; margin: 0; }
+  body.rd.cshell #pg-work #bw-shell > .bw-acts  { grid-area: acts; }
+  body.rd.cshell #pg-work #bw-shell > #bw-queue { grid-area: queue; }
+  body.rd.cshell #pg-work #bw-shell > #bw-ctx   { grid-area: ctx; }
+  body.rd.cshell .bw-side {
+    display: block; padding: 15px 16px; border-radius: 18px;
+    background: linear-gradient(145deg, rgba(16,22,32,0.91), rgba(8,12,18,0.95));
+    border: 1px solid var(--cyan-border-lo);
+  }
+  body.rd.cshell .bw-side .bw-k { margin-bottom: 10px; }
+  body.rd.cshell .bw-side .bw-k + * + .bw-k { margin-top: 16px; }
+  /* desktop type scale — the phone sizes are not reused */
+  body.rd.cshell .bw-t1, body.rd.cshell .bw-t2 { font-size: 22px; }
+  body.rd.cshell .bw-rack { font-size: 40px; }
+  body.rd.cshell .bw-mount { height: 340px; }
+  body.rd.cshell .bw-m-v { font-size: 20px; }
+  body.rd.cshell .bw-acts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body.rd.cshell .bw-cta { width: auto; align-self: flex-start; padding: 0 30px; }
+
+  /* rack-queue tally + rows */
+  body.rd.cshell .bw-tally { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 12px; }
+  body.rd.cshell .bw-ty { padding: 7px 4px; border-radius: 10px; background: rgba(8,12,18,0.6); border: 1px solid var(--cyan-border-lo); text-align: center; }
+  body.rd.cshell .bw-ty-n { font-family: var(--mono); font-size: 16px; font-weight: 800; color: var(--white); }
+  body.rd.cshell .bw-ty-k { font-size: 7.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 2px; }
+  body.rd.cshell .bw-ty.done .bw-ty-n { color: var(--teal); }
+  body.rd.cshell .bw-ty.act  .bw-ty-n { color: var(--cyan); }
+  body.rd.cshell .bw-ty.blk  .bw-ty-n { color: #ff2bd6; }
+  body.rd.cshell .bw-qlist { max-height: 330px; overflow-y: auto; }
+  body.rd.cshell .bw-q.is-cur { border-color: color-mix(in srgb, var(--cyan) 60%, transparent); background: rgba(92,242,255,0.07); }
+  body.rd.cshell .bw-blkrow {
+    display: block; width: 100%; text-align: left; padding: 10px 11px; margin-bottom: 8px; cursor: pointer;
+    border-radius: 11px; background: rgba(255,43,214,0.06); border: 1px solid rgba(255,43,214,0.4);
+  }
+  body.rd.cshell .bw-blkrow .bw-q-s { color: #ff2bd6; text-transform: none; letter-spacing: 0; }
+  /* local state rows */
+  body.rd.cshell .bw-lsrow { padding: 8px 0; border-bottom: 1px solid rgba(176,207,255,0.06); }
+  body.rd.cshell .bw-lsrow:last-child { border-bottom: 0; }
+  body.rd.cshell .bw-ls-k { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--slate); }
+  body.rd.cshell .bw-ls-v { font-size: 12.5px; color: var(--white); margin-top: 3px; line-height: 1.35; }
+}
+
+/* FULL MISSION CONTROL — the rack queue becomes its own left contextual column
+   at the same 1500px where the Command dashboard earns its third column. */
+@media (min-width: 1500px) {
+  body.rd.cshell #pg-work #bw-shell {
+    grid-template-columns: 260px minmax(0, 1fr) 320px;
+    grid-template-areas:
+      'hd    hd    hd'
+      'state state state'
+      'queue hero  na'
+      'queue prev  ctx'
+      'queue mx    ctx'
+      'queue acts  ctx';
+  }
+  body.rd.cshell .bw-mount { height: 420px; }
+  body.rd.cshell .bw-qlist { max-height: none; }
+}
 
 /* The desktop-only panels never render on phone - mobile stays as approved.
    UNSCOPED on purpose: .cs-dpanel is a brand-new class that matches nothing that
