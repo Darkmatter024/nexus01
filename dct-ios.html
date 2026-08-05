@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.386';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.387';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -21152,6 +21152,8 @@ function cmd_render() {
 // the three dashboard panels. Every value is one cmd_render already computed for the
 // phone; this is a second FACE on one brain, not a second source of truth. Nothing
 // here invents a number, and every string is written with textContent.
+// v1.14.387: standard DC shorthand a tech reads at a glance, sized for the rail.
+var CS_STEP_SHORT = { mechanical: 'MECH', power: 'PWR', network: 'NET', compute: 'CPU', validation: 'VAL' };
 function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, online, storageOk, site, masterLoaded, handoffDraft) {
   var side = document.getElementById('cs-side');
   if (!side) {
@@ -21262,7 +21264,12 @@ function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, on
     var fill = document.createElement('div'); fill.className = 'cs-stepfill'; fill.style.width = pct + '%';
     bar.appendChild(fill);
     var k = document.createElement('div'); k.className = 'cs-stepk';
-    k.textContent = (typeof DEPLOY_PHASE_LABELS === 'object' && DEPLOY_PHASE_LABELS[t]) ? DEPLOY_PHASE_LABELS[t] : t.toUpperCase();
+    // SHELL-LOCAL short forms. DEPLOY_PHASE_LABELS is shared with the phone Build
+    // workspace and the deploy screens, so it is NOT touched - five full labels simply
+    // do not fit a 320px rail and were truncating to MECHAN... / VALIDAT...
+    // The full label still renders under the rail as the current-phase line.
+    k.textContent = CS_STEP_SHORT[t] || t.toUpperCase();
+    k.title = (typeof DEPLOY_PHASE_LABELS === 'object' && DEPLOY_PHASE_LABELS[t]) ? DEPLOY_PHASE_LABELS[t] : t;
     var num = document.createElement('div'); num.className = 'cs-stepn';
     num.textContent = a.total ? (a.complete + '/' + a.total) : '—';
     step.appendChild(bar); step.appendChild(k); step.appendChild(num);
@@ -53330,7 +53337,7 @@ body.rd .bw-q.done .bw-q-p { color: var(--teal); }
   /* complete -> teal, the 'complete' channel. Active -> cyan. Never --green. */
   body.rd.cshell .cs-step.done .cs-stepfill { background: var(--teal); }
   body.rd.cshell .cs-step.blocked .cs-stepfill { background: #ff2bd6; }
-  body.rd.cshell .cs-stepk { font-size: 8px; letter-spacing: .13em; text-transform: uppercase; color: var(--slate); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.rd.cshell .cs-stepk { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 6px; white-space: nowrap; }
   body.rd.cshell .cs-step.done .cs-stepk { color: var(--teal); }
   body.rd.cshell .cs-step.active .cs-stepk { color: var(--cyan); }
   body.rd.cshell .cs-stepn { font-family: var(--mono); font-size: 10px; color: var(--slate); margin-top: 2px; }
