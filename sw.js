@@ -34,7 +34,7 @@
 // a clean v1.13.3 — dropping the prior -N cache-iteration suffix — so this real
 // version bump busts every client's cache and the three stamps (app const /
 // version.json / this key) line up again. Patch bumps continue from here.
-const CACHE_VERSION = 'phantom-v1.14.380';
+const CACHE_VERSION = 'phantom-v1.14.381';
 
 // Assets to precache on install. Keep this minimal — single-file PWA means
 // most of PHANTOM is in dct-ios.html itself.
@@ -75,7 +75,6 @@ const PRECACHE_URLS = [
   // v1.14.326: HANDOFF feature-hero art (mounted on the redesign Work->Handoff screen).
   // Owner override of the honesty-lock hold ('no use it') — ships with baked decorative text.
   'icons/phantom-feat-handoff-v2.webp',
-  'icons/phantom-ref-optics-384.webp',
   'icons/phantom-ref-optics-768.webp',
   'icons/phantom-ref-cli-768.webp',
   'icons/phantom-ref-hwref-768.webp',
@@ -83,12 +82,6 @@ const PRECACHE_URLS = [
   'icons/phantom-ref-compass-768.webp',
   'icons/phantom-ref-ghostecho-768.webp',
   'icons/phantom-ref-hardware-768.webp',
-  'icons/phantom-ref-hardware-256.webp',
-  'icons/phantom-ref-cli-256.webp',
-  'icons/phantom-ref-hwref-256.webp',
-  'icons/phantom-ref-know-256.webp',
-  'icons/phantom-ref-compass-256.webp',
-  'icons/phantom-ref-ghostecho-256.webp',
   'icons/phantom-optic-om3-256.webp',
   'icons/phantom-optic-om4-256.webp',
   'icons/phantom-optic-om5-256.webp',
