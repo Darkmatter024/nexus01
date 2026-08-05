@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.388';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.389';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20348,6 +20348,12 @@ function bw_render() {
   ab.onclick = function() { try { forge3d_open(); } catch (e) { phantom_logErr('bw:aisle', e); if (typeof phantomToast === 'function') phantomToast('Could not open the aisle view', 'error'); } };
   pvh.appendChild(ab);
   pv.appendChild(pvh);
+  // rackElevation_render3D builds the FRONT/ISO/TOP/REAR rail and the CABLES chip
+  // only when it can find a .reh-3d-toggle strip - it does document.querySelector for
+  // one and appends the rail to that strip's PARENT. Providing the strip here is what
+  // turns the existing controls on; not one line of the scene or the rail is rewritten.
+  var strip = E('div', 'reh-3d-toggle bw-strip'); strip.id = 'bw-strip';
+  pv.appendChild(strip);
   var mount = E('div', 'bw-mount'); mount.id = 'bw-mount';
   pv.appendChild(mount);
   host.appendChild(pv);
@@ -20397,6 +20403,99 @@ function bw_render() {
     var b = E('button', 'bw-act' + a[2], a[0]); b.type = 'button'; b.onclick = a[1]; acts.appendChild(b);
   });
   host.appendChild(acts);
+
+  // ── contextual tool tabs. Each opens the CANONICAL tool through
+  //    rd_openOpsTool(tab, backAction) with a back action that returns to BUILD, so
+  //    the tool opens in the workspace flow instead of stranding the tech on Work. ──
+  var tabs = E('div', 'bw-tabs');
+  [['Port map', 'portmap'], ['BOM', 'bom'], ['Manifest', 'manifest'], ['Rack map', 'rackmap']].forEach(function(t) {
+    var b = E('button', 'bw-tab', t[0]); b.type = 'button';
+    b.onclick = function() {
+      try { rd_openOpsTool(t[1], "showMode('work')"); }
+      catch (e) { phantom_logErr('bw:tab:' + t[1], e); if (typeof phantomToast === 'function') phantomToast('Could not open ' + t[0], 'error'); }
+    };
+    tabs.appendChild(b);
+  });
+  host.appendChild(tabs);
+
+  // ── connection / task worklist for the rack's CURRENT phase, from real
+  //    checklist state. Completion and evidence write through the existing
+  //    hardened path - checklist_toggle and checklist_setNote - never a new writer. ──
+  var wl = E('div', 'bw-card bw-worklist');
+  var curPhase = null;
+  try { (ru.phases || []).forEach(function(p) { if (!curPhase && p && p.status !== 'complete') curPhase = p; }); } catch (_) {}
+  var wh = E('div', 'bw-wl-h');
+  wh.appendChild(E('span', 'bw-k', 'Worklist'));
+  if (curPhase) wh.appendChild(E('span', 'bw-wl-p', plabel));
+  wl.appendChild(wh);
+  var items = (curPhase && Array.isArray(curPhase.items)) ? curPhase.items : [];
+  if (!items.length) {
+    wl.appendChild(E('div', 'bw-zero-p', curPhase
+      ? 'No checklist items defined for this phase.'
+      : 'Every phase on this rack is complete.'));
+  } else {
+    items.forEach(function(it) {
+      var done = (it.status === 'met' || it.status === 'complete' || it.done === true);
+      var row = E('div', 'bw-wl' + (done ? ' done' : ''));
+      var bx = E('button', 'bw-wl-box'); bx.type = 'button';
+      bx.setAttribute('aria-pressed', done ? 'true' : 'false');
+      bx.setAttribute('aria-label', (done ? 'Mark not done: ' : 'Mark done: ') + (it.description || it.label || 'item'));
+      bx.textContent = done ? '\u2713' : '';
+      bx.onclick = function() {
+        try {
+          checklist_toggle(c.dep.id, curPhase.id, it.id);
+          bw_render();
+        } catch (e) {
+          phantom_logErr('bw:toggle', e);
+          if (typeof phantomToast === 'function') phantomToast('Could not save that change', 'error');
+        }
+      };
+      var mid = E('div', 'bw-wl-b');
+      mid.appendChild(E('div', 'bw-wl-t', it.description || it.label || 'Item'));
+      if (it.note) mid.appendChild(E('div', 'bw-wl-n', it.note));
+      var ev = E('button', 'bw-wl-ev', it.note ? 'Evidence \u2713' : 'Evidence'); ev.type = 'button';
+      ev.setAttribute('aria-label', 'Add evidence note');
+      ev.onclick = function() {
+        var cur = it.note || '';
+        var v = null;
+        try { v = window.prompt('Evidence note for: ' + (it.description || 'item'), cur); } catch (_) {}
+        if (v === null) return;                       // cancelled - write nothing
+        try {
+          checklist_setNote(c.dep.id, curPhase.id, it.id, v);
+          if (typeof phantomToast === 'function') phantomToast('Evidence saved on device', 'ok');
+          setTimeout(bw_render, 350);                 // setNote debounces its write
+        } catch (e) {
+          phantom_logErr('bw:evidence', e);
+          if (typeof phantomToast === 'function') phantomToast('Could not save evidence', 'error');
+        }
+      };
+      row.appendChild(bx); row.appendChild(mid); row.appendChild(ev);
+      wl.appendChild(row);
+    });
+  }
+  // ── completion action: advances the phase through the existing writer, which
+  //    owns the audit entry, the rack cache and the deployment timestamp. ──
+  if (curPhase) {
+    // a phase with NO checklist items is not "partial" - it has nothing open. Only a
+    // phase with real unmet items earns the count and the gold partial treatment.
+    var _open = items.filter(function(i) { return !(i.status === 'met' || i.status === 'complete' || i.done === true); }).length;
+    var allDone = _open === 0;
+    var cb = E('button', 'bw-wl-done', allDone ? ('Complete ' + plabel) : ('Complete ' + plabel + ' \u2014 ' + items.filter(function(i){return !(i.status==='met'||i.status==='complete'||i.done===true);}).length + ' open'));
+    cb.type = 'button';
+    if (!allDone && items.length) cb.classList.add('is-partial');
+    cb.onclick = function() {
+      try {
+        deploy_advancePhase(curPhase.id, 'complete', c.dep.id);
+        if (typeof phantomToast === 'function') phantomToast(plabel + ' marked complete', 'ok');
+        bw_render();
+      } catch (e) {
+        phantom_logErr('bw:advance', e);
+        if (typeof phantomToast === 'function') phantomToast('Could not complete the phase', 'error');
+      }
+    };
+    wl.appendChild(cb);
+  }
+  host.appendChild(wl);
 
   // ── desktop-only contextual columns. They are display:none on phone, so the
   //    approved phone composition is unchanged; CSS Grid places them on desktop
@@ -53210,6 +53309,45 @@ body.rd .bw-q-s { font-size: 10.5px; color: var(--slate); margin-top: 3px; lette
 body.rd .bw-q-p { margin-left: auto; font-family: var(--mono); font-size: 13px; font-weight: 800; color: var(--cyan); }
 body.rd .bw-q.blocked .bw-q-p { color: #ff2bd6; }
 body.rd .bw-q.done .bw-q-p { color: var(--teal); }
+
+/* v1.14.389 — the strip host exists only so rackElevation_render3D can find it and
+   build its own rail into this card. It carries no styling of its own. */
+body.rd .bw-strip { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 9px; }
+body.rd .bw-strip:empty { display: none; }
+body.rd .bw-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+body.rd .bw-tab {
+  min-height: 44px; padding: 0 6px; border-radius: 11px; cursor: pointer;
+  background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo); color: var(--cyan);
+  font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+}
+body.rd .bw-tab:active { transform: scale(.98); }
+body.rd .bw-wl-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+body.rd .bw-wl-p { font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--violet); }
+body.rd .bw-wl { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(176,207,255,0.07); }
+body.rd .bw-wl:last-of-type { border-bottom: 0; }
+body.rd .bw-wl-box {
+  width: 26px; height: 26px; flex: 0 0 26px; border-radius: 8px; cursor: pointer; padding: 0;
+  background: rgba(8,12,18,0.7); border: 1px solid var(--cyan-border-lo);
+  color: #04060a; font-size: 15px; font-weight: 800; line-height: 1;
+}
+body.rd .bw-wl.done .bw-wl-box { background: var(--teal); border-color: var(--teal); }
+body.rd .bw-wl-b { flex: 1; min-width: 0; }
+body.rd .bw-wl-t { font-size: 12.5px; color: var(--white); line-height: 1.35; }
+body.rd .bw-wl.done .bw-wl-t { color: var(--slate); text-decoration: line-through; }
+body.rd .bw-wl-n { font-size: 11px; color: var(--slate); line-height: 1.35; margin-top: 4px; font-style: italic; }
+body.rd .bw-wl-ev {
+  flex: 0 0 auto; min-height: 30px; padding: 0 10px; border-radius: 9px; cursor: pointer;
+  background: none; border: 1px solid var(--cyan-border-lo); color: var(--slate);
+  font-size: 9.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+}
+body.rd .bw-wl-done {
+  width: 100%; min-height: 46px; margin-top: 12px; border: 0; border-radius: 12px; cursor: pointer;
+  background: linear-gradient(90deg, var(--teal), var(--cyan)); color: #04060a;
+  font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+/* a phase with open items still offers completion - the owner decides - but it must
+   LOOK different from a clean one, so the count is on the button and the fill is flat. */
+body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px solid var(--gold); color: var(--gold); }
 
 /* the two contextual columns are PHONE-INVISIBLE. The approved phone Build
    composition is untouched by everything below. */
