@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.385';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.386';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -16006,6 +16006,7 @@ if (typeof window !== 'undefined') {
     </div>
   </nav>
   <div id="cs-top">
+   <div class="cs-topin">
     <div>
       <div class="cs-ttitle">Command</div>
       <div class="cs-tsub" id="cs-tsub">&mdash;</div>
@@ -16017,6 +16018,7 @@ if (typeof window !== 'undefined') {
       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Search">
     <button type="button" class="cs-tbtn" id="cs-tnotif" onclick="cmd_route('work','handoff')" aria-label="Open blockers">&#9888;&#65038;<span class="cs-tbadge" id="cs-tnotif-n">0</span></button>
     <button type="button" class="cs-tscan" onclick="cmd_route('work','scan')" aria-label="Scan a rack">Scan</button>
+   </div>
   </div>
   <div class="botnav" id="rd-botnav">
     <div id="bn-rail">
@@ -21226,7 +21228,11 @@ function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, on
     try { ru = deploy_computeDeployRollup(activeDep.id); }
     catch (e) { try { phantom_logErr('cs_renderDesktop:rollup', e); } catch (_) {} }
   }
+  var _bp = document.getElementById('cs-build');
   if (!ru || !ru.phaseAgg) {
+    // owner: "Build Progress becomes a large empty slab when no deployment is
+    // active." A panel with one sentence to say sizes to that sentence.
+    if (_bp) _bp.classList.add('is-empty');
     var em = document.createElement('div');
     em.className = 'cs-empty';
     em.textContent = activeDep
@@ -21235,6 +21241,7 @@ function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, on
     bb.appendChild(em);
     return;
   }
+  if (_bp) _bp.classList.remove('is-empty');
   var rail = document.createElement('div'); rail.className = 'cs-rail';
   var curLabel = 'Complete', curPct = 0;
   DEPLOY_PHASE_TYPES.forEach(function(t) {
@@ -53176,11 +53183,15 @@ body.rd .bw-q.done .bw-q-p { color: var(--teal); }
   /* §9.5 TOPBAR — 76px, sticky, dark translucent, 22px blur, bottom divider */
   body.rd.cshell #cs-top {
     display: flex; align-items: center; gap: 14px; position: fixed; top: 0; left: 246px; right: 0;
-    height: 76px; z-index: 85; padding: 0 28px;
+    height: 76px; z-index: 85; padding: 0;
     background: rgba(4,7,11,0.82); border-bottom: 1px solid var(--cyan-border-lo);
     -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px);
   }
-  body.rd.cshell .cs-ttitle { font-size: 17px; font-weight: 800; letter-spacing: .04em; color: var(--white); }
+  /* the topbar's inner box mirrors #cmd-shell's max-width and padding, so the
+     title sits on the hero's left edge and SCAN sits on the rail's right edge
+     instead of floating against the viewport. */
+  body.rd.cshell .cs-topin { display: flex; align-items: center; gap: 14px; width: 100%; max-width: 1640px; margin: 0 auto; padding: 0 28px; }
+  body.rd.cshell .cs-ttitle { font-size: 18.5px; font-weight: 800; letter-spacing: .04em; color: var(--white); }
   body.rd.cshell .cs-tsub { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--slate); margin-top: 3px; }
   body.rd.cshell .cs-tspacer { flex: 1; }
   body.rd.cshell .cs-tsearch {
@@ -53237,15 +53248,25 @@ body.rd .bw-q.done .bw-q-p { color: var(--teal); }
   body.rd.cshell .cs-dpanel { display: flex; flex-direction: column; }
 
   /* §9.7 primary dashboard grid — NOT an equal three-column card grid */
+  /* LAPTOP IS THE DEFAULT DESKTOP COMPOSITION (owner device review): one primary
+     workspace column and one contextual rail. The full three-column Mission
+     Control grid is an UPGRADE that only unlocks at 1280px, where there is
+     genuinely room for it. Forcing three columns onto a laptop is what produced
+     the cramped panels, the clipped LOCAL SYSTEM STATE title and the wrapped
+     values. The rail is capped at 320px so it never starves the hero. */
   body.rd.cshell #cs-grid {
     display: grid;
-    grid-template-columns: minmax(520px, 1.55fr) minmax(300px, 0.8fr) minmax(270px, 0.68fr);
-    gap: 15px; align-items: start;
+    grid-template-columns: minmax(0, 1fr) minmax(290px, 320px);
+    gap: 15px;
+    /* STRETCH, not start: the hero spans the rail’s full height so the left column
+       has no dead space under it. With start, the hero sat short and the page read as
+       loose cards rather than one operating environment. */
+    align-items: stretch;
   }
-  body.rd.cshell #cs-grid .cs-hero { grid-column: 1; grid-row: 1 / span 2; }
-  body.rd.cshell #cs-intel  { grid-column: 2; grid-row: 1; min-height: 204px; }
-  body.rd.cshell #cs-health { grid-column: 3; grid-row: 1; min-height: 204px; }
-  body.rd.cshell #cs-build  { grid-column: 2 / span 2; grid-row: 2; min-height: 206px; }
+  body.rd.cshell #cs-grid .cs-hero { grid-column: 1; grid-row: 1 / span 3; }
+  body.rd.cshell #cs-intel  { grid-column: 2; grid-row: 1; min-height: 0; }
+  body.rd.cshell #cs-health { grid-column: 2; grid-row: 2; min-height: 0; }
+  body.rd.cshell #cs-build  { grid-column: 2; grid-row: 3; min-height: 0; }
 
   /* §9.8 desktop hero — same artwork, larger scale, crop and overlay only */
   body.rd.cshell #cmd-shell .cs-hero { min-height: 425px; padding: 25px; border-radius: 22px; }
@@ -53263,7 +53284,9 @@ body.rd .bw-q.done .bw-q-p { color: var(--teal); }
 
   /* shared desktop panel chrome */
   body.rd.cshell .cs-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
-  body.rd.cshell .cs-pt { font-size: 11px; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; color: var(--white); }
+  /* desktop type is its own scale, not compressed phone type. Letter-spacing is
+     eased from .17em to .12em so a two-word panel title cannot clip its column. */
+  body.rd.cshell .cs-pt { font-size: 12.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--white); white-space: nowrap; }
   /* v1.14.384: says out loud where a panel's numbers come from, so nothing on this
      dashboard can be mistaken for external monitoring or AI telemetry. */
   body.rd.cshell .cs-pcap { font-size: 9px; line-height: 1.4; color: var(--slate); margin: -6px 0 10px; }
@@ -53274,8 +53297,8 @@ body.rd .bw-q.done .bw-q-p { color: var(--teal); }
   body.rd.cshell .cs-iorb { width: 46px; height: 46px; flex: 0 0 46px; object-fit: contain; }
   body.rd.cshell .cs-irow { display: flex; align-items: flex-start; gap: 12px; }
   body.rd.cshell .cs-ik { font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--violet); }
-  body.rd.cshell .cs-ititle { font-size: 15px; font-weight: 700; color: var(--white); line-height: 1.25; margin-top: 4px; }
-  body.rd.cshell .cs-ip { font-size: 11.5px; color: var(--slate); line-height: 1.45; margin-top: 6px; }
+  body.rd.cshell .cs-ititle { font-size: 16.5px; font-weight: 700; color: var(--white); line-height: 1.28; margin-top: 5px; }
+  body.rd.cshell .cs-ip { font-size: 12.5px; color: var(--slate); line-height: 1.5; margin-top: 7px; }
   body.rd.cshell .cs-iact {
     margin-top: auto; padding-top: 12px; display: flex; gap: 8px;
   }
@@ -53294,9 +53317,10 @@ body.rd .bw-q.done .bw-q-p { color: var(--teal); }
   body.rd.cshell .cs-hdot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 7px var(--ok); }
   body.rd.cshell .cs-hrow.warn .cs-hdot { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
   body.rd.cshell .cs-hrow.bad  .cs-hdot { background: #ff2bd6; box-shadow: 0 0 7px rgba(255,43,214,0.8); }
-  body.rd.cshell .cs-hk { font-size: 11.5px; color: var(--white); font-weight: 600; min-width: 0; }
-  body.rd.cshell .cs-hs { font-size: 9.5px; color: var(--slate); margin-top: 2px; }
-  body.rd.cshell .cs-hv { margin-left: auto; font-family: var(--mono); font-size: 11.5px; font-weight: 700; color: var(--slate); white-space: nowrap; }
+  body.rd.cshell .cs-hk { font-size: 13px; color: var(--white); font-weight: 600; min-width: 0; }
+  body.rd.cshell .cs-hs { font-size: 10.5px; color: var(--slate); margin-top: 3px; line-height: 1.35; }
+  body.rd.cshell .cs-hv { margin-left: auto; padding-left: 10px; font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--slate); white-space: nowrap; }
+  body.rd.cshell .cs-hrow { padding: 9px 0; }
 
   /* §9.11 Build Progress five-step rail */
   body.rd.cshell .cs-rail { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 4px; }
@@ -53313,10 +53337,13 @@ body.rd .bw-q.done .bw-q-p { color: var(--teal); }
   body.rd.cshell .cs-bfoot { margin-top: auto; padding-top: 12px; display: flex; align-items: baseline; gap: 8px; }
   body.rd.cshell .cs-bphase { font-size: 13px; font-weight: 700; color: var(--white); }
   body.rd.cshell .cs-bpct { font-family: var(--mono); font-size: 18px; font-weight: 800; color: var(--cyan); margin-left: auto; }
-  body.rd.cshell .cs-empty { font-size: 11.5px; color: var(--slate); line-height: 1.5; }
+  body.rd.cshell .cs-empty { font-size: 12.5px; color: var(--slate); line-height: 1.55; }
+  /* a panel with nothing to say sizes to its sentence instead of reserving a slab */
+  body.rd.cshell .cs-dpanel.is-empty { min-height: 0; }
 
   /* §9.13 lower grid */
-  body.rd.cshell #cs-lower { display: grid; grid-template-columns: 1.1fr 1.1fr 0.8fr; gap: 15px; margin-top: 15px; }
+  body.rd.cshell #cs-lower { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+  body.rd.cshell #cs-ready { grid-column: 1 / span 2; }
   /* §9.14 Field Operations - two art cards, existing approved art, bottom-aligned
      title and metadata over a scrim. Same recipe as the phone TOOLS face. */
   body.rd.cshell .cs-ops { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -53385,7 +53412,10 @@ body.rd .bw-q.done .bw-q-p { color: var(--teal); }
 
 /* §10.3 COMPACT DESKTOP / LAPTOP 851-1199 — sidebar collapses to 82px, labels
    hide, dashboard becomes two columns. Bottom nav does NOT come back. */
-@media (min-width: 851px) and (max-width: 1199px) {
+/* §10.3 compact laptop — the sidebar stays a 82px icon rail until 1100px so the
+   workspace keeps its width. Owner: "the sidebar consumes too much usable
+   horizontal space." */
+@media (min-width: 851px) and (max-width: 1099px) {
   body.rd.cshell #cs-side { width: 82px; padding-left: 0; padding-right: 0; align-items: stretch; }
   body.rd.cshell #cs-side .cs-lbl, body.rd.cshell .cs-navlabel,
   body.rd.cshell .cs-ssite-k, body.rd.cshell .cs-sfoot-row span.cs-lbl { display: none; }
@@ -53400,14 +53430,27 @@ body.rd .bw-q.done .bw-q-p { color: var(--teal); }
   body.rd.cshell #cs-top { left: 82px; padding: 0 20px; }
   body.rd.cshell .page { left: 82px; }
   body.rd.cshell #cmd-shell { padding: 20px 20px 40px; }
-  body.rd.cshell #cs-grid { grid-template-columns: minmax(420px, 1.5fr) minmax(280px, 1fr); }
+  body.rd.cshell .cs-tsearch { width: 168px; }
+}
+
+/* FULL DESKTOP — the three-column upgrade is gated on CONTENT width, not viewport
+   width, and 1280 was wrong. At 1280 a 246px sidebar plus 56px padding leaves 978px,
+   while three columns need 560+310+300+30 = 1200. The overflow did not scroll - it was
+   CLIPPED by #cmd-shell overflow-x:hidden, which is why it read as cramped panels and a
+   clipped LOCAL SYSTEM STATE rather than a broken page. 1500px is the first width where
+   the three columns actually fit; below it the laptop composition stands. */
+@media (min-width: 1500px) {
+  body.rd.cshell #cs-grid {
+    grid-template-columns: minmax(560px, 1.6fr) minmax(310px, 0.85fr) minmax(300px, 0.72fr);
+  }
   body.rd.cshell #cs-grid .cs-hero { grid-column: 1; grid-row: 1 / span 2; }
   body.rd.cshell #cs-intel  { grid-column: 2; grid-row: 1; }
-  body.rd.cshell #cs-health { grid-column: 2; grid-row: 2; }
-  body.rd.cshell #cs-build  { grid-column: 1 / span 2; grid-row: 3; }
-  body.rd.cshell .cs-tsearch { width: 168px; }
-  body.rd.cshell #cs-lower { grid-template-columns: 1fr 1fr; }
-  body.rd.cshell #cs-ready { grid-column: 1 / span 2; }
+  body.rd.cshell #cs-health { grid-column: 3; grid-row: 1; }
+  body.rd.cshell #cs-build  { grid-column: 2 / span 2; grid-row: 2; }
+  body.rd.cshell #cs-lower { grid-template-columns: 1.1fr 1.1fr 0.8fr; }
+  body.rd.cshell #cs-ready { grid-column: auto; }
+  body.rd.cshell #cmd-shell .cs-hero { min-height: 470px; }
+  body.rd.cshell .cs-hero-title { font-size: 38px; }
 }
 
 /* §10.5 very large desktop — content stays near 1640px and centres; cards do
