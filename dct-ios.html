@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.384';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.385';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13437,6 +13437,10 @@ if (typeof window !== 'undefined') {
            re-home-don't-rebuild. Flag-gated; field app reaches all three via legacy nav. -->
       <!-- REDESIGN v1.14.105 — Work card-grid landing (mirrors Ref). 4 corner-bracket cards over
            the existing wk-* surfaces; cards route via showWorkTab. Back header shows in drill-in only. -->
+      <!-- v1.14.385 PHASE 2 ACTIVE BUILD WORKSPACE. Populated by bw_render() from
+           real local state only. display:none unless body.rd, so ?legacy=1 never
+           sees it and the legacy launcher below is untouched. -->
+      <div id="bw-shell"></div>
       <div id="work-back">
         <button class="rf-back-btn" onclick="wk_showGrid()" aria-label="Back to Build grid"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <span class="rf-back-title" id="work-back-title">Build</span>
@@ -18713,6 +18717,9 @@ function showMode(mode) {
   _navInternalCall = true;
   try { showPage(pid, null); } finally { _navInternalCall = false; }
   if (mode === 'command' && typeof cmd_render === 'function') { try { cmd_render(); } catch (_) {} }
+  // v1.14.385: BUILD resolves a real build context instead of landing on the static
+  // launcher. Redesign-gated inside bw_render(); ?legacy=1 never reaches it.
+  if (mode === 'work' && typeof bw_render === 'function') { try { bw_render(); } catch (e) { phantom_logErr('showMode:bw_render', e); } }
   ['command', 'work', 'ref'].forEach(function(m) {
     var el = document.getElementById('mode-' + m);
     if (el) el.classList.toggle('active', m === mode);
@@ -20128,6 +20135,312 @@ function rd_openPower() {
 // Used by the Command Center launcher + NBA routes via cmd_route('work', target).
 // No target -> Workspace opens on its markup default (Deploy).
 var WK_CAT_NAMES = { 'deploy':'DEPLOY', 'scan':'SCAN', 'handoff':'HANDOFF', 'issues':'ISSUES' };
+// ═══════════════════════════════════════════════════════════════════════════
+// v1.14.385 — PHASE 2: ACTIVE BUILD WORKSPACE (owner ruling 2026-08-05)
+// The redesign BUILD surface. Resolves a build context from REAL local state and
+// renders the active rack, its real phase progress, the existing 3D rack preview
+// and the canonical contextual doors. Not one value here is hardcoded: no rack
+// name, platform, percentage, component/connection/verification total, blocker
+// count, next action or estimate. Where a source does not exist the cell renders
+// an honest em-dash rather than a number.
+// Every door is an EXISTING door: deploy_showRackDetail, forge3d_open,
+// showWorkTab('scan'), rd_openOpsTool('portmap'), blocker_quick, cmd_loadMaster.
+// ═══════════════════════════════════════════════════════════════════════════
+function bw_ctx() {
+  var out = { master: false, dep: null, rack: null, ru: null, racks: [], phases: [], rows: [] };
+  try { out.master = (typeof master_hasMaster === 'function') ? master_hasMaster() : false; } catch (_) {}
+  try { out.dep = (typeof nowtab_resolveDep === 'function') ? nowtab_resolveDep() : null; } catch (e) { phantom_logErr('bw_ctx:dep', e); }
+  if (!out.dep) return out;
+  try { out.racks = deploy_loadRacksFor(out.dep.id) || []; } catch (e) { phantom_logErr('bw_ctx:racks', e); }
+  try { out.phases = deploy_loadPhasesFor(out.dep.id) || []; } catch (e) { phantom_logErr('bw_ctx:phases', e); }
+  var blocked = null, active = null, pending = null;
+  out.racks.forEach(function(r) {
+    var ru = null;
+    try { ru = deploy_computeRackRollup(r.id, out.phases); } catch (_) { return; }
+    if (!ru) return;
+    out.rows.push({ rack: r, ru: ru });
+    if (ru.currentPhase === 'complete') return;
+    if (ru.isBlocked) { if (!blocked) blocked = { rack: r, ru: ru }; return; }
+    if (ru.hasInProgress || (ru.pctComplete || 0) > 0) { if (!active) active = { rack: r, ru: ru }; return; }
+    if (!pending) pending = { rack: r, ru: ru };
+  });
+  // owner routing: a BLOCKED rack outranks an in-flight one so the blocker surfaces.
+  var pick = blocked || active || pending;
+  if (pick) { out.rack = pick.rack; out.ru = pick.ru; }
+  return out;
+}
+
+// real per-rack metrics. Anything without a local source returns null and renders
+// as an em-dash — never a fabricated total.
+function bw_metrics(rack, ru) {
+  var m = { components: null, componentsTotal: null, connections: null, connectionsTotal: null,
+            verified: null, verifiedTotal: null, blockers: 0 };
+  try {
+    var hosts = (rack && Array.isArray(rack.hosts)) ? rack.hosts : [];
+    if (hosts.length) {
+      m.componentsTotal = hosts.length;
+      var placed = hosts.filter(function(x) { return x && (x.installed === true || x.status === 'installed' || x.status === 'complete'); }).length;
+      m.components = placed || null;
+    }
+  } catch (e) { phantom_logErr('bw_metrics:hosts', e); }
+  try {
+    var ph = (ru && Array.isArray(ru.phases)) ? ru.phases : [];
+    var it = 0, met = 0, blk = 0;
+    ph.forEach(function(p) {
+      if (p && p.status === 'blocked') blk++;
+      var items = (p && Array.isArray(p.items)) ? p.items : [];
+      items.forEach(function(i) { it++; if (i && (i.status === 'met' || i.status === 'complete' || i.done === true)) met++; });
+    });
+    m.blockers = blk;
+    if (it > 0) { m.verified = met; m.verifiedTotal = it; }
+  } catch (e) { phantom_logErr('bw_metrics:phases', e); }
+  return m;
+}
+
+function bw_render() {
+  var host = document.getElementById('bw-shell');
+  if (!host) {
+    try { console.warn('[PHANTOM] bw_render: #bw-shell is missing from #pg-work — the Build workspace cannot render'); } catch (_) {}
+    return;
+  }
+  if (typeof redesign_isOn === 'function' && !redesign_isOn()) return;   // legacy keeps its launcher
+  var pg = document.getElementById('pg-work');
+  var c = bw_ctx();
+  var E = function(t, cls, txt) { var e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  host.textContent = '';
+
+  // ── header + honest local state (offline stated POSITIVELY) ──
+  var hd = E('div', 'bw-hd');
+  var ttl = E('div');
+  var t1 = E('span', 'bw-t1', 'BUILD'); var t2 = E('span', 'bw-t2', ' / FIELD MODE');
+  ttl.appendChild(t1); ttl.appendChild(t2);
+  var site = E('div', 'bw-site');
+  var sname = 'SITE';
+  try { if (typeof phantom_siteLabel === 'function') sname = phantom_siteLabel('SITE'); } catch (_) {}
+  site.appendChild(E('span', null, sname));
+  hd.appendChild(ttl); hd.appendChild(site);
+  host.appendChild(hd);
+
+  var st = E('div', 'bw-state');
+  st.appendChild(E('span', 'bw-dot'));
+  st.appendChild(E('b', null, 'LOCAL ACTIVE'));
+  st.appendChild(E('span', 'bw-sep', '|'));
+  var onl = (typeof navigator === 'undefined') || navigator.onLine !== false;
+  st.appendChild(E('span', null, onl ? 'ON-DEVICE' : 'ON-DEVICE \u00b7 OFFLINE'));
+  host.appendChild(st);
+
+  // ── routing: no Master -> the canonical intake door ──
+  if (!c.master && !c.dep) {
+    if (pg) pg.classList.add('bw-on');
+    var z = E('div', 'bw-card bw-zero');
+    z.appendChild(E('div', 'bw-zero-t', 'No Master loaded'));
+    z.appendChild(E('div', 'bw-zero-p', 'PHANTOM reads cabinets, hosts and rack structure from your Master file. Load it to start a build.'));
+    var lb = E('button', 'bw-cta', 'Load Master file'); lb.type = 'button';
+    lb.onclick = function() { try { cmd_loadMaster(); } catch (e) { phantom_logErr('bw:loadMaster', e); } };
+    z.appendChild(lb);
+    host.appendChild(z);
+    return;
+  }
+
+  // ── routing: deployment exists but no active rack -> the rack queue ──
+  if (!c.rack) {
+    if (pg) pg.classList.add('bw-on');
+    var ov = E('div', 'bw-card');
+    ov.appendChild(E('div', 'bw-k', c.rows.length ? 'Rack queue' : 'Build overview'));
+    if (!c.rows.length) {
+      ov.appendChild(E('div', 'bw-zero-p', c.dep
+        ? 'No racks captured for this deployment yet. Start a rack trace to begin the build.'
+        : 'No active deployment. Start one to begin building.'));
+      var qb = E('button', 'bw-cta', c.dep ? 'Open deployment' : 'Start a deployment'); qb.type = 'button';
+      qb.onclick = function() { try { cmd_route('work', 'deploy'); } catch (e) { phantom_logErr('bw:deploy', e); } };
+      ov.appendChild(qb);
+    } else {
+      ov.appendChild(E('div', 'bw-zero-p', 'Every rack in this deployment is complete. Pick one to review.'));
+      c.rows.forEach(function(row) { ov.appendChild(bw_queueRow(c.dep, row)); });
+    }
+    host.appendChild(ov);
+    return;
+  }
+
+  if (pg) pg.classList.add('bw-on');
+  var rack = c.rack, ru = c.ru;
+  var rackName = rack.rackId || rack.name || rack.id || '—';
+
+  // ── ACTIVE RACK hero ──
+  var hero = E('div', 'bw-card bw-hero' + (ru.isBlocked ? ' blocked' : ''));
+  hero.appendChild(E('div', 'bw-k', 'Active rack'));
+  hero.appendChild(E('div', 'bw-rack', String(rackName)));
+  var plat = E('div', 'bw-plat');
+  var platform = rack.platform || (rack.hosts && rack.hosts[0] && (rack.hosts[0].platform || rack.hosts[0].model)) || null;
+  if (platform) plat.appendChild(E('span', 'bw-chip', String(platform)));
+  var vendor = (rack.hosts && rack.hosts[0] && rack.hosts[0].type) ? String(rack.hosts[0].type) : null;
+  if (vendor) plat.appendChild(E('span', 'bw-platn', vendor));
+  if (!platform && !vendor) plat.appendChild(E('span', 'bw-platn', 'Platform not in Master'));
+  hero.appendChild(plat);
+  hero.appendChild(E('div', 'bw-rule'));
+
+  var idx = 0, total = ru.phaseTotal || 5;
+  try {
+    var order = (typeof DEPLOY_PHASE_TYPES !== 'undefined') ? DEPLOY_PHASE_TYPES : [];
+    var ci = order.indexOf(ru.currentPhase);
+    idx = ci >= 0 ? ci + 1 : 0;
+  } catch (_) {}
+  hero.appendChild(E('div', 'bw-ph', idx ? ('Phase ' + idx + ' of ' + total) : 'Phase —'));
+  var plabel = '—';
+  try {
+    if (ru.currentPhase === 'complete') plabel = 'Complete';
+    else if (typeof DEPLOY_PHASE_LABELS === 'object' && DEPLOY_PHASE_LABELS[ru.currentPhase]) plabel = DEPLOY_PHASE_LABELS[ru.currentPhase];
+  } catch (_) {}
+  hero.appendChild(E('div', 'bw-phn', plabel));
+  var bar = E('div', 'bw-bar'), tr = E('div', 'bw-track'), fl = E('div', 'bw-fill');
+  fl.style.width = Math.max(0, Math.min(100, ru.pctComplete || 0)) + '%';
+  tr.appendChild(fl); bar.appendChild(tr); bar.appendChild(E('div', 'bw-pct', (ru.pctComplete || 0) + '%'));
+  hero.appendChild(bar);
+
+  if (ru.isBlocked) {
+    var note = null;
+    try { (ru.phases || []).forEach(function(p) { if (!note && p && p.status === 'blocked' && p.blockerNote) note = p.blockerNote; }); } catch (_) {}
+    hero.appendChild(E('div', 'bw-blk', note ? ('Blocked \u2014 ' + note) : 'Blocked \u2014 no note recorded.'));
+  }
+
+  var cta = E('button', 'bw-cta', ru.isBlocked ? 'Open blocked rack' : 'Continue'); cta.type = 'button';
+  cta.onclick = function() {
+    try { deploy_showRackDetail(c.dep.id, rack.id); }
+    catch (e) { phantom_logErr('bw:continue', e); if (typeof phantomToast === 'function') phantomToast('Could not open the rack workflow', 'error'); }
+  };
+  hero.appendChild(cta);
+  host.appendChild(hero);
+
+  // ── NEXT ACTION, derived from the rack's real current phase ──
+  var na = E('div', 'bw-card');
+  var nb = E('button', 'bw-na'); nb.type = 'button';
+  var orb = document.createElement('img');
+  orb.className = 'bw-na-orb'; orb.src = 'phantom-ghost-v3.webp'; orb.alt = ''; orb.setAttribute('aria-hidden', 'true'); orb.loading = 'lazy';
+  var nbb = E('div', 'bw-na-b');
+  nbb.appendChild(E('div', 'bw-k', 'Next action'));
+  var nextItem = null;
+  try {
+    (ru.phases || []).forEach(function(p) {
+      if (nextItem || !p || p.status === 'complete') return;
+      var items = Array.isArray(p.items) ? p.items : [];
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        if (it && it.status !== 'met' && it.status !== 'complete' && it.done !== true) {
+          nextItem = it.description || it.label || null; break;
+        }
+      }
+    });
+  } catch (_) {}
+  nbb.appendChild(E('div', 'bw-na-t', nextItem || (plabel !== '—' ? ('Continue ' + plabel.toLowerCase()) : 'Open the rack workflow')));
+  nbb.appendChild(E('div', 'bw-na-s', nextItem ? ('Phase: ' + plabel) : 'Derived from this rack\u2019s current phase on this device.'));
+  nb.appendChild(orb); nb.appendChild(nbb); nb.appendChild(E('span', 'bw-na-ar', '\u203a'));
+  nb.onclick = function() { try { deploy_showRackDetail(c.dep.id, rack.id); } catch (e) { phantom_logErr('bw:next', e); } };
+  na.appendChild(nb);
+  host.appendChild(na);
+
+  // ── RACK PREVIEW: the EXISTING 3D implementation, controls and all ──
+  var pv = E('div', 'bw-card bw-prev');
+  var pvh = E('div', 'bw-prev-h');
+  pvh.appendChild(E('span', 'bw-k', 'Rack preview'));
+  var ab = E('button', 'bw-aisle', 'Open aisle'); ab.type = 'button';
+  ab.onclick = function() { try { forge3d_open(); } catch (e) { phantom_logErr('bw:aisle', e); if (typeof phantomToast === 'function') phantomToast('Could not open the aisle view', 'error'); } };
+  pvh.appendChild(ab);
+  pv.appendChild(pvh);
+  var mount = E('div', 'bw-mount'); mount.id = 'bw-mount';
+  pv.appendChild(mount);
+  host.appendChild(pv);
+  // rackElevation_render3D builds its own FRONT/ISO/TOP/CABLES controls and owns the
+  // GL lifecycle + flat fallback. Scene internals are untouched per the ruling.
+  // three.js is lazy-loaded and SW-precached. rackElevation_ensure3D() cannot be used
+  // here: it guards on #reh3dCanvasHost carrying .is-3d, which only the rack-detail panel
+  // has, so it would bail silently for this mount. Same lazy-load the Command hero does,
+  // with the same never-blank discipline - any failure states itself, never nothing.
+  bw_mount3D(rack, mount);
+
+  // ── real metrics ──
+  var m = bw_metrics(rack, ru);
+  var mx = E('div', 'bw-mx');
+  var cells = [
+    ['Components', m.components, m.componentsTotal, false],
+    ['Connections', m.connections, m.connectionsTotal, false],
+    ['Verification', m.verified, m.verifiedTotal, false],
+    ['Blockers', m.blockers, null, m.blockers > 0]
+  ];
+  cells.forEach(function(cl) {
+    var cell = E('div', 'bw-m' + (cl[3] ? ' hot' : ''));
+    cell.appendChild(E('div', 'bw-m-k', cl[0]));
+    var v = E('div', 'bw-m-v');
+    if (cl[1] == null && cl[2] == null) { v.textContent = '\u2014'; }
+    else {
+      v.textContent = String(cl[1] == null ? cl[2] : cl[1]);
+      if (cl[2] != null && cl[1] != null) { var s = document.createElement('small'); s.textContent = ' / ' + cl[2]; v.appendChild(s); }
+    }
+    cell.appendChild(v);
+    if (cl[1] != null && cl[2]) {
+      var tk = E('div', 'bw-m-t'), fk = E('div', 'bw-m-f');
+      fk.style.width = Math.round(cl[1] / cl[2] * 100) + '%'; tk.appendChild(fk); cell.appendChild(tk);
+    } else if (cl[3]) { cell.appendChild(E('div', 'bw-m-n', 'Attention')); }
+    mx.appendChild(cell);
+  });
+  host.appendChild(mx);
+
+  // ── contextual actions, all canonical doors ──
+  var acts = E('div', 'bw-acts');
+  var A = [
+    ['Scan', function() { try { showWorkTab('scan'); } catch (e) { phantom_logErr('bw:scan', e); } }, ''],
+    ['Port map', function() { try { rd_openOpsTool('portmap'); } catch (e) { phantom_logErr('bw:portmap', e); } }, ''],
+    ['Log blocker', function() { try { blocker_quick(c.dep && c.dep.id); } catch (e) { phantom_logErr('bw:blocker', e); } }, ' warn']
+  ];
+  A.forEach(function(a) {
+    var b = E('button', 'bw-act' + a[2], a[0]); b.type = 'button'; b.onclick = a[1]; acts.appendChild(b);
+  });
+  host.appendChild(acts);
+}
+
+// Mounts the EXISTING rack scene. Scene internals - lighting, materials, fog, tone
+// mapping, tray geometry, type colours, floor, reflection - are untouched; this only
+// supplies a real measured box and the rack. rackElevation_render3D owns the GL
+// lifecycle, the single-context guard and its own FRONT/ISO/TOP/CABLES controls.
+function bw_mount3D(rack, mount) {
+  var fail = function(msg) {
+    try { mount.innerHTML = ''; } catch (_) {}
+    var d = document.createElement('div'); d.className = 'bw-zero-p'; d.textContent = msg;
+    mount.appendChild(d);
+  };
+  if (typeof rackElevation_render3D !== 'function') { fail('Rack preview is unavailable in this build.'); return; }
+  var draw = function() {
+    try { rackElevation_render3D(rack, mount); }
+    catch (e) { phantom_logErr('bw:render3d', e); fail('Rack preview could not be drawn.'); }
+  };
+  if (window.THREE) { draw(); return; }
+  var wait = document.createElement('div'); wait.className = 'bw-zero-p'; wait.textContent = 'Loading rack preview…';
+  mount.appendChild(wait);
+  if (typeof loadScript !== 'function') { fail('Rack preview could not load on this device.'); return; }
+  loadScript('./vendor/three.min.js').then(function() {
+    if (!document.body.contains(mount)) return;   // navigated away mid-load
+    if (window.THREE) { mount.innerHTML = ''; draw(); }
+    else fail('Rack preview could not load on this device.');
+  }).catch(function(e) { phantom_logErr('bw:three', e); fail('Rack preview could not load on this device.'); });
+}
+
+function bw_queueRow(dep, row) {
+  var r = row.rack, ru = row.ru;
+  var cls = 'bw-q' + (ru.isBlocked ? ' blocked' : (ru.currentPhase === 'complete' ? ' done' : ''));
+  var b = document.createElement('button'); b.type = 'button'; b.className = cls;
+  var box = document.createElement('div'); box.style.minWidth = '0';
+  var nm = document.createElement('div'); nm.className = 'bw-q-n'; nm.textContent = r.rackId || r.name || r.id || '—';
+  var sb = document.createElement('div'); sb.className = 'bw-q-s';
+  var lbl = '—';
+  try { lbl = (ru.currentPhase === 'complete') ? 'Complete'
+    : ((typeof DEPLOY_PHASE_LABELS === 'object' && DEPLOY_PHASE_LABELS[ru.currentPhase]) || String(ru.currentPhase || '')); } catch (_) {}
+  sb.textContent = ru.isBlocked ? ('Blocked \u00b7 ' + lbl) : lbl;
+  box.appendChild(nm); box.appendChild(sb);
+  var p = document.createElement('div'); p.className = 'bw-q-p'; p.textContent = (ru.pctComplete || 0) + '%';
+  b.appendChild(box); b.appendChild(p);
+  b.onclick = function() { try { deploy_showRackDetail(dep.id, r.id); } catch (e) { phantom_logErr('bw:queue', e); } };
+  return b;
+}
+
 function showWorkTab(target) {
   showMode('work');                              // adds wk-grid → grid landing is the default
   if (!target) return;                           // no target → stay on the grid
@@ -52690,6 +53003,127 @@ body.rd.cshell .cs-hero-cta:active { transform: scale(.985); filter: brightness(
 
 /* inert everywhere until the desktop query turns them on */
 #cs-side, #cs-top { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   v1.14.385 — PHASE 2: ACTIVE BUILD WORKSPACE (owner ruling 2026-08-05)
+   Gated on body.rd, so it is the Build surface on the BARE URL and every
+   redesign entry, and ?legacy=1 keeps the untouched launcher. The legacy
+   #work-grid banner rows are HIDDEN under rd, never deleted - the rip-cord
+   restores them. Every value is read from real local state; the mockup's
+   sample numbers are reproduced nowhere.
+   ─────────────────────────────────────────────────────────────────────────── */
+#bw-shell { display: none; }
+body.rd #pg-work #bw-shell { display: block; padding: 0 0 8px; }
+/* the launcher stands down under the redesign — preserved for ?legacy=1 */
+body.rd #pg-work.bw-on #work-grid { display: none; }
+
+body.rd .bw-hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 10px; }
+body.rd .bw-t1 { font-size: 19px; font-weight: 800; letter-spacing: .06em; color: var(--cyan); }
+body.rd .bw-t2 { font-size: 19px; font-weight: 700; letter-spacing: .06em; color: var(--slate); }
+body.rd .bw-site {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px;
+  border-radius: 11px; background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo);
+  font-size: 12px; font-weight: 700; letter-spacing: .1em; color: var(--white); white-space: nowrap;
+}
+/* offline is stated POSITIVELY - never as a failure (offline-first law) */
+body.rd .bw-state {
+  display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 0 12px; margin-bottom: 12px;
+  border-radius: 11px; background: rgba(16,22,32,0.7); border: 1px solid var(--cyan-border-lo);
+  font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--slate);
+}
+body.rd .bw-state b { color: var(--ok); font-weight: 800; letter-spacing: .14em; }
+body.rd .bw-state .bw-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 7px var(--ok); flex: 0 0 7px; }
+body.rd .bw-state .bw-sep { color: rgba(176,207,255,0.25); }
+
+body.rd .bw-card {
+  position: relative; border-radius: 18px; padding: 15px 16px; margin-bottom: 12px;
+  background: linear-gradient(145deg, rgba(16,22,32,0.91), rgba(8,12,18,0.95));
+  border: 1px solid var(--cyan-border-lo);
+}
+body.rd .bw-hero { border-color: color-mix(in srgb, var(--cyan) 42%, transparent); }
+body.rd .bw-k { font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); }
+body.rd .bw-rack { font-size: 34px; font-weight: 800; letter-spacing: -.01em; color: var(--white); line-height: 1.02; margin-top: 3px; }
+body.rd .bw-plat { display: flex; align-items: center; gap: 9px; margin-top: 9px; flex-wrap: wrap; }
+body.rd .bw-chip {
+  padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: .06em;
+  color: var(--violet); background: rgba(155,89,255,0.12); border: 1px solid color-mix(in srgb, var(--violet) 45%, transparent);
+}
+body.rd .bw-platn { font-size: 12.5px; letter-spacing: .06em; color: var(--slate); }
+body.rd .bw-rule { height: 1px; background: rgba(176,207,255,0.09); margin: 13px 0 11px; }
+body.rd .bw-ph { font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--violet); }
+body.rd .bw-phn { font-size: 13.5px; color: var(--white); margin-top: 4px; }
+body.rd .bw-bar { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+body.rd .bw-track { flex: 1; height: 6px; border-radius: 3px; background: rgba(176,207,255,0.14); overflow: hidden; }
+body.rd .bw-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--violet), var(--cyan)); }
+body.rd .bw-pct { font-family: var(--mono); font-size: 14px; font-weight: 800; color: var(--white); }
+body.rd .bw-cta {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; min-height: 50px; margin-top: 13px; border: 0; border-radius: 13px; cursor: pointer;
+  background: linear-gradient(90deg, var(--cyan), var(--violet)); color: #04060a;
+  font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  -webkit-tap-highlight-color: transparent;
+}
+body.rd .bw-cta:active { transform: scale(.99); filter: brightness(1.08); }
+body.rd .bw-hero.blocked { border-color: rgba(255,43,214,0.55); }
+body.rd .bw-blk {
+  margin-top: 11px; padding: 9px 11px; border-radius: 10px; font-size: 11.5px; line-height: 1.45;
+  color: #ff2bd6; background: rgba(255,43,214,0.07); border: 1px solid rgba(255,43,214,0.42);
+}
+
+/* NEXT ACTION */
+body.rd .bw-na { display: flex; align-items: center; gap: 12px; cursor: pointer; text-align: left; width: 100%; background: none; border: 0; padding: 0; }
+body.rd .bw-na-orb { width: 46px; height: 46px; flex: 0 0 46px; object-fit: contain; }
+body.rd .bw-na-b { min-width: 0; flex: 1; }
+body.rd .bw-na-t { font-size: 14.5px; font-weight: 700; color: var(--white); line-height: 1.25; margin-top: 3px; }
+body.rd .bw-na-s { font-size: 11.5px; color: var(--slate); line-height: 1.4; margin-top: 4px; }
+body.rd .bw-na-ar { color: var(--slate); font-size: 18px; flex: 0 0 auto; }
+
+/* RACK PREVIEW — the mount is a REAL box (never display:contents) because
+   rackElevation_render3D measures it; a dissolved ancestor collapses the canvas. */
+body.rd .bw-prev { padding: 13px 14px; }
+body.rd .bw-prev-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+body.rd .bw-mount { position: relative; width: 100%; height: 250px; border-radius: 12px; overflow: hidden; background: radial-gradient(90% 70% at 50% 48%, rgba(92,242,255,.13), rgba(4,6,10,0) 70%); }
+body.rd .bw-aisle {
+  min-height: 38px; padding: 0 13px; border-radius: 10px; cursor: pointer; white-space: nowrap;
+  background: rgba(16,22,32,0.85); border: 1px solid color-mix(in srgb, var(--cyan) 45%, transparent);
+  color: var(--cyan); font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+}
+
+/* METRICS */
+body.rd .bw-mx { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 12px; }
+body.rd .bw-m { min-width: 0; }
+body.rd .bw-m-k { font-size: 8px; letter-spacing: .13em; text-transform: uppercase; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.rd .bw-m-v { font-family: var(--mono); font-size: 17px; font-weight: 800; color: var(--white); margin-top: 3px; }
+body.rd .bw-m-v small { font-size: 11px; font-weight: 600; color: var(--slate); }
+body.rd .bw-m-t { height: 4px; border-radius: 2px; background: rgba(176,207,255,0.13); margin-top: 6px; overflow: hidden; }
+body.rd .bw-m-f { height: 100%; border-radius: 2px; background: var(--cyan); }
+body.rd .bw-m.hot .bw-m-v { color: #ff2bd6; }
+body.rd .bw-m-n { font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 5px; }
+body.rd .bw-m.hot .bw-m-n { color: #ff2bd6; }
+
+/* CONTEXTUAL ACTIONS */
+body.rd .bw-acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+body.rd .bw-act {
+  min-height: 52px; border-radius: 12px; cursor: pointer; padding: 0 6px;
+  background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo); color: var(--white);
+  font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  -webkit-tap-highlight-color: transparent;
+}
+body.rd .bw-act:active { transform: scale(.98); }
+body.rd .bw-act.warn { border-color: rgba(255,43,214,0.45); color: #ff2bd6; }
+
+/* zero / overview states */
+body.rd .bw-zero { text-align: center; padding: 26px 18px; }
+body.rd .bw-zero-t { font-size: 17px; font-weight: 800; color: var(--white); }
+body.rd .bw-zero-p { font-size: 12.5px; color: var(--slate); line-height: 1.5; margin-top: 8px; }
+body.rd .bw-q { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 11px 12px; margin-bottom: 8px;
+  border-radius: 12px; background: rgba(16,22,32,0.75); border: 1px solid var(--cyan-border-lo); cursor: pointer; }
+body.rd .bw-q-n { font-size: 14px; font-weight: 700; color: var(--white); }
+body.rd .bw-q-s { font-size: 10.5px; color: var(--slate); margin-top: 3px; letter-spacing: .06em; text-transform: uppercase; }
+body.rd .bw-q-p { margin-left: auto; font-family: var(--mono); font-size: 13px; font-weight: 800; color: var(--cyan); }
+body.rd .bw-q.blocked .bw-q-p { color: #ff2bd6; }
+body.rd .bw-q.done .bw-q-p { color: var(--teal); }
+
 /* The desktop-only panels never render on phone - mobile stays as approved.
    UNSCOPED on purpose: .cs-dpanel is a brand-new class that matches nothing that
    already exists, and scoping the HIDE to body.rd.cshell made these panels rely on
