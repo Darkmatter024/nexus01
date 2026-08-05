@@ -1113,4 +1113,65 @@ in one consolidated pass, including `.374`'s boot-path front door, `.372`'s offl
 press test, and both of `.375`'s INVERTED checks (EXIT still red, CRAC still green). **CALL 0 cap
 RESET — next ship opens a fresh batch at 1 of 6.**
 
+## v1.14.382 — COMMAND SHELL PHASE 1, behind `?cshell=1` (`2b250b4`) · rollback: revert the five-commit range `2c2f831..2b250b4`
+
+Spec **6.3 / 6.4 / 8.1–8.7** under a new shell root `body.rd.cshell`. Five commits, one per plan task.
+
+**The scoping is the whole safety story.** Every rule that paints is `body.rd.cshell`-scoped, the markup
+is `display:none` by default, and the class is added only when `?cshell=1` is in the query string.
+**The flag is NOT persisted** — `cshell_isOn()` reads `location.search` and never writes storage,
+because a sticky preview is exactly the trap `.380` had to ship a way out of.
+
+**Three plan corrections made during the build, each verified before acting:**
+1. Brand mark is `phantom-prism.png`, **not** `phantom-shield-256.webp` — the plan named the
+   overflow-menu button glyph, whose own inline comment reads *"site-node art; filename is legacy
+   (was shield)"*. The prism is existing approved art, already precached, referenced by nothing until
+   now, and is the header mark the redesign campaign already earmarked. Painted as a **CSS background**
+   so a hidden shell never fetches it — the dead-weight class `.381` just purged.
+2. Microbar text is `var(--slate)`, not `--slate-dim`, whose `:root` comment says **NEVER text**.
+3. The site-health dot is **not** hardcoded healthy. `cmd_setSiteLabel` already has two states and can
+   render SET UP PROFILE; a mint dot over that text would be a lie the aisle cannot see through.
+   Confirmed → `var(--ok)` mint · unconfirmed → `var(--gold)`.
+
+**Two defects found by the in-browser pass, not by eye:**
+- Hero radius rendered **20px, not the spec's 26px** — `.cs-hero` is also a `.cs-card`, and the card
+  rule carried `#cmd-shell` while the hero rule did not, so the card's radius out-specified it and the
+  spec value lost silently. Hero selector now carries the id.
+- The hero's bottom scrim faded out at 42%, landing the fade edge **exactly on the KPI row** — the three
+  cards sat half on scrim, half on the bright GPU tray, borders washed. Moved to 58%. Overlay only.
+
+**`!important` was NOT shipped on `.cs-card`, and that is verified rather than omitted.** The plan called
+it required to beat the `.310` SURFACE-GLOW block. It is not: that block forces fills on a **named**
+selector list (`.nba/.stat/.tile/.spill/.gx*`), and a sweep of every `!important` background/border rule
+in the file found **zero** whose selector can reach a brand-new class. Confirmed in devtools — the
+computed `background-image` is the 145deg gradient.
+
+**No fake data.** The hero renders from the values `cmd_render` already computes for the NBA and the
+telemetry tiles (`activeDep`/`activePct`/`rackCount`/`blockerCount`); no new data source. Values are
+written with `textContent`, never interpolated into `innerHTML`. Empty state **removes** the progress
+bar rather than showing 0% — a zero bar reads as started-and-stalled. The microbar's right slot carries
+the real wall clock; the mock's *"Shift 01"* was **not** reproduced because no shift-number concept
+exists and inventing one is fake telemetry.
+
+**Verified before push:** stamps 3/3 · 3/3 inline blocks compile (`vm.Script`) · `sw.js` `node --check` ·
+valid JSON · CSS brace delta **0** · all-LF preserved · whole-range deletions are **only** the version
+stamp and the `cmd_setSiteLabel` body (a strict superset of its old behaviour) · no precache change.
+**In-browser at 390×844:** bare URL has no `.cshell`, shell computes `display:none`, `.cc-z0` still
+`flex`; with the flag, hero 343px, CTA 49px, padding 0/14/118, `scrollWidth === innerWidth`.
+⚠ Agents barred — ship-gate and rd-reviewer NOT invoked; equivalents run inline.
+
+**DEVICE-VERIFY — the bare URL is the most important check.** (1) badge reads `v1.14.382`. (2) **Bare URL
+must be visually identical to `.381` on every page** — if anything moved, the scoping leaked.
+(3) `?legacy=1` unchanged, RETURN TO NEW UI still works. (4) Add `?cshell=1` on Command: prism mark,
+PHANTOM / FIELD INTELLIGENCE SYSTEM, site pill, lock microbar, deployment hero; the old site/status band
+gone, the top app header still there **on purpose** (it carries the version badge and SW pill this verify
+reads — Phase 2 re-homes them). (5) **The hero crop needs your eyes** — art is 1170×403 in a ~square box,
+so `cover` shows about a third of its width at 78%. A bad crop is a `background-position` tune, not a
+revert, and needs no recut. (6) Empty state must read *No active deployment* with **no** progress bar.
+(7) Unconfirmed profile → **gold** dot, not mint. (8) Zero horizontal overflow at 390 and 430.
+(9) Remove `?cshell=1` and reload — the shell must **vanish**, proving the flag did not stick.
+
+**⛔ BATCH `.377`–`.382` is now 6 of 6 — CALL 0 CAP REACHED. Consolidated device pass required before
+the next ship.**
+
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
