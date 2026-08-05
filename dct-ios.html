@@ -52123,6 +52123,30 @@ body.rd.cshell #cmd-shell {
   min-height: 100%;
   overflow-x: hidden;
 }
+
+/* §6.4 — smoked-slate glass card material. Shell-scoped ONLY; the live
+   --rd-cardfill recipe stays authoritative everywhere else.
+   NO !important here, and that is a verified decision rather than an omission:
+   the .310 SURFACE-GLOW block that forces card fills targets a NAMED list
+   (.nba/.stat/.tile/.spill/.gx*), and a sweep of every !important background
+   and border rule in the file found ZERO whose selector can reach a new class.
+   Adding !important would only make Phase 2's state variants harder to write.
+   Colours bind to the live channel tokens, never the spec's parallel hexes. */
+body.rd.cshell #cmd-shell .cs-card {
+  background: linear-gradient(145deg, rgba(16,22,32,0.91), rgba(8,12,18,0.95));
+  border: 1px solid var(--cyan-border-lo);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.045), 0 20px 60px rgba(0,0,0,0.42);
+  border-radius: 20px;
+  position: relative;
+}
+/* top hairline: cyan into violet, both from the live channel tokens. */
+body.rd.cshell #cmd-shell .cs-card::before {
+  content: ''; position: absolute; left: 12px; right: 12px; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent,
+    color-mix(in srgb, var(--cyan) 50%, transparent),
+    color-mix(in srgb, var(--violet) 45%, transparent), transparent);
+  pointer-events: none;
+}
 </style>
 
 <!-- Crash-Cart Mode overlay — populated by crashcart_render() on activate -->
