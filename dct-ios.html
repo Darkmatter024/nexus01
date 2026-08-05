@@ -12485,7 +12485,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.379';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.380';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -12977,6 +12977,9 @@ if (typeof window !== 'undefined') {
                  Reachable from anywhere; hwMatrix_open() is unchanged. -->
             <button onclick="hwMatrix_open();document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open')" class="hdr-menu-item" style="color:var(--cyan)" aria-label="Open hardware reference"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg> &nbsp;HW REF</button>
             <button onclick="if(redesign_isOn()){rd_openProfile();document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open');return;}showPage('master');setTimeout(function(){master_showSection('profile');},10);document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open')" class="hdr-menu-item" style="color:var(--violet-bright,#b58cff)" aria-label="Open site profile editor"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b58cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> &nbsp;SITE PROFILE</button>
+              <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0"></div>
+              <!-- v1.14.380: the way back out of the ?legacy=1 rip-cord. Legacy-only by construction - #hdr-overflow-wrap is display:none !important under body.rd. -->
+              <button onclick="legacy_returnToNewUI()" class="hdr-menu-item" style="color:var(--teal)" aria-label="Return to the new UI"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg> &nbsp;RETURN TO NEW UI</button>
           </div>
         </div>
         <button id="phantom-tab-pill" class="tab-pill" onclick="tab_pillTap()" aria-label="PHANTOM open in another tab — tap for details">
@@ -18588,6 +18591,22 @@ function redesign_isOn() {
     if (s.indexOf('redesign=1') !== -1 || s.indexOf('legacy=0') !== -1) localStorage.removeItem('phantom_legacy');
     return localStorage.getItem('phantom_legacy') !== '1';
   } catch (_) { return true; }
+}
+// v1.14.380 - THE RIP-CORD'S WAY BACK. ?legacy=1 pins phantom_legacy in localStorage,
+// and until now nothing in the legacy house could clear it: the only escape was
+// knowing to type ?redesign=1, which is what stranded a laptop mid-verify. This is
+// that door. It is reachable ONLY from the legacy SYS overflow menu, whose wrapper
+// is display:none !important under body.rd, so the redesign house never renders it.
+// Navigates with ?redesign=1 rather than a bare reload so the un-stick still works
+// even if removeItem fails (private mode, quota, disabled storage).
+function legacy_returnToNewUI() {
+  try {
+    localStorage.removeItem('phantom_legacy');
+  } catch (e) {
+    try { console.warn('[PHANTOM] could not clear phantom_legacy:', e); } catch (_) {}
+    try { phantomToast('Could not clear legacy mode - loading with ?redesign=1'); } catch (_) {}
+  }
+  location.replace(location.pathname + '?redesign=1');
 }
 function redesign_initToggle() {
   if (!redesign_isOn()) return;
