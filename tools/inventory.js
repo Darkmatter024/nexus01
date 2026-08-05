@@ -1,4 +1,22 @@
 'use strict';
+// FIXTURE VERIFICATION - each failure class was reintroduced and confirmed to
+// trip a named fixture (2026-08-04):
+//   substring trap (regex per class)      -> rd-row-has-no-emitters
+//   all-zeros instrument (empty map)      -> dl-chip-is-live, tile-is-live
+//                                            (rd-row STILL PASSES - one witness
+//                                            is not enough)
+//   unterminated scope attribution        -> sw_pillTap-span ONLY.
+//                                            sw_pillTap-has-no-color-refs does
+//                                            NOT trip on this bug: colorRefsIn
+//                                            filters by the fixture's own
+//                                            hardcoded line range (12617/12633),
+//                                            never by scope.end, so it is not
+//                                            a witness for this failure class.
+//   column-anchored fn detection          -> indented-fn-logCrash-is-scoped,
+//                                            indented-fn-logo_goHome-is-scoped
+//   neon-token collision (\b vs lookahead)-> channels-reject-neon-variants
+//   evidence truncation (slice from 0)    -> sanctioned-evidence-shows-its-marker
+// Re-run this verification if the fixture set changes.
 const fs = require('fs'), path = require('path');
 const TARGET = path.join(__dirname, '..', 'dct-ios.html');
 
