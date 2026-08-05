@@ -5,13 +5,14 @@
 //   all-zeros instrument (empty map)      -> dl-chip-is-live, tile-is-live
 //                                            (rd-row STILL PASSES - one witness
 //                                            is not enough)
-//   unterminated scope attribution        -> sw_pillTap-span ONLY.
+//   unterminated scope attribution        -> sw_pillTap-span (via spanOf) and
+//                                            scopeOf-boundary-past-sw_pillTap
+//                                            (via scopeOf, the attribution path
+//                                            users actually read).
 //                                            sw_pillTap-has-no-color-refs does
-//                                            NOT trip on this bug: colorRefsIn
-//                                            filters by the fixture's own
-//                                            hardcoded line range (12617/12633),
-//                                            never by scope.end, so it is not
-//                                            a witness for this failure class.
+//                                            NOT trip: colorRefsIn filters by
+//                                            the fixture's own hardcoded range,
+//                                            never by scope.end.
 //   column-anchored fn detection          -> indented-fn-logCrash-is-scoped,
 //                                            indented-fn-logo_goHome-is-scoped
 //   neon-token collision (\b vs lookahead)-> channels-reject-neon-variants
@@ -188,6 +189,9 @@ const FIXTURES = [
       const s = spanOf(ctx.scopes, 'sw_pillTap');
       const a = s ? ('L' + s.start + '-L' + s.end) : 'not found';
       return { ok: a === 'L12617-L12633', expected: 'L12617-L12633', actual: a }; } },
+  { name: 'scopeOf-boundary-past-sw_pillTap', run: function (ctx) {
+      const a = scopeOf(ctx.scopes, 12634);
+      return { ok: a === '(markup)', expected: '(markup)', actual: a }; } },
   { name: 'indented-fn-logCrash-is-scoped', run: function (ctx) {
       const a = scopeOf(ctx.scopes, 17295);
       return { ok: a === 'logCrash()', expected: 'logCrash()', actual: a }; } },
