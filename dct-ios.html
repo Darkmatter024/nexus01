@@ -52096,6 +52096,33 @@ body.rd .gx-gold {
 }
 /* the lens is the one aqua-edged surface */
 body.rd #pg-cmd .lens { border: 2px solid #1BFFE4 !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   v1.14.382 — PHANTOM COMMAND SHELL, PHASE 1 (spec 6.3/6.4/8.1-8.7)
+   Every rule below is scoped to body.rd.cshell, a class that is added ONLY when
+   ?cshell=1 is present and is NOT persisted. Legacy (?legacy=1) and the ordinary
+   redesign never carry it, so both are byte-identical to v1.14.381.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* §6.3 — background bloom + technical grid. Two faint radials, no bright outer
+   glow and no full-screen colour gradient; the grid reads as technical texture,
+   not graph paper. background-attachment is deliberately left at the default
+   (scroll): "fixed" is broken on iOS Safari and this is an iOS PWA. The page
+   black is var(--bg0), the LIVE near-black — the colour mapping resolved the
+   spec's --phantom-page as "do not add", and a second competing near-black is
+   exactly the drift that ruling forbids. */
+body.rd.cshell #cmd-shell {
+  --cs-bloom-a: radial-gradient(60% 40% at 50% 0%, rgba(92,242,255,0.055), transparent 70%);
+  --cs-bloom-b: radial-gradient(45% 35% at 100% 12%, rgba(155,89,255,0.045), transparent 72%);
+  --cs-grid: repeating-linear-gradient(0deg, rgba(176,207,255,0.022) 0 1px, transparent 1px 48px),
+             repeating-linear-gradient(90deg, rgba(176,207,255,0.022) 0 1px, transparent 1px 48px);
+  position: relative;
+  background-color: var(--bg0);
+  background-image: var(--cs-bloom-a), var(--cs-bloom-b), var(--cs-grid);
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
+  min-height: 100%;
+  overflow-x: hidden;
+}
 </style>
 
 <!-- Crash-Cart Mode overlay — populated by crashcart_render() on activate -->
