@@ -73,7 +73,7 @@ function scopeOf(index, line) {
 function emitters(tokens, cls) { return tokens[cls] || 0; }
 
 const CHANNELS = {
-  red: /var\(--red(?=[\s,)])|#ff453a|#ff3b30|#ff2d55|rgba\(\s*255,\s*(69|45|59)\s*,/i,
+  red: /var\(--red(?=[\s,)])|#ff453a|#ff3b30|#ff2d55|#ff5a4d|rgba\(\s*255,\s*(69|45|59)\s*,/i,
   green: /var\(--green(?=[\s,)])|#30d158|#34c759|#32d74b|rgba\(\s*(48|52|50),\s*(209|199|215)\s*,/i
 };
 
@@ -115,6 +115,29 @@ function colorRefsIn(ctx, from, to) {
   return colorRefs(ctx, { above: from }).filter(function (r) { return r.line <= to; }).length;
 }
 
+// Derived from the file, never remembered. EXIT and BLAST are owner-sanctioned red.
+function exitLines(ctx) {
+  const out = [];
+  for (let i = 0; i < ctx.lines.length; i++) {
+    if (/#rd-exit/.test(ctx.lines[i]) && CHANNELS.red.test(ctx.lines[i])) out.push(i + 1);
+  }
+  return out;
+}
+
+function sanctioned(ctx) {
+  const rows = [];
+  exitLines(ctx).forEach(function (n) {
+    rows.push({ line: n, kind: 'EXIT', evidence: ctx.lines[n - 1].trim().slice(0, 110) });
+  });
+  for (let i = 0; i < ctx.lines.length; i++) {
+    const l = ctx.lines[i];
+    if (/BLAST|blastradius/i.test(l) && CHANNELS.red.test(l)) {
+      rows.push({ line: i + 1, kind: 'BLAST', evidence: l.trim().slice(0, 110) });
+    }
+  }
+  return rows.sort(function (a, b) { return a.line - b.line; });
+}
+
 const FIXTURES = [
   { name: 'root-defines-teal', run: function (ctx) {
       const a = rootHas(ctx.src, '--teal');
@@ -149,7 +172,10 @@ const FIXTURES = [
               && CHANNELS.red.test('color:var(--red-neon)') === false
               && CHANNELS.green.test('color:var(--green)') === true
               && CHANNELS.red.test('color:var(--red, #ff453a)') === true;
-      return { ok: ok, expected: 'true', actual: String(ok) }; } }
+      return { ok: ok, expected: 'true', actual: String(ok) }; } },
+  { name: 'exit-has-two-code-sites', run: function (ctx) {
+      const a = exitLines(ctx).join(',');
+      return { ok: a === '9562,9575', expected: '9562,9575', actual: a || '(none)' }; } }
 ];
 
 function runFixtures(ctx) {
@@ -208,6 +234,14 @@ function main() {
         r.scope.padEnd(30) + r.evidence);
     });
     console.log('-- ' + rows.length + ' ref(s)');
+    process.exit(0);
+  }
+  if (cmd === 'sanctioned') {
+    const rows = sanctioned(ctx);
+    rows.forEach(function (r) {
+      console.log('L' + String(r.line).padEnd(7) + r.kind.padEnd(7) + r.evidence);
+    });
+    console.log('-- ' + rows.length + ' sanctioned site(s) - these must NEVER be retokenised');
     process.exit(0);
   }
   console.error('inventory: unknown subcommand "' + cmd + '"'); process.exit(2);
