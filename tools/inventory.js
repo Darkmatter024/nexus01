@@ -1,22 +1,44 @@
 'use strict';
 // FIXTURE VERIFICATION - each failure class was reintroduced and confirmed to
-// trip a named fixture (2026-08-04):
+// trip a named fixture (2026-08-04, updated in the content-derived-fixture
+// fix wave):
 //   substring trap (regex per class)      -> rd-row-has-no-emitters
 //   all-zeros instrument (empty map)      -> dl-chip-is-live, tile-is-live
 //                                            (rd-row STILL PASSES - one witness
 //                                            is not enough)
-//   unterminated scope attribution        -> sw_pillTap-span (via spanOf) and
+//   unterminated scope attribution        -> sw_pillTap-span (via spanOf,
+//                                            asserts span!=null AND span
+//                                            length===16) and
 //                                            scopeOf-boundary-past-sw_pillTap
 //                                            (via scopeOf, the attribution path
-//                                            users actually read).
-//                                            sw_pillTap-has-no-color-refs does
-//                                            NOT trip: colorRefsIn filters by
-//                                            the fixture's own hardcoded range,
-//                                            never by scope.end.
+//                                            users actually read; asserts
+//                                            scopeOf(s.end)===sw_pillTap() AND
+//                                            scopeOf(s.end+1)===(markup)).
+//                                            sw_pillTap-has-no-color-refs now
+//                                            derives its bounds from spanOf,
+//                                            so it DOES trip under this bug too
+//                                            (fixed - it used to be a dead
+//                                            witness bound to a hardcoded range).
 //   column-anchored fn detection          -> indented-fn-logCrash-is-scoped,
 //                                            indented-fn-logo_goHome-is-scoped
+//                                            (both now via spanOf+scopeOf, no
+//                                            hardcoded line numbers)
 //   neon-token collision (\b vs lookahead)-> channels-reject-neon-variants
 //   evidence truncation (slice from 0)    -> sanctioned-evidence-shows-its-marker
+//   spanOf silently guessing on ambiguous
+//     name (first-match-by-start)         -> spanOf-throws-on-ambiguous-name
+//   JS-concatenated class attrs harvested
+//     as bogus class tokens (buildClassTokens
+//     splitting on '+'/quote)             -> dynamic-class-attrs-excluded-from-tokens
+//
+// NO fixture may contain a hard-coded dct-ios.html line number: the file ships
+// daily and a single inserted line must never brick every subcommand, nor
+// produce a failure indistinguishable from real corruption. All six former
+// pinned-line fixtures above (sw_pillTap-span, scopeOf-boundary-past-
+// sw_pillTap, indented-fn-logCrash-is-scoped, indented-fn-logo_goHome-is-
+// scoped, sw_pillTap-has-no-color-refs, exit-has-two-code-sites) are now
+// content-derived via spanOf()/exitLines() and verified to still fire on
+// their original bug (see fix-wave verification log).
 // Re-run this verification if the fixture set changes.
 const fs = require('fs'), path = require('path');
 const TARGET = path.join(__dirname, '..', 'dct-ios.html');
@@ -38,15 +60,30 @@ function rootHas(src, name) {
 
 // Tokenise EVERY class attribute once. Never a regex per class - that is
 // what produced two false inventories (rd- matches inside card-/board-).
+//
+// A class attribute built by JS concatenation (class="foo' + bar + '") is
+// NOT split into tokens - splitting on the old /[\s+'"]+/ pattern harvested
+// the JS variable names themselves (bar, ok, lit, ...) as if they were class
+// tokens, producing false LIVE verdicts with zero real static occurrences.
+// Any value containing '+', '${', or an embedded quote is counted into
+// `dynamic` instead and left unresolved: the tool cannot see through string
+// concatenation, and must say so rather than guess.
 function buildClassTokens(src) {
-  const tok = {};
+  const counts = {};
+  const samples = {};
+  let dynamic = 0;
   const re = /class\s*=\s*("([^"]*)"|'([^']*)')/g;
   let m;
   while ((m = re.exec(src)) !== null) {
     const v = m[2] !== undefined ? m[2] : m[3];
-    v.split(/[\s+'"]+/).forEach(function (t) { if (t) tok[t] = (tok[t] || 0) + 1; });
+    if (/\+|\$\{|['"]/.test(v)) { dynamic++; continue; }
+    v.split(/\s+/).forEach(function (t) {
+      if (!t) return;
+      counts[t] = (counts[t] || 0) + 1;
+      if (!samples[t]) samples[t] = 'class="' + v + '"';
+    });
   }
-  return tok;
+  return { counts: counts, samples: samples, dynamic: dynamic };
 }
 
 // Detect functions at ANY indentation, and track nesting with a stack so an
@@ -71,9 +108,17 @@ function buildScopeIndex(lines) {
   return out.sort(function (a, b) { return a.start - b.start; });
 }
 
+// First-match-by-start silently guesses when a name is ambiguous - 10 name
+// groups in this file's scope index have 2-3 frames sharing a name. spanOf
+// is load-bearing for the sw_pillTap/logCrash/logo_goHome fixtures, so an
+// ambiguous name must fail loudly, never resolve to "whichever came first".
 function spanOf(index, name) {
-  for (let i = 0; i < index.length; i++) if (index[i].name === name) return index[i];
-  return null;
+  let found = null, count = 0;
+  for (let i = 0; i < index.length; i++) {
+    if (index[i].name === name) { count++; if (found === null) found = index[i]; }
+  }
+  if (count > 1) throw new Error('spanOf: "' + name + '" is ambiguous (' + count + ' matches) - refusing to guess');
+  return found;
 }
 
 // Innermost enclosing function wins - the one with the LATEST start that still
@@ -89,7 +134,7 @@ function scopeOf(index, line) {
   return best === null ? '(markup)' : best.name + '()';
 }
 
-function emitters(tokens, cls) { return tokens[cls] || 0; }
+function emitters(tokens, cls) { return tokens.counts[cls] || 0; }
 
 const CHANNELS = {
   red: /var\(--red(?=[\s,)])|#ff453a|#ff3b30|#ff2d55|#ff5a4d|rgba\(\s*255,\s*(69|45|59)\s*,/i,
@@ -187,19 +232,29 @@ const FIXTURES = [
       return { ok: a > 0, expected: '> 0', actual: String(a) }; } },
   { name: 'sw_pillTap-span', run: function (ctx) {
       const s = spanOf(ctx.scopes, 'sw_pillTap');
-      const a = s ? ('L' + s.start + '-L' + s.end) : 'not found';
-      return { ok: a === 'L12617-L12633', expected: 'L12617-L12633', actual: a }; } },
+      const len = s ? (s.end - s.start) : null;
+      const ok = s !== null && len === 16;
+      const a = s ? ('L' + s.start + '-L' + s.end + ' (length ' + len + ')') : 'not found';
+      return { ok: ok, expected: 'span found, length 16', actual: a }; } },
   { name: 'scopeOf-boundary-past-sw_pillTap', run: function (ctx) {
-      const a = scopeOf(ctx.scopes, 12634);
-      return { ok: a === '(markup)', expected: '(markup)', actual: a }; } },
+      const s = spanOf(ctx.scopes, 'sw_pillTap');
+      if (!s) return { ok: false, expected: 'sw_pillTap span found', actual: 'not found' };
+      const atEnd = scopeOf(ctx.scopes, s.end);
+      const pastEnd = scopeOf(ctx.scopes, s.end + 1);
+      const ok = atEnd === 'sw_pillTap()' && pastEnd === '(markup)';
+      return { ok: ok, expected: 'sw_pillTap() then (markup)', actual: atEnd + ' then ' + pastEnd }; } },
   { name: 'indented-fn-logCrash-is-scoped', run: function (ctx) {
-      const a = scopeOf(ctx.scopes, 17295);
-      return { ok: a === 'logCrash()', expected: 'logCrash()', actual: a }; } },
+      const s = spanOf(ctx.scopes, 'logCrash');
+      const a = s ? scopeOf(ctx.scopes, s.start + 1) : 'not found';
+      return { ok: s !== null && a === 'logCrash()', expected: 'logCrash()', actual: a }; } },
   { name: 'indented-fn-logo_goHome-is-scoped', run: function (ctx) {
-      const a = scopeOf(ctx.scopes, 18015);
-      return { ok: a === 'logo_goHome()', expected: 'logo_goHome()', actual: a }; } },
+      const s = spanOf(ctx.scopes, 'logo_goHome');
+      const a = s ? scopeOf(ctx.scopes, s.start + 1) : 'not found';
+      return { ok: s !== null && a === 'logo_goHome()', expected: 'logo_goHome()', actual: a }; } },
   { name: 'sw_pillTap-has-no-color-refs', run: function (ctx) {
-      const a = colorRefsIn(ctx, 12617, 12633);
+      const s = spanOf(ctx.scopes, 'sw_pillTap');
+      if (!s) return { ok: false, expected: 'sw_pillTap span found', actual: 'not found' };
+      const a = colorRefsIn(ctx, s.start, s.end);
       return { ok: a === 0, expected: '0', actual: String(a) }; } },
   { name: 'channels-reject-neon-variants', run: function () {
       const ok = CHANNELS.green.test('color:var(--green-neon)') === false
@@ -208,8 +263,10 @@ const FIXTURES = [
               && CHANNELS.red.test('color:var(--red, #ff453a)') === true;
       return { ok: ok, expected: 'true', actual: String(ok) }; } },
   { name: 'exit-has-two-code-sites', run: function (ctx) {
-      const a = exitLines(ctx).join(',');
-      return { ok: a === '9562,9575', expected: '9562,9575', actual: a || '(none)' }; } },
+      const lns = exitLines(ctx);
+      const bothMarked = lns.length > 0 && lns.every(function (n) { return /#rd-exit/.test(ctx.lines[n - 1]); });
+      const ok = lns.length === 2 && bothMarked;
+      return { ok: ok, expected: '2 code sites, both containing #rd-exit', actual: (lns.join(',') || '(none)') + ' | both marked: ' + bothMarked }; } },
   { name: 'sanctioned-evidence-shows-its-marker', run: function (ctx) {
       const rows = sanctioned(ctx);
       const bad = rows.filter(function (r) {
@@ -217,7 +274,17 @@ const FIXTURES = [
                                   : r.evidence.indexOf('#rd-exit') < 0;
       });
       const a = bad.length === 0 ? 'all rows show their marker' : bad.map(function (r) { return 'L' + r.line; }).join(',');
-      return { ok: bad.length === 0, expected: 'all rows show their marker', actual: a }; } }
+      return { ok: bad.length === 0, expected: 'all rows show their marker', actual: a }; } },
+  { name: 'spanOf-throws-on-ambiguous-name', run: function (ctx) {
+      let threw = false;
+      try { spanOf(ctx.scopes, 'cleanup'); } catch (e) { threw = true; }
+      return { ok: threw === true, expected: 'true', actual: String(threw) }; } },
+  { name: 'dynamic-class-attrs-excluded-from-tokens', run: function (ctx) {
+      const blocked = emitters(ctx.tokens, 'blocked');
+      const dlChip = emitters(ctx.tokens, 'dl-chip');
+      const ok = blocked === 0 && dlChip > 0;
+      return { ok: ok, expected: 'blocked===0 (JS-harvested identifier) && dl-chip>0 (real static class)',
+               actual: 'blocked=' + blocked + ' dl-chip=' + dlChip }; } }
 ];
 
 function runFixtures(ctx) {
@@ -248,27 +315,53 @@ function main() {
     if (!cls) { console.error('usage: inventory emitters <class>'); process.exit(2); }
     const n = emitters(ctx.tokens, cls);
     console.log((n > 0 ? 'LIVE' : 'UNPROVEN') + '  ' + cls + '  class-attr occurrences: ' + n);
+    if (n > 0) {
+      console.log('  evidence: ' + ctx.tokens.samples[cls]);
+    }
     if (n === 0) {
       console.log('  NOTE: UNPROVEN is not a claim of unused. Classes toggled at');
       console.log('  runtime via classList.add never appear in a class="..." attribute.');
     }
+    console.log('  NOTE: ' + ctx.tokens.dynamic + ' class attribute(s) elsewhere are built by JS');
+    console.log('  concatenation (contain +, ${, or an embedded quote) and cannot be resolved');
+    console.log('  by static scan; their tokens are excluded from every count above, never guessed.');
     process.exit(0);
   }
   if (cmd === 'scope') {
-    const n = parseInt(process.argv[3], 10);
-    if (!n) { console.error('usage: inventory scope <line>'); process.exit(2); }
-    console.log('L' + n + '  ' + scopeOf(ctx.scopes, n) + '  |  ' +
-      (ctx.lines[n - 1] || '').trim().slice(0, 110));
+    const raw = process.argv[3];
+    const n = parseInt(raw, 10);
+    if (!raw || !/^\d+$/.test(raw) || n < 1 || n > ctx.lines.length) {
+      console.error('usage: inventory scope <line> (1-' + ctx.lines.length + ')'); process.exit(2);
+    }
+    const label = scopeOf(ctx.scopes, n);
+    console.log('L' + n + '  ' + label + '  |  ' + sliceAround((ctx.lines[n - 1] || '').trim(), 0));
+    if (label === '(markup)') {
+      console.log('  NOTE: (markup) means no `function NAME` declaration encloses this line.');
+      console.log('  Arrow functions, class methods, and object-method shorthand are not');
+      console.log('  detected - this is not proof the line sits outside any function.');
+    }
     process.exit(0);
   }
   if (cmd === 'colors') {
     const opts = { above: 0, channel: 'all' };
-    for (let i = 3; i < process.argv.length; i++) {
-      if (process.argv[i] === '--above') opts.above = parseInt(process.argv[++i], 10) || 0;
-      else if (process.argv[i] === '--channel') opts.channel = process.argv[++i];
+    const usage = 'usage: inventory colors [--above N] [--channel red|green|all]';
+    let bad = false;
+    for (let i = 3; i < process.argv.length && !bad; i++) {
+      const a = process.argv[i];
+      if (a === '--above') {
+        const v = process.argv[++i];
+        if (!v || !/^\d+$/.test(v)) { bad = true; break; }
+        opts.above = parseInt(v, 10);
+      } else if (a === '--channel') {
+        const v = process.argv[++i];
+        if (v === undefined) { bad = true; break; }
+        opts.channel = v;
+      } else {
+        bad = true;
+      }
     }
-    if (['red', 'green', 'all'].indexOf(opts.channel) === -1) {
-      console.error('usage: inventory colors [--above N] [--channel red|green|all]'); process.exit(2);
+    if (bad || ['red', 'green', 'all'].indexOf(opts.channel) === -1) {
+      console.error(usage); process.exit(2);
     }
     const rows = colorRefs(ctx, opts);
     rows.forEach(function (r) {
@@ -276,6 +369,9 @@ function main() {
         r.scope.padEnd(30) + r.evidence);
     });
     console.log('-- ' + rows.length + ' ref(s)');
+    console.log('NOTE: the scope column only detects `function NAME` declarations; arrow');
+    console.log('functions, class methods, and object-method shorthand report (markup) even');
+    console.log('when the line is actually inside a function.');
     process.exit(0);
   }
   if (cmd === 'sanctioned') {
