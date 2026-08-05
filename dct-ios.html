@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.382';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.383';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13226,6 +13226,11 @@ if (typeof window !== 'undefined') {
           <div class="cs-sitepill" id="cs-sitepill"><span class="cs-sitedot" aria-hidden="true"></span><span id="cs-site">&mdash;</span></div>
         </div>
         <div class="cs-microbar"><span>&#128274; Secure session &middot; On device</span><span id="cs-shift"></span></div>
+        <!-- v1.14.383: the grid is a plain block below 851px, so the phone Command
+             Deck renders exactly as approved in .382; it only becomes the spec 9.7
+             dashboard grid at desktop. The three panels are .cs-dpanel = display:none
+             on phone, so mobile gains nothing and loses nothing. -->
+        <div id="cs-grid">
         <div class="cs-card cs-hero" id="cs-hero">
           <div class="cs-hero-art" aria-hidden="true"></div>
           <div class="cs-hero-scrim" aria-hidden="true"></div>
@@ -13238,6 +13243,80 @@ if (typeof window !== 'undefined') {
             <div class="cs-kpi"><div class="cs-kpi-n" id="cs-kpi-pct">0%</div><div class="cs-kpi-k">Complete</div></div>
           </div>
           <button class="cs-hero-cta" id="cs-hero-cta" type="button" onclick="cmd_route('work','deploy')">Continue deployment</button>
+        </div>
+        <!-- §9.9 PHANTOM Intelligence. Renders the SAME cmd_nba() recommendation the
+             phone NBA uses - one brain, two faces. The orb is the approved assistant
+             ghost. "Defer" from the spec is NOT built: the app has no defer state and
+             a button that silently does nothing is worse than an absent one. -->
+        <div class="cs-card cs-dpanel" id="cs-intel">
+          <div class="cs-ph"><span class="cs-pt">Phantom Intelligence</span><button type="button" class="cs-pa" onclick="openVaSheet('intent')">Open AI</button></div>
+          <div class="cs-irow">
+            <img class="cs-iorb" src="phantom-ghost-v3.webp" alt="" aria-hidden="true" width="107" height="122" loading="lazy">
+            <div style="min-width:0">
+              <div class="cs-ik">Next best action</div>
+              <div class="cs-ititle" id="cs-intel-title">&mdash;</div>
+              <div class="cs-ip" id="cs-intel-p">&mdash;</div>
+            </div>
+          </div>
+          <div class="cs-iact"><button type="button" class="cs-ibtn" id="cs-intel-btn">&mdash;</button></div>
+        </div>
+        <!-- §9.10 Site Health. The rows are the signals this app ACTUALLY has -
+             connection, storage, site profile, open blockers. The spec's power
+             domains / network fabric / documentation rows have no data source in
+             PHANTOM, and inventing them would be fake telemetry. -->
+        <div class="cs-card cs-dpanel" id="cs-health">
+          <div class="cs-ph"><span class="cs-pt">Site health</span></div>
+          <div id="cs-health-rows"></div>
+        </div>
+        <!-- §9.11 Build Progress. Five-step rail over the REAL DEPLOY_PHASE_TYPES
+             aggregate from deploy_computeDeployRollup - the same numbers the deploy
+             screens read. State colours only (complete=teal, active=cyan): the phase
+             IDENTITY palette contains --green, which is retired as a status channel. -->
+        <div class="cs-card cs-dpanel" id="cs-build">
+          <div class="cs-ph"><span class="cs-pt">Build progress</span><button type="button" class="cs-pa" onclick="cmd_route('work','deploy')">Timeline</button></div>
+          <div id="cs-build-body"></div>
+        </div>
+        </div>
+        <!-- §9.13 lower grid. .cs-dpanel keeps the whole region off the phone, so
+             the approved mobile Command Deck is unchanged. -->
+        <div id="cs-lower" class="cs-dpanel">
+          <div class="cs-card cs-dpanel" id="cs-fieldops">
+            <div class="cs-ph"><span class="cs-pt">Field operations</span></div>
+            <div class="cs-ops">
+              <button type="button" class="cs-op" onclick="cmd_route('work','scan')" aria-label="Universal scan">
+                <span class="cs-op-art" style="background-image:url(icons/OPS-phone@3x.webp)" aria-hidden="true"></span>
+                <span class="cs-op-scrim" aria-hidden="true"></span>
+                <span class="cs-op-chip">Ready</span>
+                <span class="cs-op-body"><span class="cs-op-t">Universal Scan</span><span class="cs-op-m" id="cs-op-scan-m">Capture a rack</span></span>
+              </button>
+              <button type="button" class="cs-op" onclick="cmd_route('work','handoff')" aria-label="Shift handoff">
+                <span class="cs-op-art" style="background-image:url(icons/phantom-feat-handoff-v2.webp)" aria-hidden="true"></span>
+                <span class="cs-op-scrim" aria-hidden="true"></span>
+                <span class="cs-op-chip" id="cs-op-hof-chip">Open</span>
+                <span class="cs-op-body"><span class="cs-op-t">Shift Handoff</span><span class="cs-op-m" id="cs-op-hof-m">Close out the shift</span></span>
+              </button>
+            </div>
+          </div>
+          <div class="cs-card cs-dpanel" id="cs-fieldtools">
+            <div class="cs-ph"><span class="cs-pt">Field tools</span><button type="button" class="cs-pa" onclick="showMode('ref')">All tools</button></div>
+            <div class="cs-tools">
+            <button type="button" class="cs-tool" onclick="rd_openOpsTool('bom')" aria-label="BOM"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-bom-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">BOM</span></button>
+            <button type="button" class="cs-tool" onclick="rd_openOpsTool('manifest')" aria-label="Manifest"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-manifest-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Manifest</span></button>
+            <button type="button" class="cs-tool" onclick="rd_openOpsTool('portmap')" aria-label="Port Map"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-portmap-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Port Map</span></button>
+            <button type="button" class="cs-tool" onclick="rd_openOpsTool('audits')" aria-label="Audits"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-audits-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Audits</span></button>
+            <button type="button" class="cs-tool" onclick="rd_openOpsTool('blast')" aria-label="Blast"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-power-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Blast</span></button>
+            <button type="button" class="cs-tool" onclick="rd_openOpsTool('optics')" aria-label="Optics"><span class="cs-tool-art" style="background-image:url(icons/phantom-ref-optics-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Optics</span></button>
+            </div>
+          </div>
+          <div class="cs-card cs-dpanel" id="cs-ready">
+            <div class="cs-ph"><span class="cs-pt">Shift readiness</span></div>
+            <div class="cs-ring">
+              <div class="cs-ringw"><canvas id="cs-ringc" width="152" height="152" style="width:76px;height:76px"></canvas><div class="cs-ringn" id="cs-ringn">0%</div></div>
+              <div class="cs-rk" id="cs-ready-k">&mdash;</div>
+            </div>
+            <div class="cs-rlist" id="cs-ready-rows"></div>
+            <button type="button" class="cs-rbtn" onclick="cmd_route('work','handoff')">Open handoff</button>
+          </div>
         </div>
       </div>
       <div class="cc-z0" id="cc-z0">
@@ -15885,6 +15964,54 @@ if (typeof window !== 'undefined') {
   -->
   <!-- ━━━ REDESIGN BOTTOM NAV (Command · Work · Crash Cart) — shown only under body.rd;
        replaces the top mode-toggle as the redesign primary nav. ━━━ -->
+  <!-- ═══ v1.14.383 COMMAND SHELL DESKTOP CHROME (spec 9.4 / 9.5) ═══════════
+       BODY-LEVEL and position:fixed on purpose - a fixed child of a transformed
+       render host positions against the host (.212 trap). Both are display:none
+       until body.rd.cshell AND min-width:851px, so phone and legacy never see
+       them. Every control routes to an EXISTING door; no new feature logic. -->
+  <nav id="cs-side" aria-label="PHANTOM desktop navigation">
+    <div class="cs-sbrand">
+      <span class="cs-brandmark" aria-hidden="true"></span>
+      <div class="cs-sbrandtext">
+        <div class="cs-brandtext" style="font-size:15px">PHANTOM</div>
+        <div class="cs-brandsub">Field Intelligence</div>
+      </div>
+    </div>
+    <div class="cs-ssite">
+      <div class="cs-ssite-k">Active site</div>
+      <div class="cs-ssite-v"><span class="cs-sitedot" id="cs-sdot" aria-hidden="true"></span><span id="cs-ssite">&mdash;</span></div>
+    </div>
+    <div class="cs-navlabel">Navigation</div>
+        <button type="button" class="cs-navitem" id="cs-nav-cmd" onclick="showMode('command')" aria-label="Command"><img src="icons/phantom-nav-home-v2-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Command</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-bld" onclick="showMode('work')" aria-label="Build"><img src="icons/phantom-nav-build-v2-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Build</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-tls" onclick="showMode('ref')" aria-label="Tools"><img src="icons/phantom-nav-tools-v2-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Tools</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-ext" onclick="showMode('command')" aria-label="Exit"><img src="icons/phantom-nav-exit-v2-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Exit</span></button>
+    <div class="cs-navlabel" style="margin-top:12px">Operations</div>
+        <button type="button" class="cs-navitem" id="cs-nav-dep" onclick="cmd_route('work','deploy')" aria-label="Deploy" title="Deploy"><span class="cs-navdot" aria-hidden="true">DP</span><span class="cs-lbl">Deploy</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-scn" onclick="cmd_route('work','scan')" aria-label="Scan" title="Scan"><span class="cs-navdot" aria-hidden="true">SC</span><span class="cs-lbl">Scan</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-hof" onclick="cmd_route('work','handoff')" aria-label="Handoff" title="Handoff"><span class="cs-navdot" aria-hidden="true">HO</span><span class="cs-lbl">Handoff</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-mst" onclick="cmd_loadMaster()" aria-label="Load Master" title="Load Master"><span class="cs-navdot" aria-hidden="true">MA</span><span class="cs-lbl">Load Master</span></button>
+    <div class="cs-sfoot">
+      <button type="button" class="cs-navitem" id="cs-nav-prf" onclick="rd_openProfile()" aria-label="Site profile" title="Site profile" style="margin:0 0 4px;width:100%;padding:0">
+        <span class="cs-navdot" aria-hidden="true">PR</span><span class="cs-lbl">Profile</span>
+      </button>
+      <div class="cs-sfoot-row"><span aria-hidden="true">&#128274;</span><span class="cs-lbl">Secure &middot; on device</span></div>
+      <div class="cs-sfoot-row"><span class="cs-sver" id="cs-sver">&mdash;</span></div>
+    </div>
+  </nav>
+  <div id="cs-top">
+    <div>
+      <div class="cs-ttitle">Command</div>
+      <div class="cs-tsub" id="cs-tsub">&mdash;</div>
+    </div>
+    <div class="cs-tspacer"></div>
+    <input class="cs-tsearch" id="cs-tsearch" type="search" placeholder="Search racks, optics, assets..."
+      oninput="doSearchDebounced(this.value)"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();doSearchNow(this.value);this.blur();}"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Search">
+    <button type="button" class="cs-tbtn" id="cs-tnotif" onclick="cmd_route('work','handoff')" aria-label="Open blockers">&#9888;&#65038;<span class="cs-tbadge" id="cs-tnotif-n">0</span></button>
+    <button type="button" class="cs-tscan" onclick="cmd_route('work','scan')" aria-label="Scan a rack">Scan</button>
+  </div>
   <div class="botnav" id="rd-botnav">
     <div id="bn-rail">
       <span id="bn-core" aria-hidden="true"></span>
@@ -18589,6 +18716,11 @@ function showMode(mode) {
     if (el) el.classList.toggle('active', m === mode);
     var b = document.getElementById('bn-' + m);   // mirror active in the bottom nav
     if (b) b.classList.toggle('active', m === mode);
+    // v1.14.383: the desktop sidebar is body-level and outlives the page swap, so it
+    // has to be told which destination is current or it strands on Command.
+    var _csn = { command: 'cs-nav-cmd', work: 'cs-nav-bld', ref: 'cs-nav-tls' }[m];
+    var _csd = _csn && document.getElementById(_csn);
+    if (_csd) _csd.classList.toggle('on', m === mode);
   });
   var _bnIdx = { command:0, work:1, ref:2 }[mode];
   var _core = document.getElementById('bn-core');
@@ -20684,6 +20816,7 @@ function cmd_render() {
   }
   cmd_telemetry(activeDep, activePct, handoffDraft);
   cs_renderHero(activeDep, activePct, rackCount, blockerCount);
+  cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, online, storageOk, site, masterLoaded, handoffDraft);
   cmd_setSiteLabel();
   cmd_clock();
   cmd_renderZ0(site, masterLoaded);   // v1.14.335 Command v2: Z0 site + Master-age chip + S0/S1 data-master gate
@@ -20692,6 +20825,191 @@ function cmd_render() {
 // v1.14.159 D3 — Shift Telemetry: read-only over live state (reuses cmd_render's
 // activeDep/activePct/handoffDraft). DEPLOY shows activePct+bar (the dep object carries
 // no rack done/total). SCANNED counts today from phantom_scan_collection items (ts:Date.now()).
+// v1.14.383 COMMAND SHELL DESKTOP (spec 9.9/9.10/9.11) — the sidebar, topbar and
+// the three dashboard panels. Every value is one cmd_render already computed for the
+// phone; this is a second FACE on one brain, not a second source of truth. Nothing
+// here invents a number, and every string is written with textContent.
+function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, online, storageOk, site, masterLoaded, handoffDraft) {
+  var side = document.getElementById('cs-side');
+  if (!side) {
+    try { console.warn('[PHANTOM] cs_renderDesktop: #cs-side is missing - the desktop Command Shell cannot render'); } catch (_) {}
+    return;
+  }
+  var E = function(id) { return document.getElementById(id); };
+  var setText = function(id, v) { var e = E(id); if (e) e.textContent = v; };
+
+  // ── sidebar identity + topbar context ──
+  setText('cs-ssite', site || 'SITE');
+  setText('cs-tsub', site || 'SITE');
+  setText('cs-sver', (typeof PHANTOM_APP_VERSION === 'string') ? PHANTOM_APP_VERSION.replace('phantom-', '') : '');
+  var sdot = E('cs-sdot');
+  if (sdot) { if (confirmed) sdot.classList.remove('warn'); else sdot.classList.add('warn'); }
+  // the sidebar dot carries .warn on ITSELF (it is not inside a .cs-sitepill), so it
+  // needs its own rule rather than the pill's descendant selector.
+
+  // ── topbar blocker badge ──
+  var nb = E('cs-tnotif');
+  if (nb) {
+    setText('cs-tnotif-n', String(blockerCount || 0));
+    if (blockerCount > 0) nb.classList.add('has'); else nb.classList.remove('has');
+  }
+
+  // ── §9.9 Intelligence: the same recommendation the phone NBA renders ──
+  if (nba) {
+    setText('cs-intel-title', nba.h || '');
+    setText('cs-intel-p', nba.p || '');
+    var ib = E('cs-intel-btn');
+    if (ib) { ib.textContent = nba.label || 'Open'; ib.onclick = nba.act || null; }
+  }
+
+  // ── §9.10 Site Health: only signals that actually exist ──
+  var rows = [
+    ['Connection', online ? 'Reachable' : 'Offline mode', online ? 'ONLINE' : 'OFFLINE', online ? '' : 'warn'],
+    ['Storage', storageOk ? 'Local store writable' : 'Local store blocked', storageOk ? 'READY' : 'FAULT', storageOk ? '' : 'bad'],
+    ['Site profile', confirmed ? 'Confirmed for this device' : 'Not set up yet', confirmed ? 'SET' : 'UNSET', confirmed ? '' : 'warn'],
+    ['Open blockers', blockerCount > 0 ? 'Resolve before handoff' : 'Nothing blocking', String(blockerCount || 0), blockerCount > 0 ? 'bad' : '']
+  ];
+  var host = E('cs-health-rows');
+  if (host) {
+    host.textContent = '';
+    rows.forEach(function(r) {
+      var d = document.createElement('div');
+      d.className = 'cs-hrow' + (r[3] ? ' ' + r[3] : '');
+      var dot = document.createElement('span'); dot.className = 'cs-hdot'; dot.setAttribute('aria-hidden', 'true');
+      var mid = document.createElement('div'); mid.style.minWidth = '0';
+      var k = document.createElement('div'); k.className = 'cs-hk'; k.textContent = r[0];
+      var s = document.createElement('div'); s.className = 'cs-hs'; s.textContent = r[1];
+      mid.appendChild(k); mid.appendChild(s);
+      var v = document.createElement('div'); v.className = 'cs-hv'; v.textContent = r[2];
+      d.appendChild(dot); d.appendChild(mid); d.appendChild(v);
+      host.appendChild(d);
+    });
+  }
+
+  // Readiness runs BEFORE the build rail on purpose: the rail has two early
+  // returns (no host, no rollup) and a call placed after them silently never ran
+  // when there was no active deployment - which is exactly the cold-start case.
+  cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handoffDraft);
+
+  // ── §9.11 Build Progress: the real DEPLOY_PHASE_TYPES aggregate ──
+  var bb = E('cs-build-body');
+  if (!bb) return;
+  bb.textContent = '';
+  var ru = null;
+  if (activeDep) {
+    try { ru = deploy_computeDeployRollup(activeDep.id); }
+    catch (e) { try { phantom_logErr('cs_renderDesktop:rollup', e); } catch (_) {} }
+  }
+  if (!ru || !ru.phaseAgg) {
+    var em = document.createElement('div');
+    em.className = 'cs-empty';
+    em.textContent = activeDep
+      ? 'No phase data captured for this deployment yet.'
+      : 'No active deployment. Start one to see the build rail.';
+    bb.appendChild(em);
+    return;
+  }
+  var rail = document.createElement('div'); rail.className = 'cs-rail';
+  var curLabel = 'Complete', curPct = 0;
+  DEPLOY_PHASE_TYPES.forEach(function(t) {
+    var a = ru.phaseAgg[t] || { total: 0, complete: 0, inProgress: 0, blocked: 0 };
+    var pct = a.total ? Math.round(a.complete / a.total * 100) : 0;
+    var state = '';
+    if (a.blocked > 0) state = 'blocked';
+    else if (a.total > 0 && a.complete === a.total) state = 'done';
+    else if (a.inProgress > 0 || a.complete > 0) state = 'active';
+    if (!state || state === 'active' || state === 'blocked') {
+      if (curLabel === 'Complete') {
+        curLabel = (typeof DEPLOY_PHASE_LABELS === 'object' && DEPLOY_PHASE_LABELS[t]) ? DEPLOY_PHASE_LABELS[t] : t.toUpperCase();
+        curPct = pct;
+      }
+    }
+    var step = document.createElement('div'); step.className = 'cs-step' + (state ? ' ' + state : '');
+    var bar = document.createElement('div'); bar.className = 'cs-stepbar';
+    var fill = document.createElement('div'); fill.className = 'cs-stepfill'; fill.style.width = pct + '%';
+    bar.appendChild(fill);
+    var k = document.createElement('div'); k.className = 'cs-stepk';
+    k.textContent = (typeof DEPLOY_PHASE_LABELS === 'object' && DEPLOY_PHASE_LABELS[t]) ? DEPLOY_PHASE_LABELS[t] : t.toUpperCase();
+    var num = document.createElement('div'); num.className = 'cs-stepn';
+    num.textContent = a.total ? (a.complete + '/' + a.total) : '—';
+    step.appendChild(bar); step.appendChild(k); step.appendChild(num);
+    rail.appendChild(step);
+  });
+  bb.appendChild(rail);
+  var foot = document.createElement('div'); foot.className = 'cs-bfoot';
+  var ph = document.createElement('div'); ph.className = 'cs-bphase'; ph.textContent = curLabel;
+  var pc = document.createElement('div'); pc.className = 'cs-bpct';
+  pc.textContent = (ru.phasePct != null ? ru.phasePct : curPct) + '%';
+  foot.appendChild(ph); foot.appendChild(pc);
+  bb.appendChild(foot);
+}
+
+// v1.14.383 §9.14/§9.16 — Field Operations metadata and Shift Readiness.
+// The spec's mock shows a fixed 82% ring. That number is NOT reproduced: a hardcoded
+// readiness score is fake telemetry. The ring is four real gates the app can actually
+// answer - site profile confirmed, Master loaded, zero open blockers, handoff started -
+// so the number moves when the shift moves.
+function cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handoffDraft) {
+  var E = function(id) { return document.getElementById(id); };
+  var scanM = E('cs-op-scan-m');
+  if (scanM) scanM.textContent = rackCount ? (rackCount + (rackCount === 1 ? ' rack captured' : ' racks captured')) : 'No racks captured yet';
+  var hofChip = E('cs-op-hof-chip'), hofM = E('cs-op-hof-m');
+  if (hofChip) hofChip.textContent = handoffDraft ? 'Draft' : 'Not started';
+  if (hofM) hofM.textContent = handoffDraft ? 'Draft in progress' : 'Close out the shift';
+
+  var gates = [
+    ['Site profile', !!confirmed],
+    ['Master loaded', !!masterLoaded],
+    ['No open blockers', !(blockerCount > 0)],
+    ['Handoff started', !!handoffDraft]
+  ];
+  var met = gates.filter(function(g) { return g[1]; }).length;
+  var pct = Math.round(met / gates.length * 100);
+
+  var num = E('cs-ringn'); if (num) num.textContent = pct + '%';
+  var kk = E('cs-ready-k');
+  if (kk) kk.textContent = met === gates.length
+    ? 'Ready to hand off.'
+    : (gates.length - met) + ' of ' + gates.length + ' readiness gates still open.';
+
+  var host = E('cs-ready-rows');
+  if (host) {
+    host.textContent = '';
+    gates.forEach(function(g) {
+      var d = document.createElement('div');
+      d.className = 'cs-rrow' + (g[1] ? '' : ' warn');
+      var dot = document.createElement('span'); dot.className = 'cs-hdot'; dot.setAttribute('aria-hidden', 'true');
+      var k = document.createElement('span'); k.textContent = g[0];
+      var v = document.createElement('span'); v.className = 'cs-rv'; v.textContent = g[1] ? 'OK' : 'OPEN';
+      d.appendChild(dot); d.appendChild(k); d.appendChild(v);
+      host.appendChild(d);
+    });
+  }
+
+  // the ring. Drawn on a 2x canvas so it stays crisp; cyan-to-violet like every
+  // other progress surface in the shell.
+  var c = E('cs-ringc');
+  if (!c || !c.getContext) return;
+  try {
+    var g2 = c.getContext('2d');
+    var S = c.width, R = S / 2, r = R - 11;
+    g2.clearRect(0, 0, S, S);
+    g2.lineWidth = 11; g2.lineCap = 'round';
+    g2.strokeStyle = 'rgba(176,207,255,0.13)';
+    g2.beginPath(); g2.arc(R, R, r, 0, Math.PI * 2); g2.stroke();
+    if (pct > 0) {
+      var grad = g2.createLinearGradient(0, 0, S, S);
+      grad.addColorStop(0, '#5cf2ff'); grad.addColorStop(1, '#9b59ff');
+      g2.strokeStyle = grad;
+      g2.beginPath();
+      g2.arc(R, R, r, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * pct / 100));
+      g2.stroke();
+    }
+  } catch (e) {
+    try { console.warn('[PHANTOM] cs_renderReady: readiness ring failed to draw', e); } catch (_) {}
+  }
+}
+
 // v1.14.382 COMMAND SHELL §8.7 — the Active Deployment hero. Takes the SAME
 // honest values cmd_render already computed for the NBA and the telemetry tiles;
 // it introduces no new data source and invents nothing. Values are written with
@@ -52281,6 +52599,7 @@ body.rd.cshell .cs-sitepill {
    aisle has no way to see through it. */
 body.rd.cshell .cs-sitedot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; background: var(--ok); box-shadow: 0 0 7px var(--ok); }
 body.rd.cshell .cs-sitepill.warn .cs-sitedot { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
+body.rd.cshell .cs-sitedot.warn { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
 
 /* §8.6 — secure microbar. Text colour is var(--slate), NOT --slate-dim: that
    token's own :root comment reserves it for borders/decoration and says NEVER
@@ -52344,6 +52663,303 @@ body.rd.cshell .cs-hero-cta {
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 body.rd.cshell .cs-hero-cta:active { transform: scale(.985); filter: brightness(1.08); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   v1.14.383 — COMMAND SHELL DESKTOP (spec 9.x, breakpoints 10.3/10.4)
+   Desktop is a SEPARATE COMPOSITION, not a widened phone. Everything here is
+   inside @media (min-width:851px), so at 0-850px the phone Command Deck that
+   shipped in .382 is untouched down to the byte - including its bottom nav.
+   The desktop chrome (#cs-side / #cs-top) lives at BODY level and is fixed:
+   a fixed child of a transformed render host positions against the host, which
+   is the .212 trap, so these are deliberately not inside a page.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* inert everywhere until the desktop query turns them on */
+#cs-side, #cs-top { display: none; }
+/* the desktop-only panels never render on phone - mobile stays as approved */
+body.rd.cshell .cs-dpanel { display: none; }
+
+@media (min-width: 851px) {
+
+  /* §9.4 SIDEBAR — sticky full height, darker than the workspace, 1px divider */
+  body.rd.cshell #cs-side {
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0;
+    width: 246px; height: 100vh; z-index: 90;
+    background: linear-gradient(180deg, rgba(4,6,10,0.98), rgba(2,3,5,0.99));
+    border-right: 1px solid var(--cyan-border-lo);
+    padding: 18px 0 14px; overflow-y: auto; overscroll-behavior: contain;
+  }
+  body.rd.cshell .cs-sbrand { display: flex; align-items: center; gap: 10px; padding: 0 18px 16px; }
+  body.rd.cshell .cs-sbrand .cs-brandmark { width: 32px; height: 32px; flex: 0 0 32px; }
+  body.rd.cshell .cs-ssite {
+    margin: 0 14px 16px; padding: 10px 12px; border-radius: 12px;
+    background: rgba(16,22,32,0.7); border: 1px solid var(--cyan-border-lo);
+  }
+  body.rd.cshell .cs-ssite-k { font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--slate); }
+  body.rd.cshell .cs-ssite-v { display: flex; align-items: center; gap: 7px; margin-top: 5px; font-size: 13px; font-weight: 700; letter-spacing: .1em; color: var(--white); }
+  body.rd.cshell .cs-navlabel { font-size: 8.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--slate); padding: 0 20px; margin: 4px 0 7px; }
+  body.rd.cshell .cs-navitem {
+    display: flex; align-items: center; gap: 11px; margin: 0 10px 3px; padding: 0 10px;
+    min-height: 44px; border-radius: 11px; cursor: pointer; position: relative;
+    color: var(--slate); font-size: 12.5px; font-weight: 700; letter-spacing: .11em;
+    text-transform: uppercase; background: none; border: 0; width: calc(100% - 20px);
+    text-align: left; -webkit-tap-highlight-color: transparent;
+  }
+  body.rd.cshell .cs-navitem img { width: 21px; height: 21px; flex: 0 0 21px; object-fit: contain; }
+  body.rd.cshell .cs-navitem .cs-navdot { width: 21px; flex: 0 0 21px; text-align: center; font-size: 13px; color: var(--slate); }
+  body.rd.cshell .cs-navitem:hover { color: var(--white); background: rgba(92,242,255,0.05); }
+  /* §9.4 active nav: cyan edge, subtle cyan/violet wash, light text, NO oversized glow */
+  body.rd.cshell .cs-navitem.on {
+    color: var(--white);
+    background: linear-gradient(90deg, rgba(92,242,255,0.11), rgba(155,89,255,0.06));
+  }
+  body.rd.cshell .cs-navitem.on::before {
+    content: ''; position: absolute; left: -10px; top: 9px; bottom: 9px; width: 3px;
+    border-radius: 0 3px 3px 0; background: var(--cyan);
+  }
+  body.rd.cshell .cs-sfoot { margin-top: auto; padding: 12px 18px 0; border-top: 1px solid rgba(176,207,255,0.07); }
+  body.rd.cshell .cs-sfoot-row { display: flex; align-items: center; gap: 8px; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--slate); margin-top: 8px; }
+  body.rd.cshell .cs-sver { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--slate); }
+
+  /* §9.5 TOPBAR — 76px, sticky, dark translucent, 22px blur, bottom divider */
+  body.rd.cshell #cs-top {
+    display: flex; align-items: center; gap: 14px; position: fixed; top: 0; left: 246px; right: 0;
+    height: 76px; z-index: 85; padding: 0 28px;
+    background: rgba(4,7,11,0.82); border-bottom: 1px solid var(--cyan-border-lo);
+    -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px);
+  }
+  body.rd.cshell .cs-ttitle { font-size: 17px; font-weight: 800; letter-spacing: .04em; color: var(--white); }
+  body.rd.cshell .cs-tsub { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--slate); margin-top: 3px; }
+  body.rd.cshell .cs-tspacer { flex: 1; }
+  body.rd.cshell .cs-tsearch {
+    width: 240px; height: 38px; border-radius: 12px; padding: 0 13px; font-size: 12.5px;
+    color: var(--white); background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo);
+    outline: none; -webkit-appearance: none; appearance: none;
+  }
+  body.rd.cshell .cs-tsearch::placeholder { color: var(--slate); }
+  body.rd.cshell .cs-tsearch:focus { border-color: color-mix(in srgb, var(--cyan) 55%, transparent); }
+  body.rd.cshell .cs-tbtn {
+    min-width: 44px; height: 38px; border-radius: 11px; border: 1px solid var(--cyan-border-lo);
+    background: rgba(16,22,32,0.85); color: var(--slate); cursor: pointer; font-size: 15px;
+    display: inline-flex; align-items: center; justify-content: center; position: relative;
+  }
+  body.rd.cshell .cs-tbtn .cs-tbadge {
+    position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px;
+    border-radius: 9px; background: #ff2bd6; color: #04060a; font-size: 9px; font-weight: 800;
+    display: none; align-items: center; justify-content: center;
+  }
+  body.rd.cshell .cs-tbtn.has .cs-tbadge { display: inline-flex; }
+  body.rd.cshell .cs-tscan {
+    height: 38px; padding: 0 17px; border-radius: 11px; border: 0; cursor: pointer;
+    background: linear-gradient(90deg, var(--cyan), var(--violet)); color: #04060a;
+    font-size: 11.5px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase;
+  }
+  body.rd.cshell .cs-tscan:active { filter: brightness(1.08); }
+
+  /* The workspace clears the fixed chrome by offsetting the PAGE, not .main.
+     .page is position:absolute with inset:0 inside a position:relative .main,
+     and an absolutely positioned box resolves its offsets against the containing
+     block's PADDING BOX - so padding on .main moves it not one pixel. Offsetting
+     .page works because right/bottom stay 0 and it simply stretches less. */
+  body.rd.cshell .page { left: 246px; top: 76px; }
+  body.rd.cshell .app-header { display: none; }
+  body.rd.cshell #rd-botnav { display: none !important; }
+  body.rd.cshell .cs-hd, body.rd.cshell .cs-microbar { display: none; }
+  /* the shell owns the Command page on desktop - the legacy zones it replaces
+     stand down. Their doors survive in the sidebar (Master, Deploy, Handoff).
+     ⚠ THESE MUST BE TARGETED BY ID. At >=1024px the legacy desktop layout sets
+     `#pg-cmd{display:grid;grid-template-columns:340px minmax(0,760px)}` and
+     `#pg-cmd #cc-center{...}` - that second selector carries TWO ids and beats
+     any class-scoped shell rule, so `.cc-center` silently loses and the shell
+     gets trapped in a 226px grid row with the legacy content overlapping it.
+     Overriding #pg-cmd back to block is what lets the shell own the page flow. */
+  body.rd.cshell #pg-cmd { display: block; padding: 0; }
+  body.rd.cshell #pg-cmd #cc-rail, body.rd.cshell #pg-cmd #cc-center { display: none; }
+
+  /* §9.6 content area */
+  body.rd.cshell #cmd-shell {
+    padding: 24px 28px 46px; max-width: 1640px; margin: 0 auto;
+    background-attachment: scroll;
+  }
+  body.rd.cshell #cmd-shell > * + * { margin-top: 0; }
+  body.rd.cshell .cs-dpanel { display: flex; flex-direction: column; }
+
+  /* §9.7 primary dashboard grid — NOT an equal three-column card grid */
+  body.rd.cshell #cs-grid {
+    display: grid;
+    grid-template-columns: minmax(520px, 1.55fr) minmax(300px, 0.8fr) minmax(270px, 0.68fr);
+    gap: 15px; align-items: start;
+  }
+  body.rd.cshell #cs-grid .cs-hero { grid-column: 1; grid-row: 1 / span 2; }
+  body.rd.cshell #cs-intel  { grid-column: 2; grid-row: 1; min-height: 204px; }
+  body.rd.cshell #cs-health { grid-column: 3; grid-row: 1; min-height: 204px; }
+  body.rd.cshell #cs-build  { grid-column: 2 / span 2; grid-row: 2; min-height: 206px; }
+
+  /* §9.8 desktop hero — same artwork, larger scale, crop and overlay only */
+  body.rd.cshell #cmd-shell .cs-hero { min-height: 425px; padding: 25px; border-radius: 22px; }
+  body.rd.cshell .cs-hero-art { background-position: 72% center; }
+  body.rd.cshell .cs-hero-title { font-size: 35px; }
+  body.rd.cshell .cs-hero-prog { width: 54%; }
+  body.rd.cshell .cs-hero-kpis { max-width: 460px; }
+  body.rd.cshell .cs-hero-cta { width: auto; align-self: flex-start; padding: 0 26px; }
+  /* §9.8 subtle technical grid over the hero art */
+  body.rd.cshell .cs-hero-scrim::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(176,207,255,0.03) 0 1px, transparent 1px 44px),
+                repeating-linear-gradient(90deg, rgba(176,207,255,0.03) 0 1px, transparent 1px 44px);
+  }
+
+  /* shared desktop panel chrome */
+  body.rd.cshell .cs-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  body.rd.cshell .cs-pt { font-size: 11px; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; color: var(--white); }
+  body.rd.cshell .cs-pa { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); background: none; border: 0; cursor: pointer; padding: 4px; }
+  body.rd.cshell .cs-dpanel { padding: 16px 17px; }
+
+  /* §9.9 Intelligence panel */
+  body.rd.cshell .cs-iorb { width: 46px; height: 46px; flex: 0 0 46px; object-fit: contain; }
+  body.rd.cshell .cs-irow { display: flex; align-items: flex-start; gap: 12px; }
+  body.rd.cshell .cs-ik { font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--violet); }
+  body.rd.cshell .cs-ititle { font-size: 15px; font-weight: 700; color: var(--white); line-height: 1.25; margin-top: 4px; }
+  body.rd.cshell .cs-ip { font-size: 11.5px; color: var(--slate); line-height: 1.45; margin-top: 6px; }
+  body.rd.cshell .cs-iact {
+    margin-top: auto; padding-top: 12px; display: flex; gap: 8px;
+  }
+  body.rd.cshell .cs-ibtn {
+    flex: 1; min-height: 40px; border-radius: 11px; border: 0; cursor: pointer;
+    background: linear-gradient(90deg, var(--cyan), var(--violet)); color: #04060a;
+    font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  }
+  body.rd.cshell .cs-ibtn.ghost {
+    background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo); color: var(--slate); flex: 0 0 auto; padding: 0 15px;
+  }
+
+  /* §9.10 Site Health rows */
+  body.rd.cshell .cs-hrow { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-bottom: 1px solid rgba(176,207,255,0.06); }
+  body.rd.cshell .cs-hrow:last-child { border-bottom: 0; }
+  body.rd.cshell .cs-hdot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 7px var(--ok); }
+  body.rd.cshell .cs-hrow.warn .cs-hdot { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
+  body.rd.cshell .cs-hrow.bad  .cs-hdot { background: #ff2bd6; box-shadow: 0 0 7px rgba(255,43,214,0.8); }
+  body.rd.cshell .cs-hk { font-size: 11.5px; color: var(--white); font-weight: 600; min-width: 0; }
+  body.rd.cshell .cs-hs { font-size: 9.5px; color: var(--slate); margin-top: 2px; }
+  body.rd.cshell .cs-hv { margin-left: auto; font-family: var(--mono); font-size: 11.5px; font-weight: 700; color: var(--slate); white-space: nowrap; }
+
+  /* §9.11 Build Progress five-step rail */
+  body.rd.cshell .cs-rail { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 4px; }
+  body.rd.cshell .cs-step { min-width: 0; }
+  body.rd.cshell .cs-stepbar { height: 6px; border-radius: 3px; background: rgba(176,207,255,0.13); overflow: hidden; }
+  body.rd.cshell .cs-stepfill { height: 100%; width: 0; border-radius: 3px; background: var(--cyan); }
+  /* complete -> teal, the 'complete' channel. Active -> cyan. Never --green. */
+  body.rd.cshell .cs-step.done .cs-stepfill { background: var(--teal); }
+  body.rd.cshell .cs-step.blocked .cs-stepfill { background: #ff2bd6; }
+  body.rd.cshell .cs-stepk { font-size: 8px; letter-spacing: .13em; text-transform: uppercase; color: var(--slate); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.rd.cshell .cs-step.done .cs-stepk { color: var(--teal); }
+  body.rd.cshell .cs-step.active .cs-stepk { color: var(--cyan); }
+  body.rd.cshell .cs-stepn { font-family: var(--mono); font-size: 10px; color: var(--slate); margin-top: 2px; }
+  body.rd.cshell .cs-bfoot { margin-top: auto; padding-top: 12px; display: flex; align-items: baseline; gap: 8px; }
+  body.rd.cshell .cs-bphase { font-size: 13px; font-weight: 700; color: var(--white); }
+  body.rd.cshell .cs-bpct { font-family: var(--mono); font-size: 18px; font-weight: 800; color: var(--cyan); margin-left: auto; }
+  body.rd.cshell .cs-empty { font-size: 11.5px; color: var(--slate); line-height: 1.5; }
+
+  /* §9.13 lower grid */
+  body.rd.cshell #cs-lower { display: grid; grid-template-columns: 1.1fr 1.1fr 0.8fr; gap: 15px; margin-top: 15px; }
+  /* §9.14 Field Operations - two art cards, existing approved art, bottom-aligned
+     title and metadata over a scrim. Same recipe as the phone TOOLS face. */
+  body.rd.cshell .cs-ops { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  body.rd.cshell .cs-op {
+    position: relative; height: 211px; border-radius: 15px; overflow: hidden; cursor: pointer;
+    border: 1px solid var(--cyan-border-lo); padding: 0; display: flex; flex-direction: column;
+    justify-content: flex-end; text-align: left; background: var(--bg1);
+  }
+  body.rd.cshell .cs-op-art { position: absolute; inset: 0; background-size: cover; background-position: center; pointer-events: none; }
+  body.rd.cshell .cs-op-scrim {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to top, rgba(2,3,5,0.93) 0%, rgba(2,3,5,0.25) 52%, rgba(2,3,5,0.05) 100%);
+  }
+  body.rd.cshell .cs-op-chip {
+    position: absolute; top: 11px; left: 11px; padding: 4px 9px; border-radius: 8px;
+    font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+    background: rgba(4,6,10,0.8); border: 1px solid color-mix(in srgb, var(--cyan) 45%, transparent); color: var(--cyan);
+  }
+  body.rd.cshell .cs-op-body { display: block; position: relative; padding: 13px 14px; }
+  /* both are <span>: without display:block the title and the metadata run together
+     on one line. Caught in the render, not by reading the markup. */
+  body.rd.cshell .cs-op-t { display: block; font-size: 15px; font-weight: 800; letter-spacing: .04em; color: var(--white); }
+  body.rd.cshell .cs-op-m { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 4px; }
+  body.rd.cshell .cs-op:active { transform: scale(.99); }
+
+  /* §9.15 Field Tools - three columns, two rows, 95px tiles, 9px gap. The art is
+     the SAME approved 768 tool set the OPS wall uses, and every tile routes through
+     rd_openOpsTool(), the one canonical door. */
+  body.rd.cshell .cs-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  body.rd.cshell .cs-tool {
+    position: relative; height: 95px; border-radius: 12px; overflow: hidden; cursor: pointer;
+    border: 1px solid var(--cyan-border-lo); padding: 0; display: block; text-align: left;
+    background: var(--bg1);
+  }
+  body.rd.cshell .cs-tool-art { position: absolute; inset: 0; background-size: cover; background-position: center; }
+  body.rd.cshell .cs-tool-scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(2,3,5,0.9) 0%, rgba(2,3,5,0.15) 68%); }
+  body.rd.cshell .cs-tool-k {
+    position: absolute; left: 9px; right: 9px; bottom: 8px;
+    font-size: 10px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--white);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  body.rd.cshell .cs-tool:active { transform: scale(.98); }
+
+  /* §9.16 Shift Readiness */
+  body.rd.cshell .cs-ring { display: flex; align-items: center; gap: 14px; }
+  body.rd.cshell .cs-ringw { width: 76px; height: 76px; flex: 0 0 76px; position: relative; }
+  body.rd.cshell .cs-ringn {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 17px; font-weight: 800; color: var(--white);
+  }
+  body.rd.cshell .cs-rk { font-size: 11.5px; color: var(--slate); line-height: 1.45; }
+  body.rd.cshell .cs-rlist { margin-top: 12px; }
+  body.rd.cshell .cs-rrow { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 11.5px; color: var(--slate); }
+  body.rd.cshell .cs-rrow .cs-hdot { width: 7px; height: 7px; flex: 0 0 7px; }
+  body.rd.cshell .cs-rv { margin-left: auto; font-family: var(--mono); font-weight: 700; color: var(--white); }
+  /* the health rows are .cs-hrow and these are .cs-rrow - the warn dot needs its
+     OWN rule or every open gate renders a healthy mint dot, which is a lie. */
+  body.rd.cshell .cs-rrow.warn .cs-hdot { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
+  body.rd.cshell .cs-rrow.warn .cs-rv { color: var(--gold); }
+  body.rd.cshell .cs-rbtn {
+    margin-top: auto; min-height: 42px; border-radius: 11px; border: 0; cursor: pointer; width: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--violet)); color: #04060a;
+    font-size: 11px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase;
+  }
+}
+
+/* §10.3 COMPACT DESKTOP / LAPTOP 851-1199 — sidebar collapses to 82px, labels
+   hide, dashboard becomes two columns. Bottom nav does NOT come back. */
+@media (min-width: 851px) and (max-width: 1199px) {
+  body.rd.cshell #cs-side { width: 82px; padding-left: 0; padding-right: 0; align-items: stretch; }
+  body.rd.cshell #cs-side .cs-lbl, body.rd.cshell .cs-navlabel,
+  body.rd.cshell .cs-ssite-k, body.rd.cshell .cs-sfoot-row span.cs-lbl { display: none; }
+  body.rd.cshell .cs-sbrand { justify-content: center; padding: 0 0 16px; }
+  body.rd.cshell .cs-sbrand .cs-sbrandtext { display: none; }
+  body.rd.cshell .cs-ssite { margin: 0 12px 14px; padding: 8px; text-align: center; }
+  body.rd.cshell .cs-ssite-v { justify-content: center; font-size: 10px; letter-spacing: .04em; }
+  body.rd.cshell .cs-navitem { justify-content: center; gap: 0; padding: 0; margin: 0 8px 3px; width: calc(100% - 16px); }
+  body.rd.cshell .cs-navitem.on::before { left: -8px; }
+  body.rd.cshell .cs-sfoot { padding: 12px 8px 0; text-align: center; }
+  body.rd.cshell .cs-sver { font-size: 9px; }
+  body.rd.cshell #cs-top { left: 82px; padding: 0 20px; }
+  body.rd.cshell .page { left: 82px; }
+  body.rd.cshell #cmd-shell { padding: 20px 20px 40px; }
+  body.rd.cshell #cs-grid { grid-template-columns: minmax(420px, 1.5fr) minmax(280px, 1fr); }
+  body.rd.cshell #cs-grid .cs-hero { grid-column: 1; grid-row: 1 / span 2; }
+  body.rd.cshell #cs-intel  { grid-column: 2; grid-row: 1; }
+  body.rd.cshell #cs-health { grid-column: 2; grid-row: 2; }
+  body.rd.cshell #cs-build  { grid-column: 1 / span 2; grid-row: 3; }
+  body.rd.cshell .cs-tsearch { width: 168px; }
+  body.rd.cshell #cs-lower { grid-template-columns: 1fr 1fr; }
+  body.rd.cshell #cs-ready { grid-column: 1 / span 2; }
+}
+
+/* §10.5 very large desktop — content stays near 1640px and centres; cards do
+   not stretch indefinitely. Nothing else changes. */
+@media (min-width: 1600px) {
+  body.rd.cshell #cmd-shell { padding-left: 34px; padding-right: 34px; }
+}
 </style>
 
 <!-- Crash-Cart Mode overlay — populated by crashcart_render() on activate -->
