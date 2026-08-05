@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.381';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.382';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -18621,6 +18621,14 @@ function redesign_isOn() {
     return localStorage.getItem('phantom_legacy') !== '1';
   } catch (_) { return true; }
 }
+// v1.14.382 - COMMAND SHELL opt-in. Mirrors redesign_isOn()'s parse but is
+// DELIBERATELY NOT PERSISTED. redesign_isOn writes phantom_legacy to localStorage
+// because ?legacy=1 is a rip-cord that has to survive a reload; ?cshell=1 is a
+// preview, and a sticky preview is exactly the trap .380 had to ship a way out of.
+// Close the tab and the shell is gone.
+function cshell_isOn() {
+  try { return location.search.indexOf('cshell=1') !== -1; } catch (_) { return false; }
+}
 // v1.14.380 - THE RIP-CORD'S WAY BACK. ?legacy=1 pins phantom_legacy in localStorage,
 // and until now nothing in the legacy house could clear it: the only escape was
 // knowing to type ?redesign=1, which is what stranded a laptop mid-verify. This is
@@ -18645,6 +18653,9 @@ function redesign_initToggle() {
   // toggles removed so the CSS gate is authoritative. ?redesign=0 never adds .rd →
   // legacy field app is 100% untouched.
   document.body.classList.add('rd');
+  // v1.14.382: the Command Shell paints only when both classes are present, so
+  // the bare URL and ?legacy=1 are untouched by every rule this ship added.
+  if (cshell_isOn()) { document.body.classList.add('cshell'); }
   try { showMode('command'); } catch (e) { try { console.warn('[redesign] takeover failed', e); } catch (_) {} }
   cmd_setSiteLabel();
   if (typeof cmd_clock === 'function') { try { setInterval(cmd_clock, 15000); } catch (_) {} }
@@ -21107,6 +21118,12 @@ function cmd_route(mode, target) {
 function cmd_clock() {
   var d = new Date(), h = d.getHours(), ap = h >= 12 ? 'PM' : 'AM'; h = h % 12; if (h === 0) h = 12;
   var e = document.getElementById('cc-clock'); if (e) e.textContent = h + ':' + ('0' + d.getMinutes()).slice(-2) + ' ' + ap;
+  // v1.14.382: the Command Shell microbar's right slot shows the SAME wall clock.
+  // The spec's mock reads "Shift 01"; there is no shift-number concept in this app
+  // and inventing one would be fake telemetry. The real shift feature (SHIFT_END_KEY
+  // / shift_renderHero) is a countdown that is honest about being unset, and Phase 2
+  // re-homes it here properly.
+  var cse = document.getElementById('cs-shift'); if (cse) cse.textContent = h + ':' + ('0' + d.getMinutes()).slice(-2) + ' ' + ap;
   if (typeof shift_renderHero === 'function') shift_renderHero();
 }
 // ━━━ SHIP 3a — Active Shift hero: tech-entered shift end (R1) ━━━
@@ -52280,7 +52297,11 @@ body.rd.cshell .cs-microbar span { min-width: 0; overflow: hidden; text-overflow
    its aspect and CROPS, which is the adjustment ruling 6 explicitly permits.
    Two overlays keep the type legible - a left-to-right scrim for the text
    column and a bottom-up scrim for the action row. */
-body.rd.cshell .cs-hero {
+/* NOTE the #cmd-shell in this selector: it is load-bearing, not decoration.
+   .cs-hero is also a .cs-card, and the card rule is body.rd.cshell #cmd-shell
+   .cs-card — without the id here the card's 20px radius out-specifies the
+   hero's and the spec's 26px silently loses. Caught in-browser, not by eye. */
+body.rd.cshell #cmd-shell .cs-hero {
   position: relative; min-height: 343px; border-radius: 26px; overflow: hidden;
   padding: 20px 18px 17px; display: flex; flex-direction: column; justify-content: flex-end;
 }
@@ -52291,8 +52312,12 @@ body.rd.cshell .cs-hero-art {
 }
 body.rd.cshell .cs-hero-scrim {
   position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(90deg, rgba(2,3,5,0.94) 0%, rgba(2,3,5,0.72) 46%, rgba(2,3,5,0.12) 100%),
-              linear-gradient(to top, rgba(2,3,5,0.92) 0%, rgba(2,3,5,0) 42%);
+  /* the bottom stop is 58%, not the 42% first written: at 42% the fade edge landed
+     exactly on the KPI row, so the three cards sat half on scrim and half on the
+     bright GPU tray and their borders washed out. Measured against the render, not
+     guessed. The artwork does not move - only the overlay. */
+  background: linear-gradient(90deg, rgba(2,3,5,0.94) 0%, rgba(2,3,5,0.78) 52%, rgba(2,3,5,0.15) 100%),
+              linear-gradient(to top, rgba(2,3,5,0.93) 0%, rgba(2,3,5,0) 58%);
 }
 body.rd.cshell .cs-hero > *:not(.cs-hero-art):not(.cs-hero-scrim) { position: relative; }
 body.rd.cshell .cs-hero-eyebrow { font-size: 9.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--cyan); }
