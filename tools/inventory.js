@@ -77,6 +77,20 @@ const CHANNELS = {
   green: /var\(--green(?=[\s,)])|#30d158|#34c759|#32d74b|rgba\(\s*(48|52|50),\s*(209|199|215)\s*,/i
 };
 
+// Shared window: 30 chars of lead-in, 110 total, '...' when clipped on the left.
+function sliceAround(t, idx) {
+  const start = Math.max(0, idx - 30);
+  return (start > 0 ? '...' : '') + t.slice(start, start + 110);
+}
+
+// Centre the window on an arbitrary marker - used where the thing that must be
+// visible is not the colour but the reason the row was selected.
+function evidenceForPattern(line, re) {
+  const t = line.trim();
+  const m = t.match(re);
+  return sliceAround(t, (m && m.index !== undefined) ? m.index : 0);
+}
+
 // Centre the evidence window on the actual match. A fixed slice from column 0
 // silently omits the match on long lines, leaving a real row with unrelated
 // evidence - the exact "looks right, is wrong" failure this tool exists to stop.
@@ -91,9 +105,7 @@ function evidenceFor(line, ch) {
     const m = t.match(CHANNELS.green);
     if (m && m.index !== undefined && (idx < 0 || m.index < idx)) idx = m.index;
   }
-  if (idx < 0) idx = 0;
-  const start = Math.max(0, idx - 30);
-  return (start > 0 ? '...' : '') + t.slice(start, start + 110);
+  return sliceAround(t, idx < 0 ? 0 : idx);
 }
 
 function colorRefs(ctx, opts) {
@@ -127,12 +139,12 @@ function exitLines(ctx) {
 function sanctioned(ctx) {
   const rows = [];
   exitLines(ctx).forEach(function (n) {
-    rows.push({ line: n, kind: 'EXIT', evidence: ctx.lines[n - 1].trim().slice(0, 110) });
+    rows.push({ line: n, kind: 'EXIT', evidence: evidenceForPattern(ctx.lines[n - 1], /#rd-exit/) });
   });
   for (let i = 0; i < ctx.lines.length; i++) {
     const l = ctx.lines[i];
     if (/BLAST|blastradius/i.test(l) && CHANNELS.red.test(l)) {
-      rows.push({ line: i + 1, kind: 'BLAST', evidence: l.trim().slice(0, 110) });
+      rows.push({ line: i + 1, kind: 'BLAST', evidence: evidenceForPattern(l, /BLAST|blastradius/i) });
     }
   }
   return rows.sort(function (a, b) { return a.line - b.line; });
@@ -175,7 +187,15 @@ const FIXTURES = [
       return { ok: ok, expected: 'true', actual: String(ok) }; } },
   { name: 'exit-has-two-code-sites', run: function (ctx) {
       const a = exitLines(ctx).join(',');
-      return { ok: a === '9562,9575', expected: '9562,9575', actual: a || '(none)' }; } }
+      return { ok: a === '9562,9575', expected: '9562,9575', actual: a || '(none)' }; } },
+  { name: 'sanctioned-evidence-shows-its-marker', run: function (ctx) {
+      const rows = sanctioned(ctx);
+      const bad = rows.filter(function (r) {
+        return r.kind === 'BLAST' ? !/BLAST|blastradius/i.test(r.evidence)
+                                  : r.evidence.indexOf('#rd-exit') < 0;
+      });
+      const a = bad.length === 0 ? 'all rows show their marker' : bad.map(function (r) { return 'L' + r.line; }).join(',');
+      return { ok: bad.length === 0, expected: 'all rows show their marker', actual: a }; } }
 ];
 
 function runFixtures(ctx) {
