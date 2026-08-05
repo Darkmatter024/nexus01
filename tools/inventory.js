@@ -1,45 +1,23 @@
 'use strict';
-// FIXTURE VERIFICATION - each failure class was reintroduced and confirmed to
-// trip a named fixture (2026-08-04, updated in the content-derived-fixture
-// fix wave):
-//   substring trap (regex per class)      -> rd-row-has-no-emitters
-//   all-zeros instrument (empty map)      -> dl-chip-is-live, tile-is-live
-//                                            (rd-row STILL PASSES - one witness
-//                                            is not enough)
-//   unterminated scope attribution        -> sw_pillTap-span (via spanOf,
-//                                            asserts span!=null AND span
-//                                            length===16) and
-//                                            scopeOf-boundary-past-sw_pillTap
-//                                            (via scopeOf, the attribution path
-//                                            users actually read; asserts
-//                                            scopeOf(s.end)===sw_pillTap() AND
-//                                            scopeOf(s.end+1)===(markup)).
-//                                            sw_pillTap-has-no-color-refs now
-//                                            derives its bounds from spanOf,
-//                                            so it DOES trip under this bug too
-//                                            (fixed - it used to be a dead
-//                                            witness bound to a hardcoded range).
-//   column-anchored fn detection          -> indented-fn-logCrash-is-scoped,
-//                                            indented-fn-logo_goHome-is-scoped
-//                                            (both now via spanOf+scopeOf, no
-//                                            hardcoded line numbers)
-//   neon-token collision (\b vs lookahead)-> channels-reject-neon-variants
-//   evidence truncation (slice from 0)    -> sanctioned-evidence-shows-its-marker
-//   spanOf silently guessing on ambiguous
-//     name (first-match-by-start)         -> spanOf-throws-on-ambiguous-name
-//   JS-concatenated class attrs harvested
-//     as bogus class tokens (buildClassTokens
-//     splitting on '+'/quote)             -> dynamic-class-attrs-excluded-from-tokens
+// FIXTURE VERIFICATION - this tool's whole thesis is "don't trust a number
+// you can't re-derive." That used to stop at the tool's own boundary: this
+// comment asserted, by hand, that each known failure class trips a named
+// fixture - a claim nothing machine-checked after the day it was written.
 //
-// NO fixture may contain a hard-coded dct-ios.html line number: the file ships
-// daily and a single inserted line must never brick every subcommand, nor
-// produce a failure indistinguishable from real corruption. All six former
-// pinned-line fixtures above (sw_pillTap-span, scopeOf-boundary-past-
-// sw_pillTap, indented-fn-logCrash-is-scoped, indented-fn-logo_goHome-is-
-// scoped, sw_pillTap-has-no-color-refs, exit-has-two-code-sites) are now
-// content-derived via spanOf()/exitLines() and verified to still fire on
-// their original bug (see fix-wave verification log).
-// Re-run this verification if the fixture set changes.
+// It is now machine-checked. Run:
+//   node tools/inventory-selftest.js
+// It reintroduces each of the eight known failure classes into a throwaway
+// copy of this file's source (never this file, never dct-ios.html), runs
+// that copy against the REAL dct-ios.html, and asserts the expected
+// fixture(s) fail loudly with zero emitted results. Re-run it whenever
+// CHANNELS, the tokenizer, or the scope indexer changes - that is the point
+// of having it.
+//
+// NO fixture may contain a hard-coded dct-ios.html line number: the file
+// ships daily and a single inserted line must never brick every subcommand,
+// nor produce a failure indistinguishable from real corruption. Every
+// fixture here is content-derived via spanOf()/exitLines()/dynamicTokens,
+// never a pinned line.
 const fs = require('fs'), path = require('path');
 const TARGET = path.join(__dirname, '..', 'dct-ios.html');
 
@@ -60,30 +38,52 @@ function rootHas(src, name) {
 
 // Tokenise EVERY class attribute once. Never a regex per class - that is
 // what produced two false inventories (rd- matches inside card-/board-).
+// counts/samples/dynamicTokens are Object.create(null): a bare {} answers
+// emitters('constructor')/('toString')/('hasOwnProperty') with the inherited
+// Object.prototype function instead of 0 - a prototype-key leak, not a real
+// class occurrence.
 //
 // A class attribute built by JS concatenation (class="foo' + bar + '") is
-// NOT split into tokens - splitting on the old /[\s+'"]+/ pattern harvested
-// the JS variable names themselves (bar, ok, lit, ...) as if they were class
-// tokens, producing false LIVE verdicts with zero real static occurrences.
-// Any value containing '+', '${', or an embedded quote is counted into
-// `dynamic` instead and left unresolved: the tool cannot see through string
-// concatenation, and must say so rather than guess.
+// NOT split into the main `counts` map - splitting on the old /[\s+'"]+/
+// pattern harvested the JS variable names themselves (bar, ok, lit, ...) as
+// if they were class tokens, producing false LIVE verdicts with zero real
+// static occurrences. Any value containing '+', '${', or an embedded quote
+// is counted into `dynamic` instead and left unresolved there: the tool
+// cannot see through string concatenation, and must say so rather than
+// guess.
+//
+// It DOES, separately, record which literal fragments appear inside each
+// dynamic attribute (dynamicTokens) - using that same split pattern, but
+// only to answer "is this name sitting unresolved in a dynamic attribute",
+// never to promote a fragment into the LIVE counts above. This is the fact
+// that closes the false-lead in emitters' own CLI note: a token can be
+// UNPROVEN in `counts` and simultaneously explained by dynamicTokens.
 function buildClassTokens(src) {
-  const counts = {};
-  const samples = {};
+  const counts = Object.create(null);
+  const samples = Object.create(null);
+  const dynamicTokens = Object.create(null);
   let dynamic = 0;
   const re = /class\s*=\s*("([^"]*)"|'([^']*)')/g;
   let m;
   while ((m = re.exec(src)) !== null) {
     const v = m[2] !== undefined ? m[2] : m[3];
-    if (/\+|\$\{|['"]/.test(v)) { dynamic++; continue; }
+    if (/\+|\$\{|['"]/.test(v)) {
+      dynamic++;
+      const seen = Object.create(null);
+      v.split(/[\s+'"]+/).forEach(function (t) {
+        if (!t || seen[t]) return;
+        seen[t] = true;
+        dynamicTokens[t] = (dynamicTokens[t] || 0) + 1;
+      });
+      continue;
+    }
     v.split(/\s+/).forEach(function (t) {
       if (!t) return;
       counts[t] = (counts[t] || 0) + 1;
       if (!samples[t]) samples[t] = 'class="' + v + '"';
     });
   }
-  return { counts: counts, samples: samples, dynamic: dynamic };
+  return { counts: counts, samples: samples, dynamic: dynamic, dynamicTokens: dynamicTokens };
 }
 
 // Detect functions at ANY indentation, and track nesting with a stack so an
@@ -275,16 +275,35 @@ const FIXTURES = [
       });
       const a = bad.length === 0 ? 'all rows show their marker' : bad.map(function (r) { return 'L' + r.line; }).join(',');
       return { ok: bad.length === 0, expected: 'all rows show their marker', actual: a }; } },
-  { name: 'spanOf-throws-on-ambiguous-name', run: function (ctx) {
+  { name: 'spanOf-throws-on-ambiguous-name', run: function () {
+      // Synthetic frames, not ctx.scopes: pinning this to a live function
+      // name (the file used to be asserted against 'cleanup') silently
+      // depends on dct-ios.html keeping >=2 same-named functions forever -
+      // the exact family of content-dependence this tool exists to refuse.
       let threw = false;
-      try { spanOf(ctx.scopes, 'cleanup'); } catch (e) { threw = true; }
-      return { ok: threw === true, expected: 'true', actual: String(threw) }; } },
+      try { spanOf([{ name: 'x', start: 1, end: 2 }, { name: 'x', start: 5, end: 6 }], 'x'); }
+      catch (e) { threw = true; }
+      let singleOk = false;
+      try {
+        const s = spanOf([{ name: 'x', start: 1, end: 2 }], 'x');
+        singleOk = s !== null && s.start === 1 && s.end === 2;
+      } catch (e) { singleOk = false; }
+      const ok = threw === true && singleOk === true;
+      return { ok: ok, expected: 'ambiguous (2 frames) throws; unambiguous (1 frame) returns normally',
+               actual: 'threw=' + threw + ' singleFrameOk=' + singleOk }; } },
   { name: 'dynamic-class-attrs-excluded-from-tokens', run: function (ctx) {
       const blocked = emitters(ctx.tokens, 'blocked');
       const dlChip = emitters(ctx.tokens, 'dl-chip');
       const ok = blocked === 0 && dlChip > 0;
       return { ok: ok, expected: 'blocked===0 (JS-harvested identifier) && dl-chip>0 (real static class)',
-               actual: 'blocked=' + blocked + ' dl-chip=' + dlChip }; } }
+               actual: 'blocked=' + blocked + ' dl-chip=' + dlChip }; } },
+  { name: 'chip-is-in-dynamic-set', run: function (ctx) {
+      // dct-ios.html:19641 builds class="chip' + (fl ? ' flagged' : '') + '"
+      // by JS concatenation. `chip` is real - the tokenizer just cannot
+      // resolve it through the concatenation, and must say so by name
+      // instead of burying it behind a generic "elsewhere" note.
+      const a = ctx.tokens.dynamicTokens['chip'] || 0;
+      return { ok: a > 0, expected: '> 0', actual: String(a) }; } }
 ];
 
 function runFixtures(ctx) {
@@ -314,6 +333,7 @@ function main() {
     const cls = process.argv[3];
     if (!cls) { console.error('usage: inventory emitters <class>'); process.exit(2); }
     const n = emitters(ctx.tokens, cls);
+    const dynHits = ctx.tokens.dynamicTokens[cls] || 0;
     console.log((n > 0 ? 'LIVE' : 'UNPROVEN') + '  ' + cls + '  class-attr occurrences: ' + n);
     if (n > 0) {
       console.log('  evidence: ' + ctx.tokens.samples[cls]);
@@ -322,9 +342,16 @@ function main() {
       console.log('  NOTE: UNPROVEN is not a claim of unused. Classes toggled at');
       console.log('  runtime via classList.add never appear in a class="..." attribute.');
     }
-    console.log('  NOTE: ' + ctx.tokens.dynamic + ' class attribute(s) elsewhere are built by JS');
-    console.log('  concatenation (contain +, ${, or an embedded quote) and cannot be resolved');
-    console.log('  by static scan; their tokens are excluded from every count above, never guessed.');
+    if (dynHits > 0) {
+      // This is the specific fact, not the generic one: the tokenizer saw
+      // `cls` sitting inside a JS-concatenated class attribute and can name
+      // it, rather than steering the reader toward an unrelated "elsewhere".
+      console.log('  NOTE: ' + cls + ' appears in ' + dynHits + ' dynamic (JS-built) attribute(s) — unresolved.');
+    } else {
+      console.log('  NOTE: ' + ctx.tokens.dynamic + ' class attribute(s) elsewhere are built by JS');
+      console.log('  concatenation (contain +, ${, or an embedded quote) and cannot be resolved');
+      console.log('  by static scan; their tokens are excluded from every count above, never guessed.');
+    }
     process.exit(0);
   }
   if (cmd === 'scope') {
