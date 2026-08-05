@@ -13212,6 +13212,21 @@ if (typeof window !== 'undefined') {
       <!-- v1.14.335 Command v2 — Z0 header cluster (site · system-health dots · Master-age/re-ingest chip).
            #cc-statusrow moved HERE (pills → dots-with-tooltip); the standalone row that sat between the
            rack and the NBA is gone (D12). All #pg-cmd-scoped → ?legacy byte-identical. -->
+      <!-- v1.14.382 COMMAND SHELL (spec 8.1-8.7) - display:none unless body carries
+           .cshell, which only ?cshell=1 adds and which is never persisted. -->
+      <div id="cmd-shell">
+        <div class="cs-hd">
+          <div class="cs-hd-left">
+            <span class="cs-brandmark" aria-hidden="true"></span>
+            <div style="min-width:0">
+              <div class="cs-brandtext">PHANTOM</div>
+              <div class="cs-brandsub">Field Intelligence System</div>
+            </div>
+          </div>
+          <div class="cs-sitepill" id="cs-sitepill"><span class="cs-sitedot" aria-hidden="true"></span><span id="cs-site">&mdash;</span></div>
+        </div>
+        <div class="cs-microbar"><span>&#128274; Secure session &middot; On device</span><span id="cs-shift"></span></div>
+      </div>
       <div class="cc-z0" id="cc-z0">
         <span class="cc-z0-site" id="cc-z0-site">&mdash;</span>
         <div class="statusrow" id="cc-statusrow"></div>
@@ -21150,15 +21165,26 @@ function shift_clear() {
 // known legacy-leak organ) — but #rd-sub is display:none unless body.rd (:9177/:9204), so the
 // string cannot render under ?legacy=1. Verified on a clean legacy boot: 0 elements show it.
 function cmd_setSiteLabel() {
-  var el = document.getElementById('rd-site'); if (!el) return;
-  var confirmed = (typeof siteProfile_isConfirmed === 'function') && siteProfile_isConfirmed();
-  if (confirmed) {
-    el.textContent = (typeof phantom_siteLabel === 'function') ? phantom_siteLabel('SITE') : 'SITE';
-    el.classList.remove('warn');
-  } else {
-    el.textContent = 'SET UP PROFILE';
-    el.classList.add('warn');
+  if (typeof siteProfile_isConfirmed !== 'function') {
+    try { console.warn('[PHANTOM] cmd_setSiteLabel: siteProfile_isConfirmed is missing - the site label cannot reflect real state'); } catch (_) {}
   }
+  var confirmed = (typeof siteProfile_isConfirmed === 'function') && siteProfile_isConfirmed();
+  var label = confirmed
+    ? ((typeof phantom_siteLabel === 'function') ? phantom_siteLabel('SITE') : 'SITE')
+    : 'SET UP PROFILE';
+  var el = document.getElementById('rd-site');
+  if (el) {
+    el.textContent = label;
+    if (confirmed) el.classList.remove('warn'); else el.classList.add('warn');
+  }
+  // v1.14.382: the Command Shell header carries the SAME site truth from the SAME
+  // source - one door, two faces. Absent elements are normal (the shell is only in
+  // the DOM of the Command page and only paints under ?cshell=1), so a missing node
+  // is not a failure and is not warned about; a missing SOURCE is, above.
+  var cs = document.getElementById('cs-site');
+  if (cs) { cs.textContent = label; }
+  var pill = document.getElementById('cs-sitepill');
+  if (pill) { if (confirmed) pill.classList.remove('warn'); else pill.classList.add('warn'); }
 }
 
 function showPageSafe(pageId, sourceTabId, opsTab) {
@@ -52147,6 +52173,60 @@ body.rd.cshell #cmd-shell .cs-card::before {
     color-mix(in srgb, var(--violet) 45%, transparent), transparent);
   pointer-events: none;
 }
+
+/* §8.1/8.2/8.4 — phone frame. The shell is display:none by DEFAULT, so without
+   ?cshell=1 it costs nothing and neither house can see it. A bare #cmd-shell
+   selector is safe here precisely because the ID is brand new and matches
+   nothing that already exists. Every rule that PAINTS is body.rd.cshell-scoped.
+   Spec values are exact and deliberately not rounded: 14px side padding, 118px
+   bottom clearance, 16px section gap. */
+#cmd-shell { display: none; }
+body.rd.cshell #cmd-shell {
+  display: block;
+  padding: 0 14px calc(118px + env(safe-area-inset-bottom, 0px));
+}
+body.rd.cshell #cmd-shell > * + * { margin-top: 16px; }
+
+/* the shell header + microbar REPLACE the .cc-z0 status band, so the band is
+   hidden under the shell only. The shared .app-header stays visible on purpose
+   for Phase 1: it carries the version badge, the SW pill and the net pill, and
+   those are the instruments the device verify reads. Phase 2 re-homes them. */
+body.rd.cshell #pg-cmd .cc-z0 { display: none; }
+
+/* §8.5 — header. The brand mark is phantom-prism.png, EXISTING approved art
+   that is already in PRECACHE_URLS. It is painted as a CSS background rather
+   than an <img> so a shell that is display:none never fetches it - the same
+   dead-weight class the .381 cleanup purged. Decorative: the word PHANTOM
+   beside it carries the name for assistive tech. */
+body.rd.cshell .cs-hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 4px; }
+body.rd.cshell .cs-hd-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+body.rd.cshell .cs-brandmark {
+  width: 35px; height: 35px; flex: 0 0 35px;
+  background-image: url(phantom-prism.png);
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+body.rd.cshell .cs-brandtext { font-size: 17px; font-weight: 800; letter-spacing: .18em; color: var(--white); line-height: 1.05; }
+body.rd.cshell .cs-brandsub { font-size: 9px; letter-spacing: .22em; color: var(--slate); text-transform: uppercase; margin-top: 2px; }
+body.rd.cshell .cs-sitepill {
+  height: 33px; border-radius: 12px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px;
+  font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--white); white-space: nowrap;
+  background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo); flex: 0 0 auto;
+}
+/* healthy -> --ok mint (the pass/healthy channel), NEVER --green. An UNCONFIRMED
+   site profile is not healthy, it is attention: the dot goes --gold and the label
+   already reads SET UP PROFILE. A mint dot over that text would be a lie, and the
+   aisle has no way to see through it. */
+body.rd.cshell .cs-sitedot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; background: var(--ok); box-shadow: 0 0 7px var(--ok); }
+body.rd.cshell .cs-sitepill.warn .cs-sitedot { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
+
+/* §8.6 — secure microbar. Text colour is var(--slate), NOT --slate-dim: that
+   token's own :root comment reserves it for borders/decoration and says NEVER
+   text. */
+body.rd.cshell .cs-microbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--slate); margin-top: 10px;
+}
+body.rd.cshell .cs-microbar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
 
 <!-- Crash-Cart Mode overlay — populated by crashcart_render() on activate -->
