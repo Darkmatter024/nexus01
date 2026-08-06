@@ -13,9 +13,16 @@ open right now, 25 ships between them:**
   never been built."* Cause understood and answered by the `.385`–`.396` arc, but **no release is on
   record** — the remaining boxes in those eight blocks were never checked off. Owner's call whether
   the arc supersedes them or they still need a pass.
-- **`.385`–`.402` (18 of 6, contains the M2 renderer work — HIGH-risk) — OPEN.** Reconstructed
-  block at the end of this file. **Cap blown by 12. Nothing should ship after `.402` until it clears.**
-  (`.402` is an owner-directed correction made during verify, not new scope — it stays in this batch.)
+- **`.385`–`.404` (20 of 6, contains the M2 renderer work — HIGH-risk) — OPEN.** Reconstructed
+  block at the end of this file. **Cap blown by 14. Nothing should ship after `.404` until it clears.**
+  (`.402` is an owner-directed correction made during verify, not new scope — it stays in this batch.
+  `.403`/`.404` likewise: an owner-directed instrument and the regression fix it pointed at.)
+
+⛔ **THE BATCH CANNOT BE RUN RIGHT NOW — the last two ships have never been served.** `main` is at
+**`v1.14.404`**; the live URL is still serving **`v1.14.402`**. `.403` and `.404` are committed and pushed,
+and every Pages deploy for them died during a GitHub platform incident (Actions + Pages `major_outage`) —
+`build` green every run, `deploy` cancelled/failed every run. **Not a code fault.** The pass starts when the
+live `version.json` reads `phantom-v1.14.404`, and not before. Detail in the `.404` block.
 
 **✅ RESOLVED 2026-08-06 — the item that was blocking both batches is answered.** `.396` claimed the eight-ship
 blank-rack arc closes; the owner confirmed **"rack draws"** against `v1.14.401`. **The `.389`→`.396` arc is
@@ -1417,5 +1424,73 @@ observer is house-scoped; the invariant is not.
 - [ ] Bare URL: open Build, leave for Tools, return — `PhantomGL.diag()` still shows the attachment `paused: true` while away and `false` on return, exactly as `.401` did
 - [ ] `?legacy=1`: reach a rack surface, confirm the rack renders and **keeps** rendering as it did before `.401`; `RackEngine.report()` lists the attachment with `paused: false` throughout
 - [ ] ⚠ **Clear `phantom_legacy` between the two** — a `?legacy=1` visit pins it for the whole origin and the next tab boots legacy by design (the `.384` false alarm; see that block)
+
+## v1.14.403 — aisle lifecycle trace (`4d02cf3`) · rollback: revert commit
+**INSTRUMENT ONLY, zero behaviour change.** Owner-directed after a physical reproduction, and written so the
+owner never has to read a console: it writes through the existing `phantom_logErr` into the existing
+`phantom_crash_log` ring, readable **on the phone at SYS → ERRORS**. No new storage key — a new key would have
+needed M1 registry classification, so the one existing door is reused. Records, in order: `OPEN_AISLE_CLICK`,
+`AISLE_OPEN_REQUESTED`, `AISLE_HOST_CREATED` (measured mount w/h), `ENGINE_ATTACH_STARTED`, `ENGINE_ATTACHED`,
+`FIRST_FRAME` (one-shot), `AISLE_PAUSED`, `AISLE_RESUMED`, `AISLE_TEARDOWN` (+stack), `AISLE_CLOSE_REQUESTED`
+(+stack), `AISLE_CLOSED_OBSERVED`, `UNDERLYING_ROUTE_REVEALED`, `AISLE_HOST_REMOVED` — each with a state
+snapshot (open flag, in-DOM flag, `body.rd`, mount child count, rack `is-3d`, redesign mode, `document.hidden`,
+full `RackEngine.report()`).
+
+⛔ **THIS SHIP HAS NEVER BEEN SERVED — it was stamped, pushed, and its Pages deploy died. See the `.404` block.**
+
+⚠ **Its stated premise was WRONG and `.404` supersedes it.** `.403` was written against *"the sheet closes
+itself"*; the owner's screenshots then established the aisle **stays open** and only the **viewport** is blank.
+The close-handler theories are abandoned. **The instrument is deliberately RETAINED** — it costs nothing and it
+is what will confirm `.404` on the device. Verify it as part of the `.404` pass below, not separately.
+- [ ] Ring is readable at **SYS → ERRORS** on the phone after one Open Aisle, no console needed
+- [ ] Entries appear **in order** and each carries its state snapshot
+- [ ] `FIRST_FRAME` is present exactly **once** per aisle open
+- [ ] Nothing else in the app behaves differently (it is an instrument, not a fix)
+- [ ] 📌 **Honest limit, written into the code:** a `MutationObserver` callback runs in its own microtask, so the
+      stack captured there is the observer's, not the mutator's — which is why `forge3d_close` is instrumented
+      separately; the presence/absence of **its** entry is the discriminating fact
+
+## v1.14.404 — blank Forge aisle fixed, a `.401` regression (`cc0b6c0`) · rollback: revert commit
+**Two functional lines plus the stamp; everything else in the diff is comment.** The reproduction: tap OPEN
+AISLE, PHANTOM navigates correctly, the page **stays open**, header/metadata/close/rack-strip/focus-card/bottom
+controls all render — and the 3D viewport is **completely blank**. The Forge HUD is **static markup** inside the
+sheet (`:13104`), so it renders the instant `.open` is added, entirely independent of whether the 3D ever
+initialises: **a perfect shell with a blank viewport is exactly what a stopped render loop looks like, and is
+NOT evidence the mount succeeded.** `forge3d_render` calls `frame()` once synchronously while the scene is still
+**empty**; the cabinets arrive **asynchronously** on hero decode (`:19859` → `setLoadout`), and `assignSlot`
+mutates the THREE scene, which is only visible on a **later frame**. `.401` then installed a per-attachment
+`IntersectionObserver` whose `pause()` cancels the animation frame — landing between first frame and hero decode
+kills the loop before the cabinets are ever drawn. Easy to hit, because `forge3d_open` adds `.open` and renders
+in the **same synchronous task**, so the observer is installed before the browser has laid out the newly-shown
+sheet. Also why the aisle passed at `.353` and fails now: before `.401` the loop never stopped.
+**FIX 1 — never observe the aisle**, by exclusion, not tuning: it is a full-screen modal **disposed on close**,
+so it never sits hidden-but-alive and I4 protects nothing there. **The rack keeps its observer** — it lives in a
+page that goes `display:none` while staying mounted, which is the real drain I4 was written for.
+**FIX 2 — repaint after population:** `setLoadout` restarts the loop through `frame()` if it is not running and
+the scene is not disposed (`frame()` places the camera, renders, and reschedules; a bare `renderer.render` would
+draw with an unplaced camera). This makes a populated-but-invisible scene **structurally impossible**, so the
+defect class cannot return through a different door.
+**NOT DONE, deliberately:** no route changed (owner barred it), no fallback, no retry, no special case, no
+fabricated data, RACK SCENE LOCK untouched, no scene internals modified.
+**GATES:** 3 inline blocks compile ×3, `node --check sw.js`, valid JSON, CSS braces 4557/4557 (Δ0), line endings
+unchanged all-LF, PRECACHE untouched, three-stamp lockstep, functional diff exactly two lines.
+
+⛔ **NEITHER `.403` NOR `.404` HAS EVER REACHED A DEVICE — `main` is at `.404`, but Pages is still serving
+`v1.14.402`.** Six Pages runs on 2026-08-06 (`4d02cf3`→`8ed007d`): `build` succeeded **every time**, `deploy`
+cancelled/failed **every time**, during a GitHub platform incident with **Actions and Pages both
+`major_outage`**. Three empty re-trigger commits were spent, and two of the six runs died as *cancellations*
+caused by re-pushing on top of a run in flight. **This is not a code fault and nothing in the diff caused it.**
+See [[reference_pages_deploy_lock]]. **Do not start this pass until `version.json` on the live URL reads
+`phantom-v1.14.404`.**
+- [ ] **Clear the service-worker cache first** (unregister SW + delete caches — a URL cache-buster does not bypass a registered SW)
+- [ ] Confirm the app reports **`v1.14.404`** before trusting anything below
+- [ ] Build → **OPEN AISLE**: the aisle **DRAWS ITS CABINETS**, not just its HUD ⭐ *this is the whole ship*
+- [ ] Walk the flanks — geometry is there and animates
+- [ ] Focus a rack — focus card matches the drawn cabinet
+- [ ] **Close and reopen ×5** — it draws **every time**, not just the first
+- [ ] Leave Build for Tools and return — rack still there, still animating
+- [ ] SYS → ERRORS: the `.403` ring shows `FIRST_FRAME` present, and **no** `AISLE_PAUSED` immediately after `ENGINE_ATTACHED`
+- [ ] `PhantomGL.diag()` — still **exactly one** attachment for the Build mount; the aisle is no longer observed
+- [ ] `?legacy=1` — unchanged from `.402` (clear `phantom_legacy` afterwards)
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
