@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.390';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.391';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20396,7 +20396,6 @@ function bw_render() {
   var acts = E('div', 'bw-acts');
   var A = [
     ['Scan', function() { try { showWorkTab('scan'); } catch (e) { phantom_logErr('bw:scan', e); } }, ''],
-    ['Port map', function() { try { rd_openOpsTool('portmap'); } catch (e) { phantom_logErr('bw:portmap', e); } }, ''],
     ['Log blocker', function() { try { blocker_quick(c.dep && c.dep.id); } catch (e) { phantom_logErr('bw:blocker', e); } }, ' warn']
   ];
   A.forEach(function(a) {
@@ -20606,14 +20605,45 @@ function bw_mount3D(rack, mount) {
   if (typeof rackElevation_render3D !== 'function') { say('Rack preview is unavailable in this build.', 'renderer absent: ' + diag()); return; }
   if (!rack) { say('No rack selected to preview.', 'rack null: ' + diag()); return; }
 
+  // v1.14.391 — BOUNDED RE-ARM. Root cause of the blank rack on iPhone: showMode()
+  // disposes the Command hero's WebGL context and then calls bw_render() SYNCHRONOUSLY
+  // in the same call stack, so the new context is requested microseconds after
+  // forceContextLoss(). On desktop Chrome that always succeeds; on iOS WebKit the GPU-side
+  // reclaim is asynchronous, the new context is not granted, and three.js swallows the loss
+  // silently - a canvas exists and nothing ever draws.
+  // This is NOT a new theory: v1.14.342 already hit and fixed exactly this for the Command
+  // hero ("GPU contexts not yet free / page mid-layout") with a bounded re-arm. That fix was
+  // never ported to Build. It is ported here, and the scene itself is untouched.
+  var _armN = 0, _ARM_MAX = 12, _ARM_MS = 400;   // ~5s, same budget as the .342 hero fix
+  var rearm = function(why) {
+    if (!document.body.contains(mount)) return;                   // navigated away; not a failure
+    if (_armN++ < _ARM_MAX) { setTimeout(function() { if (document.body.contains(mount)) draw(); }, _ARM_MS); return; }
+    say('Rack preview could not start on this device.', why + ' (after ' + _ARM_MAX + ' re-arms): ' + diag());
+  };
   var draw = function() {
     try {
       rackElevation_render3D(rack, mount);
-      // prove it actually produced a canvas rather than returning quietly
-      if (!mount.querySelector('canvas')) { say('Rack preview did not start.', 'renderer returned without a canvas: ' + diag()); return; }
+      var cv = mount.querySelector('canvas');
+      // the renderer can return quietly without ever building a canvas
+      if (!cv) { rearm('renderer returned without a canvas'); return; }
+      // a canvas whose context was never granted, or was granted then immediately evicted,
+      // draws nothing and throws nothing. getContext returns the SAME context three.js holds,
+      // so this is a read, not a second context.
+      var gl = null;
+      try { gl = cv.getContext('webgl') || cv.getContext('experimental-webgl'); } catch (_) {}
+      if (!gl) { rearm('no webgl context granted'); return; }
+      if (gl.isContextLost && gl.isContextLost()) { rearm('context lost on creation'); return; }
+      // nothing in this app listened for context loss before now: a later eviction blanked
+      // the rack with no warning, no toast and no recovery. It recovers itself now.
+      cv.addEventListener('webglcontextlost', function(ev) {
+        try { ev.preventDefault(); } catch (_) {}
+        try { console.warn('[PHANTOM] bw_mount3D: webglcontextlost - re-arming'); } catch (_) {}
+        _armN = 0; rearm('webglcontextlost');
+      }, { once: true });
+      _armN = 0;                                                   // a clean mount resets the budget
     } catch (e) {
       phantom_logErr('bw:render3d', e);
-      say('Rack preview could not be drawn.', 'threw: ' + (e && e.message) + ' | ' + diag());
+      rearm('threw: ' + (e && e.message));
     }
   };
   // wait for a host with real size — this is the correction, not a retry-for-luck
@@ -34841,12 +34871,24 @@ function rackElevation_render3D(rack, mountEl) {
   if (typeof _forge3dActive !== 'undefined' && _forge3dActive && _forge3dActive.dispose) { try { _forge3dActive.dispose(); } catch (e) {} }
   mountEl.innerHTML = '';
   var w = mountEl.clientWidth, h = mountEl.clientHeight;
+  if (w && h) { mountEl._rm3dSizeTries = 0; }
   if (!w || !h) {
     // Panel not laid out yet — retry ONLY while it's still the visible 3D mount.
     // If it's hidden (toggled to FLAT) or detached (navigated away), abort loudly —
     // never re-arm an uncancellable per-frame spin on a dead mount.
+    // v1.14.391 — this bail/retry decision used to read #reh3dCanvasHost unconditionally.
+    // That is the rack-detail PANEL's host, so when this shared renderer is handed the
+    // Command hero's mount or the Build workspace's mount the decision was driven by an
+    // unrelated (and possibly hidden-but-present) node: either a bare console.warn bail, or
+    // an UNCAPPED rAF spin against a mount the user had already left. The panel keeps its
+    // original condition; every other consumer is judged on its OWN mount, and the retry is
+    // now bounded so no caller can spin forever.
+    var _isPanel = (mountEl.id === 'reh3dMount');
     var host0 = document.getElementById('reh3dCanvasHost');
-    if (host0 && host0.classList.contains('is-3d') && mountEl.offsetParent !== null && document.body.contains(mountEl)) {
+    var _alive = (mountEl.offsetParent !== null) && document.body.contains(mountEl);
+    var _mayRetry = _isPanel ? (!!host0 && host0.classList.contains('is-3d') && _alive) : _alive;
+    mountEl._rm3dSizeTries = (mountEl._rm3dSizeTries || 0) + 1;
+    if (_mayRetry && mountEl._rm3dSizeTries <= 60) {
       requestAnimationFrame(function () { rackElevation_render3D(rack, mountEl); });
     } else {
       console.warn('[PHANTOM] 3D rack view: mount hidden/detached before layout — aborting render');
@@ -53357,6 +53399,21 @@ body.rd .bw-q.done .bw-q-p { color: var(--teal); }
    build its own rail into this card. It carries no styling of its own. */
 body.rd .bw-strip { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 9px; }
 body.rd .bw-strip:empty { display: none; }
+
+/* v1.14.391 — PHONE HEADER COLLISION. .wmimg is a fixed 172px image sharing a flex row
+   with the redesign-only tab/version/net pills; their combined intrinsic width (~490px)
+   exceeds every phone viewport, so the wordmark overlapped the tab pill by ~93px at 390,
+   393 AND 430 and the COREWEAVE-SITE subtitle wrapped to three lines in a 41px box.
+   Nothing shrank because nothing was allowed to. Gated to body.rd so ?legacy=1 keeps the
+   header it ships with. The version stamp is deliberately KEPT - it is what a device
+   verify reads - and the tab-count pill is the one that stands down. */
+@media (max-width: 480px) {
+  body.rd .app-header .wmimg { max-width: 118px; width: auto; height: auto; }
+  body.rd .app-header .header-left-text { min-width: 0; flex: 1 1 auto; }
+  body.rd .app-header .header-left-text .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.rd #phantom-tab-pill { display: none !important; }
+  body.rd .app-header .header-right { flex: 0 0 auto; gap: 6px; }
+}
 /* v1.14.390: when the rack cannot draw, the card states WHY on screen. There is no
    console in a cold aisle, and a blank box is the one thing a tech cannot report. */
 body.rd .bw-diag { margin-top: 8px; font-family: var(--mono); font-size: 9px; line-height: 1.45; color: var(--slate); word-break: break-word; }
@@ -53427,7 +53484,9 @@ body.rd .bw-m-t { margin-top: 9px; }
 body.rd .bw-m-n { font-size: 9px; margin-top: 6px; }
 
 /* ── contextual actions + tool tabs: identical height, radius, padding ── */
-body.rd .bw-acts { gap: var(--bw-cgap); }
+/* SCAN + LOG BLOCKER only: PORT MAP moved out, it already has a contextual tab and
+   one door per feature is doctrine. */
+body.rd .bw-acts { gap: var(--bw-cgap); grid-template-columns: repeat(2, minmax(0, 1fr)); }
 body.rd .bw-act { min-height: 54px; border-radius: 14px; font-size: 11px; letter-spacing: .08em; padding: 0 4px; }
 body.rd .bw-tabs { gap: var(--bw-cgap); margin-bottom: 0; }
 body.rd .bw-tab { min-height: 46px; border-radius: 12px; font-size: 10.5px; }
@@ -53503,13 +53562,21 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
       'prev  ctx'
       'mx    ctx'
       'acts  ctx'
+      'tabs  ctx'
+      'wl    wl'
       'queue queue';
   }
   body.rd.cshell #pg-work #bw-shell > * { margin: 0; }
   body.rd.cshell #pg-work #bw-shell > .bw-hd    { grid-area: hd; margin: 0; }
   body.rd.cshell #pg-work #bw-shell > .bw-state { grid-area: state; margin: 0; }
   body.rd.cshell #pg-work #bw-shell > .bw-hero  { grid-area: hero; margin: 0; }
-  body.rd.cshell #pg-work #bw-shell > .bw-card:not(.bw-hero):not(.bw-prev) { grid-area: na; margin: 0; }
+  /* v1.14.391 — :not(.bw-worklist) is LOAD-BEARING. The worklist card also carries
+     .bw-card, so this catch-all put it in the SAME grid cell as Next Action and the two
+     rendered on top of each other - unreadable on every laptop and desktop width. Each
+     now has its own named area. Caught by measurement: both reported an identical rect. */
+  body.rd.cshell #pg-work #bw-shell > .bw-card:not(.bw-hero):not(.bw-prev):not(.bw-worklist) { grid-area: na; margin: 0; }
+  body.rd.cshell #pg-work #bw-shell > .bw-worklist { grid-area: wl; margin: 0; }
+  body.rd.cshell #pg-work #bw-shell > .bw-tabs { grid-area: tabs; margin: 0; }
   body.rd.cshell #pg-work #bw-shell > .bw-prev  { grid-area: prev; margin: 0; }
   body.rd.cshell #pg-work #bw-shell > .bw-mx    { grid-area: mx; margin: 0; }
   body.rd.cshell #pg-work #bw-shell > .bw-acts  { grid-area: acts; }
@@ -53563,7 +53630,9 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
       'queue hero  na'
       'queue prev  ctx'
       'queue mx    ctx'
-      'queue acts  ctx';
+      'queue acts  ctx'
+      'queue tabs  ctx'
+      'queue wl    wl';
   }
   body.rd.cshell .bw-mount { height: 420px; }
   body.rd.cshell .bw-qlist { max-height: none; }
