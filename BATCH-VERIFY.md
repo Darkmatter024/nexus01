@@ -13,8 +13,9 @@ open right now, 25 ships between them:**
   never been built."* Cause understood and answered by the `.385`–`.396` arc, but **no release is on
   record** — the remaining boxes in those eight blocks were never checked off. Owner's call whether
   the arc supersedes them or they still need a pass.
-- **`.385`–`.401` (17 of 6, contains the M2 renderer work — HIGH-risk) — OPEN.** Reconstructed
-  block at the end of this file. **Cap blown by 11. Nothing should ship after `.401` until it clears.**
+- **`.385`–`.402` (18 of 6, contains the M2 renderer work — HIGH-risk) — OPEN.** Reconstructed
+  block at the end of this file. **Cap blown by 12. Nothing should ship after `.402` until it clears.**
+  (`.402` is an owner-directed correction made during verify, not new scope — it stays in this batch.)
 
 **The single highest-value item in both batches:** `.396` claims the eight-ship blank-rack arc closes —
 **and there is no record of anyone confirming the rack draws.** Four ships stacked behind that silence.
@@ -1397,6 +1398,17 @@ a `display:none` ancestor).
 - [ ] Leave Build for Tools → that attachment reports `paused: true`; return → `paused: false` and animating
 - [ ] Enter Build **×10**: `attachments` never exceeds one, canvas count does not climb
 - [ ] Everything else identical to `.400`
-- [ ] ⚠ **Shared-house flag:** `rackElevation_render3D` also renders under `?legacy=1`, so the visibility pause applies there too. No markup, routing or output change — a paused loop resumes on visibility — but it is a behaviour delta in a shared path. **If you read Rule 7 as covering it, say so and the observer gets gated on `body.rd`.**
+- [x] ⚠ **Shared-house flag — ✅ RULED AND CLOSED by owner 2026-08-06: "gate the observer on body.rd".** Shipped as `.402`. Verify there, not here.
+
+## v1.14.402 — owner ruling: the visibility observer is redesign-house only (`1f47b87`) · rollback: revert commit
+Answers the `.401` flag above; **adds nothing.** `_observe` returns early unless `document.body` carries
+`rd`, so under `?legacy=1` no observer exists, `att.paused` stays false for the life of the attachment, and
+both renderers behave exactly as they did on `.400`. Functional diff is **one line plus the stamp** — the rest
+is comment. ⛔ **The single-live-context guard (`releaseOthers`, I1) is deliberately NOT gated** — two live GL
+contexts on iOS is the crash class this milestone exists to close, and legacy is entitled to that fix. Only the
+observer is house-scoped; the invariant is not.
+- [ ] Bare URL: open Build, leave for Tools, return — `PhantomGL.diag()` still shows the attachment `paused: true` while away and `false` on return, exactly as `.401` did
+- [ ] `?legacy=1`: reach a rack surface, confirm the rack renders and **keeps** rendering as it did before `.401`; `RackEngine.report()` lists the attachment with `paused: false` throughout
+- [ ] ⚠ **Clear `phantom_legacy` between the two** — a `?legacy=1` visit pins it for the whole origin and the next tab boots legacy by design (the `.384` false alarm; see that block)
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
