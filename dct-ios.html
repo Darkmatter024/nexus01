@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.399';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.400';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -17002,6 +17002,80 @@ function safeParse(str, fallback) {
   catch(e) { return fallback; }
 }
 
+// ══ v1.14.400 (M1-d / blueprint §6.2, §6.4 · audit 04 ST8) ══════════════════════════════
+// THE READ SIDE. Until now there was no safeGet and no safeRemove, so all 121 getItem and all
+// 31 removeItem calls were raw BY CONSTRUCTION, and every parse failure in the app degraded
+// silently to null/{}/[]. There was no corrupt-data toast, no quarantine, and no "your data
+// looked damaged" path anywhere. That contradicts the app's own first rule for the ONE case
+// that destroys user data rather than merely hiding a surface: a damaged blob read through
+// safeParse returned [] and the very next save wrote [] back over it. Silent, total, permanent.
+//
+// The distinction that makes this work: ABSENT is normal and stays silent. PRESENT BUT
+// UNPARSEABLE is a data-loss event and is now loud, and the bytes are kept.
+var PHANTOM_QUARANTINE_KEY = 'phantom_quarantine_v1';
+var PHANTOM_QUARANTINE_MAX = 64 * 1024;   // per-entry cap — the rescue must never blow the quota
+var _phQuarantineThrottle = 0;
+
+function phantom_quarantine(key, raw, err) {
+  try {
+    var full = String(raw == null ? '' : raw);
+    // Read the quarantine with a RAW parse, never through safeGet — a corrupt quarantine store
+    // must not recurse into quarantining itself.
+    var q = {};
+    try { q = JSON.parse(localStorage.getItem(PHANTOM_QUARANTINE_KEY) || '{}') || {}; } catch (_) { q = {}; }
+    q[key] = {
+      at: new Date().toISOString(),
+      bytes: full.length,
+      truncated: full.length > PHANTOM_QUARANTINE_MAX,
+      error: String((err && err.message) || err || 'parse failed'),
+      raw: full.slice(0, PHANTOM_QUARANTINE_MAX)
+    };
+    safeStore(PHANTOM_QUARANTINE_KEY, JSON.stringify(q));
+    try { console.warn('[PHANTOM] QUARANTINED corrupt "' + key + '" (' + full.length + ' bytes): ' + q[key].error); } catch (_) {}
+    var now = Date.now();
+    if (now - _phQuarantineThrottle > 10000) {
+      _phQuarantineThrottle = now;
+      try {
+        if (typeof phantomToast === 'function') {
+          phantomToast('Damaged data in "' + key + '" — quarantined, not deleted. Export a backup.', 'error');
+        }
+        if (typeof haptic === 'function') haptic([40, 30, 40]);
+      } catch (_) {}
+    }
+  } catch (_) { /* quarantine must never throw into a read path */ }
+}
+
+/**
+ * safeGet(key, fallback) — the canonical read door.
+ * Absent key → fallback, silently. Present but unparseable → quarantine the raw bytes,
+ * tell the user, then return fallback. Never throws.
+ */
+function safeGet(key, fallback) {
+  var raw;
+  try { raw = localStorage.getItem(key); }
+  catch (e) { try { console.warn('[PHANTOM] safeGet: storage unreadable for "' + key + '"'); } catch (_) {} return fallback; }
+  if (raw === null || raw === '') return fallback;
+  try {
+    var r = JSON.parse(raw);
+    return (r !== null && r !== undefined) ? r : fallback;
+  } catch (e) {
+    phantom_quarantine(key, raw, e);
+    return fallback;
+  }
+}
+
+/**
+ * safeRemove(key) — the canonical delete door. Returns false and says so on failure,
+ * rather than throwing into a caller that assumed deletion succeeded.
+ */
+function safeRemove(key) {
+  try { localStorage.removeItem(key); return true; }
+  catch (e) {
+    try { console.warn('[PHANTOM] safeRemove failed for "' + key + '": ' + ((e && e.message) || e)); } catch (_) {}
+    return false;
+  }
+}
+
 /**
  * safeStore(key, value)
  * localStorage.setItem wrapped in try/catch. Returns false on quota error.
@@ -17356,7 +17430,7 @@ const LOGNOTE_CHIP_DEFAULTS = [
 ];
 const LOGNOTE_CHIPS_KEY = 'phantom_lognote_chips_v1';
 function lognoteChips_load() {
-  var s = safeParse(localStorage.getItem(LOGNOTE_CHIPS_KEY) || 'null', null);
+  var s = safeGet(LOGNOTE_CHIPS_KEY, null);
   if (!s || typeof s !== 'object') s = {};
   if (!Array.isArray(s.added)) s.added = [];
   if (!Array.isArray(s.removed)) s.removed = [];
@@ -17451,7 +17525,7 @@ function renderMetrics(metrics, el) {
 /** DataStore factory — consistent load/save for localStorage JSON arrays */
 function DataStore(key) {
   return {
-    load: function() { return safeParse(localStorage.getItem(key), []); },
+    load: function() { return safeGet(key, []); },
     save: function(data) { if (!safeStore(key, JSON.stringify(data))) phantomToast('Storage full', 'error'); }
   };
 }
@@ -17483,7 +17557,7 @@ function row(key, val) {
   function logCrash(type, msg, src, line, col) {
     if (shouldIgnore(String(msg))) return;
     try {
-      var entries = safeParse(localStorage.getItem(CRASH_KEY), []);
+      var entries = safeGet(CRASH_KEY, []);
       entries.unshift({ ts: new Date().toISOString(), v: (typeof PHANTOM_APP_VERSION === 'string' ? PHANTOM_APP_VERSION : ''), type: type, msg: String(msg).slice(0, 300), src: src, line: line, col: col });
       localStorage.setItem(CRASH_KEY, JSON.stringify(entries.slice(0, MAX_ENTRIES)));
       var banner = document.getElementById('crash-banner');
@@ -17498,7 +17572,7 @@ function row(key, val) {
 
   // Auto-clear stale crash log: SW-related noise OR entries from prior file versions
   try {
-    var entries = safeParse(localStorage.getItem(CRASH_KEY), []);
+    var entries = safeGet(CRASH_KEY, []);
     if (entries.length > 0) {
       var currentVer = (typeof PHANTOM_APP_VERSION === 'string' ? PHANTOM_APP_VERSION : '');
       function sameVersion(entry) {
@@ -17515,7 +17589,7 @@ function row(key, val) {
   } catch(e) {}
 })();
 function phantomViewCrashLog() {
-  var entries = safeParse(localStorage.getItem('phantom_crash_log') || '[]', []);
+  var entries = safeGet('phantom_crash_log', []);
   if (!entries.length) { alert('No crash entries recorded.'); return; }
   var header = 'PHANTOM CRASH LOG · ' + (typeof PHANTOM_APP_VERSION === 'string' ? PHANTOM_APP_VERSION : '?') + ' · ' + entries.length + ' entries';
   var text = header + '\n\n' + entries.map(function(e, i) {
@@ -17543,7 +17617,7 @@ function phantom_logErr(ctx, err) {
   try {
     var CRASH_KEY = 'phantom_crash_log';
     var msg = (err && err.message) ? err.message : String(err);
-    var entries = safeParse(localStorage.getItem(CRASH_KEY), []);
+    var entries = safeGet(CRASH_KEY, []);
     if (!Array.isArray(entries)) entries = [];
     entries.unshift({
       ts: new Date().toISOString(),
@@ -18159,7 +18233,7 @@ function phantomDeferredInit() {
   initSheetDismiss('rm-sheet',       '.rm-sheet-inner',   closeRmSheet);
   initSheetDismiss('rm-device-sheet','.rm-device-inner',  closeRmDevice);
   initSheetDismiss('ph-sheet',       '.phs-inner',        phdock_close);   // v1.14.268 PHASE DOCK — drag-down dismiss
-  var entries = safeParse(localStorage.getItem('phantom_crash_log') || '[]', []);
+  var entries = safeGet('phantom_crash_log', []);
   if (entries.length) {
     var b = document.getElementById('crash-banner');
     if (b) {
@@ -18900,7 +18974,7 @@ function rd_closeProfile() {
 // clipboard builder. Read-only diagnostics: never mutates app/deploy data.
 function errors_refreshCount() {
   try {
-    var entries = safeParse(localStorage.getItem('phantom_crash_log') || '[]', []);
+    var entries = safeGet('phantom_crash_log', []);
     var n = Array.isArray(entries) ? entries.length : 0;
     var val = document.getElementById('hdr-agg-errors-val');
     var dot = document.getElementById('hdr-agg-errors-dot');
@@ -18911,7 +18985,7 @@ function errors_refreshCount() {
 function rd_renderErrors() {
   var body = document.getElementById('rd-errors-body');
   if (!body) return;
-  var entries = safeParse(localStorage.getItem('phantom_crash_log') || '[]', []);
+  var entries = safeGet('phantom_crash_log', []);
   if (!Array.isArray(entries)) entries = [];
   var actions = '<div style="display:flex;gap:8px;margin-bottom:14px">'
     + '<button class="hdr-menu-item" onclick="errors_copyAll()" style="flex:1;color:var(--cyan);justify-content:center">COPY ALL</button>'
@@ -18944,7 +19018,7 @@ function rd_closeErrors() {
   if (sheet) sheet.classList.remove('open');
 }
 function errors_copyAll() {
-  var entries = safeParse(localStorage.getItem('phantom_crash_log') || '[]', []);
+  var entries = safeGet('phantom_crash_log', []);
   if (!Array.isArray(entries) || !entries.length) { phantomToast('No errors to copy', 'warn'); return; }
   var header = 'PHANTOM ERROR LOG · ' + (typeof PHANTOM_APP_VERSION === 'string' ? PHANTOM_APP_VERSION : '?') + ' · ' + entries.length + ' entries';
   var text = header + '\n\n' + entries.map(function(e, i) {
@@ -19128,7 +19202,7 @@ function forge3d_render(mount) {
     // NOTHING WAS SAID, and the tech kept racking against a store that had stopped recording.
     // safeStore classifies the quota signature and raises the throttled "Storage full" toast, so
     // the failure is visible at the moment it happens. Returns a boolean now (was undefined).
-    get: function (k) { return safeParse(localStorage.getItem(k), null); },
+    get: function (k) { return safeGet(k, null); },
     set: function (k, v) { return safeStore(k, JSON.stringify(v)); }
   };
   // Field-verify status store. D2: field-verify authoritative; future import conflict
@@ -21723,7 +21797,7 @@ function cmd_telemetry(activeDep, activePct, handoffDraft) {
     E2('tt-deploy-sub').textContent = 'Tap to start';
     E2('tt-deploy-bar').style.display = 'none';
   }
-  var scans = safeParse(localStorage.getItem('phantom_scan_collection') || '[]', []);
+  var scans = safeGet('phantom_scan_collection', []);
   var dayKey = new Date().toDateString();
   var n = 0;
   for (var i = 0; i < scans.length; i++) {
@@ -22850,7 +22924,7 @@ function _blocker_listDeployments() {
 }
 
 function _blocker_pickDefaultPhase(deployId, rackId) {
-  var phases = safeParse(localStorage.getItem(DEPLOY_PHASES_KEY) || '[]', []);
+  var phases = safeGet(DEPLOY_PHASES_KEY, []);
   if (!Array.isArray(phases)) phases = [];
   phases = phases.filter(function(p) { return p.deploymentId === deployId && p.rackId === rackId; });
   phases.sort(function(a, b) { return (a.seqOrder || 0) - (b.seqOrder || 0); });
@@ -22994,7 +23068,7 @@ function _blocker_renderNoteEntry() {
   try { dep = (typeof deploy_getById === 'function') ? deploy_getById(deployId) : null; } catch (e) {}
   try { rack = (deploy_loadRacksFor(deployId) || []).find(function(r) { return r.id === rackId; }); } catch (e) {}
   try {
-    var all = safeParse(localStorage.getItem(DEPLOY_PHASES_KEY) || '[]', []);
+    var all = safeGet(DEPLOY_PHASES_KEY, []);
     if (Array.isArray(all)) phase = all.find(function(p) { return p.id === phaseId; });
   } catch (e) {}
 
@@ -23076,7 +23150,7 @@ function blocker_saveFromForm() {
 
 function blocker_save(deployId, rackId, phaseId, note) {
   try {
-    var all = safeParse(localStorage.getItem(DEPLOY_PHASES_KEY) || '[]', []);
+    var all = safeGet(DEPLOY_PHASES_KEY, []);
     if (!Array.isArray(all)) all = [];
     var idx = all.findIndex(function(p) { return p.id === phaseId; });
     if (idx === -1) {
@@ -23338,7 +23412,7 @@ var ISSUE_STOPWORDS = {
 
 function issue_loadAll() {
   try {
-    var arr = safeParse(localStorage.getItem(PHANTOM_ISSUES_KEY) || '[]', []);
+    var arr = safeGet(PHANTOM_ISSUES_KEY, []);
     return Array.isArray(arr) ? arr : [];
   } catch (e) { return []; }
 }
@@ -24894,7 +24968,7 @@ async function rbac_verifyPin(pin, stored) {
 // Persistent lockout — survives reload. Keyed by deploymentId.
 var PIN_LOCKOUT_KEY = 'phantom_pin_lockout_v1';
 function _pinAttempts_load() {
-  return safeParse(localStorage.getItem(PIN_LOCKOUT_KEY), {}) || {};
+  return safeGet(PIN_LOCKOUT_KEY, {}) || {};
 }
 function _pinAttempts_get(deploymentId) {
   var all = _pinAttempts_load();
@@ -25033,7 +25107,7 @@ async function rbac_promptSetPin(deploymentId) {
 var DEVICE_LEAD_PIN_KEY = 'phantom_device_lead_pin_v1';
 var DEVICE_LEAD_ID = '__device';   // pseudo-id reused with rbac session + lockout helpers
 
-function deviceLead_getStored() { return safeParse(localStorage.getItem(DEVICE_LEAD_PIN_KEY), null); }
+function deviceLead_getStored() { return safeGet(DEVICE_LEAD_PIN_KEY, null); }
 function deviceLead_hasPin()   { var s = deviceLead_getStored(); return !!(s && s.hash); }
 function deviceLead_isActive() { return rbac_isLeadSession(DEVICE_LEAD_ID); }
 
@@ -25235,7 +25309,7 @@ async function deploy_assignRack(deployId, rackId) {
   // exactly this reason; this one call site reached for the convenience loader instead.
   // Rack ids are globally unique ('rack_<deployId>_<idx>'), so the findIndex below still
   // resolves the right rack out of the full array.
-  var racks = safeParse(localStorage.getItem(DEPLOY_RACKS_KEY) || '[]', []);
+  var racks = safeGet(DEPLOY_RACKS_KEY, []);
   if (!Array.isArray(racks)) racks = [];
   var idx = racks.findIndex(function(r) { return r.id === rackId; });
   if (idx === -1) {
@@ -25497,7 +25571,7 @@ function siteProfile_migrateV1toV2(v1) {
 }
 
 function siteProfile_load() {
-  var stored = safeParse(localStorage.getItem(SITE_PROFILE_KEY), null);
+  var stored = safeGet(SITE_PROFILE_KEY, null);
   if (!stored) return Object.assign({}, SITE_PROFILE_DEFAULTS);
   // Migrate v1 → v2 if needed (handles stored profiles from earlier versions)
   stored = siteProfile_migrateV1toV2(stored);
@@ -26006,7 +26080,7 @@ function activeContext_getContextBlock() {
 
       // Recent discrepancies on THIS rack — most relevant troubleshooting context
       try {
-        var allDiscs = safeParse(localStorage.getItem(DISCREPANCY_KEY) || '[]', []) || [];
+        var allDiscs = safeGet(DISCREPANCY_KEY, []) || [];
         var rackDiscs = allDiscs.filter(function(d) {
           return d && d.rackId === ctx.rack.id && d.deploymentId === ctx.deployment.id;
         });
@@ -27297,7 +27371,7 @@ let _deployDashCache = {}; // in-memory rollup cache (per deployId)
 let _deployDashCacheGen = {}; // generation each cached entry was computed at
 let _deployRollupGen = 0;  // bumped by every save that affects rollup inputs
 
-function deploy_loadAll() { var r = safeParse(localStorage.getItem(DEPLOY_KEY) || '[]', []); return Array.isArray(r) ? r : []; }
+function deploy_loadAll() { var r = safeGet(DEPLOY_KEY, []); return Array.isArray(r) ? r : []; }
 function deploy_saveAll(arr) { var ok = safeStore(DEPLOY_KEY, JSON.stringify(arr)); if (ok) _deployRollupGen++; return ok; }
 function deploy_getById(id) { return deploy_loadAll().find(function(d) { return d.id === id; }) || null; }
 
@@ -27381,7 +27455,7 @@ function _deploy_loaderMisuse(fnName) {
 // scoped read handed to a whole-key write. Splitting it makes that bug unrepresentable
 // instead of merely visible: you now have to NAME which set you want.
 function deploy_loadAllRacks() {
-  var all = safeParse(localStorage.getItem(DEPLOY_RACKS_KEY) || '[]', []);
+  var all = safeGet(DEPLOY_RACKS_KEY, []);
   return Array.isArray(all) ? all : [];
 }
 function deploy_loadRacksFor(deployId) {
@@ -27404,7 +27478,7 @@ const POWER_TOPO_KEY = 'phantom_power_topo_v1';
 // Load topology for a deployment. Returns null if none configured.
 function power_loadTopology(deployId) {
   if (!deployId) return null;
-  var all = safeParse(localStorage.getItem(POWER_TOPO_KEY) || '{}', {});
+  var all = safeGet(POWER_TOPO_KEY, {});
   if (!all || typeof all !== 'object') return null;
   var topo = all[deployId];
   return (topo && typeof topo === 'object') ? topo : null;
@@ -27413,7 +27487,7 @@ function power_loadTopology(deployId) {
 // Save topology for a deployment. Returns true on success, false on quota error.
 function power_saveTopology(deployId, topo) {
   if (!deployId || !topo) return false;
-  var all = safeParse(localStorage.getItem(POWER_TOPO_KEY) || '{}', {});
+  var all = safeGet(POWER_TOPO_KEY, {});
   if (!all || typeof all !== 'object') all = {};
   all[deployId] = topo;
   return safeStore(POWER_TOPO_KEY, JSON.stringify(all));
@@ -27522,7 +27596,7 @@ function power_blastRadius(topo, nodeId) {
 // soft guard writes nothing at all. Both could have used the scoped loader and stayed
 // correct; noted here so the next reader doesn't infer a save that isn't there.
 function deploy_loadAllPhases() {
-  var all = safeParse(localStorage.getItem(DEPLOY_PHASES_KEY) || '[]', []);
+  var all = safeGet(DEPLOY_PHASES_KEY, []);
   return Array.isArray(all) ? all : [];
 }
 function deploy_loadPhasesFor(deployId) {
@@ -27594,7 +27668,7 @@ var _checklist_noteTimers = {};
 
 // Site overrides — { added:[{id,phase,label,wantNote?}], removed:[id], renamed:{id:label} }
 function checklist_loadSite() {
-  var s = safeParse(localStorage.getItem(CHECKLIST_SITE_KEY) || 'null', null);
+  var s = safeGet(CHECKLIST_SITE_KEY, null);
   if (!s || typeof s !== 'object') s = {};
   if (!Array.isArray(s.added)) s.added = [];
   if (!Array.isArray(s.removed)) s.removed = [];
@@ -27810,7 +27884,7 @@ function checklist_renderPhase(deployId, rackId, ph, hardwareType, depLocked) {
 // ── Stage 5: Optic Ledger Storage ──
 // v1.14.350 — see deploy_loadAllRacks above.
 function deploy_loadAllOptics() {
-  var all = safeParse(localStorage.getItem(DEPLOY_OPTICS_KEY) || '[]', []);
+  var all = safeGet(DEPLOY_OPTICS_KEY, []);
   return Array.isArray(all) ? all : [];
 }
 function deploy_loadOpticsFor(deployId) {
@@ -28068,7 +28142,7 @@ function siteProfile_resetToDefaults() {
 // ── Stage 6: Audit Trail Storage ──
 // v1.14.350 — see deploy_loadAllRacks above.
 function deploy_loadAllAudit() {
-  var all = safeParse(localStorage.getItem(DEPLOY_AUDIT_KEY) || '[]', []);
+  var all = safeGet(DEPLOY_AUDIT_KEY, []);
   return Array.isArray(all) ? all : [];
 }
 function deploy_loadAuditFor(deployId) {
@@ -28096,7 +28170,7 @@ function _audit_hashEntry(e) {
 // Legacy entries (pre-C4, no hash) are skipped until the first hashed entry. A chainReset
 // entry is an authorized truncation gap and does not count as a break.
 function deploy_verifyAuditChain() {
-  var all = safeParse(localStorage.getItem(DEPLOY_AUDIT_KEY) || '[]', []);
+  var all = safeGet(DEPLOY_AUDIT_KEY, []);
   if (!Array.isArray(all)) all = [];
   var baseline = null, legacy = 0, hashed = 0, truncations = 0, brokenAt = null;
   for (var i = 0; i < all.length; i++) {
@@ -28116,7 +28190,7 @@ function deploy_logAudit(deploymentId, action, entityType, entityId, summary) {
   try {
     var dep = deploy_getById(deploymentId);
     var actor = identity_getUser() || (dep && dep.buildLead) || 'System';
-    var all = safeParse(localStorage.getItem(DEPLOY_AUDIT_KEY) || '[]', []);
+    var all = safeGet(DEPLOY_AUDIT_KEY, []);
     if (!Array.isArray(all)) all = [];
     var _entry = {
       id: 'audit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -28154,7 +28228,7 @@ function deploy_logAudit(deploymentId, action, entityType, entityId, summary) {
 
 // Remove all audit records for a deployment — called from deploy_confirmDelete.
 function deploy_purgeAudit(deploymentId) {
-  var all = safeParse(localStorage.getItem(DEPLOY_AUDIT_KEY) || '[]', []);
+  var all = safeGet(DEPLOY_AUDIT_KEY, []);
   all = all.filter(function(e) { return e.deploymentId !== deploymentId; });
   deploy_saveAllAudit(all);
 }
@@ -28262,7 +28336,7 @@ function deploy_flagPhaseReverify(phaseId, deployId, rackId) {
 
 // ━━━ STAGE 9: SHIFT HANDOFF ENGINE ━━━
 function handoff_loadAll() {
-  return safeParse(localStorage.getItem(HANDOFF_KEY) || '[]', []);
+  return safeGet(HANDOFF_KEY, []);
 }
 function handoff_save(arr) {
   return safeStore(HANDOFF_KEY, JSON.stringify(arr));
@@ -28355,7 +28429,7 @@ function deploy_seedOptics(deploymentId) {
   if (!dep) return;
   var optics = (dep.edpParsed && Array.isArray(dep.edpParsed.optics)) ? dep.edpParsed.optics : [];
   if (!optics.length) return;
-  var all = safeParse(localStorage.getItem(DEPLOY_OPTICS_KEY) || '[]', []);
+  var all = safeGet(DEPLOY_OPTICS_KEY, []);
   var alreadySeeded = all.some(function(o) { return o.deploymentId === deploymentId; });
   if (alreadySeeded) return;
   var now = Date.now();
@@ -28386,7 +28460,7 @@ function deploy_ensureOptics(deployment) {
 
 function deploy_updateOpticCount(opticId, field, delta) {
   if (field !== 'dispensed' && field !== 'installed') return false;
-  var all = safeParse(localStorage.getItem(DEPLOY_OPTICS_KEY) || '[]', []);
+  var all = safeGet(DEPLOY_OPTICS_KEY, []);
   var idx = all.findIndex(function(o) { return o.id === opticId; });
   if (idx === -1) { phantomToast('Optic record not found', 'error'); return false; }
   var rec = all[idx];
@@ -28446,7 +28520,7 @@ const GHOST_ECHO_KEY = 'phantom_ghost_echo_v1';
 const GHOST_ECHO_TEXT_MAX = 280;
 
 function ge_load() {
-  var stored = safeParse(localStorage.getItem(GHOST_ECHO_KEY), null);
+  var stored = safeGet(GHOST_ECHO_KEY, null);
   if (!stored || typeof stored !== 'object') {
     return { outgoing: [], incoming: [], schemaVersion: 1 };
   }
@@ -29078,8 +29152,8 @@ function deploy_seedRacksAndPhases(deployment) {
   var srcRacks = edp.racks || [];
   if (srcRacks.length === 0) return;
 
-  var allRacks = safeParse(localStorage.getItem(DEPLOY_RACKS_KEY) || '[]', []);
-  var allPhases = safeParse(localStorage.getItem(DEPLOY_PHASES_KEY) || '[]', []);
+  var allRacks = safeGet(DEPLOY_RACKS_KEY, []);
+  var allPhases = safeGet(DEPLOY_PHASES_KEY, []);
   var now = Date.now();
 
   srcRacks.forEach(function(sr, idx) {
@@ -29142,7 +29216,7 @@ function deploy_advancePhase(phaseId, newStatus, deployId) {
     return false;
   }
 
-  var all = safeParse(localStorage.getItem(DEPLOY_PHASES_KEY) || '[]', []);
+  var all = safeGet(DEPLOY_PHASES_KEY, []);
   var idx = all.findIndex(function(p) { return p.id === phaseId; });
   if (idx === -1) return false;
 
@@ -29173,7 +29247,7 @@ function deploy_advancePhase(phaseId, newStatus, deployId) {
   for (var i = 0; i < rackPhases.length; i++) {
     if (rackPhases[i].status !== 'complete') { cp = rackPhases[i].type; break; }
   }
-  var allRacks = safeParse(localStorage.getItem(DEPLOY_RACKS_KEY) || '[]', []);
+  var allRacks = safeGet(DEPLOY_RACKS_KEY, []);
   var ri = allRacks.findIndex(function(r) { return r.id === phase.rackId; });
   var rackDisplayName = (ri !== -1) ? (allRacks[ri].rackId || phaseRackId) : phaseRackId;
   if (ri !== -1) {
@@ -29218,7 +29292,7 @@ function deploy_overrideGate(phaseId, deployId) {
   var _dep = deploy_getById(deployId);
   if (_dep && _dep.status === 'complete') { phantomToast('Deployment is complete — phases are locked', 'warn'); return false; }
   if (!confirm('Override phase gate?\n\nThis starts a phase before the previous one is complete. The override will be logged.')) return false;
-  var all = safeParse(localStorage.getItem(DEPLOY_PHASES_KEY) || '[]', []);
+  var all = safeGet(DEPLOY_PHASES_KEY, []);
   var idx = all.findIndex(function(p) { return p.id === phaseId; });
   if (idx === -1) return false;
 
@@ -29234,7 +29308,7 @@ function deploy_overrideGate(phaseId, deployId) {
   }
 
   // Look up rack display name for audit summary
-  var allRacks = safeParse(localStorage.getItem(DEPLOY_RACKS_KEY) || '[]', []);
+  var allRacks = safeGet(DEPLOY_RACKS_KEY, []);
   var ri = allRacks.findIndex(function(r) { return r.id === phaseRackId; });
   var rackDisplayName = (ri !== -1) ? (allRacks[ri].rackId || phaseRackId) : phaseRackId;
 
@@ -29798,11 +29872,11 @@ function deploy_showList(container) {
 // ── EDP Parse Cache (avoid re-analyzing same EDP) ──
 const DEPLOY_EDP_CACHE_KEY = 'phantom_edp_cache_v1'; // legacy key name — serves the vendor-reconcile parse cache; do not rename (field migration cost)
 function deploy_getCachedParse(hash) {
-  var cache = safeParse(localStorage.getItem(DEPLOY_EDP_CACHE_KEY) || '{}', {});
+  var cache = safeGet(DEPLOY_EDP_CACHE_KEY, {});
   return cache[hash] || null;
 }
 function deploy_setCachedParse(hash, parsed) {
-  var cache = safeParse(localStorage.getItem(DEPLOY_EDP_CACHE_KEY) || '{}', {});
+  var cache = safeGet(DEPLOY_EDP_CACHE_KEY, {});
   // Cap at 10 entries — evict oldest
   var keys = Object.keys(cache);
   if (keys.length >= 10) {
@@ -30152,7 +30226,7 @@ var _discLog_state = {
 // ── Storage helpers ────────────────────────────────────────
 function discLog_loadAll(deployId) {
   var arr = [];
-  try { arr = safeParse(localStorage.getItem(DISCREPANCY_KEY) || '[]', []); } catch(e) { arr = []; }
+  try { arr = safeGet(DISCREPANCY_KEY, []); } catch(e) { arr = []; }
   if (!Array.isArray(arr)) arr = [];
   return deployId ? arr.filter(function(d) { return d.deploymentId === deployId; }) : arr;
 }
@@ -30610,7 +30684,7 @@ function disc_renderCard(rec) {
 function disc_openResolveSheet(recId) {
   // Find the record in storage
   var allGlobal = [];
-  try { allGlobal = safeParse(localStorage.getItem(DISCREPANCY_KEY) || '[]', []); } catch(e) { allGlobal = []; }
+  try { allGlobal = safeGet(DISCREPANCY_KEY, []); } catch(e) { allGlobal = []; }
   if (!Array.isArray(allGlobal)) allGlobal = [];
   var rec = null;
   for (var i = 0; i < allGlobal.length; i++) {
@@ -30726,7 +30800,7 @@ function disc_confirmResolve() {
 
   // Load full list (not deploy-filtered — we need to mutate the actual record)
   var all = [];
-  try { all = safeParse(localStorage.getItem(DISCREPANCY_KEY) || '[]', []); } catch(e) { all = []; }
+  try { all = safeGet(DISCREPANCY_KEY, []); } catch(e) { all = []; }
   if (!Array.isArray(all)) all = [];
 
   var idx = -1;
@@ -34338,7 +34412,7 @@ function rackLookup_init(deployId) {
 // Read per-deployment recent rack IDs from localStorage.
 // Shape: { "<deployId>": ["rackId1","rackId2",...] }
 function rackLookup_getRecent(deployId) {
-  var all = safeParse(localStorage.getItem(RACK_RECENT_KEY) || '{}', {});
+  var all = safeGet(RACK_RECENT_KEY, {});
   if (!all || typeof all !== 'object') return [];
   var list = all[deployId];
   return Array.isArray(list) ? list : [];
@@ -34349,7 +34423,7 @@ function rackLookup_getRecent(deployId) {
 // ergonomics, not data integrity.
 function rackLookup_pushRecent(deployId, rackId) {
   try {
-    var all = safeParse(localStorage.getItem(RACK_RECENT_KEY) || '{}', {});
+    var all = safeGet(RACK_RECENT_KEY, {});
     if (!all || typeof all !== 'object') all = {};
     var list = Array.isArray(all[deployId]) ? all[deployId] : [];
     // De-dupe — move to front
@@ -34365,7 +34439,7 @@ function rackLookup_pushRecent(deployId, rackId) {
 // Silent-fail by design — recent list is ergonomic, not critical data.
 function rackLookup_purgeRecent(deployId) {
   try {
-    var all = safeParse(localStorage.getItem(RACK_RECENT_KEY) || '{}', {});
+    var all = safeGet(RACK_RECENT_KEY, {});
     if (!all || typeof all !== 'object') return;
     if (!(deployId in all)) return;
     delete all[deployId];
@@ -37249,17 +37323,17 @@ function deploy_showRackDetail(deployId, rackId) {
 // ─────────────────────────────────────────────────────────────────────────
 function deploy_purgeHeavyData(deploymentId) {
   // Racks
-  var allRacks = safeParse(localStorage.getItem(DEPLOY_RACKS_KEY) || '[]', []);
+  var allRacks = safeGet(DEPLOY_RACKS_KEY, []);
   allRacks = allRacks.filter(function(r) { return r.deploymentId !== deploymentId; });
   if (!deploy_saveAllRacks(allRacks)) { phantomToast('Storage error — rack cleanup incomplete', 'warn'); }
 
   // Phases
-  var allPhases = safeParse(localStorage.getItem(DEPLOY_PHASES_KEY) || '[]', []);
+  var allPhases = safeGet(DEPLOY_PHASES_KEY, []);
   allPhases = allPhases.filter(function(p) { return p.deploymentId !== deploymentId; });
   if (!deploy_saveAllPhases(allPhases)) { phantomToast('Storage error — phase cleanup incomplete', 'warn'); }
 
   // Optics
-  var allOptics = safeParse(localStorage.getItem(DEPLOY_OPTICS_KEY) || '[]', []);
+  var allOptics = safeGet(DEPLOY_OPTICS_KEY, []);
   allOptics = allOptics.filter(function(o) { return o.deploymentId !== deploymentId; });
   if (!deploy_saveAllOptics(allOptics)) { phantomToast('Storage error — optic cleanup incomplete', 'warn'); }
 
@@ -38795,7 +38869,7 @@ function _asbuilt_csvEsc(v) {
 // Read the raw localStorage key directly (the collection API is module-scoped).
 function _asbuilt_loadAssetScans() {
   try {
-    var arr = safeParse(localStorage.getItem('phantom_scan_collection') || '[]', []);
+    var arr = safeGet('phantom_scan_collection', []);
     return Array.isArray(arr) ? arr.filter(function(e) { return e && e.type === 'asset' && e.value; }) : [];
   } catch (_) { return []; }
 }
@@ -43258,7 +43332,7 @@ async function _edp_runChunkedInternal(raw, docHint, onProgress) {
   // Writes full per-section error details so we can see why each failed.
   if (failures.length > 0) {
     try {
-      var entries = safeParse(localStorage.getItem('phantom_crash_log') || '[]', []);
+      var entries = safeGet('phantom_crash_log', []);
       if (!Array.isArray(entries)) entries = [];
       failures.forEach(function(f) {
         entries.unshift({
@@ -43520,7 +43594,7 @@ function bomPushToApp() {
 
   // Push Burndown Jobs
   if (isEnabled('burndownJobs') && r.burndownJobs && r.burndownJobs.length) {
-    var jobs = safeParse(localStorage.getItem(BURNDOWN_KEY) || '[]', []);
+    var jobs = safeGet(BURNDOWN_KEY, []);
     r.burndownJobs.forEach(function(job) {
       jobs.push({
         id: genId(),
@@ -43556,7 +43630,7 @@ function bomPushToApp() {
 
   // Push Optics (store as notes since optic inventory has its own structure)
   if (isEnabled('optics') && r.optics && r.optics.length) {
-    var inv = safeParse(localStorage.getItem('phantom_optic_inventory') || '[]', []);
+    var inv = safeGet('phantom_optic_inventory', []);
     r.optics.forEach(function(op) {
       inv.push({
         id: genId(),
@@ -44542,7 +44616,7 @@ function saveRacks(racks) { _rackStore.save(racks); }
 const RM_HIST_KEY = 'phantom_rack_history';
 function phantomRackLog(rackId, action, detail) {
   try {
-    const all = safeParse(localStorage.getItem(RM_HIST_KEY), {});
+    const all = safeGet(RM_HIST_KEY, {});
     if (!all[rackId]) all[rackId] = [];
     all[rackId].unshift({ ts: Date.now(), action: action, detail: detail });
     all[rackId] = all[rackId].slice(0, 100); // keep 100 entries per rack
@@ -44554,7 +44628,7 @@ function phantomRackLog(rackId, action, detail) {
 }
 function phantomRackShowHistory(rackId, rackName) {
   try {
-    const all = safeParse(localStorage.getItem(RM_HIST_KEY), {});
+    const all = safeGet(RM_HIST_KEY, {});
     const entries = all[rackId] || [];
     if (!entries.length) { alert('No change history for ' + rackName + '.'); return; }
     const text = entries.map(function(e) {
@@ -44838,7 +44912,7 @@ function _rmRenderHeaderInArea(rack, area) {
 var AUDIT_WALK_KEY = 'phantom_audit_walk_v1';
 var _auditWalk = { active:false, area:null, rack:null, slots:[], cursor:0, results:{}, rackKey:null };
 
-function _auditWalk_loadAll() { return safeParse(localStorage.getItem(AUDIT_WALK_KEY), {}) || {}; }
+function _auditWalk_loadAll() { return safeGet(AUDIT_WALK_KEY, {}) || {}; }
 
 // Roll Vendor Audit Walk results (phantom_audit_walk_v1) up for a set of racks, so the
 // shift report + handoff can surface them instead of letting the walk dead-end on the
@@ -47592,7 +47666,7 @@ const BD = (() => {
     return '<span class="bd-sla ' + cls + '">' + hrs + 'h ' + mins + 'm left</span>';
   }
 
-  function loadJobs() { try { return safeParse(localStorage.getItem(KEY) || '[]', []); } catch(e) { return []; } }
+  function loadJobs() { try { return safeGet(KEY, []); } catch(e) { return []; } }
   function saveJobs(jobs) { safeStore(KEY, JSON.stringify(jobs)); }
   function getJob(id) { return loadJobs().find(j => j.id === id) || null; }
 
@@ -48582,7 +48656,7 @@ async function reconcile_run(force){
   var bomRev = bomDeps.map(function(b){ return (b && (b.revisionHash || b.hash || b.id)) || ''; }).join(',');
   var cacheKey = dep.id + '|' + ((master && master.sourceFileHash) || '') + '|' + (dep.edpHash || '') + '|' + bomRev + '|' + (dep.vendorEdpAttachedAt || '');
   if (!force){
-    var cached = safeParse(localStorage.getItem(RECONCILE_KEY), null);
+    var cached = safeGet(RECONCILE_KEY, null);
     if (cached && cached.cacheKey === cacheKey){ _reconcile.last = cached; return { ok:true, cached:true, result: cached }; }
   }
   _reconcile.running = true;
@@ -48700,7 +48774,7 @@ async function reconcile_runUI(){
 
 function reconcile_render(mount){
   if (!mount) return;
-  if (!_reconcile.last){ var c = safeParse(localStorage.getItem(RECONCILE_KEY), null); if (c) _reconcile.last = c; }
+  if (!_reconcile.last){ var c = safeGet(RECONCILE_KEY, null); if (c) _reconcile.last = c; }
   var res = _reconcile.last;
   var head = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
     '<div style="font-family:var(--orb);font-size:var(--fs-micro);letter-spacing:2px;color:var(--violet)">▣ DOCUMENT RECONCILE</div>' +
@@ -48846,7 +48920,7 @@ async function preflight_run(force){
   var masterHash = (master && (master.sourceFileHash || (master.stats && master.stats.sourceFileHash))) || '';
   var cacheKey = dep.id + '|' + masterHash + '|' + (dep.edpHash || '');
   if (!force){
-    var cached = safeParse(localStorage.getItem(PREFLIGHT_KEY), null);
+    var cached = safeGet(PREFLIGHT_KEY, null);
     if (cached && cached.cacheKey === cacheKey){ _preflight.last = cached; return { ok:true, cached:true, result: cached }; }
   }
   _preflight.running = true;
@@ -48963,7 +49037,7 @@ async function preflight_runUI(){
 
 function preflight_render(mount){
   if (!mount) return;
-  if (!_preflight.last){ var c = safeParse(localStorage.getItem(PREFLIGHT_KEY), null); if (c) _preflight.last = c; }
+  if (!_preflight.last){ var c = safeGet(PREFLIGHT_KEY, null); if (c) _preflight.last = c; }
   var res = _preflight.last;
   var head = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
     '<div style="font-family:var(--orb);font-size:var(--fs-micro);letter-spacing:2px;color:var(--cyan-bright,#5cf2ff)">✈ PRE-FLIGHT</div>' +
@@ -49015,7 +49089,7 @@ function nowDot_update(){
       var nogo = 0, adv = 0;
       try {
         var pf = (typeof _preflight !== 'undefined' && _preflight.last) ? _preflight.last
-               : safeParse(localStorage.getItem('phantom_preflight_v1'), null);
+               : safeGet('phantom_preflight_v1', null);
         if (pf && pf.deploymentId === dep.id && pf.totals){ nogo = pf.totals.nogo || 0; adv = pf.totals.advisory || 0; }
       } catch(_){}
       if (blockers > 0 || nogo > 0 || fail) sev = 'crit';
@@ -49033,7 +49107,7 @@ const AUDIT = (() => {
   const OPTIC_TYPES = ['SR4','LR4','DR4','ER4','ZR','DAC','AOC','QSFP28','QSFP-DD','OSFP','SFP+','SFP28','OTHER'];
   let currentAuditId = null;
 
-  function load() { try { return safeParse(localStorage.getItem(KEY) || '[]', []); } catch(e) { return []; } }
+  function load() { try { return safeGet(KEY, []); } catch(e) { return []; } }
   function save(audits) { safeStore(KEY, JSON.stringify(audits)); }
   function getAudit(id) { return load().find(a => a.id === id) || null; }
 
@@ -50249,7 +50323,11 @@ var PHANTOM_BACKUP_EXTRA_KEYS = [
   // than asserted from a hand-authored list.
   { k: 'deploy_forge_loadout_v1',          why: 'Forge loadout — hand-built rack layout' },
   { k: 'deploy_forge_view_v1',             why: 'Forge view state' },
-  { k: 'phantom_audits_v1',                why: 'completed audits — field work' }
+  { k: 'phantom_audits_v1',                why: 'completed audits — field work' },
+  // v1.14.400: damaged blobs rescued by safeGet. This is still the technician's data and it is
+  // the ONLY remaining copy, so it travels with the backup. Capped at 64KB per entry at capture
+  // time, so it cannot bloat the bundle.
+  { k: 'phantom_quarantine_v1',            why: 'quarantined corrupt data — the only surviving copy' }
 ];
 // Dynamically-named keys are swept by prefix — they cannot be enumerated ahead of time.
 var PHANTOM_BACKUP_PREFIXES = ['phantom_scaffold_v1::'];
@@ -50335,8 +50413,8 @@ function exportAllData() {
     }
   } catch (_) {}
   const sops = loadSOPs();
-  const racks = safeParse(localStorage.getItem('dct_racks_v1') || '[]', []);
-  const burndown = safeParse(localStorage.getItem(BURNDOWN_KEY) || '[]', []);
+  const racks = safeGet('dct_racks_v1', []);
+  const burndown = safeGet(BURNDOWN_KEY, []);
 
   const dbName = 'GhostEchoDB';
   const storeName = 'ghosts';
@@ -50355,16 +50433,16 @@ function exportAllData() {
       jobsnap: localStorage.getItem('phantom_jobsnap_v1') || null,
       rackMaps: racks,
       burndown: burndown,
-      rackHistory: safeParse(localStorage.getItem('phantom_rack_history') || '{}', {}),
+      rackHistory: safeGet('phantom_rack_history', {}),
       opticInventory: loadOpticInventory(),
-      deployments: safeParse(localStorage.getItem('phantom_deployments_v1') || '[]', []),
-      deployRacks: safeParse(localStorage.getItem('phantom_deploy_racks_v1') || '[]', []),
-      deployPhases: safeParse(localStorage.getItem('phantom_deploy_phases_v1') || '[]', []),
-      deployOptics: safeParse(localStorage.getItem('phantom_deploy_optics_v1') || '[]', []),
-      deployAudit: safeParse(localStorage.getItem('phantom_deploy_audit_v1') || '[]', []),
-      siteProfile: safeParse(localStorage.getItem('phantom_site_profile_v1') || 'null', null),
-      handoffs: safeParse(localStorage.getItem('phantom_handoff_v1') || '[]', []),
-      edpCache: safeParse(localStorage.getItem('phantom_edp_cache_v1') || '{}', {}),
+      deployments: safeGet('phantom_deployments_v1', []),
+      deployRacks: safeGet('phantom_deploy_racks_v1', []),
+      deployPhases: safeGet('phantom_deploy_phases_v1', []),
+      deployOptics: safeGet('phantom_deploy_optics_v1', []),
+      deployAudit: safeGet('phantom_deploy_audit_v1', []),
+      siteProfile: safeGet('phantom_site_profile_v1', null),
+      handoffs: safeGet('phantom_handoff_v1', []),
+      edpCache: safeGet('phantom_edp_cache_v1', {}),
       // v1.14.397 (M1-a): every remaining key, verbatim, derived from the registry above.
       // Additive and ignorable, so PHANTOM_BACKUP_SCHEMA deliberately stays 1 — bumping it would
       // make an older cached build REFUSE this bundle outright (see the _bs guard in the restore)
@@ -51147,7 +51225,7 @@ function nerve_timeAgo(ts) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 var DRIFT_KEY = 'phantom_drift_ledger_v1';
-function drift_load() { return safeParse(localStorage.getItem(DRIFT_KEY) || '[]', []); }
+function drift_load() { return safeGet(DRIFT_KEY, []); }
 function drift_save(arr) { return safeStore(DRIFT_KEY, JSON.stringify(arr)); }
 
 // Extract DOM readings + interface name from raw CLI paste
@@ -51992,7 +52070,7 @@ var compassState = { startU: 14, chassisH: 4 };
 
 function compass_loadState() {
   var raw = (typeof safeParse === 'function')
-    ? safeParse(localStorage.getItem(COMPASS_KEY), null)
+    ? safeGet(COMPASS_KEY, null)
     : null;
   if (raw && typeof raw === 'object') {
     var su = parseInt(raw.startU, 10);
@@ -52833,7 +52911,7 @@ var OpticScore = (function() {
   function _appendHistory(entry) {
     try {
       var existing = (typeof safeParse === 'function')
-        ? safeParse(localStorage.getItem(HISTORY_KEY), [])
+        ? safeGet(HISTORY_KEY, [])
         : [];
       if (!Array.isArray(existing)) existing = [];
       existing.unshift(entry);
@@ -52845,7 +52923,7 @@ var OpticScore = (function() {
   }
   function _loadHistory() {
     var raw = (typeof safeParse === 'function')
-      ? safeParse(localStorage.getItem(HISTORY_KEY), [])
+      ? safeGet(HISTORY_KEY, [])
       : [];
     return Array.isArray(raw) ? raw : [];
   }
@@ -53105,7 +53183,7 @@ var ScanDispatch = (function() {
       }
     } catch(_){}
     try {
-      var saved = (typeof safeParse === 'function') ? safeParse(localStorage.getItem(MM_INDEX_KEY), null) : null;
+      var saved = (typeof safeParse === 'function') ? safeGet(MM_INDEX_KEY, null) : null;
       if (saved && saved.byKey) { _mmIndex = { byKey: saved.byKey, count: Object.keys(saved.byKey).length, serialCount: saved.serialCount || 0, builtFor: saved.hash || null }; return _mmIndex; }
     } catch(_){}
     _mmIndex = { byKey:{}, count:0, serialCount:0, builtFor: hash };
@@ -53216,7 +53294,7 @@ var ScanDispatch = (function() {
 
   function _loadCollection() {
     var raw = (typeof safeParse === 'function')
-      ? safeParse(localStorage.getItem(COLLECTION_KEY), [])
+      ? safeGet(COLLECTION_KEY, [])
       : [];
     return Array.isArray(raw) ? raw : [];
   }
