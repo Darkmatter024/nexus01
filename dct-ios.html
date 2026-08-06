@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.401';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.402';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20217,7 +20217,7 @@ function forge3d_render(mount) {
   // so any path reaching here without going through that door left BOTH contexts live. Register
   // at the boundary that CREATES the renderer and the guard becomes structural, not remembered.
   // Registration also installs the visibility observer, so the aisle stops rendering when it is
-  // off screen — the same drain the rack had.
+  // off screen — the same drain the rack had. (v1.14.402: observer is redesign-house only.)
   RackEngine.register(mount, {
     dispose: teardown,
     pause:  function () { if (_rafId) { try { cancelAnimationFrame(_rafId); } catch (e) {} _rafId = 0; } },
@@ -35015,7 +35015,8 @@ function rackHybrid_initSync(rack) {
 // Command, and the renderer's own onVis checked document.hidden -- which a display:none ancestor
 // does NOT set. So leaving Build for Tools left the rack's rAF running at full rate on a canvas
 // nobody could see, for the rest of the shift, on a phone. An IntersectionObserver per attachment
-// closes that for every host, without any caller having to remember.
+// closes that without any caller having to remember. v1.14.402 (owner ruling): the observer is
+// REDESIGN-HOUSE ONLY — see _observe for why, and for what is deliberately NOT house-scoped.
 //
 // R-05: this is ONE ENGINE, NOT ONE LOCATION. Many attachments may exist; at most one holds a
 // live context. Non-interactive presentations cost nothing and are not tracked here.
@@ -35058,8 +35059,24 @@ var RackEngine = {
   },
 
   // I4 — a scene whose host is not visible stops working. Never by a caller remembering.
+  //
+  // v1.14.402 — OWNER RULING 2026-08-06: REDESIGN HOUSE ONLY. rackElevation_render3D is a SHARED
+  // renderer that also draws under ?legacy=1, so the ungated .401 observer changed legacy runtime
+  // behaviour — a Rule 7 break ("?legacy=1 is byte-identical-behavior"). The visibility pause is a
+  // redesign-house feature. Under legacy this is a deliberate NO-OP and both loops run exactly as
+  // they did on .400: no observer, att.paused stays false forever, and each renderer's own
+  // document.hidden path is the only thing that can stop it.
+  //
+  // NOT a No-Silent-Failures violation: skipping here is the RULED behaviour on a path that has no
+  // user-facing surface, not an error being swallowed. RackEngine.report() still lists the
+  // attachment, so the census stays honest about what is live in either house.
+  //
+  // ⛔ DELIBERATELY NOT GATED: the single-live-context guard (releaseOthers, I1). Two live GL
+  // contexts is the iOS crash class this whole milestone exists to close, and the legacy house is
+  // entitled to that fix. Only the OBSERVER is house-scoped — the invariant is not.
   _observe: function (att) {
     if (typeof IntersectionObserver !== 'function') return;   // no observer → prior behaviour
+    try { if (!document.body || !document.body.classList.contains('rd')) return; } catch (_) { return; }
     try {
       att.io = new IntersectionObserver(function (entries) {
         for (var i = 0; i < entries.length; i++) {
@@ -36555,6 +36572,8 @@ function rackElevation_render3D(rack, mountEl) {
   // v1.14.401 (M2-a): register with the lifecycle owner. This is what releases any other live
   // context (I1) and installs the visibility observer that pauses this loop when the host is not
   // on screen (I4). _reh3dActive is retained above only as a read-only compatibility shim.
+  // v1.14.402: I1 applies in BOTH houses; the I4 observer is redesign-only (owner ruling). This
+  // renderer draws under ?legacy=1 too, and there it must behave exactly as it did on .400.
   _rmAtt = RackEngine.register(mountEl, { dispose: teardown, pause: _rmPause, resume: _rmResume }, 'rack');
 }
 
