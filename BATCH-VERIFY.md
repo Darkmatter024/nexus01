@@ -17,8 +17,14 @@ open right now, 25 ships between them:**
   block at the end of this file. **Cap blown by 12. Nothing should ship after `.402` until it clears.**
   (`.402` is an owner-directed correction made during verify, not new scope — it stays in this batch.)
 
-**The single highest-value item in both batches:** `.396` claims the eight-ship blank-rack arc closes —
-**and there is no record of anyone confirming the rack draws.** Four ships stacked behind that silence.
+**✅ RESOLVED 2026-08-06 — the item that was blocking both batches is answered.** `.396` claimed the eight-ship
+blank-rack arc closes; the owner confirmed **"rack draws"** against `v1.14.401`. **The `.389`→`.396` arc is
+CLOSED** and the four ships that had stacked behind that silence are unblocked.
+
+**What that pass does NOT cover, stated so nobody reads it as a batch release:** it establishes that the rack
+RENDERS. Everything else in both batches is still unverified — in particular the `.401`/`.402` attachment
+behaviour (single-entry transfer on Open Aisle, pause/resume on leaving Build, ×10 Build entries), which a
+drawing rack does not establish, and the `?legacy=1` half of `.402`.
 
 ---
 
@@ -1362,7 +1368,8 @@ except honesty.** Renderer counts must be comparable before and after.
 three.js r128 creates a **WebGL2RenderingContext**. Per spec a canvas already holding `webgl2` returns
 **NULL** for `getContext('webgl')` — a mismatched type is refused, not created. The capability check
 was asking the wrong question and reporting a refusal that never happened.
-- [ ] ⭐ **THE ONE THAT MATTERS — NO RECORD OF A PASS.** Clear the SW cache, cold load, open Build: **the rack should DRAW.** If it does, the eight-ship arc from `.389` closes here. Four ships have stacked behind this unanswered.
+- [x] ✅ **CONFIRMED BY OWNER 2026-08-06 — "rack draws".** Verified against the build Pages was serving at the time, **`v1.14.401`**, which carries this fix. **THE EIGHT-SHIP ARC `.389`→`.396` IS CLOSED.** The root cause holds: three.js r128 creates a WebGL2 context, a canvas holding `webgl2` returns NULL for `getContext('webgl')`, and the capability check had been reporting a refusal that never happened.
+  ⚠ **Scope of this pass:** it establishes that the rack RENDERS. It does **not** establish the `.401`/`.402` attachment behaviour — single-entry transfer on Open Aisle, pause/resume on leaving Build, or ×10 Build entries without climbing. Those are separate checks and still open.
 
 ## v1.14.397 — M1-a: backup coverage is derived, not remembered (`35b9f37`) · rollback: revert commit
 `exportAllData` hand-listed FIFTEEN sections; the app has ~63 keys, sixteen uncaptured ones being real field work.
