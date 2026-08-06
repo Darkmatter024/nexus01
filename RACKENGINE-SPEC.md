@@ -180,7 +180,8 @@ Callers pass `rackId`. The engine resolves.
 _resolve(rackId) → {
   id, label, units,                       // units = rack height in U
   devices: [ { u, height, type, label, hostname, status } ],
-  source: 'master' | 'deployment' | 'standalone'
+  source: 'master' | 'deployment' | 'standalone',
+  dataState: 'populated' | 'empty' | 'unassigned'   // R-06 — see §7.1
 }
 ```
 
@@ -189,6 +190,55 @@ _resolve(rackId) → {
 It also removes the reshape divergence: `master_renderHit` `:32754` reshapes the rack where the other path passes the whole record. Neither does now — both ask for a `rackId`.
 
 `source` is carried for honesty, not behaviour: a rack that exists only as a cable endpoint resolves with an empty `devices[]`, and the engine says so rather than rendering a convincing empty rack.
+
+---
+
+## §7.1 — Topology is not contents (owner ruling R-06, 2026-08-06)
+
+**The Master must not determine whether a physical cabinet exists.** Topology says which cabinets exist and where; the Master *enriches* them. **A zero-component rack is a valid rack state, not a missing-rack state.**
+
+### Where topology comes from — and the one honest limit
+
+Topology is **already available and already independent of contents.** `deploy_forge_rackList()` `:19243` returns `Object.keys(m.racksByCab)`, and `racksByCab` is built from **both** host rows **and** cable endpoints — so the roster already contains host-less cabs. In US-SPK03 roughly **215 of 511 cabs (≈42%)** are cable-endpoint-only. The field report's own readout proves it: `ROW S3 · POS 113/119` means the roster already knew **119** cabs in that row while the cab under inspection had **zero** devices.
+
+This satisfies R-06 without a new data source, and it stays inside Design Law 6 (site data flows from the Master):
+
+> **the Master's CAB ROSTER is topology; the Master's HOST ROWS are contents.** Absence of hosts is never absence of cabinet.
+
+⚠ **The limit, stated so it is not discovered later.** PHANTOM can render a shell for every cabinet *some source has mentioned*. It **cannot** invent positions no source has ever mentioned — if a row physically has 140 cabinets and every source knows 119, the missing 21 cannot be drawn without fabricating them, and fabrication is barred. `buildPhysicalRackTopology(row)` therefore resolves **the roster**, not the floor. Extending topology beyond the roster requires a real floor-plan/topology input and is a **separate owner ruling**.
+
+### Required construction — topology first, never a populated filter
+
+```js
+const rackShells = buildPhysicalRackTopology(row);       // roster, contents-independent
+const racks = rackShells.map(shell => ({
+  ...shell,
+  contents:  masterContentsByRackId[shell.id] ?? [],
+  dataState: masterContentsByRackId[shell.id] ? 'populated' : 'empty'
+}));
+```
+
+`_resolve` **is** this shell factory — R-06 extends §7 rather than competing with it. Every expected position yields one canonical shell; Master records merge into the matching shell; **unmatched shells stay present as empty racks**; IDs and ordering are stable.
+
+### Per-cabinet rendering contract
+
+| Condition | Render |
+|---|---|
+| Full data | cabinet + all known devices |
+| Partial data | cabinet + known devices + **honest missing-data states** |
+| No Master devices | **a complete empty 48U cabinet shell** |
+| Cabling-only | shell + any available cabling / assignment metadata |
+| Unknown assignment | shell marked **unassigned/unknown** — never absent |
+
+**If the front rendering represents five cabinet positions, all five always render.**
+
+### What is defective today (measured, not assumed)
+
+- `setLoadout` `:19740` builds `WINDOW` as `LOADOUT[k] || null` and an unfilled position becomes a **pad** (`s.userData.pad`) rather than a cabinet shell. Under R-06 every one of the five positions renders a **shell**; a position with no rack is an *unassigned shell*, not a blank pad.
+- The same line filters with `deploy_forge_slots(id).length || RUN.indexOf(id) >= 0`. It survives only because of the `RUN` fallback — its **first clause is exactly the populated-filter R-06 forbids.** Topology-first construction removes the question.
+- A rack in the loadout with zero slots draws no guts, so it is visually indistinguishable from a pad. It must draw the 48U shell and carry `dataState`.
+
+**This lands with `_resolve` at M2-b.** It is not a patch to `forge3d_render`, and it is not a fallback condition — it is the resolver being built correctly the first time.
 
 ---
 
@@ -249,7 +299,7 @@ No silent failures, per the standing hard rule.
 | Context refused after the barrier | attachment degrades to `interactive:false` **flat**, with a visible line naming why. No retry loop. Recorded in `report()`. |
 | Second interactive request refused | requester degrades to flat with the same honest line |
 | `rackId` unresolvable | honest empty state **naming the rackId** — never a blank host |
-| Rack resolves with no devices | says so, and says `source` — this is the documented host-less-cab case, not a render failure |
+| Rack resolves with no devices | **R-06: render the complete empty 48U cabinet shell**, carry `dataState`, and say `source` — this is the documented host-less-cab case. It is a **valid rack state, not a missing-rack state, and never a render failure.** Never a blank, never a pad, never fabricated devices |
 | Host not measurable | the existing `ResizeObserver` path is retained; it is sound and the `.191` per-mount re-arm stays |
 | `webglcontextlost` at runtime | `preventDefault`, demote to flat, attempt re-promotion through the barrier **once**, then stay flat and say so |
 
