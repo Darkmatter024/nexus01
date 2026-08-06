@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.402';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.403';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -19072,10 +19072,83 @@ var DEPLOY_FORGE_FACE_B64 = "UklGRsRqAQBXRUJQVlA4ILhqAQCQ7AWdASqAAuQEPjEWiUOiISU
 
 var _forge3dActive = null;  // { mount, dispose } — single-GL-context tracker
 
+// ══ v1.14.403 — AISLE LIFECYCLE TRACE (owner-directed, DIAGNOSTIC ONLY) ═══════════════════
+// The owner reported: tap OPEN AISLE, the correct 3D aisle opens, NO toast, then the sheet
+// closes itself and the rack-detail screen underneath is revealed. Static analysis eliminated
+// every code path that should be able to do that: forge3d_close() has exactly ONE caller (the
+// ✕ at :13107), showMode() dismisses only the profile and phase sheets, #forge3d-sheet is a
+// direct child of #app so no page re-render can destroy it, and unlike #ph-sheet it carries NO
+// backdrop-close handler. So the close is invisible to reading the source, and the app has to
+// catch it in the act.
+//
+// It writes through phantom_logErr into the EXISTING phantom_crash_log ring, so it is readable
+// ON THE PHONE at SYS → ERRORS with no Safari console and no new storage key (a new key would
+// need M1 registry classification; reusing the one door avoids that entirely).
+//
+// ZERO BEHAVIOUR CHANGE: every hook is record-only and individually wrapped, so a fault in the
+// instrument can never alter the flow it is measuring.
+function aisle_trace(ev, detail) {
+  try {
+    phantom_logErr('AISLE/' + ev, { message: String(ev) + (detail ? ' · ' + detail : ''), stack: '' });
+  } catch (_) {}
+}
+// Snapshot of everything the owner would otherwise have to type into a console.
+function aisle_state() {
+  try {
+    var sheet = document.getElementById('forge3d-sheet');
+    var mount = document.getElementById('forge3d-mount');
+    var host  = document.getElementById('reh3dCanvasHost');
+    var rep   = '';
+    try { rep = (typeof RackEngine === 'object') ? JSON.stringify(RackEngine.report()) : 'n/a'; } catch (_) { rep = 'report-threw'; }
+    return 'open=' + !!(sheet && sheet.classList.contains('open')) +
+           ' inDOM=' + !!(sheet && document.body.contains(sheet)) +
+           ' rd=' + document.body.classList.contains('rd') +
+           ' mountKids=' + (mount ? mount.childElementCount : 'no-mount') +
+           ' is3d=' + !!(host && host.classList.contains('is-3d')) +
+           ' mode=' + (typeof _rdMode !== 'undefined' ? _rdMode : '?') +
+           ' hidden=' + document.hidden +
+           ' att=' + rep;
+  } catch (e) { return 'state-threw:' + (e && e.message); }
+}
+// Catches the close NO MATTER who does it — including a path that does not exist in the source.
+// ⚠ HONEST LIMIT: a MutationObserver callback runs in its own microtask, so the stack captured
+// here is the OBSERVER's, not the mutator's. That is why forge3d_close() is instrumented
+// separately: if the observer fires and NO AISLE_CLOSE_REQUESTED precedes it, we have PROVED
+// the close did not come through forge3d_close, which is the discriminating fact.
+function aisle_watchSheet() {
+  var sheet = document.getElementById('forge3d-sheet');
+  if (!sheet || sheet._aisleWatch) return;
+  sheet._aisleWatch = true;
+  sheet._aisleWasOpen = sheet.classList.contains('open');
+  try {
+    var mo = new MutationObserver(function () {
+      try {
+        var now = sheet.classList.contains('open');
+        if (now === sheet._aisleWasOpen) return;
+        sheet._aisleWasOpen = now;
+        if (!now) {
+          aisle_trace('AISLE_CLOSED_OBSERVED', aisle_state());
+          var _uh = document.getElementById('reh3dCanvasHost');
+          aisle_trace('UNDERLYING_ROUTE_REVEALED',
+            'rehHost=' + (_uh ? (_uh.classList.contains('is-3d') ? 'is-3d' : 'FLAT') : 'absent'));
+        }
+      } catch (_) {}
+    });
+    mo.observe(sheet, { attributes: true, attributeFilter: ['class'] });
+    // The sheet leaving the DOM entirely is a different failure from losing .open — separate it.
+    var pmo = new MutationObserver(function () {
+      try { if (!document.body.contains(sheet)) aisle_trace('AISLE_HOST_REMOVED', aisle_state()); } catch (_) {}
+    });
+    if (sheet.parentNode) pmo.observe(sheet.parentNode, { childList: true });
+  } catch (_) {}
+}
+
 function forge3d_open() {
   var sheet = document.getElementById('forge3d-sheet');
   if (!sheet) return;
+  try { aisle_watchSheet(); aisle_trace('OPEN_AISLE_CLICK', aisle_state()); } catch (_) {}
   sheet.classList.add('open');
+  try { aisle_trace('AISLE_OPEN_REQUESTED', aisle_state()); } catch (_) {}
   // iOS one-GL-context ceiling: dispose the rack-detail 3D context if live.
   try {
     if (typeof _reh3dActive !== 'undefined' && _reh3dActive && _reh3dActive.dispose &&
@@ -19085,10 +19158,17 @@ function forge3d_open() {
   } catch (e) { phantom_logErr('forge3d_open:reh3dDispose', e); }
   var mount = document.getElementById('forge3d-mount');
   if (!mount) return;
+  try { aisle_trace('AISLE_HOST_CREATED', 'w=' + mount.clientWidth + ' h=' + mount.clientHeight + ' ' + aisle_state()); } catch (_) {}
   forge3d_ensure3D(mount);
 }
 
 function forge3d_close() {
+  // v1.14.403 — the stack here is the REAL caller's. If AISLE_CLOSED_OBSERVED appears in the ring
+  // WITHOUT this entry immediately before it, the close did not come through this function.
+  try {
+    var _st = ''; try { throw new Error('close'); } catch (e) { _st = String(e.stack || '').replace(/\s+/g, ' ').slice(0, 300); }
+    aisle_trace('AISLE_CLOSE_REQUESTED', 'via forge3d_close · ' + _st);
+  } catch (_) {}
   var sheet = document.getElementById('forge3d-sheet');
   if (sheet) sheet.classList.remove('open');
   var mount = document.getElementById('forge3d-mount');
@@ -20156,6 +20236,8 @@ function forge3d_render(mount) {
   var clock = new THREE.Clock();
   function frame() {
     if (_disposed) return;
+    // v1.14.403 — one-shot. No FIRST_FRAME in the ring means the loop never ran a single tick.
+    if (!frame._first) { frame._first = 1; try { aisle_trace('FIRST_FRAME', aisle_state()); } catch (_) {} }
     _rafId = requestAnimationFrame(frame);
     var dt = clock.getDelta();
     if (pulseT >= 0) {
@@ -20209,9 +20291,18 @@ function forge3d_render(mount) {
     if (_forge3dActive && _forge3dActive.mount === mount) _forge3dActive = null;
     // v1.14.401 (M2-a): drop the attachment and its observer with the scene.
     try { RackEngine.unregister(mount); } catch (_) {}
+    // v1.14.403 — WHO TORE THE AISLE DOWN? If RackEngine.releaseOthers() disposed this scene
+    // because another renderer registered, that happens HERE and the stack names the registrant.
+    // A teardown with no preceding AISLE_CLOSE_REQUESTED means the scene died while the sheet
+    // was still open — a different defect from the sheet being closed.
+    try {
+      var _ts = ''; try { throw new Error('teardown'); } catch (e) { _ts = String(e.stack || '').replace(/\s+/g, ' ').slice(0, 300); }
+      aisle_trace('AISLE_TEARDOWN', _ts);
+    } catch (_) {}
   }
   mount._forge3dDispose = teardown;
   _forge3dActive = { mount: mount, dispose: teardown };
+  try { aisle_trace('ENGINE_ATTACH_STARTED', aisle_state()); } catch (_) {}
   // v1.14.401 (M2-a) — THIS IS THE ASYMMETRY BEING CLOSED. forge3d_render previously disposed
   // ONLY its own context; the guard against a live rack context sat one level up in forge3d_open,
   // so any path reaching here without going through that door left BOTH contexts live. Register
@@ -20220,9 +20311,13 @@ function forge3d_render(mount) {
   // off screen — the same drain the rack had. (v1.14.402: observer is redesign-house only.)
   RackEngine.register(mount, {
     dispose: teardown,
-    pause:  function () { if (_rafId) { try { cancelAnimationFrame(_rafId); } catch (e) {} _rafId = 0; } },
-    resume: function () { if (!_rafId) { try { _rafId = requestAnimationFrame(frame); } catch (e) {} } }
+    pause:  function () { try { aisle_trace('AISLE_PAUSED', 'IntersectionObserver says host not visible · ' + aisle_state()); } catch (_) {} if (_rafId) { try { cancelAnimationFrame(_rafId); } catch (e) {} _rafId = 0; } },
+    resume: function () { try { aisle_trace('AISLE_RESUMED', ''); } catch (_) {} if (!_rafId) { try { _rafId = requestAnimationFrame(frame); } catch (e) {} } }
   }, 'aisle');
+  // v1.14.403 — if ENGINE_ATTACH_STARTED appears with no ENGINE_ATTACHED after it, register()
+  // itself threw. If AISLE_PAUSED appears right after this, the .401 IntersectionObserver decided
+  // the host was not visible and stopped the loop — the standing suspicion, now measured.
+  try { aisle_trace('ENGINE_ATTACHED', aisle_state()); } catch (_) {}
 }
 // v1.14.167 — New-UI Master FILE entry (Phase 0.5 un-strand). Gives the cabinet-search /
 // host-map / elevation BROWSE a redesign door (additive; mirrors rd_openPower driving an
