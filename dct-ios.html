@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.398';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.399';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -19121,8 +19121,15 @@ function forge3d_render(mount) {
 
   // ---------- persistence + per-node status overlay ----------
   var store = {
-    get: function (k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
-    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    // v1.14.399 (M1-c / audit 04 ST1) — ROUTED THROUGH THE HARDENED LAYER.
+    // This wrapper held the app's highest data-loss exposure. It writes phantom_node_status_v1
+    // (per-node racked/pending — real work a technician did in the aisle), plus the two Forge
+    // loadout keys, and set() had a NAKED catch(e){}: on a quota-full device the write failed,
+    // NOTHING WAS SAID, and the tech kept racking against a store that had stopped recording.
+    // safeStore classifies the quota signature and raises the throttled "Storage full" toast, so
+    // the failure is visible at the moment it happens. Returns a boolean now (was undefined).
+    get: function (k) { return safeParse(localStorage.getItem(k), null); },
+    set: function (k, v) { return safeStore(k, JSON.stringify(v)); }
   };
   // Field-verify status store. D2: field-verify authoritative; future import conflict
   // flagged never silent. Serials absent fleet-wide → key by rackId|dns (uStart fallback).
@@ -19130,7 +19137,15 @@ function forge3d_render(mount) {
   var _nodeStatus = store.get(_NSKEY) || {};
   function _nk(rackId, sl) { return rackId + '|' + (sl.dns || sl.name || ('U' + sl.uStart)); }
   function statusOf(rackId, sl) { return _nodeStatus[_nk(rackId, sl)] === 'racked' ? 'racked' : 'pending'; }
-  function setStatus(rackId, sl, st) { _nodeStatus[_nk(rackId, sl)] = st; store.set(_NSKEY, _nodeStatus); }
+  function setStatus(rackId, sl, st) {
+    _nodeStatus[_nk(rackId, sl)] = st;
+    // v1.14.399: a failed write is reported, not swallowed. safeStore already raises the quota
+    // toast; this adds the console trail naming the node whose status did not persist, so a
+    // later "I marked that racked" dispute has evidence instead of a shrug.
+    var ok = store.set(_NSKEY, _nodeStatus);
+    if (!ok) { try { console.warn('[PHANTOM] setStatus: field-verify status NOT persisted for ' + _nk(rackId, sl)); } catch (_) {} }
+    return ok;
+  }
 
   // ---------- REAL MASTER BRIDGE ----------
   // v1.14.235 — DEFECT-2 FIX. This bridge read `window.master`, a global that has never
@@ -28435,12 +28450,17 @@ function ge_load() {
   if (!stored || typeof stored !== 'object') {
     return { outgoing: [], incoming: [], schemaVersion: 1 };
   }
-  // Graceful merge if new fields are added later
-  return {
-    outgoing: Array.isArray(stored.outgoing) ? stored.outgoing : [],
-    incoming: Array.isArray(stored.incoming) ? stored.incoming : [],
-    schemaVersion: stored.schemaVersion || 1
-  };
+  // v1.14.399 (M1-c / audit 04 ST3) — READ-MODIFY-WRITE, NOT A FRESH LITERAL.
+  // The comment above said "graceful merge if new fields are added later" and the code did the
+  // opposite: it rebuilt a literal with exactly three fields and dropped everything else. Paired
+  // with ge_save(cache), which writes back whatever ge_load returned, the round-trip ERASED any
+  // field this function did not name — the same defect class as the documented MASTER_STORE.save
+  // whitelist, but on the READ side, where nobody is looking for it. Preserve, then normalise.
+  var out = Object.assign({}, stored);
+  out.outgoing = Array.isArray(stored.outgoing) ? stored.outgoing : [];
+  out.incoming = Array.isArray(stored.incoming) ? stored.incoming : [];
+  out.schemaVersion = stored.schemaVersion || 1;
+  return out;
 }
 
 function ge_save(cache) {
@@ -39636,7 +39656,10 @@ function bom_classify_saveOverride(rawTypeStr, tabId) {
   if (payload.length > 32 * 1024) {
     throw new Error('bom_classify_saveOverride: override map exceeds 32KB budget');
   }
-  localStorage.setItem(_BOM_CLASSIFIER_OVERRIDES_KEY, payload);
+  // v1.14.399 (M1-c / audit 04 ST2): was a bare localStorage.setItem — one of only two writes in
+  // the file with no guard at all, so a quota-full or storage-disabled device threw straight out
+  // of the function. safeStore returns false and raises the quota toast instead.
+  if (!safeStore(_BOM_CLASSIFIER_OVERRIDES_KEY, payload)) return false;
   return true;
 }
 
@@ -39647,7 +39670,8 @@ function bom_classify_clearOverride(rawTypeStr) {
   var overrides = bom_classify_loadOverrides();
   if (!(key in overrides)) return false;
   delete overrides[key];
-  localStorage.setItem(_BOM_CLASSIFIER_OVERRIDES_KEY, JSON.stringify(overrides));
+  // v1.14.399 (M1-c / audit 04 ST2): the second unguarded write. Same treatment.
+  if (!safeStore(_BOM_CLASSIFIER_OVERRIDES_KEY, JSON.stringify(overrides))) return false;
   return true;
 }
 
