@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.393';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.394';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20631,7 +20631,15 @@ function bw_mount3D(rack, mount) {
       // so this is a read, not a second context.
       var gl = null;
       try { gl = cv.getContext('webgl') || cv.getContext('experimental-webgl'); } catch (_) {}
-      if (!gl) { rearm('no webgl context granted'); return; }
+      // v1.14.394 — a REFUSED context is not a timing problem, and re-arming it asks the
+      // browser for yet another context while it is already starved. That made the pressure
+      // worse, not better (owner: "the 12 re-arms may be worsening context pressure"). Fail
+      // once, loudly, and name the cause. Re-arming stays for layout, which it can fix.
+      if (!gl) {
+        say('Rack preview could not get a graphics context.',
+            'webgl context REFUSED (not retried - retrying allocates more contexts): ' + diag());
+        return;
+      }
       if (gl.isContextLost && gl.isContextLost()) { rearm('context lost on creation'); return; }
       // nothing in this app listened for context loss before now: a later eviction blanked
       // the rack with no warning, no toast and no recovery. It recovers itself now.
@@ -21855,8 +21863,17 @@ function cmd_mountRackHero() {
   if (mount && !mount._heroTapBound) { cmd_bindHeroTap(mount); mount._heroTapBound = true; }   // tap hero → full bay (D4)
   if (!mount) return;
   if (mount._rm3dRackId === (elev.id || '') && mount._rm3dDispose) return;   // already live for this rack
-  if (typeof reh3d_webglOK === 'function' && reh3d_webglOK()) { cmd_rackHero3D(elev, mount); return; }
+  // ═══ v1.14.394 — OWNER RULING: ONE CANONICAL LIVE RACK, AND IT BELONGS TO BUILD ═══
+  // Device evidence: "no webgl context granted (after 12 re-arms)" with the host measurable
+  // at 376x320, three.js present and WebGL supported. iOS Safari was not failing to lay out
+  // the box - it was refusing a SECOND live context, because Command already held one.
+  // Command is a situational overview and does not need a live WebGL rack; it now uses the
+  // existing DOM elevation, which is not a downgrade path but the ruled presentation. This
+  // frees the one context iOS grants so the Build workspace - the primary interactive rack
+  // surface - can have it. cmd_rackHero3D is retained, unused, for the authorized
+  // RackExperience consolidation; it is not deleted on a live-fix ship.
   cmd_rackHeroFlat(mount, elev);
+  return;
   // v1.14.342 — FLAT is the fallback ONLY when the device genuinely lacks WebGL. On a cold iOS boot the
   // probe can fail transiently (GPU contexts not yet free / page mid-layout) even though WebGL IS supported,
   // which made the hero land on the flat list some loads and 3D others. Re-arm a bounded upgrade to 3D so it
