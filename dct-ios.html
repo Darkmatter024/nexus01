@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.389';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.390';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20576,25 +20576,68 @@ function bw_render() {
 // supplies a real measured box and the rack. rackElevation_render3D owns the GL
 // lifecycle, the single-context guard and its own FRONT/ISO/TOP/CABLES controls.
 function bw_mount3D(rack, mount) {
-  var fail = function(msg) {
+  // v1.14.390 DEFECT 1 — the rack was blank on device while mounting fine in a desktop
+  // harness, i.e. a LIFECYCLE defect, not a missing call. bw_render() runs the instant
+  // showPage('work') fires, so the mount can still be zero-sized while the page is
+  // mid-transition; rackElevation_render3D then builds a 0x0 canvas and there is nothing
+  // to see and nothing thrown. This waits for a measurable host before drawing, and if
+  // the host never measures it SAYS SO on the card - there is no console in a cold aisle.
+  var TRIES = 40;   // ~40 frames ≈ 0.7s; longer than any page transition in this app
+  var announced = false;
+  var say = function(msg, why) {
+    try { console.warn('[PHANTOM] bw_mount3D: ' + why); } catch (_) {}
+    if (!announced) { announced = true; try { if (typeof phantomToast === 'function') phantomToast(msg, 'error'); } catch (_) {} }
     try { mount.innerHTML = ''; } catch (_) {}
     var d = document.createElement('div'); d.className = 'bw-zero-p'; d.textContent = msg;
-    mount.appendChild(d);
+    var s = document.createElement('div'); s.className = 'bw-diag'; s.textContent = why;
+    mount.appendChild(d); mount.appendChild(s);
   };
-  if (typeof rackElevation_render3D !== 'function') { fail('Rack preview is unavailable in this build.'); return; }
+  var diag = function() {
+    var r = mount.getBoundingClientRect();
+    var gl = false;
+    try { var cv = document.createElement('canvas'); gl = !!(cv.getContext('webgl') || cv.getContext('experimental-webgl')); } catch (_) {}
+    return 'rack=' + ((rack && (rack.rackId || rack.id)) || 'none') +
+           ' host=#bw-mount inDOM=' + document.body.contains(mount) +
+           ' w=' + Math.round(r.width) + ' h=' + Math.round(r.height) +
+           ' clientW=' + mount.clientWidth + ' clientH=' + mount.clientHeight +
+           ' three=' + (!!window.THREE) + ' webgl=' + gl +
+           ' disposeHook=' + (!!mount._rm3dDispose);
+  };
+  if (typeof rackElevation_render3D !== 'function') { say('Rack preview is unavailable in this build.', 'renderer absent: ' + diag()); return; }
+  if (!rack) { say('No rack selected to preview.', 'rack null: ' + diag()); return; }
+
   var draw = function() {
-    try { rackElevation_render3D(rack, mount); }
-    catch (e) { phantom_logErr('bw:render3d', e); fail('Rack preview could not be drawn.'); }
+    try {
+      rackElevation_render3D(rack, mount);
+      // prove it actually produced a canvas rather than returning quietly
+      if (!mount.querySelector('canvas')) { say('Rack preview did not start.', 'renderer returned without a canvas: ' + diag()); return; }
+    } catch (e) {
+      phantom_logErr('bw:render3d', e);
+      say('Rack preview could not be drawn.', 'threw: ' + (e && e.message) + ' | ' + diag());
+    }
   };
-  if (window.THREE) { draw(); return; }
-  var wait = document.createElement('div'); wait.className = 'bw-zero-p'; wait.textContent = 'Loading rack preview…';
+  // wait for a host with real size — this is the correction, not a retry-for-luck
+  var waitForBox = function(left) {
+    if (!document.body.contains(mount)) return;              // navigated away; not a failure
+    if (mount.clientWidth > 0 && mount.clientHeight > 0) { draw(); return; }
+    if (left <= 0) { say('Rack preview has no space to draw.', 'host never measured: ' + diag()); return; }
+    requestAnimationFrame(function () { waitForBox(left - 1); });
+  };
+  var go = function() { waitForBox(TRIES); };
+
+  if (window.THREE) { go(); return; }
+  var wait = document.createElement('div'); wait.className = 'bw-zero-p'; wait.textContent = 'Loading rack preview\u2026';
   mount.appendChild(wait);
-  if (typeof loadScript !== 'function') { fail('Rack preview could not load on this device.'); return; }
+  if (typeof loadScript !== 'function') { say('Rack preview could not load on this device.', 'loadScript absent: ' + diag()); return; }
   loadScript('./vendor/three.min.js').then(function() {
-    if (!document.body.contains(mount)) return;   // navigated away mid-load
-    if (window.THREE) { mount.innerHTML = ''; draw(); }
-    else fail('Rack preview could not load on this device.');
-  }).catch(function(e) { phantom_logErr('bw:three', e); fail('Rack preview could not load on this device.'); });
+    if (!document.body.contains(mount)) return;
+    if (!window.THREE) { say('Rack preview could not load on this device.', 'three.js loaded but window.THREE absent: ' + diag()); return; }
+    mount.innerHTML = '';
+    go();
+  }).catch(function(e) {
+    phantom_logErr('bw:three', e);
+    say('Rack preview could not load on this device.', 'three.js fetch failed: ' + (e && e.message) + ' | ' + diag());
+  });
 }
 
 function bw_queueRow(dep, row) {
@@ -53314,6 +53357,92 @@ body.rd .bw-q.done .bw-q-p { color: var(--teal); }
    build its own rail into this card. It carries no styling of its own. */
 body.rd .bw-strip { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 9px; }
 body.rd .bw-strip:empty { display: none; }
+/* v1.14.390: when the rack cannot draw, the card states WHY on screen. There is no
+   console in a cold aisle, and a blank box is the one thing a tech cannot report. */
+body.rd .bw-diag { margin-top: 8px; font-family: var(--mono); font-size: 9px; line-height: 1.45; color: var(--slate); word-break: break-word; }
+
+/* ═══ v1.14.390 DEFECT 2 — ONE SPACING SYSTEM, ONE CONTROL LANGUAGE ═════════
+   The workspace read as separate legacy blocks dropped into a container because
+   each block carried its own margins, radii and type sizes. Every value below
+   now comes from one scale, and the one-off local margins are gone.
+   ─────────────────────────────────────────────────────────────────────────── */
+body.rd #bw-shell {
+  --bw-pad: 15px;      /* outer page padding      */
+  --bw-gap: 15px;      /* major section gap       */
+  --bw-cpad: 17px;     /* card internal padding   */
+  --bw-cgap: 9px;      /* small control gap       */
+  --bw-rad: 20px;      /* card radius             */
+  --bw-ctl: 46px;      /* secondary control height*/
+  --bw-cta: 56px;      /* primary action height   */
+  padding: 0 var(--bw-pad) 8px;
+}
+/* one rhythm: every direct child is separated by the SAME gap, so no block needs
+   a margin of its own. This is what kills the assembled-from-parts look. */
+body.rd #bw-shell > * { margin: 0 0 var(--bw-gap); }
+body.rd #bw-shell > *:last-child { margin-bottom: 0; }
+body.rd .bw-card, body.rd .bw-side { padding: var(--bw-cpad); border-radius: var(--bw-rad); }
+body.rd .bw-hd { margin-bottom: var(--bw-gap); padding: 0; }
+body.rd .bw-state { min-height: 42px; border-radius: 13px; margin-bottom: var(--bw-gap); }
+
+/* ── hero: ONE glass surface, the rack ID and CONTINUE dominant ── */
+body.rd .bw-rack { font-size: 38px; line-height: 1; margin-top: 5px; }
+body.rd .bw-plat { margin-top: 11px; }
+body.rd .bw-rule { margin: 15px 0 13px; }
+body.rd .bw-phn { font-size: 15px; margin-top: 5px; }
+body.rd .bw-bar { margin-top: 12px; }
+body.rd .bw-track { height: 7px; border-radius: 4px; }
+body.rd .bw-pct { font-size: 15px; }
+body.rd .bw-cta { min-height: var(--bw-cta); margin-top: 16px; border-radius: 15px; font-size: 13.5px; }
+
+/* ── rack preview: controls ABOVE the render area, never over it ── */
+body.rd .bw-prev { padding: var(--bw-cpad); }
+body.rd .bw-prev-h { margin-bottom: 12px; }
+body.rd .bw-mount { height: 268px; border-radius: 14px; }
+body.rd .bw-strip { gap: var(--bw-cgap); margin: 0 0 12px; }
+/* ONE control language for FRONT / ISO / TOP / REAR / CABLES / EXPLODE. These are
+   the renderer's own .reh-3d-seg pills - restyled ONLY inside the Build card, so the
+   rack-detail panel's copies keep the look they already ship with. */
+body.rd .bw-prev .reh-3d-seg, body.rd .bw-prev .reh-3d-rail button {
+  min-height: var(--bw-ctl); padding: 0 13px; border-radius: 12px;
+  background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo); color: var(--slate);
+  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+body.rd .bw-prev .reh-3d-seg.is-on, body.rd .bw-prev .reh-3d-rail button.is-on {
+  color: var(--cyan); border-color: color-mix(in srgb, var(--cyan) 60%, transparent);
+  background: rgba(92,242,255,0.10);
+}
+body.rd .bw-prev .reh-3d-rail { display: flex; flex-wrap: wrap; gap: var(--bw-cgap); margin: 12px 0 0; }
+/* OPEN AISLE is the one door out of this card, so it reads as primary-adjacent */
+body.rd .bw-aisle { min-height: var(--bw-ctl); border-radius: 12px; font-size: 11px; padding: 0 15px;
+  background: rgba(92,242,255,0.10); }
+
+/* ── metrics: a deliberate 2x2 on phone, readable type, aligned rows ── */
+body.rd .bw-mx { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--bw-cgap); }
+body.rd .bw-m { padding: 12px 13px; border-radius: 14px; background: rgba(16,22,32,0.62); border: 1px solid var(--cyan-border-lo); }
+body.rd .bw-m-k { font-size: 9px; letter-spacing: .12em; }
+body.rd .bw-m-v { font-size: 22px; margin-top: 5px; }
+body.rd .bw-m-v small { font-size: 12px; }
+body.rd .bw-m-t { margin-top: 9px; }
+body.rd .bw-m-n { font-size: 9px; margin-top: 6px; }
+
+/* ── contextual actions + tool tabs: identical height, radius, padding ── */
+body.rd .bw-acts { gap: var(--bw-cgap); }
+body.rd .bw-act { min-height: 54px; border-radius: 14px; font-size: 11px; letter-spacing: .08em; padding: 0 4px; }
+body.rd .bw-tabs { gap: var(--bw-cgap); margin-bottom: 0; }
+body.rd .bw-tab { min-height: 46px; border-radius: 12px; font-size: 10.5px; }
+
+/* ── worklist: readable body copy, no shouty tracking on sentences ── */
+body.rd .bw-wl { padding: 12px 0; }
+body.rd .bw-wl-t { font-size: 13.5px; line-height: 1.4; letter-spacing: 0; }
+body.rd .bw-wl-n { font-size: 11.5px; }
+body.rd .bw-wl-box { width: 28px; height: 28px; flex-basis: 28px; }
+body.rd .bw-wl-ev { min-height: 34px; border-radius: 10px; }
+body.rd .bw-wl-done { min-height: 52px; border-radius: 14px; font-size: 12px; }
+
+/* ── section labels: compact uppercase technical, sentences left alone ── */
+body.rd .bw-k { font-size: 10px; letter-spacing: .18em; }
+body.rd .bw-zero-p { letter-spacing: 0; line-height: 1.55; font-size: 13px; }
 body.rd .bw-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
 body.rd .bw-tab {
   min-height: 44px; padding: 0 6px; border-radius: 11px; cursor: pointer;
@@ -53376,6 +53505,7 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
       'acts  ctx'
       'queue queue';
   }
+  body.rd.cshell #pg-work #bw-shell > * { margin: 0; }
   body.rd.cshell #pg-work #bw-shell > .bw-hd    { grid-area: hd; margin: 0; }
   body.rd.cshell #pg-work #bw-shell > .bw-state { grid-area: state; margin: 0; }
   body.rd.cshell #pg-work #bw-shell > .bw-hero  { grid-area: hero; margin: 0; }
