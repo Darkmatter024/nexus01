@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.397';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.398';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -50217,7 +50217,15 @@ var PHANTOM_BACKUP_EXTRA_KEYS = [
   { k: 'phantom_active_context_v1',        why: 'active site/deployment/rack/phase' },
   { k: 'phantom_active_deployment',        why: 'active deployment id' },
   { k: 'phantom_manifest_last_deploy',     why: 'legacy active-deployment mirror' },
-  { k: 'phantom_shift_end',                why: 'shift end marker' }
+  { k: 'phantom_shift_end',                why: 'shift end marker' },
+  // v1.14.398 — found by the RUNTIME coverage check below, not by reading the source. All three
+  // are reached as string literals passed into a wrapper (store.set('deploy_forge_loadout_v1'…)
+  // or a local `const KEY =`), so neither a key-constant grep nor a localStorage.*Item( grep can
+  // see them. That is precisely why coverage is now measured against live storage (§below) rather
+  // than asserted from a hand-authored list.
+  { k: 'deploy_forge_loadout_v1',          why: 'Forge loadout — hand-built rack layout' },
+  { k: 'deploy_forge_view_v1',             why: 'Forge view state' },
+  { k: 'phantom_audits_v1',                why: 'completed audits — field work' }
 ];
 // Dynamically-named keys are swept by prefix — they cannot be enumerated ahead of time.
 var PHANTOM_BACKUP_PREFIXES = ['phantom_scaffold_v1::'];
@@ -50231,6 +50239,47 @@ var PHANTOM_BACKUP_PREFIXES = ['phantom_scaffold_v1::'];
 //   gt_lessons, phantom_force_lead_v1, phantom_identity    dead keys, never written by live code
 //   phantom_ghost_echo_v1              carried as bundle.ghostQuirks with ID-DEDUP MERGE semantics,
 //                                      which a verbatim overwrite would destroy
+// Keys already carried by a NAMED bundle section (with integrity filtering / merge semantics).
+var PHANTOM_BACKUP_NAMED_KEYS = ['dct_sops_v1','dct_racks_v1','dct_burndown_v1','phantom_rack_history',
+  'phantom_optic_inventory','phantom_deployments_v1','phantom_deploy_racks_v1','phantom_deploy_phases_v1',
+  'phantom_deploy_optics_v1','phantom_deploy_audit_v1','phantom_site_profile_v1','phantom_handoff_v1',
+  'phantom_edp_cache_v1','phantom_master_v1','phantom_jobsnap_v1','phantom_ghost_echo_v1'];
+// Keys deliberately NOT backed up — see the block comment above for the reasoning on each.
+var PHANTOM_BACKUP_EXCLUDED_KEYS = ['_cc_probe','__phantom_health','phantom_legacy','phantom_seen_boot',
+  'phantom_freeze_v1','phantom_session_state_v1','phantom_tab_presence_v1','phantom_pin_lockout_v1',
+  'phantom_crash_log','phantom_last_backup_ts','phantom_backup_interval_days','gt_lessons',
+  'phantom_force_lead_v1','phantom_identity','phantom_brief_last_ts','phantom_guided_scope_dismissed_v1',
+  'phantom_action_stripe_off','phantom_active_audit'];
+
+// v1.14.398 — COVERAGE IS MEASURED AGAINST LIVE STORAGE, NOT ASSERTED FROM A LIST.
+// M1-a shipped a hand-authored registry and it was INCOMPLETE: deploy_forge_loadout_v1,
+// deploy_forge_view_v1 and phantom_audits_v1 were missing. All three are reached as string
+// literals passed into a wrapper -- store.set('deploy_forge_loadout_v1', …) or a function-local
+// `const KEY = …` -- so neither a key-constant grep nor a localStorage.*Item( grep can find them.
+// A registry that can only be verified by reading code has the same failure mode as the hand-
+// written export it replaced: it is correct until someone adds a key.
+// This enumerates what is ACTUALLY in storage and subtracts what is accounted for. Anything left
+// is a key nobody has classified, and it is reported rather than silently dropped.
+function phantom_backupCoverage() {
+  var covered = {}, i, k;
+  for (i = 0; i < PHANTOM_BACKUP_NAMED_KEYS.length; i++)    covered[PHANTOM_BACKUP_NAMED_KEYS[i]] = 1;
+  for (i = 0; i < PHANTOM_BACKUP_EXTRA_KEYS.length; i++)    covered[PHANTOM_BACKUP_EXTRA_KEYS[i].k] = 1;
+  for (i = 0; i < PHANTOM_BACKUP_EXCLUDED_KEYS.length; i++) covered[PHANTOM_BACKUP_EXCLUDED_KEYS[i]] = 1;
+  var uncovered = [];
+  try {
+    for (i = 0; i < localStorage.length; i++) {
+      k = localStorage.key(i);
+      if (!k || covered[k]) continue;
+      var byPrefix = false;
+      for (var p = 0; p < PHANTOM_BACKUP_PREFIXES.length; p++) {
+        if (k.indexOf(PHANTOM_BACKUP_PREFIXES[p]) === 0) { byPrefix = true; break; }
+      }
+      if (!byPrefix) uncovered.push(k);
+    }
+  } catch (_) {}
+  return uncovered;
+}
+
 function phantom_collectExtraKeys() {
   var out = {}, i, k;
   for (i = 0; i < PHANTOM_BACKUP_EXTRA_KEYS.length; i++) {
@@ -50253,6 +50302,14 @@ function phantom_collectExtraKeys() {
 
 function exportAllData() {
   if (window.phantomMarkBackupDone) phantomMarkBackupDone();
+  // v1.14.398: an unclassified key at export time is a candidate silent data loss. Say so.
+  try {
+    var _unc = phantom_backupCoverage();
+    if (_unc.length) {
+      console.warn('[PHANTOM] backup: ' + _unc.length + ' unclassified key(s) — not in the registry and not excluded: ' + _unc.join(', '));
+      if (typeof phantomToast === 'function') phantomToast(_unc.length + ' unrecognised data key(s) — backup may be incomplete', 'warn');
+    }
+  } catch (_) {}
   const sops = loadSOPs();
   const racks = safeParse(localStorage.getItem('dct_racks_v1') || '[]', []);
   const burndown = safeParse(localStorage.getItem(BURNDOWN_KEY) || '[]', []);
@@ -50288,7 +50345,11 @@ function exportAllData() {
       // Additive and ignorable, so PHANTOM_BACKUP_SCHEMA deliberately stays 1 — bumping it would
       // make an older cached build REFUSE this bundle outright (see the _bs guard in the restore)
       // instead of best-effort restoring the named sections. A degraded restore beats a refusal.
-      keys: phantom_collectExtraKeys()
+      keys: phantom_collectExtraKeys(),
+      // v1.14.398: keys present in storage that NOBODY has classified. Normally empty. Recorded
+      // in the bundle rather than dropped silently, so a backup can never quietly under-report
+      // its own coverage — and so the gap is visible in the file itself, not only in a console.
+      unclassifiedKeys: phantom_backupCoverage()
     };
   }
 
