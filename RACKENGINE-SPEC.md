@@ -1,8 +1,9 @@
 # RackEngine — Implementation Spec
 
-**Status:** design complete, not implemented. Executes at **M2**.
+**Status:** design complete. **M2-a SHIPPED** (`v1.14.401` `a94bb5f` — lifecycle owner + I4 observer; `v1.14.402` `1f47b87` scoped the observer to the redesign house). **M2-b not implemented** — `attach`, the reclaim barrier (I6), modes, the data contract and the §8 deletions all remain owed.
 **Governs:** blueprint §5. Owner rulings **R-05** (one engine, many hosts) and the standing **RACK SCENE LOCK**.
-**Baseline:** `dct-ios.html` @ v1.14.395 (`68dd5a9`).
+**Amended 2026-08-06** by owner ruling on the aisle: **§4.1** (subject + entry) and **§8.1/§8.2** (doors + storage).
+**Baseline:** `dct-ios.html` @ v1.14.395 (`68dd5a9`); §4.1/§8.1 line references read against v1.14.402.
 
 ---
 
@@ -70,13 +71,49 @@ RackEngine.interactive   // the handle currently holding the context, or null
 | Mode | Surface today | Default `interactive` | Notes |
 |---|---|---|---|
 | `bay` | Build workspace `#bw-mount` | **true** | the primary interactive rack |
-| `aisle` | Open Aisle / Forge | **true** | wider rig, walk composition |
+| `aisle` | the active rack **in its row** (§4.1) | **true** | wider rig, walk composition |
 | `detail` | rack-detail panel `#reh3dMount` | **true** | interactive when focused |
 | `map` | Rack Map | false | flat, drag/edit affordances |
 | `review` | deployment review | false | flat, annotated with phase + blocker |
 | `hero` | Command | **false — ruled** | Command's approved static presentation |
 
 `hero` is non-interactive by owner ruling, not by capability. It is expressed as `interactive: false` on the one engine rather than as a separate code path — which is what deletes `cmd_rackHero3D`.
+
+---
+
+## §4.1 — The aisle: subject and entry
+
+**Owner ruling 2026-08-06.** Asked whether the five-rack Forge loadout was a planning bench in real use or legacy composition, the owner ruled **legacy composition — absorb it into M2-b.** The design below is that absorption. It supersedes the aisle's current behaviour entirely.
+
+### The defect this closes is a WRONG SUBJECT, not a misplaced control
+
+The question that started this was where to put the `OPEN AISLE` button. That was the wrong question, and the code says why:
+
+- `bw_render`'s handler is `ab.onclick → forge3d_open()` (`:20467`) — it **takes no rack argument.**
+- The aisle's subject is `LOADOUT`: up to five racks from `deploy_forge_loadout_v1`, or `RUN.slice(0, 5)` — the first five racks of the run — when that is empty (`:19781-82`).
+- If the loadout resolves empty, `openPicker()` fires (`:19784`). **The technician taps a control on the rack they are building and gets a "choose racks" modal.**
+
+So the rack under the tech's hands is not passed in and may not be on screen. No placement fixes a control that navigates away from the subject of the screen it sits on. Worse, it sits in the preview card header directly above the FRONT/ISO/TOP/REAR + EXPLODE + CABLES rail — controls that *are* genuine view modes of this rack — which teaches that the aisle is another view mode. It is not; it is a different workspace with its own persisted state.
+
+**Doctrine already answered the standalone question.** *One door per feature* is a hard rule, and the aisle has **three** doors today: Build (`:20467`), rack detail (`:37216`), header menu `FORGE 3D` (`:13043`).
+
+### Subject
+
+```js
+RackEngine.attach({ host, rackId, mode: 'aisle' })   // SAME rackId the bay is showing
+```
+
+The engine centres on `rackId` and resolves its neighbours **from run order**. No saved selection, no picker, ever. A rack with no row context — standalone, or the host-less-cab case — **says so** and renders honestly rather than fabricating neighbours; that is I10 plus the `source` rule in §7.
+
+### Entry — a continuation, not a command
+
+**No standalone control. The gesture already exists.** The rack canvas already claims pinch (`.264`, preventDefault on claimed horizontal orbit + pinch), so the aisle is not a new gesture — it is **what is there when you keep zooming out.** Pinch out past the rack's envelope and the neighbours come into frame; pinch back in and you are at the bench. Nothing is named, nothing is learned, and the only thing that changed is camera distance — the one term RACK SCENE LOCK leaves open.
+
+**Secondary affordance, for gloved one-handed use:** the rack's identity line carries its own position — `u1:002 · 4 of 12 · ROW A ›` — and tapping the position widens to the row. Information first, navigation second. **If a dedicated action is ever required, this is where it lives** — never a floating command in a card header.
+
+**Return is symmetric and free.** §5's demote/promote already keeps the demoted attachment's data and view state, so returning restores camera, explode and cables. The rack never disappeared and never lost its angle.
+
+⚠ **OPEN OWNER CALL — the zoom-out threshold at which the row appears.** That is a feel value and belongs on the device, not at a desk. The rack scene itself stays byte-identical; the aisle is a distinct presentation under R-05, and the transition is a handoff between two modes of one engine.
 
 ---
 
@@ -162,7 +199,7 @@ All seven paths from `audit/07` Q1, with what each becomes.
 | # | Today | Becomes | Disposition |
 |---|---|---|---|
 | 1 | `rackElevation_render3D` `:34923` | the engine's **interactive renderer internals** | absorbed; scene byte-identical |
-| 2 | `forge3d_render` `:19066` | `attach({ mode:'aisle', interactive:true })` | **deleted** as a separate renderer — this is what kills F2 |
+| 2 | `forge3d_render` `:19066` | `attach({ mode:'aisle', interactive:true, rackId })` | **deleted** as a separate renderer — this is what kills F2. Subject and entry per **§4.1** |
 | 3 | `rackElevation_buildHtml` `:36204` | the engine's **flat renderer** | absorbed; now `Vocabulary`-fed |
 | 4 | `renderElevation` `:44865` | `attach({ mode:'map', interactive:false })` | absorbed; drops its private `TYPE_COLORS` `:44339` |
 | 5 | `master_buildElevationRail` `:32893` | `attach({ mode:'review' })`, **own layout retained** | chassis-face rail is a legitimate distinct presentation (R-05). Same data + vocabulary, its own visual |
@@ -173,6 +210,33 @@ All seven paths from `audit/07` Q1, with what each becomes.
 
 **Deleted at M2** (definition of done includes the deletion, not just the replacement):
 `forge3d_render` · `cmd_rackHero3D` · `reh3d_webglOK` · `phantom_webglCapable` · standalone `PhantomGL` · `diag()`'s census line · `TYPE_COLORS` `:44339` · the `_reh3dActive` / `_forge3dActive` twin trackers.
+
+### §8.1 — The aisle doors and the loadout (owner ruling 2026-08-06, per §4.1)
+
+**All three standalone doors are deleted, and no replacement command appears.** Entry is the zoom-out
+continuation plus the row-position affordance in the rack's identity line (§4.1).
+
+| Door | Site | Disposition |
+|---|---|---|
+| Build `Open aisle` | `:20467` | **deleted** — it navigates away from the subject of the screen it sits on |
+| rack-detail `OPEN AISLE` | `:37216` | **deleted** — same entry model applies here |
+| header menu `FORGE 3D` | `:13043` | **deleted** — under the new subject model there is no rack to centre on, so a rack-less aisle is meaningless |
+| `openPicker` | `:20023` | **deleted** — retires with the loadout |
+
+Three standalone doors → **zero**. One gesture, one contextual affordance.
+
+### §8.2 — Storage disposition — ⛔ RETIRING THE FEATURE IS NOT DROPPING THE KEY
+
+Both Forge keys are registered in M1's backup registry (`:50456-57`). M1 spent four ships making backup
+coverage **derived and honest**; silently orphaning a key here would contradict that immediately.
+
+| Key | Disposition |
+|---|---|
+| `deploy_forge_loadout_v1` | Feature retires. **The registry entry STAYS**, relabelled honestly — *"retired Forge loadout — carried for restore only"* — and is **never written again**. Existing devices still hold real bytes and those bytes must keep travelling in backups. Removing the entry is a **separate, owner-signed cleanup**, not this ship. |
+| `deploy_forge_view_v1` | **Superseded** by the engine's per-rack view state (§2: `view` omitted → restore this rack's last view). Migrate on first read, then treat as above. |
+
+Neither key may be deleted in the same ship that retires the surface that wrote it. A tech who restores an
+old backup is entitled to their bytes even when the feature that made them is gone.
 
 ---
 
@@ -216,8 +280,9 @@ The owner's 14-step sequence, with the numbers that must hold. `RackEngine.repor
 |---|---|
 | Command | `interactiveOwner: null`, `live: 0` |
 | Build | `interactiveOwner: bw-mount`, `live: 1` |
-| Open Aisle | `interactiveOwner: forge mount`, **`live: 1`** — transferred, not added |
-| Return to Build | `interactiveOwner: bw-mount`, `live: 1`, **view restored** |
+| Aisle (zoom out, §4.1) | `interactiveOwner:` the aisle host, **`live: 1`** — transferred, not added. **The centred rack is the one Build was showing**, and no picker appears |
+| Return to Build (zoom in) | `interactiveOwner: bw-mount`, `live: 1`, **view restored** |
+| Aisle entry points | **zero** standalone aisle controls exist anywhere (§8.1) — grep `forge3d_open` returns no call sites |
 | ×10 Build entries | `live: 1` throughout, `refused: 0`, `total` does not climb |
 | Checklist / evidence / phase | **zero** new contexts; `barrier.deferrals` may increment, refusals may not |
 | Any surface | non-interactive racks still render |
@@ -230,5 +295,11 @@ Plus the mechanical gates: `node --check` ×3, CSS brace balance, line endings, 
 ## §12 — What M2 does not do
 
 Not routing. Not storage. Not composition. Not Shift. Not the intelligence boundary. Not legacy deletion — **that is a separate ship inside M2, per R-04, and does not stack with this one.**
+
+⚠ **Reconciling "not storage" with §8.2.** §8.2 is not storage *architecture* — that stays M-later. It is the
+disposition of the two keys this ship's own deletions would otherwise orphan. The rule it encodes is narrow:
+**a ship that retires a surface must say what happens to the bytes that surface wrote, in the same ship.**
+Retiring `deploy_forge_loadout_v1`'s writer while leaving its registry entry to rot would be exactly the silent
+data-orphaning M1 was built to end. Saying so costs a table; discovering it later costs a technician's data.
 
 One ship, one subject.
