@@ -268,7 +268,22 @@ modeActive · rackId · hostConnected · hostRect
 releasesArmed · lastReleaseAt · barrierDeferrals
 ```
 
-Surfaced behind the existing diagnostic affordance. Ships in Stage 0, before any renderer change, so the before/after counts you asked for are measured on the same instrument.
+Surfaced behind the existing diagnostic affordance. Ships in Stage 0, before any renderer change, so the before/after counts are measured on the same instrument.
+
+**INVARIANT — instrumentation has an exit condition.** Diagnostics are temporary infrastructure in service of the product, never the product. Every instrument added to PHANTOM carries a written retirement condition at the moment it is added.
+
+`diag()` `:20611` is the cautionary case and the reason this rule exists. It was added as a temporary diagnostic, was never given an end, became permanent, and by v1.14.394 was *allocating a WebGL context on the failure path* — actively worsening the fault it was built to describe. Instrumentation without an exit plan doesn't stay neutral; it decays into a defect.
+
+| Instrument | Retires when | Becomes |
+|---|---|---|
+| `PhantomGL` (standalone) | M2 ships and passes device verify | absorbed into `RackEngine.report()`; the standalone object is **deleted** |
+| `phantom_webglCapable()` | M2 | owned by `RackEngine`; callers stop asking directly |
+| `diag()`'s census line | M2 | `RackEngine.report()` |
+| `window._bootRaf` | permanent — it is a lifecycle handle, not an instrument | — |
+
+M2's definition of done includes the deletion, not just the replacement. An instrument still present after its retirement condition is a defect on the next audit.
+
+**And the wider rule this sits under:** once the architecture is correct, engine work stops. The measure of PHANTOM is a technician finishing a deployment faster at 2AM — not a perfectly observable renderer. Diagnostics that survive past their purpose are the same accretion as any other unowned code.
 
 ### 5.5 Staging
 
