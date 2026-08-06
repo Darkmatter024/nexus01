@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.403';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.404';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -19827,6 +19827,14 @@ function forge3d_render(mount) {
     var target = keep ? focusables.find(function (s) { return s.userData.label === keep; })
                       : focusables.find(function (s) { return !s.userData.pad; });
     if (target) setFocus(target, true);
+    // v1.14.404 — REPAINT AFTER POPULATION. This is the second half of the .401 blank-aisle fix.
+    // The scene is populated HERE, asynchronously, on hero-image decode — long after frame() has
+    // already drawn its one synchronous EMPTY frame. Cabinets only become visible on a LATER
+    // frame, so if the loop is not running at this moment the viewport keeps showing that empty
+    // first frame forever while the DOM chips and focus card render perfectly. That is exactly
+    // the reported defect. Restarting through frame() reuses the correct path (placeCamera then
+    // render then reschedule) rather than issuing a bare render with an unplaced camera.
+    if (!_rafId && !_disposed) { try { frame(); } catch (e) { phantom_logErr('forge3d:repaintAfterLoadout', e); } }
   }
 
   // v1.14.235 — honest zero-state. An empty aisle must SAY why (hard rule: no silent
@@ -35169,8 +35177,21 @@ var RackEngine = {
   // ⛔ DELIBERATELY NOT GATED: the single-live-context guard (releaseOthers, I1). Two live GL
   // contexts is the iOS crash class this whole milestone exists to close, and the legacy house is
   // entitled to that fix. Only the OBSERVER is house-scoped — the invariant is not.
+  //
+  // ⛔ v1.14.404 — NEVER OBSERVE THE AISLE. This is the blank-aisle regression `.401` introduced,
+  // and the fix is exclusion, not tuning. The aisle is a FULL-SCREEN MODAL that is DISPOSED on
+  // close — it never sits hidden-but-alive, which is the only drain this observer exists to stop.
+  // So it protects nothing there and can only strand it, because the aisle populates its scene
+  // ASYNCHRONOUSLY (hero-image decode → setLoadout) AFTER frame() has already drawn its one
+  // synchronous EMPTY frame. A pause anywhere in that window leaves the viewport showing that
+  // empty frame forever while every DOM element renders perfectly — the exact reported defect.
+  // The pause is easy to hit because forge3d_open() adds .open and renders in the SAME task, so
+  // the observer is installed before the browser has laid the newly-shown sheet out.
+  // The rack keeps its observer: it lives inside a PAGE that goes display:none while staying
+  // mounted, which is the real drain and the reason I4 exists.
   _observe: function (att) {
     if (typeof IntersectionObserver !== 'function') return;   // no observer → prior behaviour
+    if (att && att.kind === 'aisle') return;                  // v1.14.404 — see above
     try { if (!document.body || !document.body.classList.contains('rd')) return; } catch (_) { return; }
     try {
       att.io = new IntersectionObserver(function (entries) {
