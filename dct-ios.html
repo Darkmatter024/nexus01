@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.400';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.401';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20207,9 +20207,22 @@ function forge3d_render(mount) {
     try { renderer.forceContextLoss(); } catch (e) {}
     try { if (renderer.domElement && renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement); } catch (e) {}
     if (_forge3dActive && _forge3dActive.mount === mount) _forge3dActive = null;
+    // v1.14.401 (M2-a): drop the attachment and its observer with the scene.
+    try { RackEngine.unregister(mount); } catch (_) {}
   }
   mount._forge3dDispose = teardown;
   _forge3dActive = { mount: mount, dispose: teardown };
+  // v1.14.401 (M2-a) — THIS IS THE ASYMMETRY BEING CLOSED. forge3d_render previously disposed
+  // ONLY its own context; the guard against a live rack context sat one level up in forge3d_open,
+  // so any path reaching here without going through that door left BOTH contexts live. Register
+  // at the boundary that CREATES the renderer and the guard becomes structural, not remembered.
+  // Registration also installs the visibility observer, so the aisle stops rendering when it is
+  // off screen — the same drain the rack had.
+  RackEngine.register(mount, {
+    dispose: teardown,
+    pause:  function () { if (_rafId) { try { cancelAnimationFrame(_rafId); } catch (e) {} _rafId = 0; } },
+    resume: function () { if (!_rafId) { try { _rafId = requestAnimationFrame(frame); } catch (e) {} } }
+  }, 'aisle');
 }
 // v1.14.167 — New-UI Master FILE entry (Phase 0.5 un-strand). Gives the cabinet-search /
 // host-map / elevation BROWSE a redesign door (additive; mirrors rd_openPower driving an
@@ -34986,6 +34999,90 @@ function rackHybrid_initSync(rack) {
 // the Part A status overlay ships (see trayMaterial hook). One live GL context at
 // a time — disposed on toggle-to-FLAT or when a new context opens (iOS ceiling).
 // ══════════════════════════════════════════════════════════════════════════
+// ══ v1.14.401 (M2-a / RACKENGINE-SPEC §3, §5 · owner ruling R-05) ═══════════════════════════
+// THE GRAPHICS LIFECYCLE HAS AN OWNER.
+// Until now two ad-hoc module globals tracked live contexts -- _reh3dActive for the rack and
+// _forge3dActive for the aisle -- and the cross-dispose between them was ASYMMETRIC: the rack
+// renderer disposed both, but forge3d_render disposed only its own, because the rack guard lived
+// one level up in forge3d_open. Any path reaching forge3d_render without going through
+// forge3d_open left BOTH contexts live. The guard was not enforced at the boundary that creates
+// the renderer, so it was a convention, not an invariant.
+//
+// RackEngine is that boundary. Every renderer registers here, and registration itself releases
+// the others -- symmetric by construction, in one place, for every present and future caller.
+//
+// It also owns VISIBILITY (spec I4). showMode disposed the Command hero and only when leaving
+// Command, and the renderer's own onVis checked document.hidden -- which a display:none ancestor
+// does NOT set. So leaving Build for Tools left the rack's rAF running at full rate on a canvas
+// nobody could see, for the rest of the shift, on a phone. An IntersectionObserver per attachment
+// closes that for every host, without any caller having to remember.
+//
+// R-05: this is ONE ENGINE, NOT ONE LOCATION. Many attachments may exist; at most one holds a
+// live context. Non-interactive presentations cost nothing and are not tracked here.
+var RackEngine = {
+  _live: [],   // { mount, dispose, pause, resume, kind, io }
+
+  // Register a live GL attachment. Releases every other one first (I1).
+  register: function (mount, api, kind) {
+    if (!mount) return null;
+    RackEngine.releaseOthers(mount);
+    RackEngine.unregister(mount);
+    var att = {
+      mount: mount, kind: kind || 'rack',
+      dispose: (api && api.dispose) || function () {},
+      pause:   (api && api.pause)   || function () {},
+      resume:  (api && api.resume)  || function () {},
+      io: null, paused: false
+    };
+    RackEngine._live.push(att);
+    RackEngine._observe(att);
+    return att;
+  },
+
+  // I1 — at most one live context. Enforced where the renderer is created, not one level up.
+  releaseOthers: function (keepMount) {
+    var others = RackEngine._live.filter(function (a) { return a.mount !== keepMount; });
+    for (var i = 0; i < others.length; i++) {
+      try { others[i].dispose(); } catch (_) {}
+      RackEngine.unregister(others[i].mount);
+    }
+  },
+
+  unregister: function (mount) {
+    for (var i = 0; i < RackEngine._live.length; i++) {
+      if (RackEngine._live[i].mount === mount && RackEngine._live[i].io) {
+        try { RackEngine._live[i].io.disconnect(); } catch (_) {}
+      }
+    }
+    RackEngine._live = RackEngine._live.filter(function (a) { return a.mount !== mount; });
+  },
+
+  // I4 — a scene whose host is not visible stops working. Never by a caller remembering.
+  _observe: function (att) {
+    if (typeof IntersectionObserver !== 'function') return;   // no observer → prior behaviour
+    try {
+      att.io = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          var vis = entries[i].isIntersecting && entries[i].intersectionRatio > 0;
+          if (!vis && !att.paused) { att.paused = true;  try { att.pause(); }  catch (_) {} }
+          else if (vis && att.paused) { att.paused = false; try { att.resume(); } catch (_) {} }
+        }
+      }, { threshold: 0 });
+      att.io.observe(att.mount);
+    } catch (_) { att.io = null; }
+  },
+
+  active: function () { return RackEngine._live.length ? RackEngine._live[RackEngine._live.length - 1] : null; },
+
+  report: function () {
+    return RackEngine._live.map(function (a) {
+      return { host: a.mount && (a.mount.id || '(unnamed)'), kind: a.kind, paused: a.paused,
+               connected: !!(a.mount && document.body.contains(a.mount)) };
+    });
+  }
+};
+try { window.RackEngine = RackEngine; } catch (_) {}
+
 var _reh3dActive = null;                       // { mount, dispose } — bounds live GL contexts to 1
 
 // v1.14.396 — READ A CANVAS'S EXISTING CONTEXT, WHATEVER TYPE IT IS.
@@ -35073,7 +35170,11 @@ var PhantomGL = {
       threeLoaded: !!window.THREE,
       bootLoops: (window._bootRaf ? (window._bootRaf.vf || window._bootRaf.ef ? 'RUNNING' : 'cancelled') : 'n/a'),
       canvases: this.scan(),
-      owners: this.owners()
+      owners: this.owners(),
+      // v1.14.401 (M2-a): the authoritative attachment list. owners{} above reads the legacy
+      // _reh3dActive/_forge3dActive shims and is retained for continuity across the M0 baseline;
+      // RackEngine is the source of truth from here, and both retire together at M2-b.
+      attachments: (typeof RackEngine === 'object' ? RackEngine.report() : 'n/a')
     };
   }
 };
@@ -35169,12 +35270,11 @@ function rackElevation_render3D(rack, mountEl) {
   if (!mountEl || !THREE) return;
   // one live context: dispose any prior (this mount OR a stale one from a past open)
   if (mountEl._rm3dDispose) { try { mountEl._rm3dDispose(); } catch (e) {} }
-  if (_reh3dActive && _reh3dActive.dispose && _reh3dActive.mount !== mountEl) {
-    try { _reh3dActive.dispose(); } catch (e) {}
-  }
-  // v1.14.222 — symmetric single-GL-context guard: also dispose a live Forge 3D context (the
-  // sibling forge3d_* module) so a first-session async-load interleave can't leave BOTH live.
-  if (typeof _forge3dActive !== 'undefined' && _forge3dActive && _forge3dActive.dispose) { try { _forge3dActive.dispose(); } catch (e) {} }
+  // v1.14.401 (M2-a): the single-context guard now lives in RackEngine, which releases EVERY
+  // other live attachment regardless of which module owns it. The two hand-written guards this
+  // replaces were asymmetric — the rack disposed the aisle, the aisle did not dispose the rack
+  // (its guard sat one level up in forge3d_open, so any other caller left both live).
+  RackEngine.releaseOthers(mountEl);
   mountEl.innerHTML = '';
   var w = mountEl.clientWidth, h = mountEl.clientHeight;
   if (w && h) { mountEl._rm3dSizeTries = 0; }
@@ -36395,7 +36495,14 @@ function rackElevation_render3D(rack, mountEl) {
   }
   loop();
 
-  function onVis() { if (document.hidden) { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } } else if (!stopped && rafId == null) { loop(); } }
+  // v1.14.401 (M2-a / spec I4): pause and resume are named operations now, so RackEngine's
+  // per-attachment IntersectionObserver can drive them. document.hidden only covers the app
+  // being backgrounded — it is NOT set by a display:none ancestor, which is how leaving Build
+  // left this loop running at full rate on a canvas nobody could see.
+  var _rmAtt = null;   // declared ABOVE its first use in onVis — assigned at registration below
+  function _rmPause()  { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
+  function _rmResume() { if (!stopped && rafId == null) { loop(); } }
+  function onVis() { if (document.hidden) { _rmPause(); } else if (!_rmAtt || !_rmAtt.paused) { _rmResume(); } }
   document.addEventListener('visibilitychange', onVis);
 
   function teardown() {
@@ -36440,9 +36547,15 @@ function rackElevation_render3D(rack, mountEl) {
     try { mountEl._pulseNextU = null; } catch (e) {}   // v1.14.335 D7: drop the NEXT-U flash hook with the scene
     mountEl._rm3dDispose = null;
     if (_reh3dActive && _reh3dActive.mount === mountEl) _reh3dActive = null;
+    // v1.14.401 (M2-a): drop the attachment and its IntersectionObserver with the scene.
+    try { RackEngine.unregister(mountEl); } catch (_) {}
   }
   mountEl._rm3dDispose = teardown;
   _reh3dActive = { mount: mountEl, dispose: teardown };
+  // v1.14.401 (M2-a): register with the lifecycle owner. This is what releases any other live
+  // context (I1) and installs the visibility observer that pauses this loop when the host is not
+  // on screen (I4). _reh3dActive is retained above only as a read-only compatibility shim.
+  _rmAtt = RackEngine.register(mountEl, { dispose: teardown, pause: _rmPause, resume: _rmResume }, 'rack');
 }
 
 function rackElevation_buildHtml(rack) {
