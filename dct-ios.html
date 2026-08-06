@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.394';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.395';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -12906,6 +12906,13 @@ if (typeof window !== 'undefined') {
    Each eye streams PTX/hex upward, newest line bright at the read bar, core pulsing. */
 (function(){
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // v1.14.395 (M0 / blueprint 05-C3): both boot loops now record their rAF handle so launch()
+  // can cancel them. Before this neither loop had an exit condition, a stored handle, or a
+  // visibility guard, and launch() only sets boot.style.display='none' — boot.remove() appears
+  // nowhere in the file — so the closures held live canvas refs and both loops ran at full rate
+  // for the entire shift on the primary device. 2D contexts, so NOT the WebGL refusal cause,
+  // but a continuous GPU/CPU tax and a plausible aggravator under iOS memory pressure.
+  window._bootRaf = { vf: 0, ef: 0 };
   // ---- data motes in the void ----
   var vc = document.getElementById('pe-void');
   if (vc && vc.getContext && !reduce) {
@@ -12913,7 +12920,7 @@ if (typeof window !== 'undefined') {
     function vsize(){ VW=innerWidth; VH=innerHeight; vc.width=VW*vdpr; vc.height=VH*vdpr; vx.setTransform(vdpr,0,0,vdpr,0,0); }
     vsize(); addEventListener('resize', vsize);
     for (var i=0;i<34;i++){ P.push({x:Math.random()*VW,y:Math.random()*VH,r:Math.random()*1.4+.3,s:Math.random()*.25+.05,c:Math.random()<.5?[90,210,255]:[165,110,255],a:Math.random()*.4+.1,ph:Math.random()*6}); }
-    (function vf(){ vx.clearRect(0,0,VW,VH); var t=Date.now()/1000; for (var i=0;i<P.length;i++){ var p=P[i]; p.y-=p.s; if(p.y<-4){p.y=VH+4;p.x=Math.random()*VW;} var x=p.x+Math.sin(t*.5+p.ph)*6; var aa=p.a*(.6+.4*Math.sin(t+p.ph)); vx.beginPath(); vx.arc(x,p.y,p.r,0,7); vx.fillStyle='rgba('+p.c+','+aa.toFixed(3)+')'; vx.fill(); } requestAnimationFrame(vf); })();
+    (function vf(){ vx.clearRect(0,0,VW,VH); var t=Date.now()/1000; for (var i=0;i<P.length;i++){ var p=P[i]; p.y-=p.s; if(p.y<-4){p.y=VH+4;p.x=Math.random()*VW;} var x=p.x+Math.sin(t*.5+p.ph)*6; var aa=p.a*(.6+.4*Math.sin(t+p.ph)); vx.beginPath(); vx.arc(x,p.y,p.r,0,7); vx.fillStyle='rgba('+p.c+','+aa.toFixed(3)+')'; vx.fill(); } window._bootRaf.vf = requestAnimationFrame(vf); })();
   }
   // ---- GPU-code sensor eyes ----
   var ec = document.getElementById('pe-eyes');
@@ -12937,7 +12944,7 @@ if (typeof window !== 'undefined') {
       ex.restore();
       ex.strokeStyle='rgba('+col+','+(0.20+0.26*pulse).toFixed(3)+')'; ex.lineWidth=2; ex.beginPath(); ex.arc(cx,cy,R,0,7); ex.stroke(); }
     if (reduce) { var now=Date.now(); for (var i=0;i<EYES.length;i++) eye(EYES[i], now); }   // one static frame
-    else { (function ef(){ ex.clearRect(0,0,cw,ch); var now=Date.now(); for(var i=0;i<EYES.length;i++) eye(EYES[i],now); requestAnimationFrame(ef); })(); }
+    else { (function ef(){ ex.clearRect(0,0,cw,ch); var now=Date.now(); for(var i=0;i<EYES.length;i++) eye(EYES[i],now); window._bootRaf.ef = requestAnimationFrame(ef); })(); }
   }
 })();
 
@@ -18316,6 +18323,16 @@ function launch(fast) {
     requestAnimationFrame(() => {
       boot.style.display = 'none';
       boot.classList.remove('collapsing');
+      // v1.14.395 (M0 / blueprint 05-C3): stop the two boot canvas loops. The splash is HIDDEN,
+      // not removed, so without this both rAF loops keep drawing to canvases nobody can see for
+      // the whole session. #boot.collapsing *{animation-play-state:paused} pauses CSS only.
+      try {
+        if (window._bootRaf) {
+          if (window._bootRaf.vf) cancelAnimationFrame(window._bootRaf.vf);
+          if (window._bootRaf.ef) cancelAnimationFrame(window._bootRaf.ef);
+          window._bootRaf.vf = 0; window._bootRaf.ef = 0;
+        }
+      } catch (_) {}
       var _ef=document.getElementById('pe-flash'); if(_ef){ _ef.classList.remove('pe-expose'); _ef.style.willChange='auto'; } boot.classList.remove('pe-dive');  // snap the blowout off + demote the promoted layer as the dashboard is revealed
     });
     phantomUpdateNetPill(navigator.onLine);
@@ -20593,13 +20610,26 @@ function bw_mount3D(rack, mount) {
   };
   var diag = function() {
     var r = mount.getBoundingClientRect();
-    var gl = false;
-    try { var cv = document.createElement('canvas'); gl = !!(cv.getContext('webgl') || cv.getContext('experimental-webgl')); } catch (_) {}
+    // v1.14.395 (M0 / I5): device capability comes from the CACHED probe — this function runs on
+    // the failure path and must never mint a canvas. Separately, read back THIS mount's canvas:
+    // getContext on an existing canvas returns the context three.js already holds, so it is a
+    // read, not an allocation. That distinction is the whole point — the old 'webgl=' answered
+    // "does the device support WebGL" when the question was "did THIS canvas get a context".
+    var gl = phantom_webglCapable();
+    var mcv = null, rackCtx = 'no-canvas';
+    try {
+      mcv = mount.querySelector('canvas');
+      if (mcv) {
+        var mg = mcv.getContext('webgl') || mcv.getContext('experimental-webgl');
+        rackCtx = !mg ? 'REFUSED' : ((mg.isContextLost && mg.isContextLost()) ? 'LOST' : 'live');
+      }
+    } catch (_) { rackCtx = 'read-threw'; }
     return 'rack=' + ((rack && (rack.rackId || rack.id)) || 'none') +
            ' host=#bw-mount inDOM=' + document.body.contains(mount) +
            ' w=' + Math.round(r.width) + ' h=' + Math.round(r.height) +
            ' clientW=' + mount.clientWidth + ' clientH=' + mount.clientHeight +
-           ' three=' + (!!window.THREE) + ' webgl=' + gl +
+           ' three=' + (!!window.THREE) + ' deviceWebgl=' + gl + ' rackCtx=' + rackCtx +
+           ' ' + (typeof PhantomGL === 'object' ? PhantomGL.reportLine() : 'gl=?') +
            ' disposeHook=' + (!!mount._rm3dDispose);
   };
   if (typeof rackElevation_render3D !== 'function') { say('Rack preview is unavailable in this build.', 'renderer absent: ' + diag()); return; }
@@ -34861,11 +34891,109 @@ function rackHybrid_initSync(rack) {
 // ══════════════════════════════════════════════════════════════════════════
 var _reh3dActive = null;                       // { mount, dispose } — bounds live GL contexts to 1
 
-function reh3d_webglOK() {
+// v1.14.395 (M0 / blueprint §5.4) — NON-ALLOCATING WebGL OBSERVER.
+// Answers the owner's 15 runtime questions on hardware. THE HARD RULE: this must never mint a
+// canvas and never cause a context to be created. Two consequences that are easy to get wrong:
+//   1. It counts canvases already in the DOM. It does not create one to ask "is WebGL supported" —
+//      that is the F1 mistake it exists to replace.
+//   2. getContext() is only a READ on a canvas that ALREADY HAS that context. On a canvas with no
+//      context it CREATES one. So context state is read back ONLY from the mounts the app tracks
+//      (_reh3dActive / _forge3dActive), which are known to hold contexts. Every other canvas is
+//      counted and reported as 'unprobed' — an honest gap, not a silent allocation.
+// Stage 2 folds this into RackExperience.report(). It is standalone here on purpose: the
+// measurement instrument must exist BEFORE the thing it measures changes, so the before/after
+// renderer counts come from the same instrument.
+var PhantomGL = {
+  _trackedMounts: function () {
+    var m = [];
+    try { if (typeof _reh3dActive !== 'undefined' && _reh3dActive && _reh3dActive.mount) m.push(_reh3dActive.mount); } catch (_) {}
+    try { if (typeof _forge3dActive !== 'undefined' && _forge3dActive && _forge3dActive.mount) m.push(_forge3dActive.mount); } catch (_) {}
+    return m;
+  },
+  scan: function () {
+    var out = { total: 0, visible: 0, hidden: 0, live: 0, lost: 0, refused: 0, unprobed: 0, items: [] };
+    var list;
+    try { list = document.querySelectorAll('canvas'); } catch (_) { return out; }
+    var tracked = this._trackedMounts();
+    out.total = list.length;
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i], vis = false, st = 'unprobed', owned = false;
+      try { vis = !!(c.offsetParent !== null || c.getClientRects().length); } catch (_) {}
+      for (var t = 0; t < tracked.length; t++) {
+        try { if (tracked[t] && tracked[t].contains(c)) { owned = true; break; } } catch (_) {}
+      }
+      if (owned) {
+        // safe: a tracked mount's canvas already holds its context, so this is a read
+        try {
+          var g = c.getContext('webgl') || c.getContext('experimental-webgl');
+          st = !g ? 'refused' : ((g.isContextLost && g.isContextLost()) ? 'lost' : 'live');
+        } catch (_) { st = 'threw'; }
+      }
+      if (vis) out.visible++; else out.hidden++;
+      if (st === 'live') out.live++;
+      else if (st === 'lost') out.lost++;
+      else if (st === 'refused') out.refused++;
+      else out.unprobed++;
+      out.items.push({ id: c.id || ((c.parentNode && c.parentNode.id) || '(anon)'), vis: vis, ctx: st, w: c.width, h: c.height });
+    }
+    return out;
+  },
+  owners: function () {
+    var rk = null, fg = null;
+    try { if (typeof _reh3dActive !== 'undefined' && _reh3dActive && _reh3dActive.mount) rk = _reh3dActive.mount.id || '(unnamed)'; } catch (_) {}
+    try { if (typeof _forge3dActive !== 'undefined' && _forge3dActive && _forge3dActive.mount) fg = _forge3dActive.mount.id || '(unnamed)'; } catch (_) {}
+    return { rack: rk, forge: fg };
+  },
+  reportLine: function () {
+    var s = this.scan(), o = this.owners();
+    return 'cv=' + s.total + '(' + s.visible + 'v/' + s.hidden + 'h)' +
+           ' ctx=' + s.live + 'live/' + s.lost + 'lost/' + s.refused + 'ref/' + s.unprobed + 'unp' +
+           ' rackOwner=' + (o.rack || 'none') + ' aisleOwner=' + (o.forge || 'none');
+  },
+  report: function () {
+    return {
+      version: (typeof PHANTOM_APP_VERSION === 'string' ? PHANTOM_APP_VERSION : '?'),
+      deviceWebgl: phantom_webglCapable(),
+      threeLoaded: !!window.THREE,
+      bootLoops: (window._bootRaf ? (window._bootRaf.vf || window._bootRaf.ef ? 'RUNNING' : 'cancelled') : 'n/a'),
+      canvases: this.scan(),
+      owners: this.owners()
+    };
+  }
+};
+try { window.PhantomGL = PhantomGL; } catch (_) {}
+
+// v1.14.395 (M0 / blueprint 01-F1, invariant I5) — WEBGL CAPABILITY IS PROBED ONCE.
+// Before this, reh3d_webglOK() and bw_mount3D's diag() each minted a FRESH canvas and took a
+// REAL WebGL context that was never released. reh3d_webglOK ran on every rack-detail open and
+// every Forge close; diag() ran on the FAILURE path — asking the browser for another context at
+// the exact moment the app was out of them. It is also why the device reported "WebGL support:
+// true" in the same breath as "context REFUSED": that "true" came from a different, freshly
+// minted canvas, not from the rack canvas. The two statements were never in conflict — the
+// diagnostic was measuring the wrong object.
+// The probe now allocates at most ONCE per session, hands the slot straight back via
+// WEBGL_lose_context, and caches the answer on the function object (no `var` hoist trap).
+function phantom_webglCapable() {
+  if (phantom_webglCapable._c !== undefined) return phantom_webglCapable._c;
+  var ok = false;
   try {
-    var c = document.createElement('canvas');
-    return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
-  } catch (e) { return false; }
+    if (window.WebGLRenderingContext) {
+      var c = document.createElement('canvas');
+      var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+      if (gl) {
+        ok = true;
+        // give the slot back immediately — this probe must never hold a context
+        try { var ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (_) {}
+      }
+      c.width = 0; c.height = 0;
+    }
+  } catch (_) { ok = false; }
+  phantom_webglCapable._c = ok;
+  return ok;
+}
+
+function reh3d_webglOK() {
+  return phantom_webglCapable();
 }
 
 // v1.14.353 — 3D is THE rack-detail view. Called after the panel paints (rack in scope): stash the
