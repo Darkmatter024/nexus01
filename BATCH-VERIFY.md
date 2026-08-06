@@ -1,7 +1,23 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
-**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. Batch .364-.370: RELEASED by owner 2026-08-03 ("all good") — seven ships, one past the cap, incl. the .366 two-device pass and the .370 offline pass. Cap RESET. CURRENT BATCH: OPEN, .371-.372 (2 of 6) — Ship 4 tile retokenise + OPS wall unify @384; .372 needs an OFFLINE pass (two stems renamed). ⚠ `.366` needs a TWO-DEVICE pass (phone AND laptop shell).** · Clear SW cache before the pass.
+**Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. Batch .364-.370: RELEASED by owner 2026-08-03 ("all good") — seven ships, one past the cap, incl. the .366 two-device pass and the .370 offline pass. Cap RESET. Batch .371-.375: RELEASED by owner 2026-08-04 ("all good") — five ships, cap RESET (detail at the `.375` block).** · Clear SW cache before the pass.
+
+**⛔ HEADER RECONCILED 2026-08-06 — read this line, the two above it went stale.** This line had still
+read "CURRENT BATCH: OPEN, .371-.372 (2 of 6)" long after that batch was released. **Two batches are
+open right now, 25 ships between them:**
+
+- **`.377`–`.384` (8 of 6) — device pass RUN, FAILED, never formally released.** The consolidated pass
+  was run and it failed on the Build surface; `.385` records the finding: *"the device-verify failure
+  was NOT a mis-mounted renderer, a wrong host, a bad gate or a cache. The Phase 2 Build workspace had
+  never been built."* Cause understood and answered by the `.385`–`.396` arc, but **no release is on
+  record** — the remaining boxes in those eight blocks were never checked off. Owner's call whether
+  the arc supersedes them or they still need a pass.
+- **`.385`–`.401` (17 of 6, contains the M2 renderer work — HIGH-risk) — OPEN.** Reconstructed
+  block at the end of this file. **Cap blown by 11. Nothing should ship after `.401` until it clears.**
+
+**The single highest-value item in both batches:** `.396` claims the eight-ship blank-rack arc closes —
+**and there is no record of anyone confirming the rack draws.** Four ships stacked behind that silence.
 
 ---
 
@@ -1242,5 +1258,145 @@ ships. **Scope is frozen; no further feature work until this passes.**
 **Deferred to their own batches, deliberately:** Live Activity (§9.12) — needs the offline-first append-only local
 event log the owner specified, with existing actions writing real events; **never fake events**. Desktop scanner
 modal (§9.17). The open `#6c2bd6` fault value.
+
+---
+
+# ⚠ RECONCILIATION — batch `.385`–`.401` · 17 ships · added 2026-08-06
+
+**The tracker went dark after `.384`.** Seventeen version-stamped ships landed with no BATCH-VERIFY
+entry. Two programs ran back to back: the **Phase 2 Active Build Workspace arc** (`.385`–`.396`) and
+the **Architecture Blueprint program** (`.395`–`.401`, milestones M0/M1/M2-a). Both ran as
+owner-directed iterative device loops — the owner was reporting defects **from the physical iPhone
+ship by ship**, and each ship answered the last device report. That is not the CALL 0 protocol, but
+in the arc it was *tighter* than it, not looser. It stopped being tighter at `.396`, where the loop
+went quiet and four more ships stacked behind it.
+
+**⛔ THIS BLOCK IS A RECONSTRUCTION FROM COMMIT BODIES AND `version.json` NOTES — NOT FROM OWNER
+SIGN-OFFS.** A box is checked ONLY where a later ship's notes record in writing that the owner
+confirmed it on device; the quote is cited inline. Everything else is UNCHECKED, **including ships
+that very likely passed.** An unchecked box here means "no written record", not "known broken".
+
+**The batch is 17 deep against a cap of 6, and it contains the M2 renderer work — HIGH-risk by any
+reading.** Nothing should ship after `.401` until this clears.
+
+## v1.14.385 — Phase 2 Active Build Workspace, phone (`c261d28`) · rollback: revert commit
+Honest finding that preceded it: the Phase 2 Build workspace **had never been built** — `#pg-work`
+held static markup, no renderer, and `.373`–`.384` never touched it. So this was never a regression.
+New `#bw-shell` in `#pg-work` via `bw_render()`, gated on `body.rd`; legacy `#work-grid` **hidden, not
+deleted** (`#pg-work.bw-on`).
+- [ ] Phone bare URL: BUILD opens the Active Rack workspace — header, site context, LOCAL ACTIVE state, rack hero, phase + progress, CONTINUE, Next Action, 3D preview, OPEN AISLE, four metrics, SCAN / PORT MAP / LOG BLOCKER, bottom nav
+- [ ] `?legacy=1` keeps the untouched launcher and the old `#work-grid` — rip-cord intact
+
+## v1.14.386 — three purpose-built shells, laptop corrected (`a1c6e7a`) · rollback: revert commit
+Owner device review found the three-column Mission Control grid forced into a laptop viewport.
+Measured, not guessed: at 1280 a 246px sidebar + 56px padding leaves 978px; three columns need 1200.
+**The overflow was CLIPPED, not scrolled.**
+- [ ] Laptop 1280 **and** 1440: two columns, dominant hero, readable rail, aligned topbar, no bottom nav
+- [ ] 1500+: three columns · phone unchanged · `?legacy=1` unchanged
+
+## v1.14.387 — Build Progress step labels shortened (`f44aea4`) · rollback: revert commit
+Owner-directed. Five full phase labels truncated to `MECHAN…` / `VALIDAT…` in the 320px laptop rail.
+Now MECH / PWR / NET / CPU / VAL, verified unclipped at 1280 by `scrollWidth` vs `clientWidth`.
+- [ ] Laptop 1280: rail reads MECH PWR NET CPU VAL with exact counts and the full current-phase name below
+- [ ] Phone and `?legacy=1` unchanged
+
+## v1.14.388 — Phase 2 desktop Build workspace (`050e956`) · rollback: revert commit
+Build opens INSIDE the Phase 1 persistent Command Shell — sidebar and topbar stay, only the centre changes.
+- [ ] At `?shell=1` tap BUILD: sidebar + topbar stay, BUILD is the active nav item, no bottom nav
+- [ ] 1440: hero left, context rail right, rack queue below · 1600+: three columns, queue left
+- [ ] CONTINUE, OPEN AISLE, SCAN, PORT MAP, LOG BLOCKER all still route
+- [ ] Phone at 390 unchanged from `.385` · `?legacy=1` unchanged
+
+## v1.14.389 — Phase 2 feature-complete, eight items (`f065ad0`) · rollback: revert commit
+All writes go through the existing hardened path (`checklist_toggle`, `checklist_setNote`,
+`deploy_advancePhase`) — no new writer, no raw `localStorage` write, no new key.
+- [x] **Owner reviewed on device and it FAILED with two defects** — `.390` opens "TWO DEVICE DEFECTS, FIXED SEPARATELY". Re-verify below via `.390`+.
+- [ ] Camera rail, CABLES, OPEN AISLE · all four tool tabs open, Back returns to Build
+- [ ] Worklist toggles persist across reload · evidence notes save · phase completion advances
+- [ ] Airplane mode · laptop persistent nav, no third column, no clipping · desktop 1440/1600/1728
+- [ ] `?legacy=1` launcher intact, RETURN TO NEW UI works
+
+## v1.14.390 — rack mount lifecycle (D1) + Build spacing system (D2) (`1b4c2fb`) · rollback: revert commit
+D1: canvas mounted every time in a desktop harness and failed on device ⇒ **lifecycle defect**, not a
+missing call or CSS collapse — `bw_render()` runs the instant `showPage('work')` fires, so `#bw-mount`
+can measure ZERO mid-transition. D2: ONE spacing system on `#bw-shell` (outer 15, gap 15, card 17,
+control 9, radius 20, secondary 46, primary 56); all one-off local margins deleted.
+- [x] **Its on-device diagnostic worked** — `.394`: "The device diagnostic shipped in `.390` did its job and named the real cause".
+- [ ] Build reads as one surface, not stacked legacy blocks — hierarchy in the required order
+- [ ] Rack draws on first open (superseded by `.391`/`.392`/`.394`/`.396` — verify at the end of the arc)
+
+## v1.14.391 — rack first-mount lifecycle (iOS) + three visual defects (`e998a35`) · rollback: revert commit
+Root cause with in-repo precedent: `showMode()` disposes the Command hero context then calls
+`bw_render()` **synchronously in the same call stack**. Visual D3: PORT MAP appeared twice — action
+removed, contextual tab kept (**one door per feature**).
+- [ ] Cold load → Command (live hero) → first Build open: canvas present, no diagnostic; away and back: present; real phase-completion re-render: present
+- [ ] Canvas count stable at 5 across all three (no context leak) · phone header clean at 393 · desktop overlap gone at 1280 · zero horizontal overflow
+- [ ] ⚠ **Disclosed as still open at `.391`, needs your ruling:** bottom nav 4th item is **EXIT** where the approved reference shows **SHIFT** · rack-preview control rail wraps 4-then-1 and carries REAR + EXPLODE, which the reference does not show · metrics render honest em-dashes (harness rack has no Master-linked platform) so the **metrics layout has never been seen against a populated rack**
+
+## v1.14.392 — deterministic rack stage + event-driven recovery (`540e14a`) · rollback: revert commit
+The captured device log was **from a different surface than the one under repair** — "hero mount not
+laid out after 600f" is emitted by `cmd_rackHero3D` (Command `#cc-rackhero-mount`), not the Build mount.
+- [x] ✅ **DEVICE-CONFIRMED BY OWNER** — `.393` records it verbatim: "The rack now loads in the Build workspace on device, confirmed by the owner on v1.14.392."
+- [ ] Leave to Command and return; complete a phase; draws every time
+
+## v1.14.393 — Command hero gets the same event-driven recovery (`301ba2d`) · rollback: revert commit
+Closes the other half of the identical defect, on `#cc-rackhero-mount`.
+- [x] **Was on device** — the "no webgl context granted (after 12 re-arms)" capture that drove `.394` came from this build.
+- [ ] Cold load to Command with a Master loaded: RACK HERO draws untouched → open Build, that rack draws → return to Command
+
+## v1.14.394 — one live rack, and it belongs to Build (`71d4279`) · rollback: revert commit
+iOS Safari was never failing to lay the box out (`.392` fixed that) — it was **REFUSING A SECOND LIVE
+CONTEXT**. Command surrenders the live rack to Build.
+- [ ] Cold load, open Build, rack draws on the FIRST open
+- [ ] Command now shows the DOM elevation rather than a live 3D rack — **that is intended, judge it**
+- [ ] If Build still reports a refused context, a THIRD context owner is alive and the card says so
+
+## v1.14.395 — M0: build the instrument before changing what it measures (`68dd5a9`) · rollback: revert commit
+First ship of the approved ARCHITECTURE BLUEPRINT program. **Zero visual change, zero behaviour change
+except honesty.** Renderer counts must be comparable before and after.
+- [x] **Instrument ran on device** — `.396` root cause was "found with the M0 instrument on the first run and proven in-browser".
+- [ ] Rack behaviour identical to `.394`: if it drew before it draws now, if it refused before it still refuses — only the measurement changed
+
+## v1.14.396 — the rack was never refused a context; the check asked the wrong question (`956f262`) · rollback: revert commit
+three.js r128 creates a **WebGL2RenderingContext**. Per spec a canvas already holding `webgl2` returns
+**NULL** for `getContext('webgl')` — a mismatched type is refused, not created. The capability check
+was asking the wrong question and reporting a refusal that never happened.
+- [ ] ⭐ **THE ONE THAT MATTERS — NO RECORD OF A PASS.** Clear the SW cache, cold load, open Build: **the rack should DRAW.** If it does, the eight-ship arc from `.389` closes here. Four ships have stacked behind this unanswered.
+
+## v1.14.397 — M1-a: backup coverage is derived, not remembered (`35b9f37`) · rollback: revert commit
+`exportAllData` hand-listed FIFTEEN sections; the app has ~63 keys, sixteen uncaptured ones being real field work.
+- [x] ⚠ **DEVICE-VERIFIED AND IT FAILED** — `.398`: "The `.397` registry was verified on a live device immediately after shipping and it was INCOMPLETE." Three real keys were missing. Superseded by `.398`; verify there.
+
+## v1.14.398 — M1-b: coverage measured against live storage (`9b01d25`) · rollback: revert commit
+Adds `deploy_forge_loadout_v1`, `deploy_forge_view_v1`, `phantom_audits_v1` (completed audits).
+- [ ] Real deployment loaded → EXPORT FULL BACKUP → **no** unrecognised-key toast
+- [ ] Downloaded JSON has a `keys` object and `unclassifiedKeys` is an **empty array**
+
+## v1.14.399 — M1-c: every write path guarded, PDF import works offline (`2eae342`) · rollback: revert commit
+ST1, the highest data-loss exposure in the app: the private wrapper behind `phantom_node_status_v1`
+(per-node racked/verified state).
+- [ ] Mark a node racked in the aisle view, reload, confirm it persisted
+- [ ] With storage throttled or a nearly-full device, mark a node → **"Storage full" toast, not silence**
+- [ ] Fully offline, import a PDF → works with no connection prompt
+
+## v1.14.400 — M1-d: the read side · M1 COMPLETE (`f762a68`) · rollback: revert commit
+`safeGet`/`safeRemove` land; 84 call sites migrated by script with paren-delta verification, 0 leftover.
+**ABSENT stays silent; PRESENT-BUT-UNPARSEABLE is a data-loss event — loud, and the bytes are kept.**
+- [ ] Normal use: nothing looks different anywhere
+- [ ] Safari console: `localStorage.setItem('phantom_audits_v1','{{{broken')` then reload → toast **naming the key**, app still working, `phantom_quarantine_v1` holds the original broken bytes
+- [ ] Export a backup and confirm `phantom_quarantine_v1` travels in it
+
+## v1.14.401 — M2-a: the graphics lifecycle has an owner (`a94bb5f`) · rollback: revert commit
+Opens M2, **structural half only** — `RackEngine.attach`, the reclaim barrier (I6), modes and the
+Vocabulary normalisation are M2-b. Registration now happens at the boundary that CREATES the renderer,
+so the single-context guard is an invariant instead of a convention. Both `WebGLRenderer` sites register.
+Per-attachment `IntersectionObserver` closes the invisible-canvas drain (`document.hidden` is NOT set by
+a `display:none` ancestor).
+- [ ] Build open, rack renders → console `PhantomGL.diag()` → `attachments` shows **exactly one** entry for the Build mount
+- [ ] Build → Open Aisle → Build: **one** entry at every step (transferred, not added); rack still there on return
+- [ ] Leave Build for Tools → that attachment reports `paused: true`; return → `paused: false` and animating
+- [ ] Enter Build **×10**: `attachments` never exceeds one, canvas count does not climb
+- [ ] Everything else identical to `.400`
+- [ ] ⚠ **Shared-house flag:** `rackElevation_render3D` also renders under `?legacy=1`, so the visibility pause applies there too. No markup, routing or output change — a paused loop resumes on visibility — but it is a behaviour delta in a shared path. **If you read Rule 7 as covering it, say so and the observer gets gated on `body.rd`.**
 
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
