@@ -116,7 +116,9 @@ Purpose · required state · renderer · storage · door · back · offline · d
 
 Rack Map has eight doors across four rendering surfaces. Scan and Handoff have eight each. That is not a tidiness problem — it is why `rd_openMasterFile()` `:20116` cleans state that raw `showPage('master')` `:24349` does not, and why the Platforms detail `:21222` lands stale through 7 of its 8 doors (`06` R5).
 
-**INVARIANT — one door per feature.** A tool is reachable through exactly one function. Every other entry point calls it. `ToolHost.open()` (§9) is that function. Enforced by a repo check, not by review.
+**INVARIANT — one door per feature.** A tool is reachable through exactly one *function*. Every other entry point calls it. `ToolHost.open()` (§9) is that function. Enforced by a repo check, not by review.
+
+**Read this correctly (R-05).** "One door" constrains the *implementation*, never the number of places a capability may be offered. A feature reachable from eight surfaces is good product design; eight *hand-built* entry points that clean up different state and diverge over time is the defect. The Rack Map's eight entries are not eight too many — they are eight that should funnel through one function. `audit/03` D6 framed the count as the problem and that framing is superseded.
 
 ### 3.4 SHIFT — the fifth pillar (OWNER RULING R-02)
 
@@ -212,19 +214,35 @@ Two `new THREE.WebGLRenderer` sites (`01` §1) feeding **seven** render paths (`
 
 **The canonical renderer already exists. It needs an owner and a lifecycle.**
 
-### 5.2 `RackExperience` — the door
+### 5.2 `RackEngine` — the door (OWNER RULING R-05)
+
+**Canonical means one engine, not one location.** The rack may legitimately appear in Build, Open Aisle, Rack Map, deployment review, a contextual detail workspace, and future approved views. No useful presentation is removed to satisfy a literal one-component rule.
 
 ```
-RackExperience.mount(hostEl, { mode, rackId })   // idempotent: same host + same rack = no-op
-RackExperience.update(patch)                      // data changed → mutate the live scene
-RackExperience.setMode('bay'|'aisle'|'detail')    // camera rig + composition, same context
-RackExperience.suspend()                          // host not visible → cancel rAF, KEEP context
-RackExperience.resume()
-RackExperience.release()                          // → dispose + forceContextLoss, arm the barrier
-RackExperience.state                              // camera, explode, cablesVisible — survives updates
+RackEngine.attach({ host, rackId, mode, view, interactive, context })  // → handle
+handle.update(patch)        // data changed → mutate in place, never re-create
+handle.setView(view)        // camera / explode / cables
+handle.suspend() / resume() // host not visible → stop work, decide on the context
+handle.detach()             // release this attachment
+RackEngine.report()         // the §5.4 census
 ```
 
-`hero` is **not** a mode. Per your architecture ruling, Command uses approved static artwork. `cmd_rackHero3D` `:21790` — already welded shut by the bare `return` at `:21875` — is deleted, not revived.
+| Param | Meaning |
+|---|---|
+| `host` | the element to render into |
+| `rackId` | canonical, from `ACTIVE_CTX_KEY.rackId` |
+| `mode` | `bay` · `aisle` · `map` · `review` · `detail` · `hero` |
+| `view` | camera, exploded, cablesVisible — **persisted state, not a closure** |
+| `interactive` | **true → owns a WebGL context. false → flat DOM from the same data.** |
+| `context` | deployment / phase, for annotation and honesty |
+
+**INVARIANT — many attachments, at most one interactive.** This is the reconciliation between the iOS single-context ceiling and the product's need to show racks in many places. A non-interactive attachment holds no context, costs nothing, and may exist many times at once. The lifecycle owner enforces that exactly one interactive attachment holds a context at any moment — and, per I6, never allocates one in the same task as a release.
+
+**What this corrects in my own analysis.** `audit/07` Q1 counted seven rack render paths and I treated the *count* as the defect. It never was. Seven places rendering a rack is correct product behaviour. Seven *independent implementations* carrying six mutually-disagreeing colour vocabularies is the defect. The consolidation target is one engine with N attachments — not fewer places to see a rack.
+
+It also fixes `audit/07` Q2 at the root: flat is a **mode of the engine**, so it consumes `Vocabulary` like every other mode. Nine of ten device types rendering monochrome stops being a CSS-keying bug and becomes impossible by construction.
+
+`hero` is a **non-interactive** mode — Command's approved static presentation, per your earlier ruling, now expressed as `interactive: false` rather than as a separate code path. `cmd_rackHero3D` `:21790`, already welded shut by the bare `return` at `:21875`, is deleted.
 
 ### 5.3 Invariants
 
@@ -252,7 +270,9 @@ releasesArmed · lastReleaseAt · barrierDeferrals
 
 Surfaced behind the existing diagnostic affordance. Ships in Stage 0, before any renderer change, so the before/after counts you asked for are measured on the same instrument.
 
-### 5.5 Staging the engine merge
+### 5.5 Staging
+
+*Naming note: `RackExperience` is renamed `RackEngine` throughout, per R-05 — "experience" implied a single surface; "engine" is what it is.*
 
 Merging Open Aisle into the same engine is correct and it is **not** Stage 2. The Forge scene has its own geometry and camera rig, and RACK SCENE LOCK covers materials, the §A light rig, fog, tone mapping, tray geometry, type colours, bezel strips, floor, reflection, and boot. Rushing the merge risks the locked scene for no gain on the blocking bug.
 

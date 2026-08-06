@@ -24,3 +24,51 @@ Implementation constraints that follow from the ruling and from existing doctrin
 **Verification:** the owner's device pass must cover 851px, 1024px, 1440px, **1500px and 1501px specifically** (the clip boundary), and 1600px — plus a phone pass to prove nothing below 851px moved.
 
 **Status:** RULED, not yet implemented. Scheduled into the reconstruction plan; will not ship as a standalone patch.
+
+---
+
+## R-04 — Delete the legacy house at M2
+**Date:** 2026-08-05 · **Owner words:** *"delete legacy at M2"*
+
+`?legacy=1` (persisting `phantom_legacy`) and the entire 5-tab house are **deleted at M2**, not deferred to the end of the program.
+
+Rationale of record: under the owner's standing preserve-rule — *preserve only user data, product vision, and offline-first reliability* — legacy qualifies as none of the three. It is carried because it exists. It taxes every edit in the program: the byte-identical gate, the shared-header leak class, `redesign_isOn()` branching, `nav_push` house-gating, and duplicated render paths. Removing it early makes every subsequent stage cheaper and removes an entire class of regression.
+
+**Accepted tradeoff (stated before the ruling, and ruled anyway):** this removes the runtime escape hatch during the riskiest phase of the program. Mitigation is git, and the fact that the redesign has been the default since v1.14.101 (~290 ships).
+
+Binding conditions:
+
+1. **Data first.** Before a single line is deleted, prove that no user data is reachable *only* through a legacy surface, and that every key in the `Store` registry (M1) is readable and writable from the redesign. A key that only a legacy screen can reach is a blocker, not a footnote.
+2. **M1 lands first.** The full backup must round-trip every key before legacy is removed, so a mistake is recoverable.
+3. **Delete, do not hide.** This supersedes the standing *"hide, not delete; rip-cord restores it"* rule in `CLAUDE.md` §7, which is retired by this ruling. The `?legacy=1` byte-identical gate is retired with it — after M2 there is no second house to be identical to.
+4. **`phantom_legacy` is cleaned up**, not orphaned: the key is removed from storage on upgrade so no device boots into a house that no longer exists.
+5. **One ship, reverted whole or not at all.** The deletion does not stack with other M2 work in the same version.
+
+**Verification:** a device that had `phantom_legacy` set before the upgrade must cold-boot into the redesign with all its data intact.
+
+**Status:** RULED 2026-08-05. Scheduled M2, after the renderer work and after M1.
+
+---
+
+## R-05 — One engine does not mean one location
+**Date:** 2026-08-05 · **Owner words:** *"A PHANTOM capability may appear in multiple appropriate places throughout the application. Canonical does not mean globally restricted to one screen."*
+
+**Canonical means:** one engine · one business-logic implementation · one canonical state contract · one lifecycle owner · **multiple intentional presentations and hosts.**
+
+This corrects a real error in the blueprint as approved. `audit/07` counted seven rack render paths and the blueprint treated the *count* as the defect, with consolidation framed as collapsing seven surfaces into one component. **The count was never the defect.** Seven places rendering a rack is correct product behaviour. Seven independent implementations carrying six mutually-disagreeing colour vocabularies is the defect.
+
+The rack may legitimately appear in Build, Open Aisle, Rack Map, deployment review, a contextual detail workspace, and future approved operational views. **No useful rack presentation is removed to satisfy a literal one-component rule.**
+
+```js
+RackEngine.attach({ host, rackId, mode, view, interactive, context });
+```
+
+Derived constraint that makes this work on the primary device:
+
+> **Many attachments, at most one interactive.** The iOS single-context ceiling constrains *interactive* attachments, not *presentations*. An attachment with `interactive: false` holds no WebGL context, costs nothing, and may exist many times simultaneously. The lifecycle owner enforces that at most one interactive attachment holds a context at any moment.
+
+This also resolves the flat-elevation defect properly: flat is a **mode of the engine**, not a separate renderer, so it consumes `Vocabulary` like every other mode. `audit/07` Q2 (nine of ten device types rendering monochrome) stops being a CSS keying bug and becomes impossible by construction.
+
+Applies equally beyond the rack — any capability with multiple hosts follows the same shape.
+
+**Status:** RULED 2026-08-05. Supersedes the "one component" framing in blueprint §5 and the "8 doors is the worst in the app" framing in `audit/03` D6.
