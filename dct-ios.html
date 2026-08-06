@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.392';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.393';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -21796,8 +21796,30 @@ function cmd_rackHero3D(elev, mount) {
       // webglOK was TRUE, so a mount that won't lay out is a layout anomaly, not a WebGL failure — leave the
       // loading state and let the next cmd_render re-arm a fresh attempt (its dedup only skips an already-live
       // 3D rack), rather than masking it with the flat list. ~600 frames of foreground retry before yielding.
-      if (_tries++ < 600) { requestAnimationFrame(paint); }
-      else if (typeof phantom_logErr === 'function') phantom_logErr('cmd_rackHero3D', new Error('hero mount not laid out after 600f — will retry on next render'));
+      // v1.14.393 — "will retry on next render" was not a contract. A next cmd_render is not
+      // guaranteed: with no state mutation there is none, and the hero stayed on the loading
+      // text permanently. This is the line a physical iPhone actually logged. The rAF budget
+      // is now a fast path only; when it is spent we hand off to a ResizeObserver that fires
+      // the moment the mount becomes measurable, whatever finally gives it size. Same
+      // correction already shipped for the Build mount in .392.
+      if (_tries++ < 600) { requestAnimationFrame(paint); return; }
+      if (!mount._heroRO && typeof ResizeObserver === 'function') {
+        try {
+          mount._heroRO = new ResizeObserver(function() {
+            if (_rdMode !== 'command' || !document.body.contains(mount)) {
+              try { mount._heroRO.disconnect(); } catch (_) {} mount._heroRO = null; return;
+            }
+            if (mount.offsetParent !== null && mount.clientWidth && mount.clientHeight) {
+              try { mount._heroRO.disconnect(); } catch (_) {} mount._heroRO = null;
+              _tries = 0; paint();
+            }
+          });
+          mount._heroRO.observe(mount);
+          try { console.warn('[PHANTOM] cmd_rackHero3D: hero mount not laid out — observing for layout instead of waiting on a render'); } catch (_) {}
+        } catch (e) { if (typeof phantom_logErr === 'function') phantom_logErr('cmd_rackHero3D:ro', e); }
+      } else if (!mount._heroRO && typeof phantom_logErr === 'function') {
+        phantom_logErr('cmd_rackHero3D', new Error('hero mount not laid out and ResizeObserver unavailable'));
+      }
       return;
     }
     try { rackElevation_render3D(elev, mount); mount._rm3dRackId = (elev && elev.id) || ''; var _cap = document.getElementById('cc-rackhero-cap'); if (_cap) _cap.style.display = ''; }
