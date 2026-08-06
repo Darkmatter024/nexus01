@@ -225,7 +225,26 @@ Not an edge case. Measured offline against `MASTER-US-WEST-10A-US-SPK03-SPARKS.x
 
 **The reported cab is legitimate, and it has content to show.** `s3:172` sits at position **113 of 119** — matching the device readout exactly — with **0 hosts but 31 cables out and 44 cables in.** A richly connected patch/network cabinet. That is precisely R-06's *cabling-only cabinet: render the shell and any available cabling or assignment metadata* — the data exists and the current surface discards it. The `s3` empties also fall in contiguous blocks (`101–110`, `112–114`, `137–140`, `171–172`), consistent with dedicated network sections rather than scattered data loss.
 
-**Open question for the owner, tracked here so it is not lost:** whether `s4`/`s5` are future/unbuilt rows that legitimately carry no hosts yet, or whether `SITE-HOSTS` is expected to cover them. R-06 requires their cabinets to render either way; if hosts *are* expected, that is a separate Master-completeness defect to settle before M2-b.
+**✅ ANSWERED by the owner 2026-08-06: `s4` and `s5` are FUTURE ROWS — no hosts expected yet.** The Master is correct and complete; there is no ingest defect. See §7.1b for what that answer changes.
+
+### §7.1b — `dataState` describes the MASTER, never the FLOOR
+
+The owner's answer creates a distinction R-06 did not need to make, and getting it wrong inverts the honesty failure it was written to fix.
+
+- `s3:172` — 0 hosts but **31/44 cables**, in a row that is 100/119 populated. This cabinet demonstrably **exists**.
+- `s4`/`s5` — 0 hosts across **98 of 98**, cabling planned in CUTSHEET. These are **future rows**. The cabinets may not be **installed yet.**
+
+Rendering all 196 as "a complete empty 48U cabinet shell" would tell a technician **196 cabinets are standing in those rows.** That is fabricating presence — the same class of lie as hiding a cabinet that exists, pointed the other way, and it is what the standing *never label absent telemetry* rule forbids.
+
+**The Master cannot currently distinguish them.** Verified: `SITE-VARS` carries only `location`, `row_type` and `rack_type` (data-hall names and subnet conventions). **No build-status field exists anywhere in the schema.** And it must not be guessed — "a row with zero hosts across every cab is probably future" would mislabel a legitimate all-patch row, and heuristics of that shape are barred.
+
+**Ruling of record (mine, under delegated engineering authority — reverse it if you disagree):**
+
+> **`dataState` reports what the MASTER knows, never what the FLOOR contains.** `'empty'` means *the loaded Master has no devices for this cabinet* — true for `s3:172` and for every `s4`/`s5` cab alike. It asserts neither that the cabinet is installed nor that it is absent. The shell renders; the **label never overclaims.**
+
+So the geometry from §7.1's contract is unchanged, and only the wording is constrained: **never "empty cabinet, ready to rack"** — always *"no host data in the loaded Master."*
+
+⚠ **The one thing that needs the owner, because it changes a file he maintains:** if PHANTOM should say *"future row"* rather than the weaker *"no host data,"* the Master needs somewhere to say it. Natural home is a **`SITE-VARS` `row_status` var** (`row_status | s4 | planned`), which is site data flowing from the Master exactly as Design Law 6 requires, and the SITE-VARS ingest already shipped in `.346`. Absent that var, PHANTOM stays with the weaker honest label. **This is a Master-schema change and needs an explicit ruling — do not add it unprompted.**
 
 ### Required construction — topology first, never a populated filter
 
