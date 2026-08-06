@@ -207,6 +207,26 @@ This satisfies R-06 without a new data source, and it stays inside Design Law 6 
 
 ⚠ **The limit, stated so it is not discovered later.** PHANTOM can render a shell for every cabinet *some source has mentioned*. It **cannot** invent positions no source has ever mentioned — if a row physically has 140 cabinets and every source knows 119, the missing 21 cannot be drawn without fabricating them, and fabrication is barred. `buildPhysicalRackTopology(row)` therefore resolves **the roster**, not the floor. Extending topology beyond the roster requires a real floor-plan/topology input and is a **separate owner ruling**.
 
+### §7.1a — MEASURED BLAST RADIUS (US-SPK03, 2026-08-06)
+
+Not an edge case. Measured offline against `MASTER-US-WEST-10A-US-SPK03-SPARKS.xlsx` by replicating the parser exactly — the app's own vendored SheetJS, the same `CAB_RE` / `RACK_RE`, the same columns (`SITE-HOSTS` `hr[3]`; cable `row[2]`/`row[11]`), and CUTSHEET as the source because the workbook has no WIP sheet.
+
+**Sanity-checked before use, per the standing measurement rule:** the parse returns **511 cabs / 296 with hosts / 215 host-less** and **4,143 host lines**, matching the independently recorded US-SPK03 figures. The replication is faithful.
+
+| Row | Cabs | With hosts | Empty |
+|---|---|---|---|
+| `s1` | 98 | 98 | **0** |
+| `s2` | 98 | 98 | **0** |
+| `s3` | 119 | 100 | **19** |
+| `s4` | 98 | **0** | **98** |
+| `s5` | 98 | **0** | **98** |
+
+**⛔ ROWS S4 AND S5 ARE 100% HOST-LESS — 196 cabinets that exist, carry cabling, and today render as nothing at all.** With `s3`'s 19 that is **215 cabs, ≈42% of the site.** R-06 governs two entire rows, not one cabinet.
+
+**The reported cab is legitimate, and it has content to show.** `s3:172` sits at position **113 of 119** — matching the device readout exactly — with **0 hosts but 31 cables out and 44 cables in.** A richly connected patch/network cabinet. That is precisely R-06's *cabling-only cabinet: render the shell and any available cabling or assignment metadata* — the data exists and the current surface discards it. The `s3` empties also fall in contiguous blocks (`101–110`, `112–114`, `137–140`, `171–172`), consistent with dedicated network sections rather than scattered data loss.
+
+**Open question for the owner, tracked here so it is not lost:** whether `s4`/`s5` are future/unbuilt rows that legitimately carry no hosts yet, or whether `SITE-HOSTS` is expected to cover them. R-06 requires their cabinets to render either way; if hosts *are* expected, that is a separate Master-completeness defect to settle before M2-b.
+
 ### Required construction — topology first, never a populated filter
 
 ```js
