@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.396';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.397';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -50179,6 +50179,78 @@ function importGhostQuirks() {
 // v1.14.78: full-backup bundle schema version. Bump when a change would make an OLDER PHANTOM
 // mis-handle a bundle this version writes. Restore refuses a bundle whose schemaVersion exceeds this.
 var PHANTOM_BACKUP_SCHEMA = 1;
+// ── v1.14.397 (M1-a / blueprint §6.1, audit 04 ST7) — BACKUP COVERAGE IS DERIVED, NOT REMEMBERED.
+// exportAllData hand-listed 15 named sections. The app has ~63 keys. Sixteen of the uncaptured
+// ones are REAL FIELD WORK -- field-verify status, discrepancies, deploy issues, audit walks, the
+// scan collection -- so a technician could export a "full backup", migrate device, and silently
+// lose a third of their shift. A backup that omits user data is worse than no backup, because it
+// is trusted.
+//
+// The named sections above are KEPT: they carry referential-integrity filtering (orphan racks and
+// phases are dropped against valid deployment ids) and merge semantics that a raw copy must not
+// bypass. This registry covers everything they do not, verbatim, and both travel in one bundle.
+//
+// RULE: a key that exists is in the backup unless it has a row here saying why not. Adding a key
+// to the app without adding it here is the defect this exists to make visible.
+var PHANTOM_BACKUP_EXTRA_KEYS = [
+  { k: 'phantom_node_status_v1',           why: 'per-node field-verify status — racked/pending, real aisle work' },
+  { k: 'phantom_discrepancies_v1',         why: 'logged discrepancies' },
+  { k: 'phantom_deploy_issues_v1',         why: 'deployment issues / review triage' },
+  { k: 'phantom_audit_walk_v1',            why: 'audit walk results' },
+  { k: 'phantom_audit_index_v1',           why: 'audit index' },
+  { k: 'phantom_scan_collection',          why: 'scanned barcode collection' },
+  { k: 'phantom_optic_score_history',      why: 'optic score history' },
+  { k: 'phantom_drift_ledger_v1',          why: 'drift ledger' },
+  { k: 'phantom_checklist_site_v1',        why: 'site-level checklist state' },
+  { k: 'phantom_power_topo_v1',            why: 'power topology' },
+  { k: 'phantom_classifier_overrides_v1',  why: 'BOM classifier overrides — hand-entered, never re-derivable' },
+  { k: 'phantom_current_user_v1',          why: 'operator identity' },
+  { k: 'phantom_device_lead_pin_v1',       why: 'lead PIN — travels so a device migration keeps it' },
+  { k: 'phantom_rack_recent_v1',           why: 'recent racks' },
+  { k: 'phantom_rack_view_v1',             why: 'rack view state' },
+  { k: 'phantom_rack_viewer_last',         why: 'last rack viewed' },
+  { k: 'phantom_compass_last',             why: 'compass calibration' },
+  { k: 'phantom_reconcile_v1',             why: 'vendor reconcile state' },
+  { k: 'phantom_preflight_v1',             why: 'pre-flight linter state' },
+  { k: 'phantom_edp_progress_v1',          why: 'EDP parse progress' },
+  { k: 'phantom_lognote_chips_v1',         why: 'log-note chips' },
+  { k: 'phantom_active_context_v1',        why: 'active site/deployment/rack/phase' },
+  { k: 'phantom_active_deployment',        why: 'active deployment id' },
+  { k: 'phantom_manifest_last_deploy',     why: 'legacy active-deployment mirror' },
+  { k: 'phantom_shift_end',                why: 'shift end marker' }
+];
+// Dynamically-named keys are swept by prefix — they cannot be enumerated ahead of time.
+var PHANTOM_BACKUP_PREFIXES = ['phantom_scaffold_v1::'];
+// DELIBERATELY NOT BACKED UP, and why. Restoring any of these would be wrong, not merely useless:
+//   _cc_probe, __phantom_health        ephemeral storage probes
+//   phantom_legacy, phantom_seen_boot  device-local UI selection
+//   phantom_freeze_v1, phantom_session_state_v1, phantom_tab_presence_v1   session/ephemeral
+//   phantom_pin_lockout_v1             restoring a LOCKOUT would lock a freshly restored device
+//   phantom_crash_log                  diagnostic, not user data
+//   phantom_last_backup_ts, phantom_backup_interval_days   backup metadata about the backup itself
+//   gt_lessons, phantom_force_lead_v1, phantom_identity    dead keys, never written by live code
+//   phantom_ghost_echo_v1              carried as bundle.ghostQuirks with ID-DEDUP MERGE semantics,
+//                                      which a verbatim overwrite would destroy
+function phantom_collectExtraKeys() {
+  var out = {}, i, k;
+  for (i = 0; i < PHANTOM_BACKUP_EXTRA_KEYS.length; i++) {
+    k = PHANTOM_BACKUP_EXTRA_KEYS[i].k;
+    try { var v = localStorage.getItem(k); if (v !== null) out[k] = v; } catch (_) {}
+  }
+  try {
+    for (i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (!key) continue;
+      for (var p = 0; p < PHANTOM_BACKUP_PREFIXES.length; p++) {
+        if (key.indexOf(PHANTOM_BACKUP_PREFIXES[p]) === 0 && !(key in out)) {
+          try { out[key] = localStorage.getItem(key); } catch (_) {}
+        }
+      }
+    }
+  } catch (_) {}
+  return out;
+}
+
 function exportAllData() {
   if (window.phantomMarkBackupDone) phantomMarkBackupDone();
   const sops = loadSOPs();
@@ -50211,7 +50283,12 @@ function exportAllData() {
       deployAudit: safeParse(localStorage.getItem('phantom_deploy_audit_v1') || '[]', []),
       siteProfile: safeParse(localStorage.getItem('phantom_site_profile_v1') || 'null', null),
       handoffs: safeParse(localStorage.getItem('phantom_handoff_v1') || '[]', []),
-      edpCache: safeParse(localStorage.getItem('phantom_edp_cache_v1') || '{}', {})
+      edpCache: safeParse(localStorage.getItem('phantom_edp_cache_v1') || '{}', {}),
+      // v1.14.397 (M1-a): every remaining key, verbatim, derived from the registry above.
+      // Additive and ignorable, so PHANTOM_BACKUP_SCHEMA deliberately stays 1 — bumping it would
+      // make an older cached build REFUSE this bundle outright (see the _bs guard in the restore)
+      // instead of best-effort restoring the named sections. A degraded restore beats a refusal.
+      keys: phantom_collectExtraKeys()
     };
   }
 
@@ -50666,7 +50743,16 @@ function phantomImport() {
         }
         const items = [];
         if (_bs && _bs < PHANTOM_BACKUP_SCHEMA) items.push('⚠ older backup schema (' + _bs + ') — best-effort restore');
+        // v1.14.397 (M1-a): tell the user BEFORE they commit if this file predates the key
+        // registry. Such a backup cannot contain field-verify status, discrepancies, deploy
+        // issues, audit walks or the scan collection — they were never written to it.
         else if (!_bs) items.push('⚠ backup predates schema versioning — best-effort restore');
+        if (!bundle.keys) {
+          items.push('⚠ backup predates the key registry — field-verify status, discrepancies, deploy issues, audit walks and the scan collection are NOT in this file');
+        } else {
+          var _kn = Object.keys(bundle.keys).length;
+          if (_kn) items.push(_kn + ' additional data keys');
+        }
         if (Array.isArray(bundle.sops) && bundle.sops.length)      items.push(bundle.sops.length + ' SOPs');
         if (Array.isArray(bundle.rackMaps) && bundle.rackMaps.length) items.push(bundle.rackMaps.length + ' rack maps');
         if (Array.isArray(bundle.burndown) && bundle.burndown.length)  items.push(bundle.burndown.length + ' burndown jobs');
@@ -50719,6 +50805,28 @@ function phantomImport() {
         // v1.14.77: Master source-of-truth + scope snapshot travel as their raw LZString-compressed strings (restored verbatim, under the same quota rollback).
         if (typeof bundle.master === 'string' && bundle.master) _writes.push(['phantom_master_v1', bundle.master]);
         if (typeof bundle.jobsnap === 'string' && bundle.jobsnap) _writes.push(['phantom_jobsnap_v1', bundle.jobsnap]);
+
+        // v1.14.397 (M1-a / audit 04 ST7): registry-derived keys. Pushed into the SAME _writes
+        // array, so they inherit the snapshot, the headroom pre-check and the full rollback below
+        // for free. Named sections win on collision — they carry referential-integrity filtering
+        // (orphan racks/phases dropped against valid deployment ids) that a verbatim copy lacks.
+        var _extraRestored = 0;
+        if (bundle.keys && typeof bundle.keys === 'object') {
+          var _already = {};
+          _writes.forEach(function(w) { _already[w[0]] = true; });
+          Object.keys(bundle.keys).forEach(function(k) {
+            if (_already[k]) return;
+            var v = bundle.keys[k];
+            if (typeof v !== 'string') return;
+            _writes.push([k, v]); _already[k] = true; _extraRestored++;
+          });
+        }
+        // Honesty: a bundle written before the registry existed carries no .keys, and restores
+        // only the named sections. Say so rather than reporting a full restore.
+        try {
+          console.info('[PHANTOM] restore: ' + _writes.length + ' keys staged (' +
+            (bundle.keys ? _extraRestored + ' from registry' : 'PRE-REGISTRY BACKUP — named sections only') + ')');
+        } catch (_) {}
 
         // Snapshot existing values for rollback (null = key absent → remove on rollback)
         var _snapshot = _writes.map(function(w) { return [w[0], localStorage.getItem(w[0])]; });
