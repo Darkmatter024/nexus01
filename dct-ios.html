@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.395';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.396';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20620,7 +20620,7 @@ function bw_mount3D(rack, mount) {
     try {
       mcv = mount.querySelector('canvas');
       if (mcv) {
-        var mg = mcv.getContext('webgl') || mcv.getContext('experimental-webgl');
+        var mg = phantom_readGL(mcv);
         rackCtx = !mg ? 'REFUSED' : ((mg.isContextLost && mg.isContextLost()) ? 'LOST' : 'live');
       }
     } catch (_) { rackCtx = 'read-threw'; }
@@ -20660,7 +20660,10 @@ function bw_mount3D(rack, mount) {
       // draws nothing and throws nothing. getContext returns the SAME context three.js holds,
       // so this is a read, not a second context.
       var gl = null;
-      try { gl = cv.getContext('webgl') || cv.getContext('experimental-webgl'); } catch (_) {}
+      // v1.14.396 — THE FIX. This check is load-bearing: a null here calls say(), which wipes
+      // mount.innerHTML and destroys the renderer. It asked for 'webgl' on a canvas holding a
+      // WebGL2 context, which always returns null, so it condemned every working rack.
+      gl = phantom_readGL(cv);
       // v1.14.394 — a REFUSED context is not a timing problem, and re-arming it asks the
       // browser for yet another context while it is already starved. That made the pressure
       // worse, not better (owner: "the 12 re-arms may be worsening context pressure"). Fail
@@ -34891,6 +34894,25 @@ function rackHybrid_initSync(rack) {
 // ══════════════════════════════════════════════════════════════════════════
 var _reh3dActive = null;                       // { mount, dispose } — bounds live GL contexts to 1
 
+// v1.14.396 — READ A CANVAS'S EXISTING CONTEXT, WHATEVER TYPE IT IS.
+// THE BUG THIS EXISTS TO KILL: three.js r128 creates a **WebGL2RenderingContext**. A canvas that
+// holds a webgl2 context returns NULL for getContext('webgl') and for 'experimental-webgl' —
+// per spec, a mismatched type is not created, it is refused. So every place that verified a
+// renderer by asking for 'webgl' got null from a PERFECTLY LIVE context and concluded REFUSED.
+// bw_mount3D then called say(), which wipes mount.innerHTML — DESTROYING A WORKING RENDERER and
+// replacing it with an error card. The diagnostic was causing the failure it reported.
+// Verified in-browser: THREE.WebGLRenderer -> ctx.constructor.name === 'WebGL2RenderingContext';
+// that canvas answers getContext('webgl') false and getContext('webgl2') true; and the browser
+// granted 20 fresh contexts back-to-back at the same moment the rack was "refused" — so context
+// pressure was never the cause.
+// Asking a bare canvas for a context CREATES one, so this is only ever called on canvases already
+// known to hold a context. A mismatched type on an owned canvas returns null harmlessly.
+function phantom_readGL(cv) {
+  if (!cv) return null;
+  try { return cv.getContext('webgl2') || cv.getContext('webgl') || cv.getContext('experimental-webgl') || null; }
+  catch (_) { return null; }
+}
+
 // v1.14.395 (M0 / blueprint §5.4) — NON-ALLOCATING WebGL OBSERVER.
 // Answers the owner's 15 runtime questions on hardware. THE HARD RULE: this must never mint a
 // canvas and never cause a context to be created. Two consequences that are easy to get wrong:
@@ -34925,7 +34947,7 @@ var PhantomGL = {
       if (owned) {
         // safe: a tracked mount's canvas already holds its context, so this is a read
         try {
-          var g = c.getContext('webgl') || c.getContext('experimental-webgl');
+          var g = phantom_readGL(c);
           st = !g ? 'refused' : ((g.isContextLost && g.isContextLost()) ? 'lost' : 'live');
         } catch (_) { st = 'threw'; }
       }
