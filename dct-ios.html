@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.391';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.392';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20646,12 +20646,35 @@ function bw_mount3D(rack, mount) {
       rearm('threw: ' + (e && e.message));
     }
   };
-  // wait for a host with real size — this is the correction, not a retry-for-luck
+  // v1.14.392 — RECOVERY IS EVENT-DRIVEN, NOT RENDER-DRIVEN. The device log proved the
+  // old contract was "will retry on next render", and a next render is not guaranteed: with
+  // no state mutation the surface stayed blank forever. A ResizeObserver fires the moment
+  // the box becomes measurable, whatever finally gave it size, so recovery no longer depends
+  // on the user happening to touch something. The rAF pass stays as a fast path for the
+  // common case where layout is only a frame or two behind.
+  var _ro = null, _settled = false;
+  var settle = function() {
+    if (_settled) return;
+    _settled = true;
+    if (_ro) { try { _ro.disconnect(); } catch (_) {} _ro = null; }
+    draw();
+  };
   var waitForBox = function(left) {
     if (!document.body.contains(mount)) return;              // navigated away; not a failure
-    if (mount.clientWidth > 0 && mount.clientHeight > 0) { draw(); return; }
-    if (left <= 0) { say('Rack preview has no space to draw.', 'host never measured: ' + diag()); return; }
-    requestAnimationFrame(function () { waitForBox(left - 1); });
+    if (mount.clientWidth > 0 && mount.clientHeight > 0) { settle(); return; }
+    if (left > 0) { requestAnimationFrame(function () { waitForBox(left - 1); }); return; }
+    // fast path exhausted — hand off to the observer and WAIT, do not declare failure.
+    if (!_ro && typeof ResizeObserver === 'function') {
+      try {
+        _ro = new ResizeObserver(function() {
+          if (!document.body.contains(mount)) { try { _ro.disconnect(); } catch (_) {} _ro = null; return; }
+          if (mount.clientWidth > 0 && mount.clientHeight > 0) settle();
+        });
+        _ro.observe(mount);
+        try { console.warn('[PHANTOM] bw_mount3D: host not measurable yet — observing for layout: ' + diag()); } catch (_) {}
+      } catch (e) { phantom_logErr('bw:ro', e); }
+    }
+    if (!_ro) { say('Rack preview has no space to draw.', 'host never measured and ResizeObserver unavailable: ' + diag()); }
   };
   var go = function() { waitForBox(TRIES); };
 
@@ -53454,7 +53477,16 @@ body.rd .bw-cta { min-height: var(--bw-cta); margin-top: 16px; border-radius: 15
 /* ── rack preview: controls ABOVE the render area, never over it ── */
 body.rd .bw-prev { padding: var(--bw-cpad); }
 body.rd .bw-prev-h { margin-bottom: 12px; }
-body.rd .bw-mount { height: 268px; border-radius: 14px; }
+/* v1.14.392 — DETERMINISTIC RACK STAGE. A fixed height still measures zero when an
+   ancestor collapses, which is what the device log proved. min-height plus aspect-ratio
+   give this box intrinsic size that does not wait on the parent chain, and contain:layout
+   stops a zero-height ancestor from starving it. */
+body.rd .bw-mount {
+  position: relative; width: 100%; min-height: 320px; aspect-ratio: 4 / 3;
+  height: auto; border-radius: 14px; overflow: hidden; contain: layout;
+}
+@media (min-width: 851px) { body.rd.cshell .bw-mount { min-height: 340px; } }
+@media (min-width: 1500px) { body.rd.cshell .bw-mount { min-height: 420px; } }
 body.rd .bw-strip { gap: var(--bw-cgap); margin: 0 0 12px; }
 /* ONE control language for FRONT / ISO / TOP / REAR / CABLES / EXPLODE. These are
    the renderer's own .reh-3d-seg pills - restyled ONLY inside the Build card, so the
@@ -53592,7 +53624,7 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   /* desktop type scale — the phone sizes are not reused */
   body.rd.cshell .bw-t1, body.rd.cshell .bw-t2 { font-size: 22px; }
   body.rd.cshell .bw-rack { font-size: 40px; }
-  body.rd.cshell .bw-mount { height: 340px; }
+
   body.rd.cshell .bw-m-v { font-size: 20px; }
   body.rd.cshell .bw-acts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   body.rd.cshell .bw-cta { width: auto; align-self: flex-start; padding: 0 30px; }
@@ -53634,7 +53666,7 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
       'queue tabs  ctx'
       'queue wl    wl';
   }
-  body.rd.cshell .bw-mount { height: 420px; }
+
   body.rd.cshell .bw-qlist { max-height: none; }
 }
 
