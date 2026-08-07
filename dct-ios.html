@@ -9052,34 +9052,86 @@ body.rd #forge3d-sheet.open { display: flex; }
    token-colored HUD element silently fell back to inherited/global values. Do not
    reintroduce a star-slash sequence inside a CSS comment. */
 #forge3d-sheet{--fbg:#04060a;--cyan:#28e0ff;--vio:#8a4bff;--teal:#1fffd0;--gold:#ffcb45;--ink:#c9d6e2;--dim:#5a6b7d}
+/* v1.14.407 — BOTTOM STACK GEOMETRY, DECLARED ONCE.
+   The control row's height used to be an accident: .hudbtn declared no height and took
+   whatever align-items:stretch handed it from a sibling's content, which is why both
+   utility buttons measured 46x35 populated and 46x24.5 with the loadout empty, against a
+   44px floor. Every dependent number below is now derived from these four terms; nothing
+   in this stack may re-state a measured value. Two field precedents for that rule:
+   v1.14.341 (--tabnav-h described 72px over a 96px strip) and v1.14.351 (an unpaid phase
+   dock). Pattern copied from --action-stripe-reserve at :151-155, where every term is named.
+     --forge-tap     the gloved tap floor. EVERY control in the row consumes it as its own
+                     height, so no control is sized by a sibling. --tap-m (48px) is the
+                     gloved-realistic upgrade the token comment at :141 argues for and is a
+                     one-token edit here.
+     --forge-glow    the .chip.active blur radius. The SAME token feeds the box-shadow on
+                     .chip.active below, so the glow and the room reserved for it cannot drift.
+     --forge-gutter  half the blur — the distance a CSS box-shadow stays perceptible outside
+                     its own box. This is the room .chips must hold INSIDE its clip box,
+                     because a scroller cannot be visible on one axis and scrolling on the other.
+     --forge-row-h   the row's declared height: the tap floor plus one gutter top and bottom.
+                     Written as tap + gutter*2, NOT tap + glow. Those are arithmetically
+                     identical today, but only the first states the row's REAL dependency: the
+                     row must hold whatever padding .chips carries. Expressed through --glow it
+                     would silently desynchronise from .chips the moment --forge-gutter is
+                     redefined, which is the same class of drift this block exists to stop.
+     --forge-pad-x   the strip's horizontal inset. .hint reads it so its text is bounded by the
+                     same edge as the controls it describes instead of running off the screen. */
+#forge3d-sheet{--forge-tap:var(--tap-s,44px);--forge-glow:14px;
+  --forge-gutter:calc(var(--forge-glow) / 2);
+  --forge-row-h:calc(var(--forge-tap) + var(--forge-gutter) * 2);
+  --forge-pad-x:18px}
 #forge3d-sheet #forge3d-hud{position:absolute;inset:0;pointer-events:none;z-index:5}
 #forge3d-sheet .hud{position:fixed;left:0;right:0;pointer-events:none;z-index:10}
-#forge3d-sheet .hud-bottom{bottom:0;padding:0 18px calc(env(safe-area-inset-bottom,0px) + 16px)}
+#forge3d-sheet .hud-bottom{bottom:0;padding:0 var(--forge-pad-x) calc(env(safe-area-inset-bottom,0px) + 16px)}
 #forge3d-sheet .herotag{display:inline-flex;align-items:center;gap:10px;pointer-events:none;
   background:rgba(8,14,22,.55);border:1px solid rgba(40,224,255,.22);border-radius:12px;
   padding:9px 14px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   box-shadow:0 0 24px rgba(40,224,255,.08), inset 0 1px 0 rgba(255,255,255,.05);
   transition:opacity .3s ease}
-#forge3d-sheet .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);
+/* v1.14.407 — flex-shrink:0. .herotag is inline-flex and shrink-to-fit, so a long #tagSub squeezed
+   this dot into a 5.28x7 ELLIPSE (measured, zero state) despite its declared 7x7. A status dot that
+   deforms with the length of the text beside it is not a status dot. Geometry only — the colour
+   channel and the pulse are untouched. */
+#forge3d-sheet .dot{flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:var(--teal);
   box-shadow:0 0 10px var(--teal);animation:fx-pulse 1.8s ease-in-out infinite}
 @keyframes fx-pulse{50%{opacity:.35}}
 #forge3d-sheet .herotag .id{font-size:12px;letter-spacing:.2em;color:#e8f2fa;font-weight:600}
 #forge3d-sheet .herotag .sub{font-size:9px;letter-spacing:.18em;color:var(--dim)}
-#forge3d-sheet .toprow{display:flex;gap:8px;align-items:stretch;margin-bottom:12px;pointer-events:auto}
-#forge3d-sheet .chips{display:flex;gap:6px;flex:1;min-width:0;
-  overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x;
-  scrollbar-width:none;padding-bottom:2px}
+/* LAYER 1 + LAYER 2 share this row — that is the approved composition (MOCKUP-FORGE-HYBRID-
+   AISLE-v2.9.2): pills flex:1, utility buttons flex:0 0 auto beside them. Restacking it into
+   two rows would be a redesign, not a fix. What changes here is that the row now DECLARES its
+   height instead of inheriting whatever the chips happened to be, and align-items is center so
+   every child sits on the same axis whether the loadout is full or empty. */
+#forge3d-sheet .toprow{display:flex;gap:8px;align-items:center;min-height:var(--forge-row-h);
+  margin-bottom:12px;pointer-events:auto}
+/* overflow-y is declared EXPLICITLY. It was omitted, and css-overflow-3 blockifies the missing
+   axis: an element with overflow-x:auto and overflow-y:visible computes to auto/auto, so this
+   scroller was already clipping vertically without saying so. It cut the active pill's glow
+   flush at the top edge. The honest fix is to keep the clip and reserve room inside it —
+   --forge-gutter above and below — not to sprinkle overflow:visible, which cannot work here
+   (a box cannot be visible on one axis while it scrolls on the other).
+   The old padding-bottom:2px is GONE: it was a scrollbar gutter for a scrollbar this rule
+   suppresses two lines down, and 2px of a 14px blur is not clearance, it is a sliver. */
+#forge3d-sheet .chips{display:flex;gap:6px;flex:1;min-width:0;align-self:stretch;
+  overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-x;
+  scrollbar-width:none;padding:var(--forge-gutter) 0}
 #forge3d-sheet .chips::-webkit-scrollbar{display:none}
-#forge3d-sheet .chip{flex:0 0 auto;width:76px;background:rgba(8,14,22,.55);border:1px solid rgba(60,80,100,.35);
+#forge3d-sheet .chip{flex:0 0 auto;width:76px;min-height:var(--forge-tap);
+  display:flex;flex-direction:column;justify-content:center;
+  background:rgba(8,14,22,.55);border:1px solid rgba(60,80,100,.35);
   border-radius:10px;padding:7px 6px 6px;text-align:center;cursor:pointer;
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:border-color .25s,box-shadow .25s}
-#forge3d-sheet .chip.active{border-color:rgba(40,224,255,.55);box-shadow:0 0 14px rgba(40,224,255,.18)}
+#forge3d-sheet .chip.active{border-color:rgba(40,224,255,.55);box-shadow:0 0 var(--forge-glow) rgba(40,224,255,.18)}
 #forge3d-sheet .chip .cid{font-family:'Orbitron','Chakra Petch',sans-serif;font-size:8.5px;letter-spacing:.08em;color:#8fa6ba}
 #forge3d-sheet .chip.active .cid{color:var(--cyan)}
 #forge3d-sheet .chip .bar{height:3px;border-radius:2px;background:#141c26;margin-top:5px;overflow:hidden}
 #forge3d-sheet .chip .bar i{display:block;height:100%;border-radius:2px;background:#5a6b7d;transition:width .4s}
 #forge3d-sheet .chip.active .bar i{background:var(--cyan);box-shadow:0 0 6px rgba(40,224,255,.6)}
-#forge3d-sheet .hudbtn{flex:0 0 auto;width:46px;border-radius:10px;cursor:pointer;
+/* height is DECLARED, not stretched off .chips. This is the empty-state collapse: with no
+   Master the pill strip has no content, so align-items:stretch gave both buttons the line box
+   of their glyph — 46x24.5 measured — and 46x35 once chips existed. Neither cleared 44. */
+#forge3d-sheet .hudbtn{flex:0 0 auto;width:46px;height:var(--forge-tap);border-radius:10px;cursor:pointer;
   background:rgba(8,14,22,.7);border:1px solid rgba(40,224,255,.3);
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   display:flex;align-items:center;justify-content:center;color:var(--cyan);font-size:17px}
@@ -9165,16 +9217,31 @@ body.rd #forge3d-sheet.open { display: flex; }
 #forge3d-sheet .search-result:active,#forge3d-sheet .search-result.sel{background:rgba(40,224,255,.08)}
 #forge3d-sheet .search-result-id{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--cyan)}
 #forge3d-sheet .search-empty{padding:20px;text-align:center;color:var(--dim);font-size:11px}
+/* v1.14.407 — DEAD CONTROL FIX. showToast() (:20239) toggles only the .show class, and this
+   rule hid the toast with opacity alone while leaving pointer-events:auto, display:flex and
+   visibility:visible. The invisible toast therefore stayed hit-testable for the life of the
+   sheet: document.elementFromPoint at the centre of the pill strip returned span#toastUndo,
+   not the chip, so pills under its 88px band were dead to touch and the swallowed tap was
+   silent (the undo handler no-ops once toastUndoFn is null). Hit-testing now follows the same
+   class the visibility does. */
 #forge3d-sheet .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);
-  bottom:calc(env(safe-area-inset-bottom,0px) + 96px);z-index:60;pointer-events:auto;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 96px);z-index:60;pointer-events:none;
   display:flex;align-items:center;gap:14px;background:rgba(8,14,22,.92);
   border:1px solid rgba(40,224,255,.3);border-radius:12px;padding:11px 16px;
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   font-size:11px;letter-spacing:.06em;color:var(--ink);opacity:0;
-  transition:opacity .25s,transform .25s;white-space:nowrap;
+  transition:opacity .25s,transform .25s;
+  max-width:calc(100vw - var(--forge-pad-x) * 2);
   box-shadow:0 4px 24px rgba(0,0,0,.5)}
-#forge3d-sheet .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#forge3d-sheet .toast .undo{font-family:'Orbitron','Chakra Petch',sans-serif;font-size:10px;
+#forge3d-sheet .toast.show{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+/* v1.14.407 — the same unbounded-text pattern deleted from .hint survived here: white-space:nowrap
+   over left:50% + translateX(-50%), on a message built from a Master DEVICE NAME (:20090) and
+   therefore unbounded. .hint overran a 390px viewport by 41px per side for exactly this reason.
+   nowrap is gone and the toast is bounded to the same --forge-pad-x edge as the controls; UNDO is
+   pinned flex:0 0 auto so a wrapping message can never shrink the affordance it exists to offer.
+   NOTE: a fixed element contributes nothing to documentElement.scrollWidth, so no overflow test in
+   the suite could ever have caught this — it is bounded here by construction, not by a gate. */
+#forge3d-sheet .toast .undo{flex:0 0 auto;font-family:'Orbitron','Chakra Petch',sans-serif;font-size:10px;
   letter-spacing:.16em;color:var(--gold);cursor:pointer;padding:4px 2px}
 #forge3d-sheet .picker{position:fixed;inset:0;z-index:55;background:rgba(4,6,10,.96);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:none;
@@ -9199,9 +9266,24 @@ body.rd #forge3d-sheet.open { display: flex; }
 #forge3d-sheet .pick .pbar i{display:block;height:100%;background:var(--teal);border-radius:2px}
 #forge3d-sheet .picker-nav{display:flex;gap:10px;padding:10px 16px calc(env(safe-area-inset-bottom,0px) + 14px);
   border-top:1px solid rgba(40,224,255,.12);flex-shrink:0}
-#forge3d-sheet .hint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);
-  transform:translateX(-50%);font-size:9px;letter-spacing:.3em;color:var(--dim);
-  z-index:9;pointer-events:none;transition:opacity .8s ease;white-space:nowrap}
+/* v1.14.407 — THE 92px IS DELETED, NOT RETUNED. This caption was pinned to the viewport at
+   bottom:calc(safe + 92px) — a constant describing the height of a strip that declared no
+   height and measured 108.5-137px, so the caption's box landed INSIDE the control row in every
+   state measured (a 10px rect overlap of .toprow on tablet, and on the phone the moment a rack
+   is focused). It was never right: the same 92px is in the source mock's v2, v2.2, v2.8 and
+   v2.9.2, frozen while the stack beneath it was rebuilt from [herotag + dim slider] to
+   [pill row + herotag]. Replacing it with a bigger constant would fail the same way the next
+   time the stack moves — and the stack DOES move, because .herotag is inline-flex and its
+   height is data-driven (56px focused, 74px when the zero-state message wraps).
+   So the clearance is now STRUCTURAL: the caption is a child of the strip it must clear and
+   sits at bottom:100% of it. That is exact at every herotag height, on every viewport, with no
+   number to go stale. It also costs the stack nothing — an abspos child adds no height — and
+   reading --forge-pad-x bounds the text to the same edge as the controls, which is what stops
+   it overrunning a 390px viewport by 41px per side (it was white-space:nowrap at 472px wide). */
+#forge3d-sheet .hint{position:absolute;left:0;right:0;bottom:100%;margin-bottom:10px;
+  padding:0 var(--forge-pad-x);text-align:center;line-height:1.5;
+  font-size:9px;letter-spacing:.3em;color:var(--dim);
+  pointer-events:none;transition:opacity .8s ease}
 #forge3d-sheet .hint.gone{opacity:0}
 /* v1.14.226 — persistent build badge (§10): subtle top-right, redesign-only, taps pass through */
 #ver-stamp { display: none; }
@@ -12486,7 +12568,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.406';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.407';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13109,9 +13191,13 @@ if (typeof window !== 'undefined') {
     <div id="forge3d-mount"></div>
 <div id="forge3d-hud">
   <!-- hud-top brand lockup dropped: the app's .rd-sheet-hdr already brands + closes this sheet. -->
-  <div class="hint" id="hint">TAP A RACK TO FOCUS · ⊞ PICK UP TO 5 FOR THE 3D</div>
 
+  <!-- v1.14.407 — #hint moved INSIDE .hud-bottom. It is positioned at bottom:100% of this
+       strip, so it clears the whole stack by construction at any herotag height. As a
+       viewport-fixed sibling it carried a hard-coded 92px offset and drew on top of the pills.
+       Element id, class and text are unchanged; #hint is looked up by id (:19942, :20295). -->
   <div class="hud hud-bottom">
+    <div class="hint" id="hint">TAP A RACK TO FOCUS · ⊞ PICK UP TO 5 FOR THE 3D</div>
     <div class="toprow">
       <div class="chips" id="chips"></div>
       <div class="hudbtn gold" id="loadoutBtn" title="3D loadout">&#8862;</div>
@@ -19879,9 +19965,17 @@ function forge3d_render(mount) {
     if (tagSub) tagSub.textContent = msg;
     if (hintEl) hintEl.textContent = msg;
     console.warn('[forge] ' + msg);
-    if (typeof phantomToast === 'function') {
-      phantomToast(noMaster ? 'FORGE · NO MASTER LOADED' : 'FORGE · NO RACKS IN LOADOUT');
-    }
+    // v1.14.407 — THE RED BAR ACROSS THE CONTROL ROW. This called phantomToast with NO type
+    // argument, and phantomToast defaults `colors[type] || colors.error` (:50941), so an
+    // EXPECTED, HONEST zero state — no Master loaded on a fresh device — was painted
+    // rgba(255,59,59,.9) ERROR RED. #toast-container is fixed at bottom:90px z-index:var(--z-toast)
+    // (:13124), far above this sheet's z-index 60, so it landed across BOTH utility buttons
+    // (measured 198x30 at 175..374 x 724..754, covering 11px of each 44px control).
+    // It is also the FOURTH copy of the same sentence: #forge3d-prov, #hint and #tagSub all
+    // already state it, the latter two byte-identically from `msg` two lines above.
+    // Deleted rather than re-typed. A non-error colour would fix the lie but keep the
+    // redundancy and keep a transient banner lying over the controls; the persistent surfaces
+    // say it better and stay on screen. The console.warn above keeps the diagnostic channel.
     return true;
   }
 

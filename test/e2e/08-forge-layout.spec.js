@@ -1,0 +1,669 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// 08 — THE FORGE BOTTOM CONTROL STACK (v1.14.407)
+//
+// WHY THIS SPEC EXISTS
+// The bottom stack of #forge3d-sheet shipped with its geometry undeclared. .hudbtn
+// (:9125 today) carried a width and NO height, so both utility buttons were sized by
+// align-items:stretch off a SIBLING — the pill strip. With no Master the strip is
+// empty, so there was nothing to stretch against and the two buttons measured
+// 46 x 24.5, against the app's own published 44px gloved floor (--tap-s, :150).
+// Populated they measured 46 x 35. Neither cleared the floor, and NOTHING in the
+// suite would have said so, because the row rendered, painted and looked plausible.
+//
+// Alongside it: .chips declared overflow-x only, and css-overflow-3 blockifies the
+// omitted axis, so the scroller clipped VERTICALLY without saying so and amputated
+// the active pill's glow; and .hint was pinned to the viewport at a hard-coded
+// `bottom: calc(safe + 92px)` describing the height of a strip that declared no
+// height, so a fourth layer was drawn INTO the control row.
+//
+// WHAT THIS SPEC PINS — the shape of the fix, not its pixel values:
+//   1. every control in the row consumes the tap token as its OWN height, in every
+//      chip state INCLUDING EMPTY (the state that collapsed);
+//   2. the three layers — pill strip, utility buttons, focus card — never intersect;
+//   3. .chips declares its clip on both axes and reserves the glow's own room INSIDE
+//      that clip, derived from the same token that draws the glow;
+//   4. the hint's clearance is STRUCTURAL: the stack is GROWN at runtime, twice, by
+//      two different mechanisms, and the gap must hold. A constant cannot survive
+//      that test. This is the repo's own durable rule (v1.14.341 --tabnav-h,
+//      v1.14.351 phase dock) made enforceable instead of remembered.
+//
+// WHAT IT CANNOT PIN — stated, never faked:
+//   env(safe-area-inset-bottom) resolves to 0.00px on WebKit-for-Windows, so real
+//   iPhone home-indicator clearance is verified by NOTHING here (see the last test,
+//   which skips with that reason rather than asserting a proxy and calling it proof).
+//   backdrop-filter compositing and iOS momentum scrolling also differ. The physical
+//   iPhone gate still owns all three.
+//
+// TIER AWARENESS
+// Runs on phone-webkit (390x844) and tablet-webkit (834x1194). Nothing branches on a
+// hard-coded breakpoint: whether the five-pill loadout fits is MEASURED
+// (scrollWidth vs clientWidth) and the tier-appropriate invariant is asserted from
+// that measurement.
+//
+// LOCAL HELPERS ONLY. fixtures.js and playwright.config.js are shared and were not
+// touched; nothing was added to BENIGN_CONSOLE.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const { test, expect } = require('./fixtures');
+
+// ── The door ─────────────────────────────────────────────────────────────────
+// forge3d_open() (:19238) is a top-level declaration and therefore a real global;
+// it is also what the Build workspace's "Open aisle" button calls. The BUTTON door
+// itself is already pinned by 02-build-forge ("the aisle opens over Build and
+// closing it returns to Build with #bw-mount intact"), so this spec opens through
+// the global and spends its boots on geometry instead of re-testing that door. The
+// CLOSE side still goes through the real control (.rd-sheet-close, onclick at
+// :13172) so a dead close button fails here too.
+async function openAisle(page) {
+  const isRd = await page.evaluate(() => document.body.classList.contains('rd'));
+  expect(isRd, '#forge3d-sheet is body.rd-gated (:9040); this surface does not exist without it').toBe(true);
+
+  await page.evaluate(() => {
+    if (typeof window.forge3d_open !== 'function') throw new Error('forge3d_open is not a global — the aisle has no door');
+    window.forge3d_open();
+  });
+  await page.waitForSelector('#forge3d-sheet.open', { timeout: 20_000 });
+  await expect(page.locator('#forge3d-sheet')).toBeVisible();
+  await settle(page);
+}
+
+/** Two frames, never a sleep (fixtures.js design rule 1). */
+async function settle(page) {
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+}
+
+// ── Chip markup ──────────────────────────────────────────────────────────────
+// Copied VERBATIM from the app's own emitter, buildChips() at dct-ios.html
+// :20149-20151, including the .active class that updateChips() (:20169) toggles and
+// whose box-shadow is the ink being clipped. Nothing here is fabricated as app DATA:
+// #chips is populated only when racks resolve from a Master, and this spec measures
+// CSS GEOMETRY, so the markup is a fixture for the layout and the ids are
+// placeholders. No rack, count or percentage below is claimed to be real.
+const CHIP_IDS = ['a:01', 'a:02', 'a:03', 'a:04', 'a:05'];   // the LOADOUT cap is 5 (:19962 RUN.slice(0,5))
+
+async function setChips(page, n) {
+  await page.evaluate(({ ids, count }) => {
+    const mk = (id, pct, active) =>
+      '<div class="chip' + (active ? ' active' : '') + '" data-rack="' + id + '">' +
+      '<div class="cid">' + id + '</div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div></div>';
+    document.getElementById('chips').innerHTML =
+      ids.slice(0, count).map((id, i) => mk(id, 20 + i * 15, i === 0)).join('');
+  }, { ids: CHIP_IDS, count: n });
+  await settle(page);
+}
+
+// Every chip state the surface actually has: the honest no-Master zero state, a
+// partial loadout, and the real 5-rack cap.
+const CHIP_STATES = [0, 1, 3, 5];
+
+// ── One atomic snapshot ──────────────────────────────────────────────────────
+// Every rect, computed style and hit test is read inside ONE page.evaluate, so the
+// comparisons are self-consistent even if the scene mutates a frame later. Reading
+// rects one round-trip at a time is how a layout test measures two different layouts
+// and reports a defect that never existed.
+const SNAPSHOT = () => {
+  const q = (s) => document.querySelector('#forge3d-sheet ' + s);
+  const rect = (el) => {
+    if (!el) return null;
+    const b = el.getBoundingClientRect();
+    return {
+      t: +b.top.toFixed(2), b: +b.bottom.toFixed(2), l: +b.left.toFixed(2),
+      r: +b.right.toFixed(2), w: +b.width.toFixed(2), h: +b.height.toFixed(2),
+    };
+  };
+  const EPS = 0.5;   // sub-pixel rounding is not an overlap
+  const hit = (a, c) => !!(a && c) &&
+    (Math.min(a.b, c.b) - Math.max(a.t, c.t) > EPS) &&
+    (Math.min(a.r, c.r) - Math.max(a.l, c.l) > EPS);
+  const name = (el) => el
+    ? el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') +
+      (el.className && typeof el.className === 'string' && el.className.trim()
+        ? '.' + el.className.trim().split(/\s+/)[0] : '')
+    : 'null';
+  const topAt = (x, y) => name(document.elementFromPoint(x, y));
+
+  const strip = q('.hud-bottom'), row = q('.toprow'), chips = q('.chips');
+  const hero = q('.herotag'), hint = q('.hint'), toast = q('.toast'), active = q('.chip.active');
+  const lo = document.getElementById('loadoutBtn'), se = document.getElementById('searchBtn');
+
+  const csChips = getComputedStyle(chips);
+  const csStrip = getComputedStyle(strip);
+  const num = (v) => parseFloat(v) || 0;
+
+  // The blur radius the browser will actually paint, read off .chip.active's own
+  // computed shadow: "rgb(...) 0px 0px 14px 0px". Third length = blur.
+  let paintedGlow = null;
+  if (active) {
+    const m = /(-?[\d.]+)px\s+(-?[\d.]+)px\s+(-?[\d.]+)px/.exec(getComputedStyle(active).boxShadow || '');
+    if (m) paintedGlow = parseFloat(m[3]);
+  }
+
+  const R = {
+    strip: rect(strip), row: rect(row), chips: rect(chips), hero: rect(hero),
+    hint: rect(hint), toast: rect(toast), lo: rect(lo), se: rect(se), active: rect(active),
+  };
+
+  // Is a control the TOPMOST element at its own corners and centre? A control that
+  // renders but does not hit-test is a dead control, which is the class this sheet
+  // already shipped once (the invisible toast over the pill strip).
+  const probe = (el) => {
+    if (!el) return null;
+    const b = el.getBoundingClientRect();
+    return [
+      topAt(b.left + 4, b.top + 4),
+      topAt(b.right - 4, b.bottom - 4),
+      topAt(b.left + b.width / 2, b.top + b.height / 2),
+    ];
+  };
+
+  // Every chip whose box is not fully inside the clip box of the scroller.
+  const clipped = Array.from(document.querySelectorAll('#forge3d-sheet .chip'))
+    .filter((c) => {
+      const b = c.getBoundingClientRect();
+      return R.chips && (b.left < R.chips.l - 0.5 || b.right > R.chips.r + 0.5);
+    })
+    .map((c) => c.dataset.rack);
+
+  // env(safe-area-inset-bottom) as this browser resolves it. 0 on WebKit-for-Windows.
+  const probeEl = document.createElement('div');
+  probeEl.style.cssText = 'position:fixed;left:-9999px;height:env(safe-area-inset-bottom,0px)';
+  document.body.appendChild(probeEl);
+  const safeInset = +probeEl.getBoundingClientRect().height.toFixed(2);
+  probeEl.remove();
+
+  return {
+    rects: R,
+    tokens: {
+      tap: csStrip.getPropertyValue('--forge-tap').trim(),
+      glow: csStrip.getPropertyValue('--forge-glow').trim(),
+      gutter: csStrip.getPropertyValue('--forge-gutter').trim(),
+      padX: csStrip.getPropertyValue('--forge-pad-x').trim(),
+      tapS: getComputedStyle(document.documentElement).getPropertyValue('--tap-s').trim(),
+    },
+    chipsCss: {
+      overflowX: csChips.overflowX, overflowY: csChips.overflowY,
+      padTop: num(csChips.paddingTop), padBottom: num(csChips.paddingBottom),
+      scrollH: chips.scrollHeight, clientH: chips.clientHeight,
+      scrollW: chips.scrollWidth, clientW: chips.clientWidth,
+    },
+    stripCss: { padBottom: num(csStrip.paddingBottom), padLeft: num(csStrip.paddingLeft) },
+    rowMinHeight: num(getComputedStyle(row).minHeight),
+    hintCss: {
+      position: getComputedStyle(hint).position,
+      whiteSpace: getComputedStyle(hint).whiteSpace,
+      offsetParent: name(hint.offsetParent),
+    },
+    toastPointerEvents: getComputedStyle(toast).pointerEvents,
+    paintedGlow,
+    chipCount: document.querySelectorAll('#forge3d-sheet .chip').length,
+    clippedChips: clipped,
+    safeInset,
+    // The point the hidden toast used to swallow: the dead centre of the pill strip.
+    stripCentreHit: R.chips ? topAt((R.chips.l + R.chips.r) / 2, (R.chips.t + R.chips.b) / 2) : null,
+    hitLoadout: probe(lo),
+    hitSearch: probe(se),
+    // The layer-separation matrix, computed in-page against one set of rects.
+    intersects: {
+      chips_loadout: hit(R.chips, R.lo),
+      chips_search: hit(R.chips, R.se),
+      loadout_search: hit(R.lo, R.se),
+      hero_row: hit(R.hero, R.row),
+      hero_chips: hit(R.hero, R.chips),
+      hero_loadout: hit(R.hero, R.lo),
+      hero_search: hit(R.hero, R.se),
+      hint_row: hit(R.hint, R.row),
+      hint_chips: hit(R.hint, R.chips),
+      hint_loadout: hit(R.hint, R.lo),
+      hint_search: hit(R.hint, R.se),
+      hint_hero: hit(R.hint, R.hero),
+    },
+  };
+};
+
+async function snapshot(page) {
+  return page.evaluate(SNAPSHOT);
+}
+
+// ── Environment noise: named, partitioned LOCALLY, reported ──────────────────
+// Identical reasoning to 02-build-forge. NOTHING was added to the shared
+// BENIGN_CONSOLE — every entry there weakens every spec in the suite.
+//  1. The cross-origin API health probe (phantomCheckApi :50945) against the
+//     Cloudflare Worker, whose Origin allowlist is the Pages origin BY DESIGN. It is
+//     stubbed at the network layer below so the app takes its production path; the
+//     text pattern stays only as a backstop for a preflight the router misses.
+//  2. navigator.vibrate — a mobile-only API Chromium implements and then blocks
+//     without a gesture. iOS Safari does not implement it at all, so on the field
+//     device haptic() (:16397) is a no-op.
+const ENV_NOISE = [
+  /phantom-api\.[a-z0-9]+\.workers\.dev|Access-Control-Allow-Origin|access control checks|net::ERR_FAILED/i,
+  /Blocked call to navigator\.vibrate/i,
+];
+const isEnvNoise = (t) => ENV_NOISE.some((re) => re.test(t));
+
+async function stubHealthProbe(page) {
+  await page.route(/phantom-api\.[a-z0-9]+\.workers\.dev/, (route) =>
+    route.fulfill({
+      status: 204,
+      headers: {
+        'access-control-allow-origin': '*',
+        'access-control-allow-methods': 'GET, POST, OPTIONS',
+        'access-control-allow-headers': '*',
+      },
+      body: '',
+    }));
+}
+
+test.describe('Forge bottom control stack', () => {
+  // ───────────────────────────────────────────────────────────────────────────
+  // A · THE TAP FLOOR — the assertion that would have caught the original bug
+  // ───────────────────────────────────────────────────────────────────────────
+
+  test('both utility buttons clear 44x44 in EVERY chip state, including the empty zero state', async ({ phantom, page }, testInfo) => {
+    await phantom.boot();
+    await openAisle(page);
+
+    const seen = [];
+    for (const n of CHIP_STATES) {
+      await setChips(page, n);
+      const m = await snapshot(page);
+      const tag = `[${testInfo.project.name} · ${n} chip${n === 1 ? '' : 's'}]`;
+
+      // The app's OWN published floor, read live off :root (:150), not a number this
+      // suite imported. If the token ever drops below 44 the test says so here.
+      const tapS = parseFloat(m.tokens.tapS);
+      expect(tapS, `${tag} --tap-s no longer resolves to a length: "${m.tokens.tapS}"`).toBeGreaterThan(0);
+      expect(tapS, `${tag} the app's own gloved floor --tap-s (:150) dropped below 44px`).toBeGreaterThanOrEqual(44);
+
+      // n === 0 IS THE ORIGINAL DEFECT. With #chips empty there is no sibling to
+      // stretch against; before v1.14.407 both buttons measured 46 x 24.5 here.
+      expect(m.chipCount, `${tag} chip fixture did not apply`).toBe(n);
+      expect(m.rects.lo.h, `${tag} #loadoutBtn is ${m.rects.lo.h}px tall, under the ${tapS}px gloved floor`).toBeGreaterThanOrEqual(tapS);
+      expect(m.rects.se.h, `${tag} #searchBtn is ${m.rects.se.h}px tall, under the ${tapS}px gloved floor`).toBeGreaterThanOrEqual(tapS);
+      expect(m.rects.lo.w, `${tag} #loadoutBtn is ${m.rects.lo.w}px wide, under ${tapS}px`).toBeGreaterThanOrEqual(tapS);
+      expect(m.rects.se.w, `${tag} #searchBtn is ${m.rects.se.w}px wide, under ${tapS}px`).toBeGreaterThanOrEqual(tapS);
+
+      // Visually balanced: the two controls are a matched pair, not two accidents
+      // that happen to both clear the floor.
+      expect(m.rects.lo.h, `${tag} the utility buttons are different heights`).toBe(m.rects.se.h);
+      expect(m.rects.lo.w, `${tag} the utility buttons are different widths`).toBe(m.rects.se.w);
+
+      // The pills are tap targets too — .chip carries a click handler (:20154).
+      if (n > 0) {
+        expect(m.rects.active.h, `${tag} .chip is ${m.rects.active.h}px tall, under the ${tapS}px floor — the pills are controls (click handler :20154)`).toBeGreaterThanOrEqual(tapS);
+      }
+
+      // Rendering is not reaching: a control that draws but does not hit-test is a
+      // dead control. This sheet already shipped one (the invisible toast).
+      for (const h of m.hitLoadout) expect(h, `${tag} #loadoutBtn is covered — elementFromPoint returned ${h}`).toMatch(/loadoutBtn/);
+      for (const h of m.hitSearch) expect(h, `${tag} #searchBtn is covered — elementFromPoint returned ${h}`).toMatch(/searchBtn|svg|circle|line/);
+      expect(m.stripCentreHit, `${tag} something invisible is over the pill strip: ${m.stripCentreHit}`).not.toMatch(/toast/i);
+      expect(m.toastPointerEvents, `${tag} the hidden .toast is hit-testable again (:9218) — it swallows pill taps silently`).toBe('none');
+
+      seen.push(`${n}:${m.rects.lo.w}x${m.rects.lo.h}`);
+    }
+
+    testInfo.annotations.push({ type: 'tap-floor', description: `loadoutBtn per chip state — ${seen.join(' ')}` });
+  });
+
+  test('every control in the row consumes the tap token as its OWN height, not a sibling\'s', async ({ phantom, page }, testInfo) => {
+    // THE ROOT CAUSE, pinned as a behaviour rather than as a number. Before the fix
+    // .hudbtn had no height at all and inherited the row's stretch, so its size
+    // tracked whatever the CHIPS happened to be. Move the one declared knob and every
+    // control must follow it. If someone reinstates align-items:stretch and deletes
+    // the declared heights, the buttons stop tracking --forge-tap and this fails —
+    // even though a static "is it >= 44" assertion would still pass.
+    await phantom.boot();
+    await openAisle(page);
+    await setChips(page, 3);
+
+    const base = await snapshot(page);
+    const tap0 = parseFloat(base.tokens.tap);
+    expect(tap0, `--forge-tap does not resolve to a length: "${base.tokens.tap}"`).toBeGreaterThanOrEqual(44);
+    expect(base.rects.lo.h, '#loadoutBtn does not equal --forge-tap at rest').toBe(tap0);
+    expect(base.rects.se.h, '#searchBtn does not equal --forge-tap at rest').toBe(tap0);
+    expect(base.rects.active.h, '.chip does not equal --forge-tap at rest').toBe(tap0);
+
+    // One knob, turned. --forge-tap is declared on #forge3d-sheet (:9075) so an
+    // inline property on the sheet is the same cascade level the app uses.
+    const TAP2 = tap0 + 20;
+    await page.evaluate((v) => document.getElementById('forge3d-sheet').style.setProperty('--forge-tap', v + 'px'), TAP2);
+    await settle(page);
+    const moved = await snapshot(page);
+
+    expect(parseFloat(moved.tokens.tap), 'the token did not take — this test would be vacuous').toBe(TAP2);
+    expect(moved.rects.lo.h, `#loadoutBtn ignored --forge-tap (${TAP2}px) — it is being sized by something else`).toBe(TAP2);
+    expect(moved.rects.se.h, `#searchBtn ignored --forge-tap (${TAP2}px) — it is being sized by something else`).toBe(TAP2);
+    expect(moved.rects.active.h, `.chip ignored --forge-tap (${TAP2}px)`).toBe(TAP2);
+    // and the row's own declared height moved with it (--forge-row-h = tap + glow).
+    expect(moved.rowMinHeight, '.toprow min-height did not follow --forge-tap — the row height is emergent again')
+      .toBe(TAP2 + parseFloat(moved.tokens.glow));
+
+    await page.evaluate(() => document.getElementById('forge3d-sheet').style.removeProperty('--forge-tap'));
+    await settle(page);
+    const back = await snapshot(page);
+    expect(back.rects.lo.h, 'the strip did not return to its declared height').toBe(tap0);
+
+    testInfo.annotations.push({ type: 'one-knob', description: `--forge-tap ${tap0} -> ${TAP2} -> ${tap0}; row min-height ${base.rowMinHeight} -> ${moved.rowMinHeight}` });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // B · THE THREE LAYERS
+  // ───────────────────────────────────────────────────────────────────────────
+
+  test('the pill strip, the utility buttons and the focus card never intersect', async ({ phantom, page }, testInfo) => {
+    // The owner's report was "the rack pills and the right-side utility buttons are
+    // fighting the focus card below". Separation is asserted by RECT, in every chip
+    // state, in both directions — never by eye. The hint is included because the
+    // caption was the fourth, uninvited layer that was actually inside the row.
+    await phantom.boot();
+    await openAisle(page);
+
+    for (const n of CHIP_STATES) {
+      await setChips(page, n);
+      const m = await snapshot(page);
+      const tag = `[${testInfo.project.name} · ${n} chips]`;
+      const box = (k) => JSON.stringify(m.rects[k]);
+
+      expect(m.intersects.chips_loadout, `${tag} the pill strip overlaps #loadoutBtn — chips ${box('chips')} vs ${box('lo')}`).toBe(false);
+      expect(m.intersects.chips_search, `${tag} the pill strip overlaps #searchBtn — chips ${box('chips')} vs ${box('se')}`).toBe(false);
+      expect(m.intersects.loadout_search, `${tag} the two utility buttons overlap each other`).toBe(false);
+
+      // Requirement 4, verbatim: the focus card must not overlap the control row.
+      expect(m.intersects.hero_row, `${tag} .herotag overlaps .toprow — hero ${box('hero')} vs row ${box('row')}`).toBe(false);
+      expect(m.intersects.hero_chips, `${tag} .herotag overlaps the pill strip`).toBe(false);
+      expect(m.intersects.hero_loadout, `${tag} .herotag overlaps #loadoutBtn`).toBe(false);
+      expect(m.intersects.hero_search, `${tag} .herotag overlaps #searchBtn`).toBe(false);
+
+      // The caption is a layer too, and it is the one that was drawing on the pills.
+      expect(m.intersects.hint_row, `${tag} .hint is drawn INSIDE the control row — hint ${box('hint')} vs row ${box('row')}`).toBe(false);
+      expect(m.intersects.hint_chips, `${tag} .hint overlaps the pill strip`).toBe(false);
+      expect(m.intersects.hint_loadout, `${tag} .hint overlaps #loadoutBtn`).toBe(false);
+      expect(m.intersects.hint_search, `${tag} .hint overlaps #searchBtn`).toBe(false);
+      expect(m.intersects.hint_hero, `${tag} .hint overlaps the focus card`).toBe(false);
+
+      // Stacking ORDER, not just non-overlap: hint above the strip, focus card below
+      // the control row, everything inside the bottom strip.
+      expect(m.rects.hint.b, `${tag} .hint's bottom edge is below the strip's top edge`).toBeLessThanOrEqual(m.rects.strip.t + 0.5);
+      expect(m.rects.row.b, `${tag} the control row does not sit above the focus card`).toBeLessThanOrEqual(m.rects.hero.t + 0.5);
+      expect(m.rects.hero.b, `${tag} the focus card escapes the bottom of its own strip`).toBeLessThanOrEqual(m.rects.strip.b + 0.5);
+
+      // No control is pushed off the bottom of the viewport by the safe-area padding.
+      const vh = await page.evaluate(() => window.innerHeight);
+      expect(m.rects.hero.b, `${tag} the focus card is below the fold (viewport ${vh}px)`).toBeLessThanOrEqual(vh + 0.5);
+      expect(m.rects.hint.t, `${tag} .hint is off the top of the viewport`).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  test('the caption stays readable and inside the viewport at every chip state', async ({ phantom, page }, testInfo) => {
+    // The 92px pin came with white-space:nowrap, which forced the app's own 59-char
+    // zero-state string (deploy_forge_zeroState :19945) to 472.7px inside a 390px
+    // viewport — 41px cut off each end. The caption is now allowed to wrap, so the
+    // pin is: whatever string the app writes, the box stays on screen.
+    await phantom.boot();
+    await openAisle(page);
+
+    const ZERO_STATE = 'NO MASTER LOADED · LOAD A MASTER FILE TO BUILD YOUR LOADOUT';   // :19945, verbatim
+    await page.evaluate((s) => { document.getElementById('hint').textContent = s; }, ZERO_STATE);
+    await setChips(page, 0);
+
+    const m = await snapshot(page);
+    const vw = await page.evaluate(() => window.innerWidth);
+    const tag = `[${testInfo.project.name}]`;
+
+    expect(m.hintCss.whiteSpace, `${tag} .hint is nowrap again — the app's own zero-state string does not fit at ${vw}px`).not.toBe('nowrap');
+    expect(m.rects.hint.l, `${tag} .hint runs off the left edge: ${JSON.stringify(m.rects.hint)}`).toBeGreaterThanOrEqual(0);
+    expect(m.rects.hint.r, `${tag} .hint runs off the right edge: ${JSON.stringify(m.rects.hint)}`).toBeLessThanOrEqual(vw + 0.5);
+    expect(m.rects.hint.h, `${tag} .hint collapsed to zero height — the caption is gone`).toBeGreaterThan(0);
+    // It is bounded by the SAME inset as the controls it describes (--forge-pad-x).
+    expect(m.stripCss.padLeft, `${tag} the strip's inset is not --forge-pad-x (${m.tokens.padX})`).toBe(parseFloat(m.tokens.padX));
+
+    await phantom.assertNoHorizontalOverflow();
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // C · THE CLIP
+  // ───────────────────────────────────────────────────────────────────────────
+
+  test('the pill strip declares its clip on both axes and holds the glow\'s own room inside it', async ({ phantom, page }, testInfo) => {
+    await phantom.boot();
+    await openAisle(page);
+    await setChips(page, 5);
+
+    const m = await snapshot(page);
+    const tag = `[${testInfo.project.name}]`;
+
+    // css-overflow-3 blockifies the omitted axis: declaring only overflow-x:auto
+    // yields auto/auto and a SILENT vertical clip. Both axes must be declared.
+    expect(m.chipsCss.overflowX, `${tag} .chips is no longer a horizontal scroller`).toBe('auto');
+    expect(m.chipsCss.overflowY, `${tag} .chips overflow-y is "${m.chipsCss.overflowY}" — it must be DECLARED, not left to blockify (:9107)`).toBe('hidden');
+
+    // A clip is honest only if the ink it clips has room reserved inside it. The room
+    // is derived from the SAME token that draws the glow, so the two cannot drift:
+    // a CSS box-shadow stays perceptible for about half its blur radius.
+    const glow = parseFloat(m.tokens.glow);
+    expect(glow, `${tag} --forge-glow does not resolve to a length: "${m.tokens.glow}"`).toBeGreaterThan(0);
+    expect(m.paintedGlow, `${tag} .chip.active's painted blur (${m.paintedGlow}px) drifted from --forge-glow (${glow}px) — the glow and the room made for it are no longer the same number`).toBe(glow);
+
+    const need = glow / 2;
+    const above = +(m.rects.active.t - m.rects.chips.t).toFixed(2);
+    const below = +(m.rects.chips.b - m.rects.active.b).toFixed(2);
+    expect(above, `${tag} only ${above}px of room above the active pill for a ${glow}px glow — the top of the glow is amputated`).toBeGreaterThanOrEqual(need);
+    expect(below, `${tag} only ${below}px of room below the active pill for a ${glow}px glow`).toBeGreaterThanOrEqual(need);
+    expect(m.chipsCss.padTop, `${tag} the gutter is not the derived --forge-gutter (${m.tokens.gutter})`).toBe(need);
+    expect(m.chipsCss.padBottom, `${tag} the gutter is asymmetric — the old padding-bottom-only hack is back`).toBe(m.chipsCss.padTop);
+
+    // The room is PADDING, not overflow: a vertical scroll region inside a
+    // horizontal scroller is a second clip nobody asked for.
+    expect(m.chipsCss.scrollH, `${tag} .chips has a vertical scroll region (${m.chipsCss.scrollH} > ${m.chipsCss.clientH}) — content is being cut, not just ink`).toBe(m.chipsCss.clientH);
+
+    // ── TIER-AWARE, and MEASURED rather than branched on a breakpoint ──────────
+    const fits = m.chipsCss.scrollW <= m.chipsCss.clientW + 1;
+    if (fits) {
+      // Wide enough for the whole loadout: then every pill must be fully inside the
+      // clip box. A pill half-eaten by the clip on a tier that has the room is a bug.
+      expect(m.clippedChips, `${tag} the strip has room (scrollWidth ${m.chipsCss.scrollW} <= clientWidth ${m.chipsCss.clientW}) yet these pills are clipped: ${m.clippedChips.join(', ')}`).toEqual([]);
+    } else {
+      // Narrow tier: the strip is a scroller BY DESIGN, so pills off the edge are
+      // reachable, not lost — and the overflow must stay inside the scroller and
+      // never reach the document. What is NOT asserted here: that the operator can
+      // SEE there is more to scroll. The scrollbar is suppressed (:9108/:9110) and
+      // there is no edge fade, so at the 5-rack cap on a 390px phone two pills are
+      // off-screen with no affordance. That is an open owner item (a fix is either a
+      // smaller pill or a gradient — both restyles), reported, not asserted away.
+      expect(m.chipsCss.scrollW, `${tag} the strip does not fit its pills but is not scrollable either`).toBeGreaterThan(m.chipsCss.clientW);
+      testInfo.annotations.push({
+        type: 'open-owner-item',
+        description: `at ${await page.evaluate(() => window.innerWidth)}px the 5-pill loadout needs ${m.chipsCss.scrollW}px in a ${m.chipsCss.clientW}px strip; off-edge pills: ${m.clippedChips.join(', ') || 'none'} — no scroll affordance exists`,
+      });
+    }
+
+    await phantom.assertNoHorizontalOverflow();
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // D · THE DURABLE RULE, MADE ENFORCEABLE
+  // ───────────────────────────────────────────────────────────────────────────
+
+  test('the caption\'s clearance is DERIVED: move the stack and the gap holds', async ({ phantom, page }, testInfo) => {
+    // THE ASSERTION THIS SPEC EXISTS FOR. .hint used to clear the stack with a
+    // hard-coded `bottom: calc(safe + 92px)` (old :9202) while the stack itself
+    // measured 108.5-137px and was data-driven. This repo has been bitten by exactly
+    // that shape twice already (v1.14.341 --tabnav-h, v1.14.351 phase dock), and a
+    // static "do they overlap today" assertion would have passed on all three.
+    //
+    // So the stack is MOVED at runtime — grown and shrunk, through both of its
+    // independently-varying members — and the gap between the caption and the strip
+    // must be the SAME number every time. A constant offset cannot do that.
+    await phantom.boot();
+    await openAisle(page);
+    await setChips(page, 3);
+
+    const gapOf = (m) => +(m.rects.strip.t - m.rects.hint.b).toFixed(2);
+    const tag = `[${testInfo.project.name}]`;
+
+    // Structural, not incidental: the caption is positioned against the strip it must
+    // clear, not against the viewport. That is what makes the gap survive.
+    const rest = await snapshot(page);
+    expect(rest.hintCss.position, `${tag} .hint is viewport-pinned again ("${rest.hintCss.position}") — a fixed caption needs a magic number to clear a stack whose height it cannot see`).not.toBe('fixed');
+    expect(rest.hintCss.offsetParent, `${tag} .hint is not anchored to the bottom strip — its offsetParent is ${rest.hintCss.offsetParent}`).toMatch(/hud-bottom|hud/);
+
+    // The two members are perturbed SEPARATELY, because they fail differently: the
+    // control row is governed by a declared token, the focus card by DATA. A
+    // clearance derived from --forge-row-h alone would survive the first and still
+    // slide under the second, which is the shape that actually shipped.
+    //
+    // FOCUS-CARD strings. The short one is deploy_forge_tagSub's real format
+    // (:19434 — site · racked/total · TAP FLANKS TO WALK). The long one is that same
+    // clause repeated until the box wraps on the WIDEST tier this spec runs; the
+    // point of it is the BOX HEIGHT, not the string, and no claim is made that any
+    // site reports it. Measured at rest: the herotag is already wrapped on a 390px
+    // phone (74px) and single-line on an 834px tablet (56px), which is exactly why a
+    // fixed constant cannot describe this stack.
+    const SUB_SHORT = 'US-SPK03 · 21/42 RACKED · TAP FLANKS TO WALK';
+    const SUB_LONG = new Array(6).fill('US-SPK03 · 21/42 RACKED · ⚠3 FLAGGED · TAP FLANKS TO WALK').join(' · ');
+    const setSub = async (s) => {
+      await page.evaluate((v) => { document.getElementById('tagSub').textContent = v; }, s);
+      await settle(page);
+    };
+    const setTap = async (v) => {
+      await page.evaluate((px) => {
+        const s = document.getElementById('forge3d-sheet');
+        if (px) s.style.setProperty('--forge-tap', px); else s.style.removeProperty('--forge-tap');
+      }, v);
+      await settle(page);
+    };
+
+    const runs = [{ label: 'at rest', m: rest }];
+
+    // (1) FOCUS CARD, one line — data-driven, and it SHRINKS the stack on the phone.
+    await setSub(SUB_SHORT);
+    runs.push({ label: 'short focus card', m: await snapshot(page) });
+
+    // (2) FOCUS CARD, wrapped — data-driven, and it grows the stack on every tier.
+    await setSub(SUB_LONG);
+    runs.push({ label: 'wrapped focus card', m: await snapshot(page) });
+
+    // (3) CONTROL ROW, through its own declared token — a different member entirely.
+    await setTap('76px');
+    runs.push({ label: 'wrapped card + --forge-tap 76px', m: await snapshot(page) });
+
+    // (4) Back to the declared row height, card still wrapped.
+    await setTap(null);
+    runs.push({ label: 'wrapped card only', m: await snapshot(page) });
+
+    const heights = runs.map((r) => r.m.rects.strip.h);
+    const heroes = runs.map((r) => r.m.rects.hero.h);
+    const rows = runs.map((r) => r.m.rects.row.h);
+    const gaps = runs.map((r) => gapOf(r.m));
+    // eslint-disable-next-line no-console
+    console.log(`[08-forge-layout] ${tag} clearance under perturbation — ` +
+      runs.map((r, i) => `${r.label}: stack ${heights[i]} (row ${rows[i]} + card ${heroes[i]}), gap ${gaps[i]}`).join(' | '));
+
+    // The defect signal first, so a real regression reports as a regression and not
+    // as a broken test: at rest, does the caption already sit in the control row?
+    expect(rest.intersects.hint_row, `${tag} at rest: .hint is drawn INSIDE the control row — hint ${JSON.stringify(rest.rects.hint)} vs row ${JSON.stringify(rest.rects.row)}`).toBe(false);
+
+    // VACUITY GUARDS. If a member never actually changed height, every assertion
+    // below is meaningless for that member and would pass on a hard-coded offset too.
+    // Both are asserted SEPARATELY so a half-dead perturbation cannot hide behind the
+    // other one — which is precisely the hole the first draft of this test had.
+    const spread = (a) => Math.max(...a) - Math.min(...a);
+    expect(spread(heroes), `${tag} the FOCUS CARD never changed height (${heroes.join(', ')}) — the data-driven half of this test proved nothing; either the subtitle is no longer written to #tagSub or .herotag stopped wrapping`).toBeGreaterThan(5);
+    expect(spread(rows), `${tag} the CONTROL ROW never changed height (${rows.join(', ')}) — the row no longer derives its height from --forge-tap`).toBeGreaterThan(5);
+    expect(spread(heights), `${tag} the stack never changed height (${heights.join(', ')}) — this test proved nothing`).toBeGreaterThan(5);
+
+    for (let i = 0; i < runs.length; i++) {
+      const { label, m } = runs[i];
+      // The caption clears the WHOLE stack, whatever the stack currently is.
+      expect(m.intersects.hint_row, `${tag} ${label}: .hint slid into the control row at a stack height of ${m.rects.strip.h}px`).toBe(false);
+      expect(m.intersects.hint_hero, `${tag} ${label}: .hint slid into the focus card`).toBe(false);
+      expect(m.rects.hint.b, `${tag} ${label}: .hint's bottom (${m.rects.hint.b}) is not above the strip's top (${m.rects.strip.t})`).toBeLessThanOrEqual(m.rects.strip.t + 0.5);
+      // And the clearance is the SAME every time: derived, not a constant that
+      // happens to be big enough today.
+      expect(gaps[i], `${tag} ${label}: the clearance changed to ${gaps[i]}px (was ${gaps[0]}px at rest) across stack heights ${heights.join(' / ')} — the caption is tracking something other than the stack`).toBeCloseTo(gaps[0], 1);
+    }
+
+    testInfo.annotations.push({
+      type: 'derived-clearance',
+      description: `stack ${heights.join(' / ')}px · focus card ${heroes.join(' / ')}px · row ${rows.join(' / ')}px · clearance ${gaps.join(' / ')}px (constant)`,
+    });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // E · THE SHEET AS A WHOLE
+  // ───────────────────────────────────────────────────────────────────────────
+
+  test('opening and closing the aisle raises no uncaught exception and never overflows horizontally', async ({ phantom, page }, testInfo) => {
+    await stubHealthProbe(page);   // must precede boot() — see the ENV_NOISE block
+    await phantom.boot();
+
+    for (let i = 0; i < 2; i++) {
+      await openAisle(page);
+      await setChips(page, i === 0 ? 0 : 5);          // the two extremes of the row
+      await phantom.assertNoHorizontalOverflow();     // Rule 1, with the aisle open
+
+      // Close through the REAL control (onclick="forge3d_close()" :13172), so a dead
+      // close button fails this test rather than being stepped around.
+      await page.locator('#forge3d-sheet .rd-sheet-close').click();
+      await expect(page.locator('#forge3d-sheet')).not.toHaveClass(/(^|\s)open(\s|$)/);
+      await expect(page.locator('#forge3d-sheet')).toBeHidden();
+      await phantom.assertNoHorizontalOverflow();     // and with it closed
+    }
+
+    const hard = phantom.hardErrors();
+    const noise = hard.filter((e) => isEnvNoise(e.text));
+    const app = hard.filter((e) => !isEnvNoise(e.text));
+    if (noise.length) {
+      // Printed every run so a partition can never quietly become the reason a real
+      // error was missed.
+      // eslint-disable-next-line no-console
+      console.log(`[08-forge-layout] ${noise.length} ENVIRONMENT console entr${noise.length === 1 ? 'y' : 'ies'} partitioned locally (NOT allowlisted): ${JSON.stringify(noise.map((e) => e.text.slice(0, 120)))}`);
+    }
+    expect(app, `console errors on two aisle open/close round trips:\n${app.map((e) => `  [${e.type}] ${e.text}`).join('\n')}`).toEqual([]);
+
+    // An uncaught EXCEPTION is never environmental. Asserted with no partition at
+    // all, so no filter above can hide one.
+    const thrown = hard.filter((e) => e.type === 'pageerror');
+    expect(thrown, `uncaught exceptions across the aisle round trips:\n${thrown.map((e) => `  ${e.text}`).join('\n')}`).toEqual([]);
+
+    testInfo.annotations.push({ type: 'console', description: `${app.length} app · ${noise.length} environment` });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // F · WHAT THIS HARNESS CANNOT ANSWER
+  // ───────────────────────────────────────────────────────────────────────────
+
+  test('the bottom strip clears the iPhone home indicator', async ({ phantom, page }, testInfo) => {
+    await phantom.boot();
+    await openAisle(page);
+    const m = await snapshot(page);
+
+    // MEASURED, not assumed. On WebKit-for-Windows env(safe-area-inset-bottom)
+    // resolves to 0.00px, so there is no inset to clear and a "pass" here would be a
+    // pass over nothing. The skip is the honest result: this requirement is owed to
+    // the physical iPhone gate and to nothing in this suite.
+    //
+    // On a runner that DOES report an inset (a real device, or a future harness that
+    // emulates one) this test stops skipping and asserts the real thing: the strip's
+    // bottom padding must exceed the inset, because it is declared as
+    // calc(env(safe-area-inset-bottom,0px) + 16px) at :9081.
+    //
+    // NOTE ON PROXIES. At a 0px inset NO assertion here can tell "the env() term is
+    // present" from "the env() term was deleted" — both compute to the same 16px — so
+    // none is offered. The one structural half that IS verifiable is asserted in the
+    // derived-clearance test above: .hint is position:absolute and anchored to
+    // .hud-bottom, which is what makes the strip the SINGLE owner of the safe-area
+    // term (the caption used to carry its own copy). The magnitude is owed to the
+    // device; the ownership is pinned here.
+    testInfo.annotations.push({ type: 'safe-area', description: `env(safe-area-inset-bottom) = ${m.safeInset}px; .hud-bottom padding-bottom = ${m.stripCss.padBottom}px` });
+    test.skip(m.safeInset === 0,
+      'env(safe-area-inset-bottom) resolves to 0.00px on WebKit-for-Windows, so real iPhone ' +
+      'notch/home-indicator clearance cannot be verified here. Owed to the physical iPhone gate. ' +
+      `Measured: strip padding-bottom = ${m.stripCss.padBottom}px, which is the +16px term alone.`);
+
+    expect(m.stripCss.padBottom, `.hud-bottom's bottom padding (${m.stripCss.padBottom}px) does not clear the ${m.safeInset}px inset`).toBeGreaterThan(m.safeInset);
+    expect(m.rects.hero.b, 'the focus card sits inside the home-indicator inset')
+      .toBeLessThanOrEqual(await page.evaluate(() => window.innerHeight) - m.safeInset + 0.5);
+  });
+});
