@@ -519,7 +519,7 @@ test.describe('Build workspace + Forge aisle', () => {
   test('the aisle states its zero-state instead of failing silently with no Master', async ({ phantom, page }) => {
     // The seed carries a deployment but no Master file, which is a REAL field state (a rack
     // traced on device before the Master lands). deploy_forge_rackList() (:19323) returns []
-    // and deploy_forge_zeroState() (:19852) must SAY so — on the herotag, the hint and the
+    // and deploy_forge_zeroState() (:19852) must SAY so — on the status row, the hint and the
     // console. A blank aisle with no statement is the defect class this app calls a silent
     // failure, and it is indistinguishable from the .390 blank-aisle bug by eye.
     await phantom.boot({ seed: buildSeed() });
@@ -529,7 +529,9 @@ test.describe('Build workspace + Forge aisle', () => {
 
     await expect(page.locator('#forge3d-prov')).toHaveText(/NO MASTER LOADED/i);
     await expect
-      .poll(async () => (await page.locator('#forge3d-sheet #tagSub').textContent()) || '',
+      // v1.14.409 — #tagSub became #tagState. The zero-state message goes into the STATE
+      // pill; the walk pill is hidden alongside it (pinned in 08's D3 section).
+      .poll(async () => (await page.locator('#forge3d-sheet #tagState').textContent()) || '',
         { timeout: 20_000, message: 'the aisle never stated its zero-state' })
       .toMatch(/NO MASTER LOADED/i);
   });

@@ -9095,7 +9095,7 @@ body.rd #forge3d-sheet.open { display: flex; }
    which fires WITH that panel open, would have gone with it. An absolutely-positioned element
    with z-index:auto establishes NO stacking context, so the toast's own z-index:60 is now
    resolved in #forge3d-hud's context and still beats the panel (40), the search overlay (50)
-   and the picker (55) — while .toprow and .herotag stay at auto and are correctly covered by all
+   and the picker (55) — while .toprow and .statrow stay at auto and are correctly covered by all
    three. That is what makes "above the row" and "above the panel" true at the same time.
    The position change costs nothing today and is more correct tomorrow: #forge3d-hud is
    absolute inset:0 of the sheet and the sheet's rect was MEASURED identical to the viewport rect
@@ -9105,27 +9105,70 @@ body.rd #forge3d-sheet.open { display: flex; }
    over unaudited (v1.14.233 fixed only the JS half of that mismatch). */
 #forge3d-sheet .hud{position:absolute;left:0;right:0;pointer-events:none}
 #forge3d-sheet .hud-bottom{bottom:0;padding:0 var(--forge-pad-x) calc(env(safe-area-inset-bottom,0px) + 16px)}
-#forge3d-sheet .herotag{display:inline-flex;align-items:center;gap:10px;pointer-events:none;
-  background:rgba(8,14,22,.55);border:1px solid rgba(40,224,255,.22);border-radius:12px;
-  padding:9px 14px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  box-shadow:0 0 24px rgba(40,224,255,.08), inset 0 1px 0 rgba(255,255,255,.05);
-  transition:opacity .3s ease}
-/* v1.14.407 — flex-shrink:0. .herotag is inline-flex and shrink-to-fit, so a long #tagSub squeezed
-   this dot into a 5.28x7 ELLIPSE (measured, zero state) despite its declared 7x7. A status dot that
-   deforms with the length of the text beside it is not a status dot. Geometry only — the colour
-   channel and the pulse are untouched. */
+/* v1.14.409 — ROW 2, THE STATUS ROW. This replaces .herotag, and it is a DECOMPOSITION, not new
+   data: the old card rendered ONE string built by deploy_forge_tagSub (old :19495) whose clauses
+   were already `SITE · racked/total RACKED [· ⚠n FLAGGED] · TAP FLANKS TO WALK`. Those clauses are
+   now three named slots — #tagId, #tagState, #tagWalk. Nothing is computed that was not computed
+   before. Two clauses were handled DELIBERATELY rather than dropped by accident:
+     · the SITE label is gone from this row. It is not lost: deploy_forge_provenance (:19507)
+       already leads the sheet header subtitle #forge3d-prov (:13228) with it, and that header is
+       on screen whenever this row is (02-build-forge asserts it there). Carrying it twice is the
+       same redundancy .407 deleted a fourth copy of.
+     · `⚠n FLAGGED` is CONDITIONAL, so it cannot be a fourth pill — three plus a sometimes-fourth
+       does not fit 390px, and a pill that comes and goes is not a row. It folds into the STATE
+       pill as a flagged STATE (.flagged, gold): same text, same condition, one less box.
+   WHY THE BULK IS GONE. .herotag was an inline-flex box around a two-line <span>, so its height
+   was DATA-DRIVEN — measured 56px focused, 74px once the zero-state message wrapped — sitting
+   under a 58px control row. That variable card is the "jacked up" bottom the owner reported. A
+   pill is one line of 10px type in a ~26px box, so row 2 is a constant ~26px in every populated
+   state and the stack loses ~30-48px.
+   WRAP, NOT CLIP. flex-wrap is how a long rack label or a flagged state stays READABLE at 390px
+   instead of being truncated or running off the edge — requirement "no clipping at 390px" is met
+   by giving the text somewhere to go, not by hiding it. Row 2 may therefore still change height,
+   and that costs nothing: .hint and .toast clear this stack at bottom:100%, which is exact at any
+   height. That anchor is the reason this row was free to be re-composed at all.
+   ⛔ NOT CONTROLS. No handler, no role, no tabindex, no cursor:pointer. They are read-outs, and
+   they are exempt from the 44px gloved floor that governs row 1 ONLY because they never look
+   tappable — a thing that invites a gloved tap and does nothing is a silent failure. */
+#forge3d-sheet .statrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;pointer-events:none}
+#forge3d-sheet .statpill{display:inline-flex;align-items:center;gap:7px;min-width:0;
+  pointer-events:none;-webkit-user-select:none;user-select:none;
+  background:rgba(8,14,22,.55);border:1px solid rgba(60,80,100,.35);border-radius:10px;
+  padding:5px 10px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  font-size:10px;letter-spacing:.14em;line-height:1.4;color:var(--dim)}
+/* The walk pill LEAVES the row in the zero state rather than being dimmed — with no racks there
+   is nothing to walk. `hidden` alone cannot do that: the UA's own [hidden] display:none rule loses
+   to the author display:inline-flex above, so the author rule is stated here. */
+#forge3d-sheet .statpill[hidden]{display:none}
+/* TERTIARY LAYER, ordered within itself: the rack id is the one datum worth reading first, so it
+   keeps the cyan edge and the light ink; the count and the instruction are dim. */
+#forge3d-sheet .statpill.st-id{background:rgba(8,14,22,.62);border-color:rgba(40,224,255,.28);
+  color:#e8f2fa;font-weight:600;letter-spacing:.16em}
+#forge3d-sheet .statpill.st-state{color:var(--ink)}
+/* ⭐ `0/0 RACKED` IS HONEST DATA, NOT AN ERROR. Cable-endpoint-only cabinets legitimately resolve
+   with zero hosts (~42% of cabs on a real site) and a 0/0 rack is a VALID rack state — reading it
+   as a fault nearly rolled production back once. Only .flagged, which means the rack's GEOMETRY is
+   suspect (deploy_forge_flagCount :19586), gets a warning colour, and it is gold — the app's
+   attention channel — never red. */
+#forge3d-sheet .statpill.st-state.flagged{color:var(--gold);border-color:rgba(255,203,69,.35)}
+/* v1.14.407 — flex-shrink:0. This dot used to sit in .herotag, an inline-flex shrink-to-fit box,
+   so a long subtitle squeezed it into a 5.28x7 ELLIPSE (measured, zero state) despite its declared
+   7x7. It now lives inside the id pill, which is short by construction — but the guard stays,
+   because the reason for it has not stopped being true, it has only moved. Geometry only; the
+   colour channel and the pulse are untouched. */
 #forge3d-sheet .dot{flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:var(--teal);
   box-shadow:0 0 10px var(--teal);animation:fx-pulse 1.8s ease-in-out infinite}
 @keyframes fx-pulse{50%{opacity:.35}}
-#forge3d-sheet .herotag .id{font-size:12px;letter-spacing:.2em;color:#e8f2fa;font-weight:600}
-#forge3d-sheet .herotag .sub{font-size:9px;letter-spacing:.18em;color:var(--dim)}
-/* LAYER 1 + LAYER 2 share this row — that is the approved composition (MOCKUP-FORGE-HYBRID-
-   AISLE-v2.9.2): pills flex:1, utility buttons flex:0 0 auto beside them. Restacking it into
-   two rows would be a redesign, not a fix. What changes here is that the row now DECLARES its
-   height instead of inheriting whatever the chips happened to be, and align-items is center so
-   every child sits on the same axis whether the loadout is full or empty. */
+/* ROW 1 — SELECTION + ACTIONS. Pills flex:1, utility buttons flex:0 0 auto beside them
+   (MOCKUP-FORGE-HYBRID-AISLE-v2.9.2). The row DECLARES its height rather than inheriting whatever
+   the chips happened to be, and align-items:center puts every child on one baseline whether the
+   loadout is full or empty — which is the "top row looks uneven" half of the owner's report.
+   margin-bottom is the air between the two rows of ONE dock. It is a plain adjacent-sibling
+   margin, not a clearance constant: nothing here is trying to clear a stack whose height it
+   cannot see (that is .hint's and .toast's job, and both do it structurally at bottom:100%), so
+   it has nothing to go stale against. 12px -> 10px tightens the dock into one system. */
 #forge3d-sheet .toprow{display:flex;gap:8px;align-items:center;min-height:var(--forge-row-h);
-  margin-bottom:12px;pointer-events:auto}
+  margin-bottom:10px;pointer-events:auto}
 /* overflow-y is declared EXPLICITLY. It was omitted, and css-overflow-3 blockifies the missing
    axis: an element with overflow-x:auto and overflow-y:visible computes to auto/auto, so this
    scroller was already clipping vertically without saying so. It cut the active pill's glow
@@ -9311,12 +9354,14 @@ body.rd #forge3d-sheet.open { display: flex; }
    height and measured 108.5-137px, so the caption's box landed INSIDE the control row in every
    state measured (a 10px rect overlap of .toprow on tablet, and on the phone the moment a rack
    is focused). It was never right: the same 92px is in the source mock's v2, v2.2, v2.8 and
-   v2.9.2, frozen while the stack beneath it was rebuilt from [herotag + dim slider] to
-   [pill row + herotag]. Replacing it with a bigger constant would fail the same way the next
-   time the stack moves — and the stack DOES move, because .herotag is inline-flex and its
-   height is data-driven (56px focused, 74px when the zero-state message wraps).
+   v2.9.2, frozen while the stack beneath it was rebuilt from [hero card + dim slider] to
+   [pill row + hero card]. Replacing it with a bigger constant would fail the same way the next
+   time the stack moves — and the stack DOES move. It moved AGAIN at v1.14.409, which is the
+   proof: the hero card that measured 56px focused and 74px wrapped was replaced outright by the
+   .statrow pill row (~26px, and still wrap-driven). A constant would have needed retuning twice;
+   this anchor needed no edit at all.
    So the clearance is now STRUCTURAL: the caption is a child of the strip it must clear and
-   sits at bottom:100% of it. That is exact at every herotag height, on every viewport, with no
+   sits at bottom:100% of it. That is exact at every status-row height, on every viewport, with no
    number to go stale. It also costs the stack nothing — an abspos child adds no height — and
    reading --forge-pad-x bounds the text to the same edge as the controls, which is what stops
    it overrunning a 390px viewport by 41px per side (it was white-space:nowrap at 472px wide). */
@@ -13233,7 +13278,7 @@ if (typeof window !== 'undefined') {
   <!-- hud-top brand lockup dropped: the app's .rd-sheet-hdr already brands + closes this sheet. -->
 
   <!-- v1.14.407 — #hint moved INSIDE .hud-bottom. It is positioned at bottom:100% of this
-       strip, so it clears the whole stack by construction at any herotag height. As a
+       strip, so it clears the whole stack by construction at any status-row height. As a
        viewport-fixed sibling it carried a hard-coded 92px offset and drew on top of the pills.
        Element id, class and text are unchanged; #hint is looked up by id (:19942, :20295). -->
   <div class="hud hud-bottom">
@@ -13250,12 +13295,19 @@ if (typeof window !== 'undefined') {
       <div class="hudbtn gold" id="loadoutBtn" title="3D loadout">&#8862;</div>
       <div class="hudbtn" id="searchBtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></div>
     </div>
-    <div class="herotag" id="herotag">
-      <span class="dot"></span>
-      <span>
-        <span class="id" id="tagId">—</span><br>
-        <span class="sub" id="tagSub">TAP A RACK TO FOCUS</span>
-      </span>
+    <!-- v1.14.409 — ROW 2. The single .herotag card is now three named status pills, which is a
+         decomposition of the string it already rendered (see the CSS note at :9108). #tagId is
+         what it always was; #tagState owns the `n/m RACKED` clause and its conditional
+         `· ⚠n FLAGGED`; #tagWalk owns the standing instruction.
+         #tagWalk ships `hidden` on purpose: before a rack is focused the card reads `— / TAP A
+         RACK TO FOCUS` and nothing else, and it must keep reading exactly that. setFocus (:19985)
+         reveals it, deploy_forge_zeroState (:20050) hides it again — an empty aisle must not
+         instruct the tech to walk flanks that are not there.
+         ⛔ No handler, no role, no tabindex, no cursor: these are read-outs. -->
+    <div class="statrow" id="statrow">
+      <span class="statpill st-id"><span class="dot"></span><span id="tagId">—</span></span>
+      <span class="statpill st-state" id="tagState">TAP A RACK TO FOCUS</span>
+      <span class="statpill st-walk" id="tagWalk" hidden>TAP FLANKS TO WALK</span>
     </div>
   </div>
 
@@ -19483,18 +19535,25 @@ function forge3d_render(mount) {
   // v1.14.237 — PROVENANCE. Forge must never claim "LIVE MASTER" over a snapshot that
   // boot-restored from localStorage. `restoredFromStorage` is trustworthy: it has exactly
   // ONE writer (_phantom_master_bootRestore) and the fresh-parse path never sets it —
-  // verified, not assumed. Rendered into the sheet SUBTITLE, not the herotag: .sub is 9px
-  // inside an inline-flex box and a provenance string glued there wraps over the scene.
+  // verified, not assumed. Rendered into the sheet SUBTITLE, not the status row: a provenance
+  // string glued into that row wraps over the scene. v1.14.409 leans on this the other way too —
+  // the status row dropped its own copy of the site label BECAUSE this one is already on screen.
   function deploy_forge_siteLabel() {
     var m = deploy_forge_master();
     return (m && m.siteCode) ? String(m.siteCode).toUpperCase() : 'MASTER';
   }
-  // v1.14.238 — the herotag carries a flag count when the focused rack's geometry is suspect.
-  // Kept to a short glyph+number: .sub is 9px inside an inline-flex box, and a long string glued
-  // here wraps over the scene (the reason .237 put provenance in the subtitle instead).
-  function deploy_forge_tagSub(racked, total, flags) {
-    return deploy_forge_siteLabel() + ' · ' + racked + '/' + total + ' RACKED'
-      + (flags ? ' · ⚠' + flags + ' FLAGGED' : '') + ' · TAP FLANKS TO WALK';
+  // v1.14.238 / v1.14.409 — the STATE pill's text, and ONLY that pill's text. This was
+  // deploy_forge_tagSub, which concatenated four clauses into one string for one <span>; the
+  // status row now has three named slots, so a function that returns a concatenation would be
+  // handing a multi-clause string to a slot that owns one clause. Renamed as well as narrowed,
+  // deliberately: a same-named function with a different return shape is the trap that produced
+  // the v1.14.348 arity bug, and both call sites had to be visited anyway.
+  // WHAT LEFT THIS STRING: the site label (already the first term of #forge3d-prov, :19507) and
+  // ' · TAP FLANKS TO WALK' (now static markup in #tagWalk, :13253). The flag count STAYS glued
+  // to the count because it is conditional — see the CSS note at :9108 — and the caller pairs it
+  // with the .flagged class.
+  function deploy_forge_tagState(racked, total, flags) {
+    return racked + '/' + total + ' RACKED' + (flags ? ' · ⚠' + flags + ' FLAGGED' : '');
   }
   function deploy_forge_provenance() {
     var el = document.getElementById('forge3d-prov');
@@ -19582,7 +19641,7 @@ function forge3d_render(mount) {
   }
   function deploy_forge_unplaced(id) { deploy_forge_slots(id); return _unplacedCache[id] || []; }
   // v1.14.238 — how many devices in this rack carry a geometry flag (conflict / overrun /
-  // unknown height / hostname-location mismatch). Drives the chip + herotag indicators.
+  // unknown height / hostname-location mismatch). Drives the chip + status-pill indicators.
   function deploy_forge_flagCount(id) {
     var n = 0;
     deploy_forge_slots(id).forEach(function (s) {
@@ -19919,7 +19978,33 @@ function forge3d_render(mount) {
   var focused = null;
   var gutTextures = {};
   var tagId = document.getElementById('tagId');
-  var tagSub = document.getElementById('tagSub');
+  var tagState = document.getElementById('tagState');
+  var tagWalk = document.getElementById('tagWalk');
+  // v1.14.409 — ONE writer per status SHAPE, so no caller can put a concatenated string into a
+  // slot that owns a single clause. Declared here, immediately under the elements they write:
+  // this IIFE is ~1000 lines and has already shipped a bug where a var declared BELOW its first
+  // use silently wiped an earlier assignment (the setView no-op), and node --check is blind to it.
+  function writeStatusPills(racked, total, flags) {
+    // v1.14.409 — the id pill is hidden by writeStatusMessage() in a message state (no rack, no id
+    // worth showing). This is the symmetric reveal: a counted state always has a focused rack.
+    if (tagId && tagId.parentElement) tagId.parentElement.hidden = false;
+    if (tagState) {
+      tagState.textContent = deploy_forge_tagState(racked, total, flags);
+      tagState.classList.toggle('flagged', !!flags);
+    }
+    if (tagWalk) tagWalk.hidden = false;
+  }
+  // The zero state has no count and no aisle to walk, so the walk pill leaves the row entirely.
+  // That is not a behaviour change: pre-.409 the message REPLACED the whole concatenated string,
+  // walk clause and all, so an empty aisle never said "TAP FLANKS TO WALK" then either.
+  // v1.14.409 — the status row is the STATE surface. In a message state there is no focused rack,
+  // so the id pill would render a bare `● —`: a dot, a dash, and no information. It is hidden
+  // instead, and setFocus() below reveals it again the moment there is an id worth showing.
+  function writeStatusMessage(msg) {
+    if (tagId && tagId.parentElement) tagId.parentElement.hidden = true;
+    if (tagState) { tagState.textContent = msg; tagState.classList.remove('flagged'); }
+    if (tagWalk) tagWalk.hidden = true;
+  }
   var camTargetX = 0, radiusTarget = 13.5;
 
   function setFocus(rack, animate) {
@@ -19942,7 +20027,7 @@ function forge3d_render(mount) {
     var fslots = deploy_forge_slots(rack.userData.label);
     var fracked = fslots.filter(function (s) { return s.status === 'racked'; }).length;
     tagId.textContent = rack.userData.label + ' · FOCUS';
-    tagSub.textContent = deploy_forge_tagSub(fracked, fslots.length, deploy_forge_flagCount(rack.userData.label));
+    writeStatusPills(fracked, fslots.length, deploy_forge_flagCount(rack.userData.label));
     radiusTarget = 9.8;
     focused = rack;
     store.set('deploy_forge_view_v1', rack.userData.label);
@@ -20000,15 +20085,26 @@ function forge3d_render(mount) {
     if (LOADOUT.length) {
       // Populated. Restore the default hint — #hint is shared DOM that survives
       // close/open, so a prior no-Master open would otherwise leave its message stranded.
-      if (hintEl) hintEl.textContent = _HINT_DEFAULT;
+      // v1.14.409 — and the symmetric restore: a populated aisle gets its instruction back, and
+      // the hint must be un-hidden as well as re-texted, since the zero state now hides it.
+      if (hintEl) { hintEl.textContent = _HINT_DEFAULT; hintEl.hidden = false; }
       return false;
     }
     var noMaster = !RUN.length;
     var msg = noMaster ? 'NO MASTER LOADED · LOAD A MASTER FILE TO BUILD YOUR LOADOUT'
                        : 'NO RACKS LOADED · TAP ⊞ TO BUILD YOUR LOADOUT';
     if (tagId) tagId.textContent = '—';
-    if (tagSub) tagSub.textContent = msg;
-    if (hintEl) hintEl.textContent = msg;
+    writeStatusMessage(msg);
+    // v1.14.409 — SAY IT ONCE. This used to write `msg` into the hint AS WELL, so the zero state
+    // rendered the identical 59-character sentence twice, stacked, in two type treatments about
+    // 20px apart. The .407 comment below already named this redundancy when it deleted the FOURTH
+    // copy (the toast) — but decomposing the herotag into a full-width state pill put the
+    // remaining two directly on top of each other and made it impossible to miss.
+    // The division of labour is now honest: the HINT is the instruction surface (what to do), the
+    // STATUS ROW is the state surface (what is true). A zero state is a state, so it lives in the
+    // row, and the hint stands down rather than echoing it. Nothing is lost — the message is still
+    // on screen, still persistent, still in #forge3d-prov, and still in the console.
+    if (hintEl) { hintEl.textContent = ''; hintEl.hidden = true; }
     console.warn('[forge] ' + msg);
     // v1.14.407 — THE RED BAR ACROSS THE CONTROL ROW. This called phantomToast with NO type
     // argument, and phantomToast defaults `colors[type] || colors.error` (:50941), so an
@@ -20016,7 +20112,7 @@ function forge3d_render(mount) {
     // rgba(255,59,59,.9) ERROR RED. #toast-container is fixed at bottom:90px z-index:var(--z-toast)
     // (:13124), far above this sheet's z-index 60, so it landed across BOTH utility buttons
     // (measured 198x30 at 175..374 x 724..754, covering 11px of each 44px control).
-    // It is also the FOURTH copy of the same sentence: #forge3d-prov, #hint and #tagSub all
+    // It is also the FOURTH copy of the same sentence: #forge3d-prov, #hint and #tagState all
     // already state it, the latter two byte-identically from `msg` two lines above.
     // Deleted rather than re-typed. A non-error colour would fix the lie but keep the
     // redundancy and keep a transient banner lying over the controls; the persistent surfaces
@@ -20054,7 +20150,7 @@ function forge3d_render(mount) {
     D.meta.textContent = 'ROW ' + info.row.toUpperCase() + ' · POS ' + (info.idx + 1) + '/' + info.arr.length + ' · ' + racked + '/' + slots.length + ' RACKED';
     D.footer.innerHTML = '<span><b>' + slots.length + '</b> COMPONENTS</span><span><b>' + racked + '</b> RACKED · <b>' + (slots.length - racked) + '</b> PENDING</span>';
     if (focused && focused.userData.label === label)
-      tagSub.textContent = deploy_forge_tagSub(racked, slots.length, deploy_forge_flagCount(label));
+      writeStatusPills(racked, slots.length, deploy_forge_flagCount(label));
   }
   function rebake(rack) {
     if (!heroImg.complete) return;
