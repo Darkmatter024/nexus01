@@ -1574,6 +1574,60 @@ raises reading `(1 entries)`, SYS count `1` — **not 4**.
 - [ ] `?legacy=1` — open the aisle, reload: **no** "JS ERROR" banner (clear `phantom_legacy` afterwards)
 - [ ] Master + shift-end quota toasts are device-only and fold into the M1 storage checks below
 
+## v1.14.408 — the Forge toast moves above the row (`73acdb1`) · rollback: revert commit
+
+**Owner ruling**, closing the one item `.407` escalated rather than absorbed.
+
+⭐ **THE 96px IS DELETED, NOT RETUNED.** Last magic clearance in the stack, twin of the 92px removed
+at `.407`. `.407` made it *total*: the row grew to 58px, so the toast stopped merely clipping the row
+and began lying **entirely inside it**, hit-testable for its full 4s over the pill strip. `#toast` is
+now a **child of `.hud-bottom` at `bottom:100%`** — clears the row and the focus card at any height.
+
+**Why it couldn't be done at `.407`, and what unblocked it.** Two requirements were in direct tension:
+the toast must clear the row, **and** it must still paint above the **open detail panel** — the
+status-toggle handler fires with that panel up, so a toast sealed underneath takes **UNDO** with it and
+the tech silently loses the ability to revert a RACKED/PENDING change. Both were impossible while
+`.hud` carried `position:fixed`, because **a fixed element ALWAYS establishes a stacking context**
+whatever its z-index, capping every child below the strip's own `z-index:10` and so below the panel's 40.
+**The lever is one declaration:** `.hud` → `position:absolute` + `z-index:auto` establishes **no**
+stacking context, so the toast's `z-index:60` resolves in `#forge3d-hud`'s context and beats the panel
+(40), search overlay (50) and picker (55) — while `.toprow`/`.herotag` stay at auto and remain correctly
+covered by all three. Costs nothing today (the sheet's rect was **measured identical** to the viewport
+rect on both tiers) and is more correct tomorrow: it now anchors to the **sheet**, which is what it
+always described. Inherited from a full-window mock; `.233` fixed only the JS half.
+
+**Two smaller things fell out.** `left:50%` + `translateX(-50%)` retires for `margin-inline:auto` +
+`width:fit-content`, so the element carries **no transform at rest** (a transform makes it a containing
+block for any future fixed descendant — the `.212` trap). And `--forge-gap` is **named**, because 10px
+stopped being one element's margin and became a **shared term** the moment the toast joined the caption
+in that slot. The two now share one slot and may not stack: the caption yields via
+`.toast.show ~ .hint` and returns over its own 800ms fade (hence `#toast` is emitted **before** `#hint`).
+
+**MEASURED:** the gap above the row is **exactly 10.0px in all six** combinations — short card, wrapping
+zero-state card, forced 3-line card × 390 and 834. With the panel **open**, `elementFromPoint` at the
+toast's own centre returns the toast and **UNDO is hit-testable**.
+
+⚠ **Three false failures were found in the PROBE, not the CSS**, and the method note is now in the spec:
+`.toast` animates `translateY(20px)→0` over 250ms, so measuring in the same turn samples it **mid-flight
+up to 20px low**; and `.hint` carries its **own 800ms** fade, so a 300ms wait catches it at 0.6 opacity
+returning. Also relearned: **`showToast` is IIFE-scoped** and unreachable at page scope (the trap that
+bit M2-b), so the probe drives the DOM state it produces.
+
+**GATES:** 3 inline blocks compile · `node --check sw.js` · valid JSON · braces **4559/4559** (+1
+caption-yields rule) · CRLF intact, 0 lone LF · three-stamp lockstep · RACK SCENE LOCK respected ·
+`?legacy=1` unaffected. **GUARD:** `08-forge-layout.spec.js` → **11 tests**; two of the three new ones
+assert the **lever directly** (the strip must not be `fixed`, must not carry a z-index), so restoring
+either fails here rather than in the aisle at 2AM. Full suite **115 tests — 106 passed + 9 skipped**.
+**Live confirmed 2026-08-07:** all three stamps serving `phantom-v1.14.408` ~40s after push.
+
+- [ ] Clear the SW cache, confirm **`v1.14.408`**
+- [ ] Change a rack's loadout so the toast fires — it appears **ABOVE the pill row**, never across it ⭐
+- [ ] Open a rack's detail panel, toggle a row RACKED/PENDING — the toast is visible **over the panel**
+      and **UNDO actually reverts it** ⭐ *this is the half that was in tension*
+- [ ] The caption disappears while the toast is up and returns after
+- [ ] Bottom strip still clears the home indicator — ⚠ `env(safe-area-inset-bottom)` is **0** in the
+      harness, so this is verified by **nothing** off-device
+
 ## v1.14.407 — Forge bottom control stack, one clean pass (`a8360df`) · rollback: revert commit
 
 Owner-directed after Forge began rendering: *"the bottom rack-strip controls are clipping/overlapping…
