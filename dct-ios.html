@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.404';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.405';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20856,6 +20856,41 @@ function bw_mount3D(rack, mount) {
     say('Rack preview could not start on this device.', why + ' (after ' + _ARM_MAX + ' re-arms): ' + diag());
   };
   var draw = function() {
+    // ══ v1.14.405 — BUILD MUST NOT RE-ACQUIRE WHILE THE AISLE OWNS THE SCREEN ═══════════════
+    // THE PROVEN CAUSE OF THE BLANK FORGE AISLE, and it is an interaction of three ships, none
+    // of which is wrong on its own:
+    //   .391 gave this function a BOUNDED RE-ARM — 12 tries x 400ms, ~5 SECONDS of setTimeout
+    //        retries — whose only liveness guard is document.body.contains(mount).
+    //   .401 made context release SYMMETRIC: any renderer that registers disposes every other
+    //        attachment through RackEngine.releaseOthers (I1).
+    //   Together: opening the aisle NEVER REMOVES #bw-mount FROM THE DOM — the aisle is a
+    //   separate full-screen sheet, a direct child of #app — so the re-arm keeps firing for up
+    //   to five seconds AFTER the aisle opens, and each retry re-registers this mount and
+    //   DISPOSES THE LIVE AISLE. The HUD is static markup so it stays perfect; only the scene
+    //   dies. That is the reported defect exactly: shell open, viewport blank, no close ever
+    //   requested, and the surviving attachment is bw-mount.
+    // Before .401 this was harmless: a rack render could not kill a live aisle, which is why
+    // the aisle passed device verify at .353 and has been blank since. .404 removed only the
+    // OBSERVER half of .401 and left releaseOthers, which is why it did not fix this.
+    //
+    // THE GUARD WAS ASKING THE WRONG QUESTION. "Is my mount still in the DOM" is not the same
+    // as "am I still the surface the technician is looking at". A retry loop that outlives a
+    // navigation to another WebGL surface is a STALE CALLBACK, and this is the correction of
+    // that guard rather than a new timeout, retry, fallback or special case — it REMOVES work
+    // on a path that must not run at all.
+    // Placed at the top of draw() deliberately: every route into the renderer from this
+    // function, the first attempt and all twelve re-arms, passes through here. One guard, no
+    // path left open.
+    // NOT a silent failure: nothing user-facing is being swallowed. Build is not on screen, so
+    // a toast here would fire over the aisle and name a surface the technician is not looking
+    // at. Deferring is the CORRECT outcome, and it is stated in the console for the record.
+    try {
+      var _aisle = document.getElementById('forge3d-sheet');
+      if (_aisle && _aisle.classList.contains('open')) {
+        console.warn('[PHANTOM] bw_mount3D: aisle owns the screen — Build re-acquisition aborted (would dispose the live aisle)');
+        return;
+      }
+    } catch (_) {}
     try {
       rackElevation_render3D(rack, mount);
       var cv = mount.querySelector('canvas');
