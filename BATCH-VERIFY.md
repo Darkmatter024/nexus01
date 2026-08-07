@@ -1518,4 +1518,82 @@ that must not run. **I1 was not weakened**; `releaseOthers` is unchanged.
 ⚠ **This pass confirms the aisle DRAWS AND HOLDS and nothing more.** It does **not** release either
 batch. `.377`–`.384` remains unreleased; `.385`–`.405` remains OPEN at 21 of 6.
 
+---
+
+# ⚖ OWNER RULINGS 2026-08-06 — batch `.377`–`.384` DISPOSED, three `.391` items CLOSED
+
+Issued during the regression-baseline session, alongside the first automated test suite
+(`test/e2e/`, 7 specs). These rulings change what must be verified on device and what must not.
+
+## RULING 1 — `.377`–`.384` disposed, ship by ship
+
+> *"Mark `.377`–`.384` superseded where the current architecture and approved UI have replaced them.
+> Preserve any unique data-safety work that is still valid."*
+
+The batch ran a device pass on 2026-08-03 and **FAILED** on the Build surface; that failure is what
+`.385` diagnosed. No release was ever recorded. Re-verifying eight ships against a Build workspace
+that has since been rebuilt would spend device time on a surface that no longer exists.
+
+Classified individually rather than written off wholesale — three of these carry work that is still
+load-bearing today.
+
+| Ship | Disposition | Basis |
+|---|---|---|
+| `.377` OPS wall re-cut at 768 | **SUPERSEDED IN PLACE** | The nine-cell OPS wall it re-cut is currently **unreachable**: `bw_render()` adds `bw-on` on every branch (`:20458`/`:20471`/`:20489`) and `:54055` then hides `#work-grid`, which contains the wall. Verifying its art is moot until the wall has a door again. **The assets are on disk and precached — nothing is lost.** The reachability regression is tracked as an open P1, not as this ship's debt. |
+| `.378` TOOLS art-first card face, phone | **PRESERVED — now automated** | The `#pg-ref` cards render and are exercised by `03-tools.spec.js` (all 7 static cards `:13546`–`:13552`) and `06-composition.spec.js` on all five tiers. |
+| `.379` remove the glowtune dev tool | **CLOSED** | A deletion. Absence confirmed; nothing to verify on device. |
+| `.380` the rip-cord gets a way back | **PRESERVED — load-bearing, now automated** | RETURN TO NEW UI is the only exit from the legacy house. `01-nav.spec.js` verifies `?legacy=1` boots with no `body.rd`, `#rd-botnav` hidden, legacy `.tab-nav` visible, `#pg-triage` active, `phantom_legacy='1'` persisted, and a subsequent bare-URL reload **stays** legacy. This is Rule 7's safety net and it is proven. |
+| `.381` wire desktop TOOLS to the 768 art | **PRESERVED — now automated** | Covered by `06-composition.spec.js` on `laptop-chromium` and `desktop-chromium`. |
+| `.382` COMMAND SHELL PHASE 1 (`?cshell=1`) | **SUPERSEDED** | `ARCHITECTURE-BLUEPRINT.md` D-06 / §10.3 rules `#cmd-shell` is a **complete second Command implementation** that is capability-ported and then **deleted**; `#pg-cmd` becomes the single Command at every tier, wrapped in the `.cshell` chrome. The preview shell is a dead end by ruling. `06-composition.spec.js` asserts the current correct behaviour: `.cshell` is opt-in and never persisted, so a bare URL at 1440px is still the phone composition. |
+| `.383` COMMAND SHELL DESKTOP | **SUPERSEDED** | Same ruling. Rebuilt at Stage 7 / M5. |
+| `.384` HONEST NAMING + transparent readiness | **PRESERVED — invariant, do not regress** | *Site Health* → **LOCAL SYSTEM STATE**, captioned *"Read from this device. PHANTOM receives no facility telemetry"*; readiness as **"N of 4 ready"**, a count of real gates, never a hardcoded score. This is the never-label-absent-telemetry rule, and it is the same principle the blueprint later encodes as **D-15** (Shift readiness is a gate list with a met/total count, never a percentage). **Any future change that reintroduces a fabricated score or a facility-telemetry label is a P0 revert.** |
+
+**Net: 3 superseded · 1 closed · 4 preserved (all four now covered by automation).**
+Batch `.377`–`.384` is **DISPOSED**. It is not on the device pass. Batch `.385`–`.405` remains OPEN.
+
+## RULING 2 — SHIFT is the fifth pillar; EXIT is an APPROVED MISMATCH until M4
+
+> *"SHIFT is the intended fifth product pillar. EXIT must not remain the permanent fourth navigation
+> destination. Do not redesign navigation yet — record this as an approved mismatch for the relevant
+> milestone."*
+
+**Measured today** (`01-nav.spec.js`, and independently by `06-composition.spec.js`): primary nav is
+**three `.botitem` destinations + `#rd-exit`** — `bn-command` Home · `bn-work` Build · `bn-ref` Tools ·
+`rd-exit` Exit. **No Scan. No Shift.** Target per R-02 is five slots: Command · Build · Scan · Tools · Shift.
+Delta is **+Scan, +Shift, −Exit**.
+
+**This is a KNOWN, ACCEPTED mismatch. It is not a defect to be fixed opportunistically.**
+Nav is not to be touched until **M4 / blueprint Stage 6**, where Shift ships as a pillar and
+`EXIT` leaves slot 4 in the same ship. Any earlier nav change is out of scope and must be refused.
+Closes `.391` open item 1.
+
+## RULING 3 — the Build rack control rail matches the approved composition, later
+
+> *"The Build rack control rail must ultimately match the approved Build composition. Do not polish
+> it during baseline work."*
+
+The rail wraps 4-then-1 and carries REAR + EXPLODE, which the approved reference does not show.
+`.reh-3d-seg` measures **22px** on phone (`06-composition.spec.js`, CSS-rule probe at `:10657`) against
+the app's own `--tap-s` 44px gloved floor. **Both facts are recorded, neither is to be changed during
+baseline work.** Owned by the Build composition milestone (W2 / M2-b). Closes `.391` open item 2.
+
+## RULING 4 — a populated Master/rack fixture is required
+
+> *"Add a representative populated Master/rack fixture so Build metrics, phases, devices, platform,
+> blockers, and Forge can be tested against real populated state."*
+
+Every one of the six baseline specs reported the same limitation: the harness had **no Master loaded**,
+so only the zero state was ever exercised. `bw_render()` routes away before creating `#bw-mount` with no
+deployment (`:20457`) or no active rack (`:20470`); the `.reh-3d-seg` pills are built by JS
+(`:36049`/`:36097`/`:36107`) only once a rack elevation exists; the four `bw-tab` tool doors (`:20632`)
+exist only in the populated branch; the aisle states NO MASTER LOADED.
+
+Fixture lands as `test/e2e/fixtures-populated.js` + `test/e2e/07-populated.spec.js`. Per **R-06** it
+**must include at least one host-less, cable-endpoint-only cabinet** — ~42% of cabs on a real site
+resolve with empty `hosts[]`, and a fixture where every cabinet is populated would hide the most
+expensive data class in the app. Closes `.391` open item 3 — the Build metrics layout gets seen against
+a populated rack.
+
+---
+
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->

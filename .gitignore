@@ -8,3 +8,10 @@
 
 # SDD scratch workspace (ledger, briefs, review packages) - never shipped
 .superpowers/
+
+# Playwright regression harness — the app stays toolchain-free; only the harness
+# source is tracked. Installed deps and run artifacts are not.
+/test/node_modules/
+/test/test-results/
+/test/playwright-report/
+/test/package-lock.json
