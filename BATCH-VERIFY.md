@@ -1574,6 +1574,85 @@ raises reading `(1 entries)`, SYS count `1` — **not 4**.
 - [ ] `?legacy=1` — open the aisle, reload: **no** "JS ERROR" banner (clear `phantom_legacy` afterwards)
 - [ ] Master + shift-end quota toasts are device-only and fold into the M1 storage checks below
 
+## v1.14.407 — Forge bottom control stack, one clean pass (`a8360df`) · rollback: revert commit
+
+Owner-directed after Forge began rendering: *"the bottom rack-strip controls are clipping/overlapping…
+this is a layout/composition defect, not a rendering defect."* Measured by three read-only agents,
+fixed by one, then reviewed by three more — **the review found a blocker the first six had not seen,
+because they were reading CSS and it opened the aisle and looked.**
+
+**ROOT CAUSE, ONE SENTENCE: the control row had no declared height, so every control in it was sized
+by a sibling.** `.hudbtn` declared `width:46px` and no height, taking whatever `align-items:stretch`
+handed it from the chips. Measured **46×24.5** on a fresh device and **46×35** populated against the
+app's own 44px `--tap-s`. The pills were 76×33 and they carry click handlers, so they were sub-floor
+too. Provenance: `git log -L` returns **exactly one commit per rule** (`25a1e29`, `.233`) and the CSS
+was still byte-identical to `MOCKUP-FORGE-HYBRID-AISLE-v2.html` — a mock authored as a **full-window
+demo and never validated at 390px inside a sheet.**
+
+| | before | after |
+|---|---|---|
+| utility buttons, fresh device | 46 × **24.5** | 46 × **44**, matched pair |
+| utility buttons, populated | 46 × **35** | 46 × **44** |
+| rack pills (click handlers) | 76 × **33** | 76 × **44** |
+| row height | 24.5 / 35 — emergent | **58px constant**, empty or full |
+| active pill's glow room | **0.00px** above a declared 14px blur | **7px / 7px**, derived |
+| `.chips` overflow | `auto / auto` — y-axis clipped silently | `auto / hidden`, both declared |
+| caption vs pill row | drawn **on top of the pills** | **10px clear**, structurally |
+| caption width @390 | **472.70px**, cut 41px off each end | 390px, wraps, readable |
+| pill-strip centre tap | returned `span#toastUndo` — swallowed | returns the pill |
+
+⭐ **THE 92px IS DELETED, NOT RETUNED.** The caption is now a **child** of the strip it must clear, at
+`bottom:100%`. The guard proves it is derived: **the gap holds at 10px across a stack forced from 142
+to 300px.** This is the repo's own fixed-strip-clearance rule (`.341`, `.351`) satisfied by *removing*
+the constant. Its `white-space:nowrap` went too — it forced 59 characters to 472.70px inside a 390px
+viewport, unreadable at both ends.
+
+⭐ **BLOCKER THE REQUEST DID NOT NAME:** the zero state opened with a **RED ERROR BAR across both
+utility buttons.** `deploy_forge_zeroState` called `phantomToast` with **no type**, and `phantomToast`
+defaults `colors[type] || colors.error`, so an expected, honest condition — no Master on a fresh
+device — was painted `rgba(255,59,59,.9)`. It was also the **fourth copy of the same sentence** on one
+screen. Deleted rather than re-coloured; `console.warn` keeps the diagnostic. **A zero state is not an
+error** — the never-label-absent-telemetry rule, applied to a colour.
+
+**THREE OF THE OWNER'S OWN SUSPICIONS REFUTED BY MEASUREMENT, and no change was manufactured to satisfy
+them:** the focus card never overlapped the row (**−12.00px**, a clean constant gap — the `.hint` was
+the intruder, so requirement 4 was already met) · **no ancestor clips these controls** (`#forge3d-mount`
+is the HUD's *sibling*; the only clipping box was `.chips`, on its own children, clipping a **shadow**)
+· **zero negative lengths** exist anywhere in the block. Also refuted: the patch-stacking premise —
+nothing here had ever been patched, so the ban was forward-looking and the discipline was to not
+*author* the first hack.
+
+**STYLE UNCHANGED** — glass, blur, borders, radii, colours, fonts and sizes verified byte-identical in
+computed values. Structure, spacing and stacking only.
+
+**GATES:** 3 inline blocks compile · `node --check sw.js` · valid JSON · CSS braces **4558/4558** (+1
+deliberate token rule) · CRLF intact, 0 lone LF · PRECACHE untouched · three-stamp lockstep.
+**RACK SCENE LOCK respected** — nothing under `#forge3d-mount`, `forge3d_render`, `drawGuts` or the
+camera rig. **`?legacy=1` unreachable** — the sheet is `body.rd`+`.open` gated and a sweep of all 12
+style blocks confirms zero uses of these classes outside a `#forge3d-sheet`-scoped selector.
+**GUARD:** new `test/e2e/08-forge-layout.spec.js`. Suite now **112 tests — 103 passed + 9 skipped**,
+reconciling exactly to the 104-test baseline plus this spec.
+**Live confirmed 2026-08-07:** all three stamps serving `phantom-v1.14.407` ~40s after push.
+
+- [ ] Clear the SW cache, confirm the app reports **`v1.14.407`**
+- [ ] Open the aisle with **NO Master**: **no red bar**, and no caption lying across the pills ⭐
+- [ ] Both utility buttons and the rack pills are comfortably tappable **with a glove**
+- [ ] Load a Master: pill row and focus card cleanly separated, active pill's glow not cut
+- [ ] Bottom strip still clears the home indicator — ⚠ `env(safe-area-inset-bottom)` resolves to **0**
+      in the harness, so the real notch clearance is verified by **nothing** off-device
+- [ ] `?legacy=1` unchanged (clear `phantom_legacy` afterwards)
+
+⛔ **OPEN — OWNER RULINGS, ESCALATED NOT ABSORBED.** (1) The **Forge toast** still carries a magic
+`96px` and still overlaps the control row while shown, and this ship made that overlap *worse* (the
+stack grew 23px, so it now sits entirely inside the row band instead of clipping 66% of it). It cannot
+be fixed without a ruling: moving it under `.hud-bottom` — the same structural fix that worked for the
+caption — puts it **behind the open detail panel** at one of its two call sites and destroys the UNDO
+affordance. (2) At the real **5-rack loadout cap, 2 of 5 pills are off-screen at 390px** with no
+affordance; both available fixes are restyles the brief forbade. (3) `--forge-tap` is bound to
+`--tap-s` 44px while the app's own token comment argues the gloved-realistic minimum is **~50px** and
+`--tap-m` (48px) already exists — now a **one-token edit**. (4) `.rd-sheet-close`, the aisle's only
+exit, is **40×40**; `.detail-close` is **32×32**.
+
 ---
 
 # ⚖ OWNER RULINGS 2026-08-06 — batch `.377`–`.384` DISPOSED, three `.391` items CLOSED
