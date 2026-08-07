@@ -1785,4 +1785,26 @@ a populated rack.
 
 ---
 
+## v1.14.409 — Forge bottom dock: one dock, two rows
+
+Owner-approved on the 390px mockups **before** stamping. Row 1 = selection + action (chips left,
+⊞ / search right, one 44px baseline). Row 2 = context, three read-out pills replacing the single
+wide card. **No new state is computed** — `deploy_forge_tagSub` already concatenated these exact
+three clauses; each pill now owns one of them.
+
+- [ ] Cold-load with **no Master**: the dock says its sentence **once**, and there is no bare `● —` pill.
+- [ ] Load a Master, focus a rack: id / count / walk read on **one row**, nothing clipped at 390.
+- [ ] Focus a **flagged** rack: the count pill goes **GOLD**. If it is red, stop and report.
+- [ ] `0/0 RACKED` on a cable-endpoint-only cab is **not** styled as an error.
+- [ ] Change a loadout: the toast still fires **above** the row (the `.408` invariant).
+- [ ] Bottom strip still clears the home indicator — `env(safe-area-inset-bottom)` is 0 in the
+      harness, so this is verified by **nothing** off-device.
+
+Flagged to the owner, **not** introduced by this ship: the caption still wraps to two lines at 390
+(pre-existing copy length) · zero-state row 1 is right-weighted (no chips without a Master) · chips 4
+and 5 sit off-screen at a full five-rack loadout with nothing signalling the strip scrolls (carried
+`.407` ruling).
+
+---
+
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->

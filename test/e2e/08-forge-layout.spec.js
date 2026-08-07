@@ -19,7 +19,7 @@
 // WHAT THIS SPEC PINS — the shape of the fix, not its pixel values:
 //   1. every control in the row consumes the tap token as its OWN height, in every
 //      chip state INCLUDING EMPTY (the state that collapsed);
-//   2. the three layers — pill strip, utility buttons, focus card — never intersect;
+//   2. the three layers — pill strip, utility buttons, status row — never intersect;
 //   3. .chips declares its clip on both axes and reserves the glow's own room INSIDE
 //      that clip, derived from the same token that draws the glow;
 //   4. the hint's clearance is STRUCTURAL: the stack is GROWN at runtime, twice, by
@@ -93,6 +93,33 @@ async function setChips(page, n) {
   await settle(page);
 }
 
+// v1.14.409 — PUT THE DOCK IN ITS POPULATED COMPOSITION.
+// Two members of the dock are CONDITIONAL by design and are absent in the zero state:
+//   • #hint — the instruction caption. deploy_forge_zeroState() hides it, because the zero-state
+//     message goes to the status row and the caption used to render a byte-identical copy of it
+//     ~20px above, in a second type treatment. The hint is the INSTRUCTION surface; the status row
+//     is the STATE surface. One sentence, one home.
+//   • .st-id — the rack-id pill. With no focused rack it would read `● —`: a dot, a dash and no
+//     information, so writeStatusMessage() hides it and writeStatusPills() reveals it again.
+// The harness cannot load a Master, so the app sits in the zero state and any test asserting the
+// POPULATED geometry has to say so. This helper does exactly what the app's own populated path
+// does — it invents no data, and the pill text is the owner's own example.
+// The conditional behaviour itself is pinned separately, by the zero-state test below, so hiding
+// it here can never hide a regression.
+async function populateDock(page) {
+  await page.evaluate(() => {
+    const hint = document.getElementById('hint');
+    if (hint) { hint.hidden = false; hint.textContent = 'TAP A RACK TO FOCUS · ⊞ PICK UP TO 5 FOR THE 3D'; }
+    const id = document.getElementById('tagId');
+    if (id && id.parentElement) { id.parentElement.hidden = false; id.textContent = 's3:171'; }
+    const st = document.getElementById('tagState');
+    if (st) st.textContent = '0/0 RACKED';
+    const wk = document.getElementById('tagWalk');
+    if (wk) { wk.hidden = false; wk.textContent = 'TAP FLANKS TO WALK'; }
+  });
+  await settle(page);
+}
+
 // Every chip state the surface actually has: the honest no-Master zero state, a
 // partial loadout, and the real 5-rack cap.
 const CHIP_STATES = [0, 1, 3, 5];
@@ -124,7 +151,7 @@ const SNAPSHOT = () => {
   const topAt = (x, y) => name(document.elementFromPoint(x, y));
 
   const strip = q('.hud-bottom'), row = q('.toprow'), chips = q('.chips');
-  const hero = q('.herotag'), hint = q('.hint'), toast = q('.toast'), active = q('.chip.active');
+  const statrow = q('.statrow'), hint = q('.hint'), toast = q('.toast'), active = q('.chip.active');
   const lo = document.getElementById('loadoutBtn'), se = document.getElementById('searchBtn');
 
   const csChips = getComputedStyle(chips);
@@ -140,7 +167,7 @@ const SNAPSHOT = () => {
   }
 
   const R = {
-    strip: rect(strip), row: rect(row), chips: rect(chips), hero: rect(hero),
+    strip: rect(strip), row: rect(row), chips: rect(chips), statrow: rect(statrow),
     hint: rect(hint), toast: rect(toast), lo: rect(lo), se: rect(se), active: rect(active),
   };
 
@@ -208,15 +235,15 @@ const SNAPSHOT = () => {
       chips_loadout: hit(R.chips, R.lo),
       chips_search: hit(R.chips, R.se),
       loadout_search: hit(R.lo, R.se),
-      hero_row: hit(R.hero, R.row),
-      hero_chips: hit(R.hero, R.chips),
-      hero_loadout: hit(R.hero, R.lo),
-      hero_search: hit(R.hero, R.se),
+      statrow_row: hit(R.statrow, R.row),
+      statrow_chips: hit(R.statrow, R.chips),
+      statrow_loadout: hit(R.statrow, R.lo),
+      statrow_search: hit(R.statrow, R.se),
       hint_row: hit(R.hint, R.row),
       hint_chips: hit(R.hint, R.chips),
       hint_loadout: hit(R.hint, R.lo),
       hint_search: hit(R.hint, R.se),
-      hint_hero: hit(R.hint, R.hero),
+      hint_statrow: hit(R.hint, R.statrow),
     },
   };
 };
@@ -351,9 +378,9 @@ test.describe('Forge bottom control stack', () => {
   // B · THE THREE LAYERS
   // ───────────────────────────────────────────────────────────────────────────
 
-  test('the pill strip, the utility buttons and the focus card never intersect', async ({ phantom, page }, testInfo) => {
+  test('the pill strip, the utility buttons and the status row never intersect', async ({ phantom, page }, testInfo) => {
     // The owner's report was "the rack pills and the right-side utility buttons are
-    // fighting the focus card below". Separation is asserted by RECT, in every chip
+    // fighting the focus card below" (the card is now .statrow, v1.14.409). Separation is
     // state, in both directions — never by eye. The hint is included because the
     // caption was the fourth, uninvited layer that was actually inside the row.
     await phantom.boot();
@@ -369,28 +396,28 @@ test.describe('Forge bottom control stack', () => {
       expect(m.intersects.chips_search, `${tag} the pill strip overlaps #searchBtn — chips ${box('chips')} vs ${box('se')}`).toBe(false);
       expect(m.intersects.loadout_search, `${tag} the two utility buttons overlap each other`).toBe(false);
 
-      // Requirement 4, verbatim: the focus card must not overlap the control row.
-      expect(m.intersects.hero_row, `${tag} .herotag overlaps .toprow — hero ${box('hero')} vs row ${box('row')}`).toBe(false);
-      expect(m.intersects.hero_chips, `${tag} .herotag overlaps the pill strip`).toBe(false);
-      expect(m.intersects.hero_loadout, `${tag} .herotag overlaps #loadoutBtn`).toBe(false);
-      expect(m.intersects.hero_search, `${tag} .herotag overlaps #searchBtn`).toBe(false);
+      // Requirement 4, verbatim: the status row must not overlap the control row.
+      expect(m.intersects.statrow_row, `${tag} .statrow overlaps .toprow — statrow ${box('statrow')} vs row ${box('row')}`).toBe(false);
+      expect(m.intersects.statrow_chips, `${tag} .statrow overlaps the pill strip`).toBe(false);
+      expect(m.intersects.statrow_loadout, `${tag} .statrow overlaps #loadoutBtn`).toBe(false);
+      expect(m.intersects.statrow_search, `${tag} .statrow overlaps #searchBtn`).toBe(false);
 
       // The caption is a layer too, and it is the one that was drawing on the pills.
       expect(m.intersects.hint_row, `${tag} .hint is drawn INSIDE the control row — hint ${box('hint')} vs row ${box('row')}`).toBe(false);
       expect(m.intersects.hint_chips, `${tag} .hint overlaps the pill strip`).toBe(false);
       expect(m.intersects.hint_loadout, `${tag} .hint overlaps #loadoutBtn`).toBe(false);
       expect(m.intersects.hint_search, `${tag} .hint overlaps #searchBtn`).toBe(false);
-      expect(m.intersects.hint_hero, `${tag} .hint overlaps the focus card`).toBe(false);
+      expect(m.intersects.hint_statrow, `${tag} .hint overlaps the status row`).toBe(false);
 
-      // Stacking ORDER, not just non-overlap: hint above the strip, focus card below
+      // Stacking ORDER, not just non-overlap: hint above the strip, status row below
       // the control row, everything inside the bottom strip.
       expect(m.rects.hint.b, `${tag} .hint's bottom edge is below the strip's top edge`).toBeLessThanOrEqual(m.rects.strip.t + 0.5);
-      expect(m.rects.row.b, `${tag} the control row does not sit above the focus card`).toBeLessThanOrEqual(m.rects.hero.t + 0.5);
-      expect(m.rects.hero.b, `${tag} the focus card escapes the bottom of its own strip`).toBeLessThanOrEqual(m.rects.strip.b + 0.5);
+      expect(m.rects.row.b, `${tag} the control row does not sit above the status row`).toBeLessThanOrEqual(m.rects.statrow.t + 0.5);
+      expect(m.rects.statrow.b, `${tag} the status row escapes the bottom of its own strip`).toBeLessThanOrEqual(m.rects.strip.b + 0.5);
 
       // No control is pushed off the bottom of the viewport by the safe-area padding.
       const vh = await page.evaluate(() => window.innerHeight);
-      expect(m.rects.hero.b, `${tag} the focus card is below the fold (viewport ${vh}px)`).toBeLessThanOrEqual(vh + 0.5);
+      expect(m.rects.statrow.b, `${tag} the status row is below the fold (viewport ${vh}px)`).toBeLessThanOrEqual(vh + 0.5);
       expect(m.rects.hint.t, `${tag} .hint is off the top of the viewport`).toBeGreaterThanOrEqual(0);
     }
   });
@@ -402,6 +429,7 @@ test.describe('Forge bottom control stack', () => {
     // pin is: whatever string the app writes, the box stays on screen.
     await phantom.boot();
     await openAisle(page);
+    await populateDock(page);   // conditional members — see the helper
 
     const ZERO_STATE = 'NO MASTER LOADED · LOAD A MASTER FILE TO BUILD YOUR LOADOUT';   // :19945, verbatim
     await page.evaluate((s) => { document.getElementById('hint').textContent = s; }, ZERO_STATE);
@@ -497,6 +525,7 @@ test.describe('Forge bottom control stack', () => {
     // must be the SAME number every time. A constant offset cannot do that.
     await phantom.boot();
     await openAisle(page);
+    await populateDock(page);   // conditional members — see the helper
     await setChips(page, 3);
 
     const gapOf = (m) => +(m.rects.strip.t - m.rects.hint.b).toFixed(2);
@@ -509,21 +538,26 @@ test.describe('Forge bottom control stack', () => {
     expect(rest.hintCss.offsetParent, `${tag} .hint is not anchored to the bottom strip — its offsetParent is ${rest.hintCss.offsetParent}`).toMatch(/hud-bottom|hud/);
 
     // The two members are perturbed SEPARATELY, because they fail differently: the
-    // control row is governed by a declared token, the focus card by DATA. A
+    // control row is governed by a declared token, the status row by DATA. A
     // clearance derived from --forge-row-h alone would survive the first and still
     // slide under the second, which is the shape that actually shipped.
     //
-    // FOCUS-CARD strings. The short one is deploy_forge_tagSub's real format
-    // (:19434 — site · racked/total · TAP FLANKS TO WALK). The long one is that same
-    // clause repeated until the box wraps on the WIDEST tier this spec runs; the
-    // point of it is the BOX HEIGHT, not the string, and no claim is made that any
-    // site reports it. Measured at rest: the herotag is already wrapped on a 390px
-    // phone (74px) and single-line on an 834px tablet (56px), which is exactly why a
-    // fixed constant cannot describe this stack.
+    // STATUS-ROW strings, written into the STATE pill (#tagState). These are LAYOUT
+    // fixtures for the box height, not claims about what any site reports.
+    //
+    // ⚠ v1.14.409 — the short string is DELIBERATELY still the pre-.409 whole-card
+    // format (site · racked/total · TAP FLANKS TO WALK). The app no longer builds
+    // that string — deploy_forge_tagState now returns the count clause ALONE and the
+    // other two clauses are their own pills — but this test needs a string long
+    // enough to wrap the row, and re-pointing it at the real 10-char format would
+    // silently make the perturbation too small to move the box and turn the vacuity
+    // guard below into the thing it exists to prevent. So: a fixture, named as one.
+    // The REAL format is pinned instead by 02-build-forge (zero state) and by the
+    // structure test at the bottom of this file.
     const SUB_SHORT = 'US-SPK03 · 21/42 RACKED · TAP FLANKS TO WALK';
     const SUB_LONG = new Array(6).fill('US-SPK03 · 21/42 RACKED · ⚠3 FLAGGED · TAP FLANKS TO WALK').join(' · ');
     const setSub = async (s) => {
-      await page.evaluate((v) => { document.getElementById('tagSub').textContent = v; }, s);
+      await page.evaluate((v) => { document.getElementById('tagState').textContent = v; }, s);
       await settle(page);
     };
     const setTap = async (v) => {
@@ -536,29 +570,29 @@ test.describe('Forge bottom control stack', () => {
 
     const runs = [{ label: 'at rest', m: rest }];
 
-    // (1) FOCUS CARD, one line — data-driven, and it SHRINKS the stack on the phone.
+    // (1) STATUS ROW, one line — data-driven, and it SHRINKS the stack on the phone.
     await setSub(SUB_SHORT);
-    runs.push({ label: 'short focus card', m: await snapshot(page) });
+    runs.push({ label: 'short status row', m: await snapshot(page) });
 
-    // (2) FOCUS CARD, wrapped — data-driven, and it grows the stack on every tier.
+    // (2) STATUS ROW, wrapped — data-driven, and it grows the stack on every tier.
     await setSub(SUB_LONG);
-    runs.push({ label: 'wrapped focus card', m: await snapshot(page) });
+    runs.push({ label: 'wrapped status row', m: await snapshot(page) });
 
     // (3) CONTROL ROW, through its own declared token — a different member entirely.
     await setTap('76px');
-    runs.push({ label: 'wrapped card + --forge-tap 76px', m: await snapshot(page) });
+    runs.push({ label: 'wrapped row2 + --forge-tap 76px', m: await snapshot(page) });
 
     // (4) Back to the declared row height, card still wrapped.
     await setTap(null);
-    runs.push({ label: 'wrapped card only', m: await snapshot(page) });
+    runs.push({ label: 'wrapped row2 only', m: await snapshot(page) });
 
     const heights = runs.map((r) => r.m.rects.strip.h);
-    const heroes = runs.map((r) => r.m.rects.hero.h);
+    const statHeights = runs.map((r) => r.m.rects.statrow.h);
     const rows = runs.map((r) => r.m.rects.row.h);
     const gaps = runs.map((r) => gapOf(r.m));
     // eslint-disable-next-line no-console
     console.log(`[08-forge-layout] ${tag} clearance under perturbation — ` +
-      runs.map((r, i) => `${r.label}: stack ${heights[i]} (row ${rows[i]} + card ${heroes[i]}), gap ${gaps[i]}`).join(' | '));
+      runs.map((r, i) => `${r.label}: stack ${heights[i]} (row ${rows[i]} + row2 ${statHeights[i]}), gap ${gaps[i]}`).join(' | '));
 
     // The defect signal first, so a real regression reports as a regression and not
     // as a broken test: at rest, does the caption already sit in the control row?
@@ -569,7 +603,7 @@ test.describe('Forge bottom control stack', () => {
     // Both are asserted SEPARATELY so a half-dead perturbation cannot hide behind the
     // other one — which is precisely the hole the first draft of this test had.
     const spread = (a) => Math.max(...a) - Math.min(...a);
-    expect(spread(heroes), `${tag} the FOCUS CARD never changed height (${heroes.join(', ')}) — the data-driven half of this test proved nothing; either the subtitle is no longer written to #tagSub or .herotag stopped wrapping`).toBeGreaterThan(5);
+    expect(spread(statHeights), `${tag} the STATUS ROW never changed height (${statHeights.join(', ')}) — the data-driven half of this test proved nothing; either the state clause is no longer written to #tagState or .statrow stopped wrapping`).toBeGreaterThan(5);
     expect(spread(rows), `${tag} the CONTROL ROW never changed height (${rows.join(', ')}) — the row no longer derives its height from --forge-tap`).toBeGreaterThan(5);
     expect(spread(heights), `${tag} the stack never changed height (${heights.join(', ')}) — this test proved nothing`).toBeGreaterThan(5);
 
@@ -577,7 +611,7 @@ test.describe('Forge bottom control stack', () => {
       const { label, m } = runs[i];
       // The caption clears the WHOLE stack, whatever the stack currently is.
       expect(m.intersects.hint_row, `${tag} ${label}: .hint slid into the control row at a stack height of ${m.rects.strip.h}px`).toBe(false);
-      expect(m.intersects.hint_hero, `${tag} ${label}: .hint slid into the focus card`).toBe(false);
+      expect(m.intersects.hint_statrow, `${tag} ${label}: .hint slid into the status row`).toBe(false);
       expect(m.rects.hint.b, `${tag} ${label}: .hint's bottom (${m.rects.hint.b}) is not above the strip's top (${m.rects.strip.t})`).toBeLessThanOrEqual(m.rects.strip.t + 0.5);
       // And the clearance is the SAME every time: derived, not a constant that
       // happens to be big enough today.
@@ -586,7 +620,7 @@ test.describe('Forge bottom control stack', () => {
 
     testInfo.annotations.push({
       type: 'derived-clearance',
-      description: `stack ${heights.join(' / ')}px · focus card ${heroes.join(' / ')}px · row ${rows.join(' / ')}px · clearance ${gaps.join(' / ')}px (constant)`,
+      description: `stack ${heights.join(' / ')}px · status row ${statHeights.join(' / ')}px · row ${rows.join(' / ')}px · clearance ${gaps.join(' / ')}px (constant)`,
     });
   });
 
@@ -595,7 +629,7 @@ test.describe('Forge bottom control stack', () => {
   //
   // Two claims that were in DIRECT TENSION before this ship, which is why the toast
   // could not simply be moved:
-  //   (1) it must clear the control row at ANY focus-card height, and
+  //   (1) it must clear the control row at ANY status-row height, and
   //   (2) it must still paint above the OPEN detail panel — the status-toggle handler
   //       fires with that panel up, so a toast sealed underneath it takes the UNDO
   //       affordance with it and the tech silently loses the ability to revert.
@@ -625,12 +659,12 @@ test.describe('Forge bottom control stack', () => {
     await page.waitForTimeout(300);                        // past the 250ms transform
   }
 
-  test('the toast clears the control row at every focus-card height', async ({ phantom, page }) => {
+  test('the toast clears the control row at every status-row height', async ({ phantom, page }) => {
     await phantom.boot();
     await openAisle(page);
     await setChips(page, 3);
 
-    // The focus card is inline-flex and data-driven — it is the term that moves the
+    // The status row wraps and is data-driven — it is the term that moves the
     // whole stack, so it is the term worth perturbing. A constant offset (the old 96px)
     // cannot survive this; a bottom:100% anchor is exact at every height.
     for (const [label, sub] of [
@@ -638,17 +672,17 @@ test.describe('Forge bottom control stack', () => {
       ['zero-state', 'NO MASTER LOADED · LOAD A MASTER FILE TO BUILD YOUR LOADOUT'],
       ['forced 3-line', 'NO MASTER LOADED · LOAD A MASTER FILE TO BUILD YOUR LOADOUT · AND THEN SOME MORE TEXT TO FORCE A THIRD LINE HERE'],
     ]) {
-      await page.evaluate((s) => { document.getElementById('tagSub').textContent = s; }, sub);
+      await page.evaluate((s) => { document.getElementById('tagState').textContent = s; }, sub);
       await raiseToast(page);
 
       const m = await page.evaluate(() => {
         const g = (q) => { const b = document.querySelector(q).getBoundingClientRect(); return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, height: b.height }; };
-        return { toast: g('#forge3d-sheet .toast'), row: g('#forge3d-sheet .toprow'), card: g('#forge3d-sheet .herotag'), vw: document.documentElement.clientWidth };
+        return { toast: g('#forge3d-sheet .toast'), row: g('#forge3d-sheet .toprow'), card: g('#forge3d-sheet .statrow'), vw: document.documentElement.clientWidth };
       });
       const overlaps = (a, b) => !(a.bottom <= b.top || a.top >= b.bottom || a.right <= b.left || a.left >= b.right);
 
       expect(overlaps(m.toast, m.row), `[${label}] the toast overlaps the control row — the 96px is back or the anchor broke`).toBe(false);
-      expect(overlaps(m.toast, m.card), `[${label}] the toast overlaps the focus card`).toBe(false);
+      expect(overlaps(m.toast, m.card), `[${label}] the toast overlaps the status row`).toBe(false);
       expect(m.toast.top, `[${label}] the toast is not ABOVE the row`).toBeLessThan(m.row.top);
       expect(m.toast.left, `[${label}] the toast runs off the left edge`).toBeGreaterThanOrEqual(0);
       expect(m.toast.right, `[${label}] the toast runs off the right edge`).toBeLessThanOrEqual(m.vw);
@@ -695,6 +729,209 @@ test.describe('Forge bottom control stack', () => {
     await page.waitForTimeout(1000);   // .hint carries its OWN 800ms fade, not the toast's 250ms
     const after = await page.evaluate(() => getComputedStyle(document.getElementById('hint')).opacity);
     expect(Number(after), 'the caption never came back after the toast dismissed').toBe(1);
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // D3 · THE STATUS ROW — v1.14.409, owner ruling "three compact pills on one row"
+  //
+  // The single .herotag card became #tagId / #tagState / #tagWalk. That is a
+  // DECOMPOSITION of a string the app already built (deploy_forge_tagSub concatenated
+  // `SITE · n/m RACKED [· ⚠k FLAGGED] · TAP FLANKS TO WALK`), so the risk here is not
+  // "is the data real" — it is the two things a decomposition can silently get wrong:
+  //   (1) a read-out that LOOKS tappable. Row 1 is controls and owes the 44px gloved
+  //       floor; row 2 is read-outs and is exempt — but the exemption is only honest
+  //       while the pills carry no handler, no role, no tabindex and no cursor. A
+  //       gloved tap that lands on nothing and reports nothing is this app's own
+  //       named defect class.
+  //   (2) a clause that quietly changed meaning. `TAP FLANKS TO WALK` must not stand
+  //       in an empty aisle instructing the tech to walk flanks that are not there —
+  //       pre-.409 it could not, because the zero-state message replaced the WHOLE
+  //       string. That property is now carried by an attribute and has to be pinned.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  test('the three status pills are read-outs, not controls', async ({ phantom, page }, testInfo) => {
+    await phantom.boot();
+    await openAisle(page);
+    await populateDock(page);   // conditional members — see the helper
+    await setChips(page, 3);
+
+    // The owner's own example, set directly on the slots. Nothing is invented: these
+    // are the exact three clauses the concatenated string carried.
+    await page.evaluate(() => {
+      document.getElementById('tagId').textContent = 's3:171';
+      document.getElementById('tagState').textContent = '0/0 RACKED';
+      document.getElementById('tagWalk').hidden = false;
+    });
+    await settle(page);
+
+    const m = await page.evaluate(() => {
+      const pills = ['tagId', 'tagState', 'tagWalk'].map((id) => {
+        const el = document.getElementById(id);
+        // #tagId is the TEXT inside the id pill; the pill itself is the styled box.
+        const box = el.closest('.statpill') || el;
+        const b = box.getBoundingClientRect();
+        const cs = getComputedStyle(box);
+        const hitEl = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+        return {
+          id, text: el.textContent.trim(),
+          rect: { t: +b.top.toFixed(2), h: +b.height.toFixed(2), l: +b.left.toFixed(2), r: +b.right.toFixed(2) },
+          // every affordance a control would carry
+          cursor: cs.cursor,
+          pointerEvents: cs.pointerEvents,
+          fontSize: parseFloat(cs.fontSize),
+          role: box.getAttribute('role'),
+          tabindex: box.getAttribute('tabindex'),
+          onclick: !!box.onclick || box.hasAttribute('onclick'),
+          tag: box.tagName.toLowerCase(),
+          // what a tap at the pill's centre actually reaches
+          hit: hitEl ? (hitEl.id || String(hitEl.className || hitEl.tagName)) : null,
+        };
+      });
+      const row = document.querySelector('#forge3d-sheet .statrow').getBoundingClientRect();
+      const toprow = document.querySelector('#forge3d-sheet .toprow').getBoundingClientRect();
+      return {
+        pills,
+        row: { t: +row.top.toFixed(2), h: +row.height.toFixed(2), l: +row.left.toFixed(2), r: +row.right.toFixed(2) },
+        toprowH: +toprow.height.toFixed(2),
+        vw: document.documentElement.clientWidth,
+      };
+    });
+
+    const tag = `[${testInfo.project.name}]`;
+
+    for (const p of m.pills) {
+      // (1) NOT A CONTROL — asserted through every channel that could imply one.
+      expect(p.tag, `${tag} #${p.id}'s pill is a <${p.tag}> — a button/anchor element IS an affordance`).toBe('span');
+      expect(p.cursor, `${tag} #${p.id} has cursor:${p.cursor} — it advertises a tap it does not handle`).not.toBe('pointer');
+      expect(p.role, `${tag} #${p.id} carries role="${p.role}"`).toBeNull();
+      expect(p.tabindex, `${tag} #${p.id} carries tabindex="${p.tabindex}" — it is in the focus order`).toBeNull();
+      expect(p.onclick, `${tag} #${p.id} has a click handler — then it is a control and owes the 44px floor`).toBe(false);
+      expect(p.pointerEvents, `${tag} #${p.id} is hit-testable (pointer-events:${p.pointerEvents}) — a tap lands on it and nothing happens`).toBe('none');
+      expect(p.hit, `${tag} a tap at #${p.id}'s centre is absorbed by the pill (${p.hit}) instead of passing through`).not.toMatch(/statpill|tag(Id|State|Walk)/);
+
+      // (2) TYPE FLOOR. The app's hard floor is 10px (--fs-micro); .hint's 9px and
+      // .chip .cid's 8.5px are pre-existing exceptions, and nothing NEW may join them.
+      expect(p.fontSize, `${tag} #${p.id} renders at ${p.fontSize}px — below the app's 10px floor for new type`).toBeGreaterThanOrEqual(10);
+    }
+
+    // (3) ONE ROW at the owner's example data, and inside the viewport.
+    const tops = m.pills.map((p) => p.rect.t);
+    expect(Math.max(...tops) - Math.min(...tops), `${tag} the three pills are not on one row (tops ${tops.join(', ')}) with the owner's own example data`).toBeLessThanOrEqual(0.5);
+    expect(m.row.l, `${tag} the status row runs off the left edge`).toBeGreaterThanOrEqual(0);
+    expect(m.row.r, `${tag} the status row runs off the right edge (${m.row.r} > ${m.vw})`).toBeLessThanOrEqual(m.vw + 0.5);
+
+    // (4) REDUCED BULK, made enforceable. The whole complaint was that the tertiary
+    // layer was the tallest thing in the dock: the old card measured 56-74px under a
+    // 58px control row. Row 2 must now be the SHORTER of the two.
+    expect(m.row.h, `${tag} the status row (${m.row.h}px) is taller than the control row (${m.toprowH}px) — the tertiary layer is the bulkiest thing in the dock again`).toBeLessThan(m.toprowH);
+
+    testInfo.annotations.push({
+      type: 'status-row',
+      description: `pills ${m.pills.map((p) => `${p.id} "${p.text}" ${p.rect.h}px`).join(' · ')} | row ${m.row.h}px vs control row ${m.toprowH}px`,
+    });
+
+    await phantom.assertNoHorizontalOverflow();
+  });
+
+  test('the zero state says its message ONCE and shows no empty id pill', async ({ phantom, page }) => {
+    // v1.14.409. Two things this pins, both regressions that were LIVE for one build:
+    //
+    // 1. THE DOUBLED SENTENCE. deploy_forge_zeroState() used to write the same 59-character
+    //    string into BOTH #hint and the status row. In the old design that read as a card with a
+    //    small sub-line; once the herotag was decomposed into a full-width state pill the two
+    //    copies sat ~20px apart in two type treatments and the dock looked broken. The .407
+    //    comment in that function had ALREADY named this redundancy when it deleted the fourth
+    //    copy (the error toast) — and the fourth was deleted while the second and third were left
+    //    stacked. Division of labour: the HINT is the instruction surface, the STATUS ROW is the
+    //    state surface. A zero state is a state.
+    // 2. THE EMPTY ID PILL. With no focused rack the id pill rendered `● —`: a dot, a dash, and
+    //    no information.
+    //
+    // Asserted on the aisle's REAL zero state — the harness has no Master, so this is simply what
+    // the app does. That is also why populateDock() exists for the geometry tests, and why hiding
+    // these members there cannot hide a regression: this test is the other half of that contract.
+    await phantom.boot();
+    await openAisle(page);
+
+    const m = await page.evaluate(() => {
+      const vis = (el) => !!el && el.getBoundingClientRect().height > 0;
+      const idPill = document.querySelector('#forge3d-sheet .statpill.st-id');
+      const state = document.getElementById('tagState');
+      // Count only the LEAF carriers, so a wrapper is never counted as a second copy.
+      const carriers = [...document.querySelectorAll('#forge3d-sheet *')]
+        .filter((e) => /NO MASTER LOADED/i.test(e.textContent || '')
+          && ![...e.children].some((c) => /NO MASTER LOADED/i.test(c.textContent || ''))
+          && e.getBoundingClientRect().height > 0)
+        .map((e) => e.id || String(e.className));
+      return {
+        carriers,
+        idPillVisible: vis(idPill),
+        stateText: state ? (state.textContent || '').trim() : null,
+        stateVisible: vis(state),
+      };
+    });
+
+    // The state must still be STATED — this is the no-silent-failure guarantee, not just tidiness.
+    expect(m.stateVisible, 'the status row vanished in the zero state — the aisle now fails silently').toBe(true);
+    expect(m.stateText).toMatch(/NO MASTER LOADED/i);
+
+    // ...exactly once inside the dock. #forge3d-prov is the sheet HEADER (provenance), a different
+    // surface with a different job, so it is excluded rather than counted as a duplicate.
+    const inDock = m.carriers.filter((c) => !/forge3d-prov/.test(c));
+    expect(inDock, `the zero-state message is rendered ${inDock.length} times inside the dock: ${JSON.stringify(inDock)}`).toHaveLength(1);
+
+    expect(m.idPillVisible, 'the id pill is visible with no focused rack — it can only read "● —"').toBe(false);
+  });
+
+  test('the walk instruction leaves the row when there is no aisle to walk', async ({ phantom, page }, testInfo) => {
+    // The zero state must not tell a tech to TAP FLANKS TO WALK an empty aisle. Before
+    // .409 that was true for free (the message replaced the entire concatenated
+    // string); now it is carried by writeStatusMessage() toggling [hidden], so it is a
+    // real property that can regress. Driven through the DOM contract rather than the
+    // internal helper, which is IIFE-scoped and unreachable from page scope.
+    await phantom.boot();
+    await openAisle(page);
+
+    const read = () => page.evaluate(() => {
+      const w = document.getElementById('tagWalk');
+      return {
+        hidden: w.hidden,
+        display: getComputedStyle(w).display,
+        inRow: w.getBoundingClientRect().width > 0,
+        state: document.getElementById('tagState').textContent.trim(),
+      };
+    });
+
+    // ZERO STATE, exactly as deploy_forge_zeroState writes it (:20050, verbatim).
+    const ZERO = 'NO MASTER LOADED · LOAD A MASTER FILE TO BUILD YOUR LOADOUT';
+    await page.evaluate((msg) => {
+      document.getElementById('tagId').textContent = '—';
+      document.getElementById('tagState').textContent = msg;
+      document.getElementById('tagWalk').hidden = true;
+    }, ZERO);
+    await settle(page);
+
+    const zero = await read();
+    expect(zero.state, 'the zero-state message is not in the state pill').toBe(ZERO);
+    expect(zero.hidden, 'the walk pill is still present in the zero state').toBe(true);
+    // [hidden] is a UA rule that an author display:inline-flex overrides — the app has
+    // to re-state it, and this is the assertion that says whether it did.
+    expect(zero.display, 'the walk pill is [hidden] but still display:' + zero.display + ' — the author rule at :9145 is missing, so the empty aisle tells the tech to walk flanks that are not there').toBe('none');
+    expect(zero.inRow, 'the walk pill still occupies width in the zero state').toBe(false);
+
+    // FOCUSED: the instruction comes back.
+    await page.evaluate(() => {
+      document.getElementById('tagState').textContent = '0/0 RACKED';
+      document.getElementById('tagWalk').hidden = false;
+    });
+    await settle(page);
+
+    const live = await read();
+    expect(live.hidden, 'the walk pill never returned when a rack was focused').toBe(false);
+    expect(live.display, 'the walk pill is not displayed when focused').not.toBe('none');
+    expect(live.inRow, 'the walk pill has zero width when focused').toBe(true);
+
+    testInfo.annotations.push({ type: 'walk-pill', description: `zero: display ${zero.display} · focused: display ${live.display}` });
   });
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -770,7 +1007,7 @@ test.describe('Forge bottom control stack', () => {
       `Measured: strip padding-bottom = ${m.stripCss.padBottom}px, which is the +16px term alone.`);
 
     expect(m.stripCss.padBottom, `.hud-bottom's bottom padding (${m.stripCss.padBottom}px) does not clear the ${m.safeInset}px inset`).toBeGreaterThan(m.safeInset);
-    expect(m.rects.hero.b, 'the focus card sits inside the home-indicator inset')
+    expect(m.rects.statrow.b, 'the status row sits inside the home-indicator inset')
       .toBeLessThanOrEqual(await page.evaluate(() => window.innerHeight) - m.safeInset + 0.5);
   });
 });

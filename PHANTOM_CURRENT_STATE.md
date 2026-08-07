@@ -14,9 +14,9 @@ source. Ship-by-ship truth is `git log` + each ship's `version.json` `notes`.
 
 | Stamp | Value | Source |
 |---|---|---|
-| `version.json` `version` | `phantom-v1.14.408` | `version.json:2` |
-| `sw.js` `CACHE_VERSION` | `phantom-v1.14.408` | `sw.js:37` |
-| `dct-ios.html` `PHANTOM_APP_VERSION` | `phantom-v1.14.408` | `dct-ios.html:12554` |
+| `version.json` `version` | `phantom-v1.14.409` | `version.json:2` |
+| `sw.js` `CACHE_VERSION` | `phantom-v1.14.409` | `sw.js:37` |
+| `dct-ios.html` `PHANTOM_APP_VERSION` | `phantom-v1.14.409` | `dct-ios.html:12656` |
 
 Three-stamp lockstep holds. Ship commit `997716e` — *"v1.14.406 - no silent failures: two P0 storage
 defects and the false crash banner"*. Previous ship `6d862e5` — *"v1.14.405 - blank Forge aisle, PROVEN root
