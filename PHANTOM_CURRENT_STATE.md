@@ -14,9 +14,9 @@ source. Ship-by-ship truth is `git log` + each ship's `version.json` `notes`.
 
 | Stamp | Value | Source |
 |---|---|---|
-| `version.json` `version` | `phantom-v1.14.407` | `version.json:2` |
-| `sw.js` `CACHE_VERSION` | `phantom-v1.14.407` | `sw.js:37` |
-| `dct-ios.html` `PHANTOM_APP_VERSION` | `phantom-v1.14.407` | `dct-ios.html:12554` |
+| `version.json` `version` | `phantom-v1.14.408` | `version.json:2` |
+| `sw.js` `CACHE_VERSION` | `phantom-v1.14.408` | `sw.js:37` |
+| `dct-ios.html` `PHANTOM_APP_VERSION` | `phantom-v1.14.408` | `dct-ios.html:12554` |
 
 Three-stamp lockstep holds. Ship commit `997716e` — *"v1.14.406 - no silent failures: two P0 storage
 defects and the false crash banner"*. Previous ship `6d862e5` — *"v1.14.405 - blank Forge aisle, PROVEN root
@@ -122,14 +122,14 @@ re-derive it here.
 
 ## 5 — Unverified work
 
-**23 ships in one open batch** (was 29 across two; `.377`–`.384` disposed by ruling, below).
+**24 ships in one open batch** (was 29 across two; `.377`–`.384` disposed by ruling, below).
 Both ranges are contiguous — `git log --all` returns a ship commit for every version `.377`
 through `.405`, no gaps.
 
 | Batch | Ships | Count | State |
 |---|---|---|---|
 | `.377`–`.384` | 8 | — | ✅ **DISPOSED by owner ruling 2026-08-06.** Not on the device pass. Classified ship by ship rather than written off: **3 superseded** (`.377` OPS wall art — the wall is currently unreachable; `.382`/`.383` Command Shell — blueprint D-06 deletes `#cmd-shell` after capability port), **1 closed** (`.379`, a deletion), **4 preserved and now covered by automation** (`.378` + `.381` Tools art → `03-tools`/`06-composition`; `.380` legacy rip-cord → `01-nav`; `.384` LOCAL SYSTEM STATE + "N of 4 ready" → a data-honesty **invariant**, any reintroduced fabricated score is a P0 revert). Full table in `BATCH-VERIFY.md` "OWNER RULINGS". |
-| `.385`–`.407` | 23 | **23 of 6** | **OPEN.** Contains the M2 renderer work — HIGH-risk. Cap blown by 16. `.406` was pushed deliberately on top of an open batch because its P1 fix is a PRECONDITION for a trustworthy pass: `.403`'s aisle trace raised a false *"JS ERROR"* banner on every healthy Open Aisle, so every tester would have reported a crash that never happened. Nothing else ships until this clears. |
+| `.385`–`.408` | 24 | **24 of 6** | **OPEN.** Contains the M2 renderer work — HIGH-risk. Cap blown by 16. `.406` was pushed deliberately on top of an open batch because its P1 fix is a PRECONDITION for a trustworthy pass: `.403`'s aisle trace raised a false *"JS ERROR"* banner on every healthy Open Aisle, so every tester would have reported a crash that never happened. Nothing else ships until this clears. |
 
 **What the two confirmations in §3 do NOT cover**, stated so nobody reads them as a release
 (`BATCH-VERIFY.md` header "What that pass does NOT cover" + `.405` block):
@@ -150,7 +150,7 @@ through `.405`, no gaps.
 **Stale headers, do not trust:** `BATCH-VERIFY.md`'s reconciled header still reads "25 ships between
 them" (line 8) and `.385`–`.404`, "20 of 6" (line 16); `CLAUDE.md`'s verify-debt bullet reads "26 ships"
 and `.385`–`.402`. Both were written before `.405`. The `.405` block at the tail of `BATCH-VERIFY.md`
-is current: **23 of 6** in the single remaining batch.
+is current: **24 of 6** in the single remaining batch.
 
 ---
 
@@ -204,7 +204,7 @@ unregister the SW and delete caches before any verify pass, or the device report
 
 ## 8 — Next action
 
-**Run the `.385`–`.407` consolidated device pass. Nothing else.** It is 23 ships against a cap of 6,
+**Run the `.385`–`.408` consolidated device pass. Nothing else.** It is 24 ships against a cap of 6,
 it contains the M2 renderer work, the two blockers that held it are both cleared (the `.396` rack
 confirmation and the Pages outage), and `main` is live. The checklist is the block set at the tail of
 `BATCH-VERIFY.md`; the unchecked items are enumerated in §5 above.
@@ -266,7 +266,7 @@ uncommitted. Zero application files touched — `dct-ios.html`, `sw.js`, `versio
 | Harness | `test/` — Playwright 1.62.1, own `package.json`, static server on 127.0.0.1:4317 (a secure context, so the SW path runs as it does on Pages) |
 | Projects | `phone-webkit` 390×844 · `tablet-webkit` 834×1194 · `laptop-chromium` 1366×768 · `desktop-chromium` 1440×900 · `reduced-motion` |
 | Specs | `00-boot` · `01-nav` · `02-build-forge` · `03-tools` · `04-storage` · `05-offline` · `06-composition` · `08-forge-layout` |
-| Result (`phone-webkit`) | **112 tests — 93 genuine passes · 10 `test.fail()` documented defects · 9 skipped harness limits.** `retries: 0`. ~11.6 min. (Was 83/13 at `.405`; three flipped when `.406` fixed what they pinned, and `.407` added the 8-test `08-forge-layout` guard.) |
+| Result (`phone-webkit`) | **115 tests — 96 genuine passes · 10 `test.fail()` documented defects · 9 skipped harness limits.** `retries: 0`. ~11.6 min. (Was 83/13 at `.405`; three flipped when `.406` fixed what they pinned, and `.407` added the 8-test `08-forge-layout` guard.) |
 
 `retries: 0` is deliberate — a flaky field app must fail loudly; retries hide exactly what this suite
 hunts. The `BENIGN_CONSOLE` allowlist holds **one** entry with a written reason; six independent
