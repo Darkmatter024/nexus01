@@ -1518,6 +1518,62 @@ that must not run. **I1 was not weakened**; `releaseOthers` is unchanged.
 ⚠ **This pass confirms the aisle DRAWS AND HOLDS and nothing more.** It does **not** release either
 batch. `.377`–`.384` remains unreleased; `.385`–`.405` remains OPEN at 21 of 6.
 
+## v1.14.406 — no silent failures: two P0 storage defects + the false crash banner (`997716e`) · rollback: revert commit
+
+**First ship found by automation rather than by the owner in the aisle.** All three defects came out of
+the new `test/e2e` baseline, and all three are one family: *the app knew something and did not say it.*
+
+**P0-1 — the Master save was invisible on failure.** `PHANTOM_MASTER_STORE.save` wrote through a raw
+`setItem` whose quota branch `console.warn`ed and returned `false` with no toast and no haptic, and its
+single caller **discarded the boolean**. On a full device: operator loads a Master, parse succeeds, UI
+reports success, **nothing persists** — gone at the next cold start. Largest payload in the app; a
+4000-host site compresses to ~6.5MB against a ~5MB Safari origin quota. Both branches now toast +
+haptic + raise `__phantomStorageFull`; the caller records a false return. Message is
+capability-specific on purpose — `safeStore`'s generic *"Storage full"* does not tell a tech the Master
+still works **this session** and must be re-imported after a restart.
+
+**P0-2 — shift end swallowed everything.** `shift_end_write` was a raw `setItem` in a bare
+`catch(_){}`: on quota it stored nothing, threw nothing, warned nothing, toasted nothing, while the hero
+kept rendering a countdown that would not survive the next launch. `phantom_shift_end` is
+registry-classified **user data**. Now through `safeStore` — the fix **removes** the hand-written
+swallow rather than adding a second handler.
+
+**P1 — the instrument reported a crash on every success.** `.403`'s `aisle_trace` routes 14 NORMAL
+lifecycle events through `phantom_logErr`, which force-shows the shared `#crash-banner` reading
+*"JS ERROR"*. A healthy Open Aisle raised it every time. **This blocked this very batch pass** — every
+tester would have reported a crash that never happened. `phantom_logErr` gains an optional third arg
+(`opts.trace` → `type:'trace'`, never raises the banner); optional and defaulting to prior behaviour, so
+**all 64 existing call sites are byte-identical**. One new predicate `phantom_crashErrors` is the single
+definition of *"is this ring entry an error"*, used by the banner, the boot banner and the SYS header
+count. The ERRORS sheet is **deliberately unfiltered** — listing the traces is the point of `.403`.
+
+⚠ **`?legacy=1` IS NOT BYTE-IDENTICAL AND THAT IS DELIBERATE**, on the `.402` precedent (*only the
+presentation is house-scoped, the invariant never is*). The two quota toasts now fire in **both** houses
+where legacy was silent — gating honesty to redesign would preserve a data-loss bug for the sake of the
+rule. Filtering traces from the boot banner (which is **not** rd-gated) **restores** legacy's pre-`.403`
+behaviour. The banner mutation inside `phantom_logErr` stays `redesign_isOn()`-gated; the SYS count is
+only ever invoked under `rd`. No legacy markup, render path, `showPage`/`showOpsTab` or `#ops-tab-strip`
+is touched.
+
+**GATES:** 3 inline blocks compile · `node --check sw.js` · valid JSON · CSS braces 4557/4557 (Δ0) ·
+**CRLF intact, 0 lone LF** (baselined at 54,749 pairs before the first edit) · PRECACHE untouched ·
+three-stamp lockstep. `dct-ios.html` diff: 64 added / 11 removed — **34 comment, 30 functional.**
+
+**PROOF BEFORE PUSH:** the three regression tests that pinned these at `.405` all flipped to *"expected
+to fail but passed"*; annotations removed so a regression now fails loudly. Full suite re-run green
+(**96 passed, 8 skipped**). Trace/error separation verified directly in WebKit: 3 traces → banner
+hidden, SYS count `NONE`, ERRORS sheet still lists them labelled `TRACE`; then 1 real error → banner
+raises reading `(1 entries)`, SYS count `1` — **not 4**.
+
+**Live confirmed 2026-08-06:** all three stamps serving `phantom-v1.14.406` ~40s after push. No Pages lock.
+
+- [ ] **Clear the service-worker cache first**, then confirm the app reports **`v1.14.406`**
+- [ ] Build → **OPEN AISLE**: **NO** "JS ERROR" banner appears on a healthy open ⭐ *this is the whole P1*
+- [ ] SYS → ERRORS still **lists** the `AISLE/...` entries, now labelled **TRACE** — the `.403` instrument is intact
+- [ ] Header SYS error count reads **NONE** while only traces are present
+- [ ] `?legacy=1` — open the aisle, reload: **no** "JS ERROR" banner (clear `phantom_legacy` afterwards)
+- [ ] Master + shift-end quota toasts are device-only and fold into the M1 storage checks below
+
 ---
 
 # ⚖ OWNER RULINGS 2026-08-06 — batch `.377`–`.384` DISPOSED, three `.391` items CLOSED
