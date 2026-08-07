@@ -591,6 +591,113 @@ test.describe('Forge bottom control stack', () => {
   });
 
   // ───────────────────────────────────────────────────────────────────────────
+  // D2 · THE TOAST — v1.14.408, owner ruling "move it above the row"
+  //
+  // Two claims that were in DIRECT TENSION before this ship, which is why the toast
+  // could not simply be moved:
+  //   (1) it must clear the control row at ANY focus-card height, and
+  //   (2) it must still paint above the OPEN detail panel — the status-toggle handler
+  //       fires with that panel up, so a toast sealed underneath it takes the UNDO
+  //       affordance with it and the tech silently loses the ability to revert.
+  // The lever that makes both true is `.hud` dropping position:fixed: a fixed element
+  // ALWAYS establishes a stacking context and would cap the toast below the panel.
+  // These tests pin the OUTCOME, so if anyone ever restores position:fixed (or gives
+  // the strip a z-index) they fail here rather than in the aisle at 2AM.
+  //
+  // METHOD NOTE: .toast animates translateY(20px) -> 0 over 250ms. Measuring in the
+  // same turn the class is added samples it MID-FLIGHT, up to 20px low — that produced
+  // three false failures while this was being written. Always settle first.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  async function raiseToast(page) {
+    await page.evaluate(() => {
+      const t = document.getElementById('toast');
+      t.classList.remove('show');
+      void t.offsetWidth;                                  // animate from rest every time
+      document.getElementById('toastMsg').innerHTML = 'NODE-01 &rarr; RACKED';
+      t.classList.add('show');                             // exactly what showToast() does
+    });
+    // showToast itself is IIFE-scoped and unreachable at page scope, hence the class.
+    await page.waitForFunction(
+      () => getComputedStyle(document.getElementById('toast')).opacity === '1',
+      undefined, { timeout: 3000 },
+    );
+    await page.waitForTimeout(300);                        // past the 250ms transform
+  }
+
+  test('the toast clears the control row at every focus-card height', async ({ phantom, page }) => {
+    await phantom.boot();
+    await openAisle(page);
+    await setChips(page, 3);
+
+    // The focus card is inline-flex and data-driven — it is the term that moves the
+    // whole stack, so it is the term worth perturbing. A constant offset (the old 96px)
+    // cannot survive this; a bottom:100% anchor is exact at every height.
+    for (const [label, sub] of [
+      ['short', 'R-A01 · FOCUSED'],
+      ['zero-state', 'NO MASTER LOADED · LOAD A MASTER FILE TO BUILD YOUR LOADOUT'],
+      ['forced 3-line', 'NO MASTER LOADED · LOAD A MASTER FILE TO BUILD YOUR LOADOUT · AND THEN SOME MORE TEXT TO FORCE A THIRD LINE HERE'],
+    ]) {
+      await page.evaluate((s) => { document.getElementById('tagSub').textContent = s; }, sub);
+      await raiseToast(page);
+
+      const m = await page.evaluate(() => {
+        const g = (q) => { const b = document.querySelector(q).getBoundingClientRect(); return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, height: b.height }; };
+        return { toast: g('#forge3d-sheet .toast'), row: g('#forge3d-sheet .toprow'), card: g('#forge3d-sheet .herotag'), vw: document.documentElement.clientWidth };
+      });
+      const overlaps = (a, b) => !(a.bottom <= b.top || a.top >= b.bottom || a.right <= b.left || a.left >= b.right);
+
+      expect(overlaps(m.toast, m.row), `[${label}] the toast overlaps the control row — the 96px is back or the anchor broke`).toBe(false);
+      expect(overlaps(m.toast, m.card), `[${label}] the toast overlaps the focus card`).toBe(false);
+      expect(m.toast.top, `[${label}] the toast is not ABOVE the row`).toBeLessThan(m.row.top);
+      expect(m.toast.left, `[${label}] the toast runs off the left edge`).toBeGreaterThanOrEqual(0);
+      expect(m.toast.right, `[${label}] the toast runs off the right edge`).toBeLessThanOrEqual(m.vw);
+    }
+  });
+
+  test('the toast still beats the OPEN detail panel, so UNDO survives', async ({ phantom, page }) => {
+    await phantom.boot();
+    await openAisle(page);
+    await page.evaluate(() => document.getElementById('detailPanel').classList.add('open'));
+    await raiseToast(page);
+
+    const layered = await page.evaluate(() => {
+      const t = document.getElementById('toast').getBoundingClientRect();
+      const topEl = document.elementFromPoint(t.left + t.width / 2, t.top + t.height / 2);
+      const u = document.getElementById('toastUndo').getBoundingClientRect();
+      const topUndo = document.elementFromPoint(u.left + u.width / 2, u.top + u.height / 2);
+      const inside = (el, id) => { while (el) { if (el.id === id) return true; el = el.parentElement; } return false; };
+      return {
+        topIsToast: inside(topEl, 'toast'),
+        undoTappable: !!topUndo && topUndo.id === 'toastUndo',
+        topTag: topEl ? (topEl.id || String(topEl.className)) : null,
+        // The lever itself, asserted directly: a fixed strip re-seals the toast.
+        stripPosition: getComputedStyle(document.querySelector('#forge3d-sheet .hud-bottom')).position,
+        stripZ: getComputedStyle(document.querySelector('#forge3d-sheet .hud-bottom')).zIndex,
+      };
+    });
+
+    expect(layered.stripPosition, 'the bottom strip went back to position:fixed — that ALWAYS makes a stacking context and re-seals the toast under the panel').not.toBe('fixed');
+    expect(layered.stripZ, 'the bottom strip gained a z-index — that makes a stacking context and caps the toast below the panel').toBe('auto');
+    expect(layered.topIsToast, `with the detail panel open the topmost element at the toast's own centre is ${layered.topTag}, not the toast — UNDO is unreachable`).toBe(true);
+    expect(layered.undoTappable, 'UNDO is not hit-testable with the panel open — the status toggle can no longer be reverted').toBe(true);
+  });
+
+  test('the caption yields to the toast rather than stacking with it, and returns', async ({ phantom, page }) => {
+    await phantom.boot();
+    await openAisle(page);
+
+    await raiseToast(page);
+    const during = await page.evaluate(() => getComputedStyle(document.getElementById('hint')).opacity);
+    expect(Number(during), 'the caption and the toast are stacked in the same slot above the strip').toBe(0);
+
+    await page.evaluate(() => document.getElementById('toast').classList.remove('show'));
+    await page.waitForTimeout(1000);   // .hint carries its OWN 800ms fade, not the toast's 250ms
+    const after = await page.evaluate(() => getComputedStyle(document.getElementById('hint')).opacity);
+    expect(Number(after), 'the caption never came back after the toast dismissed').toBe(1);
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
   // E · THE SHEET AS A WHOLE
   // ───────────────────────────────────────────────────────────────────────────
 

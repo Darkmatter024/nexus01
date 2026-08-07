@@ -9075,14 +9075,35 @@ body.rd #forge3d-sheet.open { display: flex; }
                      row must hold whatever padding .chips carries. Expressed through --glow it
                      would silently desynchronise from .chips the moment --forge-gutter is
                      redefined, which is the same class of drift this block exists to stop.
-     --forge-pad-x   the strip's horizontal inset. .hint reads it so its text is bounded by the
-                     same edge as the controls it describes instead of running off the screen. */
+     --forge-pad-x   the strip's horizontal inset. .hint and .toast read it so their text is
+                     bounded by the same edge as the controls they describe, instead of running
+                     off the screen.
+     --forge-gap     the air between the strip's top edge and whatever floats above it. Named in
+                     v1.14.408 because it stopped being one element's cosmetic margin and became
+                     a shared term the moment .toast joined .hint in that slot: two elements
+                     restating the same 10px is how the next 92px gets born. */
 #forge3d-sheet{--forge-tap:var(--tap-s,44px);--forge-glow:14px;
   --forge-gutter:calc(var(--forge-glow) / 2);
   --forge-row-h:calc(var(--forge-tap) + var(--forge-gutter) * 2);
-  --forge-pad-x:18px}
+  --forge-pad-x:18px;--forge-gap:10px}
 #forge3d-sheet #forge3d-hud{position:absolute;inset:0;pointer-events:none;z-index:5}
-#forge3d-sheet .hud{position:fixed;left:0;right:0;pointer-events:none;z-index:10}
+/* v1.14.408 — position:absolute + z-index:auto, and BOTH halves are load-bearing.
+   `position:fixed` ALWAYS establishes a stacking context, whatever its z-index. So while this
+   strip was fixed, every descendant was sealed inside it and capped below its z-index:10 — which
+   is precisely why the toast could not be moved in here: as a child it would have lost to
+   .detail-panel (z-index:40, :9146) and the UNDO affordance for the status toggle at :20102,
+   which fires WITH that panel open, would have gone with it. An absolutely-positioned element
+   with z-index:auto establishes NO stacking context, so the toast's own z-index:60 is now
+   resolved in #forge3d-hud's context and still beats the panel (40), the search overlay (50)
+   and the picker (55) — while .toprow and .herotag stay at auto and are correctly covered by all
+   three. That is what makes "above the row" and "above the panel" true at the same time.
+   The position change costs nothing today and is more correct tomorrow: #forge3d-hud is
+   absolute inset:0 of the sheet and the sheet's rect was MEASURED identical to the viewport rect
+   on both tiers, so this strip does not move — but it now anchors to the SHEET rather than the
+   viewport, which is what it always described. The mock this HUD came from was a full-window
+   demo where fixed was correct; the app re-homed it inside a sheet and carried the positioning
+   over unaudited (v1.14.233 fixed only the JS half of that mismatch). */
+#forge3d-sheet .hud{position:absolute;left:0;right:0;pointer-events:none}
 #forge3d-sheet .hud-bottom{bottom:0;padding:0 var(--forge-pad-x) calc(env(safe-area-inset-bottom,0px) + 16px)}
 #forge3d-sheet .herotag{display:inline-flex;align-items:center;gap:10px;pointer-events:none;
   background:rgba(8,14,22,.55);border:1px solid rgba(40,224,255,.22);border-radius:12px;
@@ -9224,16 +9245,35 @@ body.rd #forge3d-sheet.open { display: flex; }
    not the chip, so pills under its 88px band were dead to touch and the swallowed tap was
    silent (the undo handler no-ops once toastUndoFn is null). Hit-testing now follows the same
    class the visibility does. */
-#forge3d-sheet .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);
-  bottom:calc(env(safe-area-inset-bottom,0px) + 96px);z-index:60;pointer-events:none;
+/* v1.14.408 — THE 96px IS DELETED, NOT RETUNED (owner ruling: "move it above the row").
+   This was the last magic clearance in the stack and the twin of the 92px removed from .hint at
+   .407: a constant describing a strip that used to declare no height. It failed the same way and
+   .407 made it total — the row grew to 58px, so the toast stopped clipping the row and started
+   lying entirely inside it, hit-testable for its full 4s (:20257) on the pill strip.
+   The clearance is now STRUCTURAL and identical to .hint's: a child of the strip, anchored at
+   bottom:100% of it, so it clears the row and the focus card at ANY height with no number to go
+   stale. left/right read --forge-pad-x so the bar is bounded to the same edge as the controls,
+   and `margin-inline:auto` + `width:fit-content` centre it — which retires the left:50% +
+   translateX(-50%) pair, so the slide-in transform is now a plain translateY and the element no
+   longer carries a transform at rest (a transform would make it a containing block for any
+   future fixed descendant — the trap that cost .212).
+   ⛔ THIS ONLY WORKS BECAUSE .hud DROPPED position:fixed — see the note there. Re-introducing a
+   stacking context on the strip seals this toast under .detail-panel and silently kills UNDO. */
+#forge3d-sheet .toast{position:absolute;left:var(--forge-pad-x);right:var(--forge-pad-x);
+  bottom:100%;margin:0 auto var(--forge-gap);width:fit-content;max-width:100%;
+  z-index:60;pointer-events:none;transform:translateY(20px);
   display:flex;align-items:center;gap:14px;background:rgba(8,14,22,.92);
   border:1px solid rgba(40,224,255,.3);border-radius:12px;padding:11px 16px;
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   font-size:11px;letter-spacing:.06em;color:var(--ink);opacity:0;
   transition:opacity .25s,transform .25s;
-  max-width:calc(100vw - var(--forge-pad-x) * 2);
   box-shadow:0 4px 24px rgba(0,0,0,.5)}
-#forge3d-sheet .toast.show{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+#forge3d-sheet .toast.show{opacity:1;pointer-events:auto;transform:translateY(0)}
+/* The toast and the caption occupy the SAME slot above the strip, so they are not allowed to
+   stack on each other: while the toast is up the caption yields. It is advisory text and it
+   returns when the toast dismisses. The sibling combinator is why #toast is emitted before
+   #hint in the markup. */
+#forge3d-sheet .toast.show ~ .hint{opacity:0}
 /* v1.14.407 — the same unbounded-text pattern deleted from .hint survived here: white-space:nowrap
    over left:50% + translateX(-50%), on a message built from a Master DEVICE NAME (:20090) and
    therefore unbounded. .hint overran a 390px viewport by 41px per side for exactly this reason.
@@ -9280,7 +9320,7 @@ body.rd #forge3d-sheet.open { display: flex; }
    number to go stale. It also costs the stack nothing — an abspos child adds no height — and
    reading --forge-pad-x bounds the text to the same edge as the controls, which is what stops
    it overrunning a 390px viewport by 41px per side (it was white-space:nowrap at 472px wide). */
-#forge3d-sheet .hint{position:absolute;left:0;right:0;bottom:100%;margin-bottom:10px;
+#forge3d-sheet .hint{position:absolute;left:0;right:0;bottom:100%;margin-bottom:var(--forge-gap);
   padding:0 var(--forge-pad-x);text-align:center;line-height:1.5;
   font-size:9px;letter-spacing:.3em;color:var(--dim);
   pointer-events:none;transition:opacity .8s ease}
@@ -12568,7 +12608,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.407';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.408';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13197,6 +13237,13 @@ if (typeof window !== 'undefined') {
        viewport-fixed sibling it carried a hard-coded 92px offset and drew on top of the pills.
        Element id, class and text are unchanged; #hint is looked up by id (:19942, :20295). -->
   <div class="hud hud-bottom">
+    <!-- v1.14.408 — #toast moved INSIDE .hud-bottom, ABOVE the row (owner ruling). It sits at
+         bottom:100% of this strip exactly as #hint does, so it clears the whole stack by
+         construction at any focus-card height and its magic 96px is gone. It is placed BEFORE
+         #hint so `.toast.show ~ .hint` can suppress the caption while the toast is up — the two
+         occupy the same slot and must not stack on each other. Both lookups are getElementById
+         (:20252, :20259), so DOM position is irrelevant to the JS. -->
+    <div class="toast" id="toast"><span id="toastMsg"></span><span class="undo" id="toastUndo">UNDO</span></div>
     <div class="hint" id="hint">TAP A RACK TO FOCUS · ⊞ PICK UP TO 5 FOR THE 3D</div>
     <div class="toprow">
       <div class="chips" id="chips"></div>
@@ -13211,8 +13258,6 @@ if (typeof window !== 'undefined') {
       </span>
     </div>
   </div>
-
-  <div class="toast" id="toast"><span id="toastMsg"></span><span class="undo" id="toastUndo">UNDO</span></div>
 
   <div class="detail-panel" id="detailPanel">
     <div class="detail-header">
