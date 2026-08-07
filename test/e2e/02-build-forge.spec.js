@@ -535,24 +535,18 @@ test.describe('Build workspace + Forge aisle', () => {
   });
 
   test('opening the aisle does not tell the technician the app crashed', async ({ phantom, page }) => {
-    // EXPECTED FAILURE — GENUINE APP DEFECT, live at v1.14.405. Not a harness artifact.
-    //
-    // aisle_trace() (dct-ios.html:19090) routes NORMAL lifecycle events — OPEN_AISLE_CLICK,
+    // ── FIXED in v1.14.406 — this test now GUARDS the fix. ──────────────────────
+    // Was: aisle_trace() routed NORMAL lifecycle events — OPEN_AISLE_CLICK,
     // AISLE_OPEN_REQUESTED, AISLE_HOST_CREATED, ENGINE_ATTACH_STARTED, ENGINE_ATTACHED —
-    // through phantom_logErr() (:17616). phantom_logErr does two things: it appends to the
-    // crash ring (fine, that is a debug ledger) AND, under body.rd, it force-shows the shared
-    // #crash-banner (:13182) reading "JS ERROR — tap to view crash log (N entries)" (:17639).
-    // So a perfectly healthy aisle open raises a JS-ERROR banner over the technician's screen
-    // and leaves it there. The instrument added to hunt the .403 blank aisle now reports a
-    // crash on every SUCCESS.
-    //
-    // This test documents the defect and turns GREEN the moment aisle_trace stops driving the
-    // user-facing banner (its own ring channel, or a non-error banner state).
-    // VERIFIED FAILURE REASON (run with test.fail() removed, 2026-08-06): the baseline
-    // toBeHidden() below PASSES on a clean boot, and the test fails on the LAST assertion
-    // only — "#crash-banner ... unexpected value visible". So this test.fail() is recording
-    // the defect and nothing else.
-    test.fail();
+    // through phantom_logErr(), which appends to the crash ring (fine, that is a debug
+    // ledger) AND force-shows the shared #crash-banner reading "JS ERROR — tap to view
+    // crash log (N entries)". A perfectly healthy aisle open raised a JS-ERROR banner over
+    // the technician's screen and left it there: the instrument added to hunt the .403
+    // blank aisle reported a crash on every SUCCESS.
+    // Now: phantom_logErr takes an optional { trace: true }, which stores type:'trace' and
+    // never raises the banner; phantom_crashErrors() is the single predicate the banner,
+    // the boot banner and the SYS header count all use, so the number shown is a count of
+    // real errors. The ERRORS sheet stays unfiltered — listing traces is the point of .403.
 
     await phantom.boot({ seed: buildSeed() });
     await enterBuild(page);

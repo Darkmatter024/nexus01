@@ -639,15 +639,18 @@ test.describe('durability across a reload', () => {
 // ═════════════════════════════════════════════════════════════════════════════════
 test.describe('unguarded write paths', () => {
 
-  // ── DEFECT ────────────────────────────────────────────────────────────────────
-  // PHANTOM_MASTER_STORE.save (:31400) writes with a RAW localStorage.setItem (:31422).
-  // Its quota branch (:31432) does a console.warn and returns false — no phantomToast,
-  // no haptic. The single caller (:31840) discards the return value entirely. Net effect
-  // on a full device: the operator loads the Master, the parse succeeds, the UI reports
-  // success, and the master is NOT persisted — silently gone at the next cold start.
-  // The master is the largest payload in the app and the one most likely to hit quota
-  // (a 4000-host site compresses to ~6.5MB against a ~5MB Safari origin quota).
-  test.fail('a quota failure while saving the Master reaches the operator', async ({ phantom, page }) => {
+  // ── FIXED in v1.14.406 — this test now GUARDS the fix. ────────────────────────
+  // Was: PHANTOM_MASTER_STORE.save wrote with a raw localStorage.setItem whose quota
+  // branch did a console.warn and returned false — no phantomToast, no haptic — and the
+  // single caller discarded the return value entirely. On a full device the operator
+  // loaded the Master, the parse succeeded, the UI reported success, and nothing was
+  // persisted: silently gone at the next cold start. The Master is the largest payload
+  // in the app and the one most likely to hit quota (a 4000-host site compresses to
+  // ~6.5MB against a ~5MB Safari origin quota).
+  // Now: both failure branches toast + haptic + raise __phantomStorageFull, and the
+  // caller records a false return. If this ever goes red again, the operator has gone
+  // blind on the single most expensive write in the app.
+  test('a quota failure while saving the Master reaches the operator', async ({ phantom, page }) => {
     await phantom.boot();
     await armToastRail(page);
     const r = await underQuotaPressure(page, function () {
@@ -669,13 +672,15 @@ test.describe('unguarded write paths', () => {
       .toMatch(/Storage full|too large|not saved/i);
   });
 
-  // ── DEFECT ────────────────────────────────────────────────────────────────────
-  // shift_end_write (:22384) is a raw localStorage.setItem inside a bare try{}catch(_){}.
-  // On quota it throws nothing, warns nothing, toasts nothing and stores nothing — the
-  // operator sets their shift end, the UI accepts it, and the marker is simply not there.
+  // ── FIXED in v1.14.406 — this test now GUARDS the fix. ────────────────────────
+  // Was: shift_end_write was a raw localStorage.setItem inside a bare try{}catch(_){}.
+  // On quota it threw nothing, warned nothing, toasted nothing and stored nothing — the
+  // operator set their shift end, the UI accepted it, and the marker simply was not there.
   // phantom_shift_end is classified as user data in the backup registry (:50601), so this
-  // is not ephemeral UI state. Directly contradicts the app's own No-Silent-Failures rule.
-  test.fail('a quota failure while writing the shift-end marker reaches the operator', async ({ phantom, page }) => {
+  // is not ephemeral UI state. It directly contradicted the No-Silent-Failures rule.
+  // Now: the write goes through safeStore, which owns the quota toast, the haptic and the
+  // storage-full flag, and shift_end_write returns the outcome instead of swallowing it.
+  test('a quota failure while writing the shift-end marker reaches the operator', async ({ phantom, page }) => {
     await phantom.boot();
     await armToastRail(page);
     const r = await underQuotaPressure(page, function () {

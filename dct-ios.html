@@ -12486,7 +12486,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.405';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.406';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -17613,16 +17613,29 @@ function phantomViewCrashLog() {
 // SAME phantom_crash_log ring (adds ctx + stack) so SYS -> ERRORS surfaces it. Fully self-
 // contained + try-wrapped: the logger can never crash its caller. Skips the IGNORE_PATTERNS
 // filter on purpose — every hand-instrumented catch is a deliberate, wanted record.
-function phantom_logErr(ctx, err) {
+// v1.14.406 — ONE definition of "is this ring entry an error?".
+// The phantom_crash_log ring carries two different things: caught ERRORS, and the .403 aisle
+// LIFECYCLE TRACES. Three surfaces ask this question — the banner in phantom_logErr, the boot
+// banner in phantomDeferredInit, and the SYS header count in errors_refreshCount — and a second
+// copy of the predicate is exactly how they would drift apart. The ERRORS sheet deliberately
+// does NOT filter: listing the traces is the whole point of the .403 instrument.
+function phantom_crashErrors(entries) {
+  if (!Array.isArray(entries)) return [];
+  return entries.filter(function(e) { return !!e && e.type !== 'trace'; });
+}
+// v1.14.406 — opts.trace marks a lifecycle record rather than a fault. Third parameter is
+// optional and defaults to the previous behaviour, so all 64 existing call sites are unchanged.
+function phantom_logErr(ctx, err, opts) {
   try {
     var CRASH_KEY = 'phantom_crash_log';
+    var isTrace = !!(opts && opts.trace);
     var msg = (err && err.message) ? err.message : String(err);
     var entries = safeGet(CRASH_KEY, []);
     if (!Array.isArray(entries)) entries = [];
     entries.unshift({
       ts: new Date().toISOString(),
       v: (typeof PHANTOM_APP_VERSION === 'string' ? PHANTOM_APP_VERSION : ''),
-      type: 'caught',
+      type: isTrace ? 'trace' : 'caught',
       ctx: String(ctx || ''),
       msg: String(msg).slice(0, 300),
       src: '', line: '', col: '',
@@ -17634,9 +17647,13 @@ function phantom_logErr(ctx, err) {
     // #crash-banner mutation is redesign-gated so ?legacy=1 stays STRICTLY byte-identical on
     // caught-error paths — the existing logCrash still drives the banner for UNCAUGHT errors in
     // both houses, unchanged; SYS -> ERRORS surfaces caught entries in redesign.
-    if (typeof redesign_isOn === 'function' && redesign_isOn()) {
+    // v1.14.406 — a TRACE never raises the banner, and the number the banner shows is the count
+    // of real errors, not of ring entries. Before this, .403's aisle_trace routed 14 NORMAL
+    // lifecycle events through this door, so a completely healthy Open Aisle put "JS ERROR — tap
+    // to view crash log" on screen every single time.
+    if (!isTrace && typeof redesign_isOn === 'function' && redesign_isOn()) {
       var banner = document.getElementById('crash-banner');
-      if (banner) { banner.style.display = 'block'; banner.innerHTML = '<span class="ico ico-md ico-warning"></span> JS ERROR — tap to view crash log (' + entries.length + ' entries)'; }
+      if (banner) { banner.style.display = 'block'; banner.innerHTML = '<span class="ico ico-md ico-warning"></span> JS ERROR — tap to view crash log (' + phantom_crashErrors(entries).length + ' entries)'; }
     }
     try { if (typeof console !== 'undefined' && console.warn) console.warn('[phantom_logErr] ' + String(ctx) + ':', err); } catch (_) {}
   } catch (_) {}
@@ -18233,7 +18250,10 @@ function phantomDeferredInit() {
   initSheetDismiss('rm-sheet',       '.rm-sheet-inner',   closeRmSheet);
   initSheetDismiss('rm-device-sheet','.rm-device-inner',  closeRmDevice);
   initSheetDismiss('ph-sheet',       '.phs-inner',        phdock_close);   // v1.14.268 PHASE DOCK — drag-down dismiss
-  var entries = safeGet('phantom_crash_log', []);
+  // v1.14.406 — errors only. This banner is NOT redesign-gated, so before this fix one aisle
+  // open left 14 trace entries in the ring and the NEXT cold boot opened with "JS ERROR" in
+  // BOTH houses. Filtering traces restores what ?legacy=1 did before .403 introduced them.
+  var entries = phantom_crashErrors(safeGet('phantom_crash_log', []));
   if (entries.length) {
     var b = document.getElementById('crash-banner');
     if (b) {
@@ -18974,8 +18994,9 @@ function rd_closeProfile() {
 // clipboard builder. Read-only diagnostics: never mutates app/deploy data.
 function errors_refreshCount() {
   try {
-    var entries = safeGet('phantom_crash_log', []);
-    var n = Array.isArray(entries) ? entries.length : 0;
+    // v1.14.406 — the SYS header count is an ERROR count. Traces stay listed in the ERRORS
+    // sheet (rd_renderErrors is deliberately unfiltered) but are never counted as faults here.
+    var n = phantom_crashErrors(safeGet('phantom_crash_log', [])).length;
     var val = document.getElementById('hdr-agg-errors-val');
     var dot = document.getElementById('hdr-agg-errors-dot');
     if (val) { val.textContent = n > 0 ? String(n) : 'NONE'; val.style.color = n > 0 ? '#ff3b3b' : 'var(--slate)'; }
@@ -19089,7 +19110,9 @@ var _forge3dActive = null;  // { mount, dispose } — single-GL-context tracker
 // instrument can never alter the flow it is measuring.
 function aisle_trace(ev, detail) {
   try {
-    phantom_logErr('AISLE/' + ev, { message: String(ev) + (detail ? ' · ' + detail : ''), stack: '' });
+    // v1.14.406 — declare what this is. These are lifecycle records, not faults; without the
+    // flag every healthy aisle open reported a crash to the operator.
+    phantom_logErr('AISLE/' + ev, { message: String(ev) + (detail ? ' · ' + detail : ''), stack: '' }, { trace: true });
   } catch (_) {}
 }
 // Snapshot of everything the owner would otherwise have to type into a console.
@@ -22381,8 +22404,14 @@ function shift_end_read() {
     return o;
   } catch (_) { return null; }
 }
+// v1.14.406 — NO SILENT FAILURES. This was a bare catch(_){} over a raw setItem: a quota
+// failure stored nothing, threw nothing, warned nothing and toasted nothing, while the hero
+// went on rendering a countdown that would be gone at the next launch. phantom_shift_end is
+// registry-classified user data (:50601), not ephemeral UI state. safeStore owns the quota
+// toast, the haptic and the storage-full flag, so this needs no handling of its own — it only
+// needed to stop swallowing. Returns the outcome so a caller can react.
 function shift_end_write(endMs) {
-  try { localStorage.setItem(SHIFT_END_KEY, JSON.stringify({ end: endMs, setAt: Date.now() })); } catch (_) {}
+  return safeStore(SHIFT_END_KEY, JSON.stringify({ end: endMs, setAt: Date.now() }));
 }
 function shift_end_clear() { try { localStorage.removeItem(SHIFT_END_KEY); } catch (_) {} }
 function shift_state() {
@@ -31429,11 +31458,30 @@ var PHANTOM_MASTER_STORE = {
         e.code === 22 || e.code === 1014 ||
         /quota/i.test(e.message || '')
       );
+      // v1.14.406 — NO SILENT FAILURES. This handler used to console.warn and return false,
+      // and its only caller discarded the boolean, so a quota failure on the LARGEST payload
+      // in the app was invisible: the operator loaded a Master, the UI reported success, and
+      // nothing persisted. The message is capability-specific on purpose — safeStore's generic
+      // "Storage full" does not tell a tech the thing they actually need to know, which is that
+      // the Master still works for THIS session and must be re-imported after a restart.
       if (isQuota) {
         console.warn('PHANTOM: Master too large for offline storage on this device; in-memory parse retained for this session.');
+        try {
+          if (typeof phantomToast === 'function') {
+            phantomToast('Master too large to save — works this session, re-import after restart', 'error');
+          }
+          if (typeof haptic === 'function') haptic([40, 30, 40]);
+        } catch (_) {}
+        try { window.__phantomStorageFull = true; } catch (_) {}
         return false;
       }
       console.warn('PHANTOM_MASTER_STORE save failed:', e);
+      try {
+        if (typeof phantomToast === 'function') {
+          phantomToast('Master could not be saved — works this session, re-import after restart', 'error');
+        }
+        if (typeof haptic === 'function') haptic([40, 30, 40]);
+      } catch (_) {}
       return false;
     }
   },
@@ -31836,8 +31884,13 @@ async function phantom_parseMaster(arrayBuffer, options) {
     // app cold-start can hydrate window._lastPhantomMaster without
     // requiring the operator to re-pick the Master file. Wrapped in
     // try/catch so a save failure cannot break the parse return.
+    // v1.14.406 — the return value used to be discarded here, which is the other half of the
+    // silent failure above. save() now tells the operator itself in both failure branches, so
+    // this site records the outcome for the log rather than toasting a second time.
     try {
-      PHANTOM_MASTER_STORE.save(site);
+      if (PHANTOM_MASTER_STORE.save(site) === false) {
+        console.warn('PHANTOM_MASTER_STORE: Master NOT persisted — in-memory only for this session.');
+      }
     } catch (e) {
       console.warn('PHANTOM_MASTER_STORE save failed:', e);
     }
