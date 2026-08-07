@@ -1493,4 +1493,29 @@ See [[reference_pages_deploy_lock]]. **Do not start this pass until `version.jso
 - [ ] `PhantomGL.diag()` — still **exactly one** attachment for the Build mount; the aisle is no longer observed
 - [ ] `?legacy=1` — unchanged from `.402` (clear `phantom_legacy` afterwards)
 
+## v1.14.405 — blank Forge aisle, PROVEN root cause (`6d862e5`) · rollback: revert commit
+✅ **DEVICE-CONFIRMED BY OWNER 2026-08-06: "aisle draws and holds."** The `.390`→`.404` blank-aisle
+arc is **CLOSED**. Found by a focused regression pass against the last device-verified good aisle
+(`v1.14.353`, `4f84c65`, batch `.351`–`.354` CLEARED 2026-07-25) — **not** by another device-log cycle.
+
+**Cause: an interaction of three ships, none of which is wrong alone.** `.391` gave `bw_mount3D` a
+bounded re-arm — 12 × 400ms ≈ **five seconds** of `setTimeout` retries — guarded only by
+`document.body.contains(mount)`. `.401` made release **symmetric** (any registration disposes all
+others via `releaseOthers`, I1). **Opening the aisle never removes `#bw-mount` from the DOM** — the
+aisle is a separate full-screen sheet, a direct child of `#app` — so Build's re-arm kept firing for
+five seconds *after* the aisle opened and each retry re-registered `bw-mount` and **disposed the live
+aisle.** The Forge HUD is static markup, so it stayed perfect while only the scene died.
+`.404` removed only the **observer** half of `.401` and left `releaseOthers`, which is why it missed.
+
+**Fix: correct the guard, add no machinery.** `draw()` aborts while the aisle sheet is open. No
+timeout, no retry, no fallback, no instrumentation, no special-case path — it *removes* work on a path
+that must not run. **I1 was not weakened**; `releaseOthers` is unchanged.
+- [x] Build → OPEN AISLE draws its cabinets **and holds past the five-second window** — owner confirmed
+- [ ] Close and reopen ×10 — draws every time
+- [ ] Build's rack returns after closing the aisle
+- [ ] `?legacy=1` unchanged
+
+⚠ **This pass confirms the aisle DRAWS AND HOLDS and nothing more.** It does **not** release either
+batch. `.377`–`.384` remains unreleased; `.385`–`.405` remains OPEN at 21 of 6.
+
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
