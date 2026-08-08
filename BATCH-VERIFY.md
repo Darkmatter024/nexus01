@@ -1871,4 +1871,63 @@ out, so `.410` is verified as shipped and this is a follow-on, not a rollback.
 
 ---
 
+## v1.14.412 — Step 3: the desktop stops being a stretched phone
+
+The desktop composition already existed; it was gated behind a URL flag nobody types, so every
+laptop rendered 720px of content centred in 1440. **The gate is now automatic at ≥1024** (owner
+ruling), with `?cshell=0` as the rip-cord.
+
+- [ ] **iPad in LANDSCAPE**: the desktop shell appears **automatically** — left rail, right column.
+      Then rotate to **portrait** and confirm it stays on the phone layout **until reload**. That
+      is expected, not a bug: toggling the class live would reparent `#bw-mount` and RackEngine
+      owns a single live WebGL attachment.
+- [ ] **iPhone, header pill**: `API OFFLINE` sits **below the notch** and is comfortably tappable.
+      ⚠ This is the one that cannot be checked anywhere else — it was 8px INTO the notch, and
+      `env(safe-area-inset-top)` resolves to **0** in the harness, so no screenshot could show it.
+- [ ] Bottom-nav labels and the version chip are legible at arm's length (both were 9px).
+- [ ] On the shell: **no purple gradient anywhere** — every action is cyan.
+- [ ] `?legacy=1` still byte-identical — every shared-chrome rule is `body.rd`-scoped because
+      `.app-header` renders in BOTH houses.
+
+Verified across seven tiers (390 · 834 · 1024 · 1194 · 1366 · 1440 · 1920 + rip-cord): zero
+tappable targets under 44px, zero text under 10px, zero horizontal overflow, type ladder strictly
+increasing at every one.
+
+**Known and deliberate:** 834–1023 has no desktop composition and stays on the phone layout — the
+shell renders a broken half-state at that width (two stacked wordmarks, no rail, no right column).
+
+---
+
+## v1.14.413 — a rack with no devices says what that means
+
+Ships because the same honest data was reported as a regression **twice** — `.401` (rollback
+ordered) and `.411` (sprint stopped). Both times the data was right and the **sentence** was
+missing. **Also carries the parked Step 3 work** (`.412` was stamped but never pushed when the
+field report arrived).
+
+- [ ] **Row S4, focus any cab**: the status pill reads **`NO HOST DATA IN MASTER`** — with
+      `· N CABLES` where the Master carries cables. **CYAN. If it is red or gold, stop and report** —
+      an unprovisioned cab is not a fault and not an action item.
+- [ ] Open that rack's detail: a cyan callout explains it, and **nothing tells you to tap rows
+      that are not there** (the hint used to say TAP A ROW over an empty grid).
+- [ ] The detail meta line reads the sentence, not `0/0 RACKED` — row and position still shown.
+- [ ] **Focus a FLAGGED rack on a populated row**: the `⚠ N FLAGGED` clause is **fully readable,
+      not clipped**. It used to run to x=445 in a 372px row and clip the warning.
+- [ ] A populated, unflagged rack still shows `n/m RACKED` **and** `TAP FLANKS TO WALK`.
+
+Step 3 items riding along — **all unverified on glass**:
+
+- [ ] **iPad LANDSCAPE**: desktop shell appears automatically (rail + right column). Rotate to
+      portrait: stays on the phone layout **until reload** — expected, not a bug.
+- [ ] **iPhone**: the header status pill sits **below the notch**. It was 8px INTO it, and
+      `env(safe-area-inset-top)` is 0 in the harness so nothing off-device could show that.
+- [ ] On the desktop shell: **no purple gradient anywhere**; open the Forge aisle and confirm its
+      **✕ actually closes it** (the top bar used to paint over the sheet and swallow the tap).
+- [ ] `?legacy=1` byte-identical · `?cshell=0` drops a laptop back to the phone layout.
+
+Measured at 390 across six status-row states incl. a fully-flagged 48U rack: worst right edge
+**360px** against a 372px row, one baseline, zero overflow.
+
+---
+
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->

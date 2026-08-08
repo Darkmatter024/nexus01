@@ -26,7 +26,7 @@
 // seed, the Build/Command entry helpers, the WebGL probe, the attachment census and the
 // console-noise partition in the round-trip test — is defined in this file on purpose.
 
-const { test, expect } = require('./fixtures');
+const { test, expect, gotoMode } = require('./fixtures');
 
 // ── Storage seed ────────────────────────────────────────────────────────────────
 // bw_render() (:20424) ROUTES before it ever builds the preview:
@@ -181,13 +181,13 @@ async function buildPreviewOutcomeWithReentry(page, attempts = 3) {
 // calls bw_render() (:18815). Never call the function directly — a test that bypasses the
 // door cannot catch a dead door.
 async function enterBuild(page) {
-  await page.locator('#bn-work').click();
+  await gotoMode(page, 'work');   // bottom nav below 1024, desktop rail above - one door
   await expect(page.locator('#bw-shell')).toBeVisible();
   await page.locator('#bw-mount').waitFor({ state: 'visible', timeout: 15_000 });
 }
 
 async function enterCommand(page) {
-  await page.locator('#bn-command').click();
+  await gotoMode(page, 'command');
   await expect(page.locator('#pg-cmd')).toBeVisible();
 }
 

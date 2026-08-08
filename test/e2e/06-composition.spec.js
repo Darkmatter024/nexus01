@@ -7,10 +7,17 @@
 // (640 / 851 / 980 / 1024 / 1500) rather than only the four project viewports.
 //
 // Three things it deliberately does NOT do:
-//  · It does not assume desktop chrome exists on a bare URL. `.cshell` is added
-//    ONLY by ?cshell=1 (cshell_isOn :18863, applied :18898) and is never
-//    persisted, so at 1440px on a bare URL PHANTOM is still the phone
-//    composition. That is the design, not a defect, and it is asserted as such.
+//  · v1.14.412 — IT NO LONGER ASSUMES THE PHONE COMPOSITION AT EVERY WIDTH.
+//    This header used to say `.cshell` was added ONLY by ?cshell=1 and never
+//    persisted, so a bare URL at 1440px was still the phone layout. That was
+//    true, and it was the reason every laptop rendered 720px of content centred
+//    in 1440 with a phone bottom nav across the full width. The owner ruled the
+//    desktop composition automatic. The gate is now CSS — every body.rd.cshell
+//    rule sits inside @media (min-width: 1024px) — and the class only says the
+//    composition is PERMITTED (?cshell=0 is the rip-cord). The tests below
+//    therefore assert the BOUNDARY, and they assert it by resizing a live page,
+//    because that is the only thing that can tell a media query from a JS gate
+//    read once at boot.
 //  · It does not measure a control the zero-state app never instantiates and
 //    then call that a live sighting. Where a CSS RULE is measured instead of a
 //    rendered control, the test says so in its name and its comment.
@@ -27,7 +34,7 @@
 // playwright.config.js are shared and were not modified.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const { test, expect } = require('./fixtures');
+const { test, expect, gotoMode, railIsUp } = require('./fixtures');
 
 // ── local helpers ────────────────────────────────────────────────────────────
 
@@ -46,8 +53,13 @@ async function setWidth(page, width) {
 }
 
 /** Switch redesign mode through the real bottom-nav door and wait for the page. */
+// v1.14.412 — navId is the BOTTOM-NAV id these tests were written against. Below 1024 that is
+// still the door; at 1024+ the desktop rail replaces the bottom nav, so the id is translated to
+// a mode and gotoMode() taps whichever organ is composed. The subject of these tests is the
+// PAGE that ends up active, not the organ that was tapped.
+const NAV_TO_MODE = { 'bn-command': 'command', 'bn-work': 'work', 'bn-ref': 'ref' };
 async function goMode(page, navId, pageId) {
-  await page.locator('#' + navId).click();
+  await gotoMode(page, NAV_TO_MODE[navId]);
   await page.waitForFunction(
     (id) => {
       const el = document.getElementById(id);
@@ -198,12 +210,26 @@ const TAP_FLOOR = 44;
 
 test.describe('zero horizontal overflow', () => {
   test('Command composes inside the viewport at this tier and at every declared breakpoint', async ({ phantom, page }) => {
+    // v1.14.412 — SWEEP GOT MORE EXPENSIVE, MEASURED not guessed. Eight of the twenty
+    // widths below are >=1024, where the desktop shell now composes on a bare URL. On WebKit a
+    // resize cycle costs ~5.4s with the shell up against ~1.0s on the phone layout - stable,
+    // not growing, and the DOM node count holds flat, so this is cost and not a leak. The two
+    // backdrop-filter: blur(22px) surfaces (a 246x100vh rail and a full-width 76px bar) are the
+    // likely price. The sweep genuinely does more work; it is not hanging.
+    test.slow();
     await phantom.boot();
     await phantom.assertNoHorizontalOverflow();      // this project's own viewport first
     await assertNoOverflowAcross(page, SWEEP, 'Command (#pg-cmd)');
   });
 
   test('Build composes inside the viewport at this tier and at every declared breakpoint', async ({ phantom, page }) => {
+    // v1.14.412 — SWEEP GOT MORE EXPENSIVE, MEASURED not guessed. Eight of the twenty
+    // widths below are >=1024, where the desktop shell now composes on a bare URL. On WebKit a
+    // resize cycle costs ~5.4s with the shell up against ~1.0s on the phone layout - stable,
+    // not growing, and the DOM node count holds flat, so this is cost and not a leak. The two
+    // backdrop-filter: blur(22px) surfaces (a 246x100vh rail and a full-width 76px bar) are the
+    // likely price. The sweep genuinely does more work; it is not hanging.
+    test.slow();
     await phantom.boot();
     await goMode(page, 'bn-work', 'pg-work');
     await phantom.assertNoHorizontalOverflow();
@@ -211,6 +237,13 @@ test.describe('zero horizontal overflow', () => {
   });
 
   test('Tools composes inside the viewport at this tier and at every declared breakpoint', async ({ phantom, page }) => {
+    // v1.14.412 — SWEEP GOT MORE EXPENSIVE, MEASURED not guessed. Eight of the twenty
+    // widths below are >=1024, where the desktop shell now composes on a bare URL. On WebKit a
+    // resize cycle costs ~5.4s with the shell up against ~1.0s on the phone layout - stable,
+    // not growing, and the DOM node count holds flat, so this is cost and not a leak. The two
+    // backdrop-filter: blur(22px) surfaces (a 246x100vh rail and a full-width 76px bar) are the
+    // likely price. The sweep genuinely does more work; it is not hanging.
+    test.slow();
     await phantom.boot();
     await goMode(page, 'bn-ref', 'pg-ref');
     await phantom.assertNoHorizontalOverflow();
@@ -223,7 +256,7 @@ test.describe('zero horizontal overflow', () => {
 // ═════════════════════════════════════════════════════════════════════════════
 
 test.describe('tier boundaries', () => {
-  test('851px flips phone composition to desktop chrome, and the second tier is 1500px (not 1520px)', async ({ phantom, page }) => {
+  test('1024px flips phone composition to desktop chrome, and the second tier is 1500px (not 1520px)', async ({ phantom, page }) => {
     await phantom.boot({ query: '?cshell=1' });
     expect(
       await page.evaluate(() => document.body.classList.contains('cshell')),
@@ -238,25 +271,25 @@ test.describe('tier boundaries', () => {
         cmdshell: getComputedStyle(document.getElementById('cmd-shell')).display,
       }));
 
-    // ── 850px: phone composition. Bottom nav, no side rail, no top bar.
-    await setWidth(page, 850);
-    expect(await chrome(), 'at 850px the desktop chrome must stay inert (#cs-side/#cs-top are display:none until min-width:851px, :54042/:54423)').toEqual({
+    // ── 1023px: phone composition. Bottom nav, no side rail, no top bar.
+    await setWidth(page, 1023);
+    expect(await chrome(), 'at 1023px the desktop chrome must stay inert — every body.rd.cshell rule now sits inside @media (min-width:1024px), and #cmd-shell keeps its base display:none outside that gate').toEqual({
       side: 'none',
       top: 'none',
       botnav: 'grid',
-      cmdshell: 'block',
+      cmdshell: 'none',
     });
     let o = await overflow(page);
-    expect(o.scrollW, `850px overflows: ${o.offenders.join(', ')}`).toBeLessThanOrEqual(o.clientW + 1);
+    expect(o.scrollW, `1023px overflows: ${o.offenders.join(', ')}`).toBeLessThanOrEqual(o.clientW + 1);
 
-    // ── 851px: desktop composition. Side rail + top bar take over, bottom nav stands down.
-    await setWidth(page, 851);
+    // ── 1024px: desktop composition. Side rail + top bar take over, bottom nav stands down.
+    await setWidth(page, 1024);
     const hi = await chrome();
-    expect(hi.side, '#cs-side must appear at 851px').not.toBe('none');
-    expect(hi.top, '#cs-top must appear at 851px').not.toBe('none');
-    expect(hi.botnav, '#rd-botnav must stand down at 851px — two primary navs on screen at once is the defect this boundary exists to prevent').toBe('none');
+    expect(hi.side, '#cs-side must appear at 1024px').not.toBe('none');
+    expect(hi.top, '#cs-top must appear at 1024px').not.toBe('none');
+    expect(hi.botnav, '#rd-botnav must stand down at 1024px — two primary navs on screen at once is the defect this boundary exists to prevent').toBe('none');
     o = await overflow(page);
-    expect(o.scrollW, `851px overflows: ${o.offenders.join(', ')}`).toBeLessThanOrEqual(o.clientW + 1);
+    expect(o.scrollW, `1024px overflows: ${o.offenders.join(', ')}`).toBeLessThanOrEqual(o.clientW + 1);
 
     // ── the SECOND boundary. The brief carried it as 1520px; the app declares
     //    @media (min-width: 1500px) (three of them, :54231/:54399/:54724) and
@@ -277,25 +310,60 @@ test.describe('tier boundaries', () => {
     expect(o.scrollW, `1519px overflows: ${o.offenders.join(', ')}`).toBeLessThanOrEqual(o.clientW + 1);
   });
 
-  test('a bare URL keeps the phone composition at every width — cshell is opt-in and never persisted', async ({ phantom, page }) => {
+  test('the composition follows the VIEWPORT, not a flag that was read once at boot', async ({ phantom, page }) => {
+    // v1.14.412 — THIS TEST USED TO ASSERT THE OPPOSITE, and it was right to until the owner
+    // ruled otherwise: the desktop shell was opt-in via ?cshell=1 and a bare URL stayed on the
+    // phone layout at every width. The consequence was that every laptop rendered 720px of
+    // content centred in 1440 with a phone bottom nav across the full width.
+    //
+    // The contract now: the class only says the desktop composition is PERMITTED; an
+    // @media (min-width:1024px) decides whether it applies. That distinction is the whole
+    // point, so this asserts it the only way that can tell the two apart — by RESIZING a live
+    // page. A JS gate read at boot passes a fresh-load check at every width and still leaves
+    // the shell stuck on when the window narrows; only a resize catches it.
     await phantom.boot();
-    for (const w of [390, 851, 1366, 1440, 1600]) {
+
+    const compose = () => page.evaluate(() => ({
+      cshell: document.body.classList.contains('cshell'),
+      side: getComputedStyle(document.getElementById('cs-side')).display,
+      cmdshell: getComputedStyle(document.getElementById('cmd-shell')).display,
+      botnav: getComputedStyle(document.getElementById('rd-botnav')).display,
+    }));
+
+    for (const w of [390, 834, 1023]) {
       await setWidth(page, w);
-      const s = await page.evaluate(() => ({
-        cshell: document.body.classList.contains('cshell'),
-        rd: document.body.classList.contains('rd'),
-        side: getComputedStyle(document.getElementById('cs-side')).display,
-        cmdshell: getComputedStyle(document.getElementById('cmd-shell')).display,
-        botnav: getComputedStyle(document.getElementById('rd-botnav')).display,
-      }));
-      expect(s, `bare URL at ${w}px must not compose desktop chrome (?cshell=1 is the only door, and it is not persisted)`).toEqual({
-        cshell: false,
-        rd: true,
-        side: 'none',
-        cmdshell: 'none',
-        botnav: 'grid',
-      });
+      const c = await compose();
+      expect(c.side, `${w}px must not compose the desktop rail`).toBe('none');
+      expect(c.cmdshell, `${w}px must not compose the desktop shell — #cmd-shell keeps its base display:none outside the 1024 gate`).toBe('none');
+      expect(c.botnav, `${w}px must keep the bottom nav`).toBe('grid');
     }
+    for (const w of [1024, 1366, 1440, 1600]) {
+      await setWidth(page, w);
+      const c = await compose();
+      expect(c.side, `${w}px must compose the desktop rail`).not.toBe('none');
+      expect(c.cmdshell, `${w}px must compose the desktop shell`).not.toBe('none');
+      expect(c.botnav, `${w}px must stand the bottom nav down — two primary navs on screen at once is the defect this boundary exists to prevent`).toBe('none');
+    }
+    // and back down again: the shell must RELEASE the layout, not merely fail to take it.
+    await setWidth(page, 390);
+    const back = await compose();
+    expect(back.cmdshell, 'narrowing left the desktop shell composed at 390px — the gate is being read once instead of continuously').toBe('none');
+    expect(back.botnav, 'narrowing did not restore the bottom nav').toBe('grid');
+  });
+
+  test('the rip-cord pins the phone composition at a desktop width', async ({ phantom, page }) => {
+    // ?cshell=0 is the counterpart of ?legacy=1: one URL that gets an operator back to the
+    // layout they know, without clearing storage or knowing any internals.
+    await phantom.boot({ query: '?cshell=0' });
+    await setWidth(page, 1440);
+    const c = await page.evaluate(() => ({
+      cshell: document.body.classList.contains('cshell'),
+      cmdshell: getComputedStyle(document.getElementById('cmd-shell')).display,
+      botnav: getComputedStyle(document.getElementById('rd-botnav')).display,
+    }));
+    expect(c.cshell, '?cshell=0 did not stand the desktop composition down').toBe(false);
+    expect(c.cmdshell, '?cshell=0 still composed the desktop shell at 1440px').toBe('none');
+    expect(c.botnav, '?cshell=0 did not keep the phone bottom nav at 1440px').toBe('grid');
   });
 });
 
@@ -416,6 +484,9 @@ test.describe('touch-target floor', () => {
   // one PASSES and must keep passing — it is the floor's positive control.
   test('the bottom nav — the always-on-screen control — clears 44px in both axes', async ({ phantom, page }) => {
     await phantom.boot();
+    // The BOTTOM NAV is a phone/tablet organ. At 1024+ the desktop rail replaces it and this
+    // has nothing on screen to measure; the rail has its own floor check in 08-forge-layout.
+    test.skip(await railIsUp(page), 'the desktop shell composes a left rail at this width; there is no bottom nav to measure');
     const nav = await page.evaluate(() =>
       Array.from(document.querySelectorAll('#rd-botnav .botitem, #rd-botnav #rd-exit')).map((el) => {
         const r = el.getBoundingClientRect();
@@ -528,10 +599,26 @@ test.describe('reduced motion', () => {
         bottomGap: Math.round(window.innerHeight - r.bottom),
       };
     });
-    expect(nav.display, 'the bottom nav must still be a grid under reduced motion').toBe('grid');
-    expect(nav.pos).toBe('fixed');
-    expect(nav.h, `the bottom nav collapsed to ${nav.h}px`).toBeGreaterThanOrEqual(TAP_FLOOR);
-    expect(Math.abs(nav.bottomGap), `the bottom nav is ${nav.bottomGap}px off the viewport bottom`).toBeLessThanOrEqual(2);
+    // v1.14.412 — WHICH nav is on screen depends on the tier, but the claim is the same at
+    // both: a motion preference must not collapse the fixed navigation organ. Below 1024 that
+    // organ is the bottom nav; at 1024+ it is the desktop rail.
+    if (await railIsUp(page)) {
+      const rail = await page.evaluate(() => {
+        const r = document.getElementById('cs-side'); const cs = getComputedStyle(r);
+        return { display: cs.display, pos: cs.position, w: r.getBoundingClientRect().width };
+      });
+      expect(rail.display, 'the desktop rail collapsed under reduced motion').not.toBe('none');
+      expect(rail.pos, 'the desktop rail stopped being fixed under reduced motion').toBe('fixed');
+      expect(rail.w, 'the desktop rail has no width under reduced motion').toBeGreaterThan(0);
+    } else {
+      expect(nav.display, 'the bottom nav must still be a grid under reduced motion').toBe('grid');
+      expect(nav.pos).toBe('fixed');
+      // These two measure the BOTTOM NAV's own box, so they belong to this branch. At 1024+ the
+      // organ is the rail, which is asserted above — a 0px bottom nav there is the correct answer,
+      // not a collapse.
+      expect(nav.h, `the bottom nav collapsed to ${nav.h}px`).toBeGreaterThanOrEqual(TAP_FLOOR);
+      expect(Math.abs(nav.bottomGap), `the bottom nav is ${nav.bottomGap}px off the viewport bottom`).toBeLessThanOrEqual(2);
+    }
   });
 
   test('reduced motion keeps the same tier boundaries', async ({ phantom, page }) => {
@@ -543,9 +630,9 @@ test.describe('reduced motion', () => {
       await page.evaluate(() => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)),
       'prefers-reduced-motion emulation did not reach the page'
     ).toBe(true);
-    await setWidth(page, 850);
+    await setWidth(page, 1023);
     expect(await page.evaluate(() => getComputedStyle(document.getElementById('cs-side')).display)).toBe('none');
-    await setWidth(page, 851);
+    await setWidth(page, 1024);
     expect(await page.evaluate(() => getComputedStyle(document.getElementById('cs-side')).display)).not.toBe('none');
     await phantom.assertNoHorizontalOverflow();
   });

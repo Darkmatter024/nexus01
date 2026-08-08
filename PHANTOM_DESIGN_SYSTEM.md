@@ -163,6 +163,7 @@ a weight and a tracking token — size alone is not hierarchy.
 
 | Token | Size | Weight | Tracking | Case | Role |
 |---|---:|---:|---|---|---|
+| `--fs-display` | **32px** | 800 | tight | sentence/UPPER | **one display moment per screen** — desktop hero headline, the rack ID on Build. Never a label, never a metric. |
 | `--fs-hero` | 18px | 700 | `display` 4.5px | UPPER | screen title, wordmark |
 | `--fs-head` | 16px | 700 | `wide` 2.8px | UPPER | section header |
 | `--fs-subhead` | 14px | 600 | `ui` 2.2px | UPPER | card title, tab |
@@ -172,6 +173,20 @@ a weight and a tracking token — size alone is not hierarchy.
 
 **Numerals** (rack IDs, U positions, counts) always run `--hud-track-data` (0.3px) — data is read,
 not scanned.
+
+**RULING A + the seventh step, owner-approved 2026-08-07 (`v1.14.412`).** The ladder is **fixed at
+every tier**: a bigger screen buys *composition*, not bigger type — §9 already says the surplus
+becomes margin, and growing the type is itself a form of stretching. The `@media (min-width:1024px)`
+fluid block is therefore **retired**; it had produced two separate ladder failures (`--fs-micro`
+resolving to **9px**, below the app's own floor, at 1024–1200; and `--fs-body` reaching 14px and
+colliding with `--fs-subhead` from 1366 up). Capping one bound could not fix it — each cap moved the
+collision to the neighbouring pair.
+
+Because the six steps are a *phone* ladder that tops at 18px, a genuine display moment had nowhere
+to go, so `--fs-display` **32px** was added as the seventh and last step. It does **not** grow by
+tier either: before this, `.cs-hero-title` carried three sizes (30/35/38) and `.bw-rack` three more
+(34/38/40) — six declarations now consuming one token. **Resolved ladder is
+`10 / 11 / 12 / 14 / 16 / 18 / 32` at 390, 834, 1366, 1440 and 1920.**
 
 ⚠ **CORRECTION to the audit as first written.** I reported the second `:root` re-declaring
 `--fs-micro/caption/body` as `clamp()` values as a cascade conflict. **It is not.** That block sits
@@ -351,7 +366,19 @@ Per screen, in the Step-2 order (Command → Build → Forge → Tools → Shift
 | Forge | **pass done** `v1.14.410` — HUD onto the scale, sheet close to 44px, **permanent control placement ruling** |
 | Tools | **pass done** `v1.14.410` — search input to the floor, tile type + radius, all scoped to `#ref-grid` |
 | Shift | **pass done** `v1.14.410` — close button was 260.5×30, title wrap, type + radius onto the scale |
-| Tablet / laptop / desktop | blocked on phone freeze |
+| **Desktop shell (`cshell`)** | **pass done + GATE FLIPPED** `v1.14.412` — automatic at **≥1024**, `?cshell=0` rip-cord. 5 violet gradients → 0 · 8 sub-44 controls → 0 · 18 type sizes → 8 · 24 sub-floor declarations → 0 |
+| **Shared header / nav chrome** | **pass done** `v1.14.412` — `.hdr-agg-pill` 27→44px, `.blabel` / `#ver-stamp` 9→10px, and a latent notch bug (`top:-9px`) deleted |
+| Tablet 834–1023 | **no composition** — stays on the phone layout by ruling; the shell renders a broken half-state here |
+
+### The seven-tier floor check (`v1.14.412`)
+
+`390 · 834 · 1024 · 1194 · 1366 · 1440 · 1920` + the `?cshell=0` rip-cord — **zero tappable targets
+under 44px, zero text under 10px, zero horizontal overflow, ladder strictly increasing at all.**
+
+⚠ **The audit lesson that produced the last two rows.** Every phone pass scoped its audit to the
+PAGE container (`#pg-cmd`, `#pg-work`, `#pg-ref` …), so the header and bottom nav were never
+measured — *"zero sub-44 targets on all five screens"* was true of the screens and was allowed to
+read as true of the app. **Audit the chrome as its own surface, or it is nobody's.**
 
 ### Carried, with the ruling that owns each
 

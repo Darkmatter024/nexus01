@@ -19,7 +19,7 @@
 // Everything below was measured against dct-ios.html at v1.14.405, not assumed.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const { test, expect } = require('./fixtures');
+const { test, expect, gotoMode, railIsUp } = require('./fixtures');
 
 // ── LOCAL helpers (defined here on purpose; fixtures.js is shared and untouched) ──
 
@@ -103,7 +103,7 @@ function fmt(errs) {
 
 /** Land on the Tools page the way a tech does: the bottom-nav slot. */
 async function openTools(page) {
-  await page.locator('#bn-ref').click();
+  await gotoMode(page, 'ref');
   await page.waitForFunction(() => {
     const p = document.getElementById('pg-ref');
     return !!p && p.classList.contains('active') && p.classList.contains('rf-grid');
@@ -228,6 +228,10 @@ test.describe('Tools page grid (#pg-ref)', () => {
     // its clearance term. This asserts the clearance actually covers the strip — the
     // recurring "every fixed strip needs its own clearance" defect class.
     await phantom.boot();
+    // v1.14.412 - this asserts clearance over the BOTTOM NAV, a phone/tablet organ. At 1024+
+    // the desktop rail replaces it and the strip height is 0, so the assertion has nothing
+    // to measure against. The desktop scroll surface is covered by the overflow tests.
+    test.skip(await railIsUp(page), 'the desktop shell composes a left rail at this width; there is no bottom-nav strip to clear');
     await openTools(page);
 
     // .page carries scroll-behavior:smooth (:1067), so a scrollTop assignment ANIMATES.
@@ -471,7 +475,7 @@ test.describe('ops tool reachability', () => {
     test.fail(true, 'OPS wall hidden by #pg-work.bw-on (:20458/:54055) — nine tools have no phone door');
 
     await phantom.boot();
-    await page.locator('#bn-work').click();
+    await gotoMode(page, 'work');
     await page.waitForFunction(() => document.getElementById('pg-work').classList.contains('active'));
 
     const doors = await page.evaluate(() => {

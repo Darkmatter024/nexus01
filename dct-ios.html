@@ -202,7 +202,14 @@
   --fs-subhead:  14px;  /* card titles · section headers */
   --fs-head:     16px;  /* page-level titles */
   --fs-hero:     18px;  /* primary screen titles · critical numerics */
-
+  /* v1.14.412 - THE SEVENTH STEP, owner-approved 2026-08-07. The six steps above are a PHONE
+     ladder and they top out at 18px, which is right for a phone and wrong for the one element
+     per screen that is a genuine DISPLAY moment - the desktop hero headline and the rack ID on
+     Build. DESIGN_RULES section 6 says spend your boldness in one place; this is the token for
+     that place, and it is the ONLY step above --fs-hero. Per ruling A it does NOT grow by tier:
+     one size everywhere, so a display element cannot drift into a per-breakpoint ladder of its
+     own (--cs-hero-title carried three: 30/35/38, and .bw-rack carried three more: 34/38/40). */
+  --fs-display:  32px;  /* hero headline - one per screen, never for a label or a metric */
   /* ── v6 vocabulary additions (Fabric 2026) ── */
   --cyan-bright:   #9af6ff;        /* active-state cyan, brighter than --cyan */
   --violet-bright: #b478ff;        /* active-state violet, brighter than --violet */
@@ -3878,6 +3885,28 @@ body.rd #fs-fiber > .card:nth-child(7) .ico-tile { --optic: url("icons/phantom-o
    nominal state either, so it reads as a fact rather than either an alarm or an all-clear. */
 .hdr-agg-pill[data-state="offline"]  { color: var(--cyan);  border-color: rgba(92,242,255,0.22);
                                        background: rgba(92,242,255,0.03); }
+
+/* ━━━ v1.14.412 SHARED CHROME — the 44px floor reaches the header and the nav, not just pages ━━━
+   Found while auditing the desktop tiers, and it was wrong at 390 the whole time. Every phone pass
+   in this sprint scoped its audit to the PAGE container (#pg-cmd, #pg-work, #pg-ref ...), so the
+   header and the bottom nav were never measured. "Zero sub-44 targets on all five screens" was
+   true of the screens, and I let it read as true of the app. It was not.
+     - .hdr-agg-pill measured 27 x 77. It is a BUTTON — it opens the health panel — and it sat
+       17px under the gloved floor at every width, including the phone. The header is ~68px, so
+       the pill can take the floor without the header growing.
+     - .blabel (bottom-nav labels) and #ver-stamp were 9px, under the app's own 10px hard floor
+       (:158). 01-nav asserts the nav ITEM clears 44px, which it does; the label inside it is not
+       a control, so nothing caught the type.
+   body.rd-scoped on purpose: .app-header and its children render in BOTH houses, so an ungated
+   change here would move ?legacy=1 — Rule 7, and the .402 precedent decides it: gate the
+   presentation, never the invariant. #rd-botnav is redesign-only by construction. */
+body.rd .hdr-agg-pill { min-height: var(--tap-s); border-radius: var(--r-ctl); }
+/* Growing the pill to the floor exposed an alignment bug that was harmless while it was 27px:
+   .header-right was landing 8px ABOVE the header's padding box. The header's padding-top IS the
+   safe-area term (--safe-top), so on a notched iPhone that 8px is 8px INTO the notch — and
+   env(safe-area-inset-top) resolves to 0 here, which is exactly why the harness could not show it.
+   The content box is 46px and the pill is 44px, so it fits: only the alignment was wrong. */
+body.rd .header-right { align-self: center; }
 
 /* EKG vitals glyph — always shows the SYS label; the heartbeat trace sweeps
    left->right and beats faster as health degrades. Quiet cyan when ok, gold
@@ -8832,7 +8861,7 @@ body.rd #ref-grid .rf-card.rf-art { aspect-ratio:1/1; padding:0; justify-content
 body.rd #ref-grid .rf-card.rf-art .rf-cic { display:none; }
 body.rd #ref-grid .rf-card.rf-art .rf-cname { font-family:var(--ff-display); font-size:var(--fs-body); letter-spacing:var(--hud-track-mid); text-align:left; align-self:flex-start; padding:0 var(--sp-3); }
 body.rd #ref-grid .rf-card.rf-art .rf-cmeta { font-size:var(--fs-micro); letter-spacing:var(--hud-track-data); text-align:left; align-self:flex-start; padding:0 var(--sp-3) var(--sp-3); max-width:100%; box-sizing:border-box; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-/* v1.14.410 DESIGN SYSTEM  Tools. Scoped to #ref-grid ON PURPOSE: .rf-card and .rf-glabel are
+/* v1.14.410 DESIGN SYSTEM - Tools. Scoped to #ref-grid ON PURPOSE: .rf-card and .rf-glabel are
    UNSCOPED shared rules that also dress #work-grid and .deploy-tools-grid, and .rf-card is not
    body.rd-gated at all, so editing them in place would reach outside this screen and could move
    ?legacy=1. Rule 7 protects the invariant; per R-E each screen takes the scale as it is
@@ -9184,8 +9213,8 @@ body.rd #forge3d-sheet.open { display: flex; }
    ⛔ NOT CONTROLS. No handler, no role, no tabindex, no cursor:pointer. They are read-outs, and
    they are exempt from the 44px gloved floor that governs row 1 ONLY because they never look
    tappable — a thing that invites a gloved tap and does nothing is a silent failure. */
-/* v1.14.410  the pills must share ONE baseline at 390 with the strings the app actually
-   writes (setFocus appends ' � FOCUS', :20105  a .409 probe injected a shorter label and hid
+/* v1.14.410 - the pills must share ONE baseline at 390 with the strings the app actually
+   writes (setFocus appends ' � FOCUS', :20105 - a .409 probe injected a shorter label and hid
    that they no longer fit). nowrap makes the constraint explicit instead of silently stacking. */
 #forge3d-sheet .statrow{display:flex;flex-wrap:nowrap;align-items:center;gap:var(--sp-1);pointer-events:none}
 #forge3d-sheet .statpill{display:inline-flex;align-items:center;gap:7px;min-width:0;
@@ -9194,7 +9223,7 @@ body.rd #forge3d-sheet.open { display: flex; }
   padding:5px var(--sp-2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);line-height:1.4;color:var(--dim);
   white-space:nowrap;flex:0 0 auto}
-/* the rack id is DATA  it takes the data tracking step, which is both correct and the width
+/* the rack id is DATA - it takes the data tracking step, which is both correct and the width
    this row needs. */
 #forge3d-sheet .statpill.st-id{letter-spacing:var(--hud-track-data)}
 /* The walk pill LEAVES the row in the zero state rather than being dimmed — with no racks there
@@ -9261,11 +9290,11 @@ body.rd #forge3d-sheet.open { display: flex; }
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   display:flex;align-items:center;justify-content:center;color:var(--cyan);font-size:17px}
 #forge3d-sheet .hudbtn svg{width:18px;height:18px;stroke:var(--cyan);fill:none;stroke-width:2}
-/* v1.14.410  .gold retired from the grid button per the owner ruling: amber is reserved for
+/* v1.14.410 - .gold retired from the grid button per the owner ruling: amber is reserved for
    warning/attention and a view toggle is neither. The rule itself stays for any control that
    genuinely needs the attention channel. */
 #forge3d-sheet .hudbtn.gold{border-color:rgba(255,203,69,.4);color:var(--gold)}
-/* SCENE UTILITY CLUSTER  hangs from the header bottom (top:100%), so its clearance is derived
+/* SCENE UTILITY CLUSTER - hangs from the header bottom (top:100%), so its clearance is derived
    rather than constant. Same dimensions, material, radius and 44px floor as before; only the
    home changed. Quiet at rest on the chips ring, cyan on press. */
 #forge3d-sheet .scene-utils{position:absolute;top:100%;right:var(--forge-pad-x);
@@ -9314,9 +9343,23 @@ body.rd #forge3d-sheet.open { display: flex; }
 #forge3d-sheet .status-badge.status-pending{background:rgba(90,107,125,.14);color:var(--dim)}
 /* RU-less hosts: in the Master, but with no U we can place. Gold = the app's existing
    "surfaced, not lost" language (cf. .master-unplaced). Never silently dropped. */
-#forge3d-sheet .forge-unplaced{margin:6px 4px 10px;padding:8px 10px;border-radius:6px;
+#forge3d-sheet .forge-unplaced{margin:6px 4px 10px;padding:8px 10px;border-radius:var(--r-ctl);
   background:rgba(255,203,69,.10);border:1px solid rgba(255,203,69,.32);color:var(--gold);
-  font-size:9px;letter-spacing:.10em;line-height:1.5;word-break:break-word}
+  font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);line-height:1.5;word-break:break-word}
+/* v1.14.413 — THE HONEST EMPTY STATE. Deliberately CYAN, not gold and not red: gold is the
+   attention channel (a human must act) and red is fault. A cabinet the Master carries no hosts
+   for is neither — it is information, and painting it as a fault is precisely the misreading
+   that cost a near-rollback at .401 and a stopped sprint at .411. Same geometry and type scale
+   as .forge-unplaced above so the two callouts read as one family, different channel because
+   they mean different things: that one is a data DEFECT (hosts with no U), this one is a data
+   ABSENCE. Sits at the top of the detail table, where the header row used to stand alone. */
+#forge3d-sheet .forge-nodata{margin:6px 4px 10px;padding:10px;border-radius:var(--r-ctl);
+  background:rgba(92,242,255,.07);border:1px solid rgba(92,242,255,.28);color:var(--cyan);
+  font-family:var(--ff-display);font-size:var(--fs-caption);letter-spacing:var(--hud-track-mid);
+  line-height:1.5;word-break:break-word}
+#forge3d-sheet .forge-nodata .fnd-sub{display:block;margin-top:6px;font-family:var(--mono);
+  font-size:var(--fs-micro);letter-spacing:var(--hud-track-tight);color:var(--ink);
+  text-transform:none}
 /* v1.14.238 — GEOMETRY TRUTH. Red = the Master's geometry is WRONG (two devices in one U, or a
    chassis running off the top of the rack): the elevation cannot be trusted until it is fixed.
    Gold = we simply do not know (model height not in MASTER_U_TABLE) — reuses the existing
@@ -9455,7 +9498,7 @@ body.rd #forge3d-sheet.open { display: flex; }
 #forge3d-sheet .hint.gone{opacity:0}
 /* v1.14.226 — persistent build badge (§10): subtle top-right, redesign-only, taps pass through */
 #ver-stamp { display: none; }
-body.rd #ver-stamp { display: inline-flex; align-items: center; align-self: center; padding: 2px 8px; border-radius: 8px; font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: .08em; color: #43506a; background: rgba(6,9,15,0.7); border: 1px solid rgba(180,194,208,0.12); pointer-events: none; white-space: nowrap; }
+body.rd #ver-stamp { display: inline-flex; align-items: center; align-self: center; padding: 2px var(--sp-2); border-radius: var(--r-ctl); font-family: var(--mono); font-size: var(--fs-micro); font-weight: 600; letter-spacing: .08em; color: #43506a; background: rgba(6,9,15,0.7); border: 1px solid rgba(180,194,208,0.12); pointer-events: none; white-space: nowrap; }
 .rd-sheet-hdr { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(12px + var(--safe-top, 0px)) 18px 12px; border-bottom: 1px solid rgba(120,150,200,0.14); }
 .rd-sheet-titles { min-width: 0; }
 .rd-sheet-titles .t { font-family: var(--orb); font-weight: 700; letter-spacing: .14em; font-size: 18px; color: var(--white); }
@@ -9604,19 +9647,19 @@ body.rd #ph-sheet.open {
 #shiftend-sheet .se-custom-row label{font-family:var(--mono);font-size:12px;letter-spacing:1px;color:var(--slate)}
 #shiftend-sheet input.se-custom{flex:1;min-height:var(--tap-xl,56px);padding:0 14px;border-radius:10px;border:1px solid rgba(92,242,255,.22);background:rgba(10,14,20,.6);color:var(--cyan);font-family:var(--mono);font-size:16px;-webkit-appearance:none}
 #shiftend-sheet .se-clear{display:block;width:calc(100% - 40px);margin:14px 20px 12px;min-height:var(--tap-xl,56px);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--slate);font-family:var(--mono);font-size:13px;letter-spacing:1px;cursor:pointer;-webkit-appearance:none}
-/*  v1.14.410 DESIGN SYSTEM  SHIFT 
+/* === v1.14.410 DESIGN SYSTEM - SHIFT ===
    body.rd-scoped on purpose. .va-close-btn, .va-sheet-title and .va-sheet-inner are UNSCOPED
    rules shared by #shiftend-sheet, #log-sheet and #vaSheet, and all three exist in the legacy
    DOM (verified: present, zero-size, closed). Rule 7 keeps ?legacy=1 byte-identical, and the
-   .402 precedent is the test  gate the PRESENTATION, never the INVARIANT. This is presentation,
+   .402 precedent is the test - gate the PRESENTATION, never the INVARIANT. This is presentation,
    so it is gated; the redesign house is the default UI and gets the fix.
 
-   THE CLOSE BUTTON WAS 260.5 x 30. It was swept up by the "sheet action buttons  full width in
+   THE CLOSE BUTTON WAS 260.5 x 30. It was swept up by the "sheet action buttons - full width in
    bottom-sheet context" group at :745, a rule written for SAVE/CANCEL bars, not for a glyph. So
-   the  stretched across the whole header as a 30px-tall invisible strip: under the gloved floor
+   the X stretched across the whole header as a 30px-tall invisible strip: under the gloved floor
    in height, and a 260px-wide close target sitting right next to the title, where nobody expects
    one. It also starved the title of width, which is why "SET SHIFT END" wrapped to two lines at
-   390  that wrap fixes itself here, no type change needed. */
+   390 - that wrap fixes itself here, no type change needed. */
 body.rd #shiftend-sheet .va-close-btn, body.rd #log-sheet .va-close-btn {
   width: var(--tap-s); min-width: var(--tap-s); height: var(--tap-s); min-height: var(--tap-s);
   flex: 0 0 auto; padding: 0; border-radius: var(--r-ctl); font-family: var(--raj);
@@ -9869,7 +9912,7 @@ body.rd{--rd-cardfill:linear-gradient(158deg,#050506 0%,#010102 46%,#000000 76%,
 #rd-botnav .botitem,#rd-botnav #rd-exit{position:relative;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px 4px;border:none;background:none;border-radius:0;margin:0;min-width:0;cursor:pointer;transition:opacity .2s}
 #rd-botnav .bicon{order:1;width:54px;height:54px;object-fit:contain;display:block;opacity:.82;transition:opacity .2s,filter .2s}   /* v1.14.339: +~17% (46→54) for the re-cut crisp-glass icons; nav-height cap +8px */
 #rd-botnav .btick{order:2;width:18px;height:3px;border-radius:2px;background:var(--tc,var(--cyan));opacity:0;transition:opacity .2s,width .2s,background .2s}
-#rd-botnav .blabel{order:3;font-family:var(--orb);font-weight:700;font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:#4a565f;white-space:nowrap;transition:color .2s,text-shadow .2s}
+#rd-botnav .blabel{order:3;font-family:var(--orb);font-weight:700;font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);text-transform:uppercase;color:#4a565f;white-space:nowrap;transition:color .2s,text-shadow .2s}
 #rd-botnav .botitem.active .bicon,#rd-botnav #rd-exit .bicon{opacity:1}
 #rd-botnav .botitem.active .btick{opacity:1;box-shadow:0 0 6px var(--tc)}
 #rd-botnav .botitem.active .blabel{color:var(--tc,#dffaff);text-shadow:0 0 10px var(--tc)}
@@ -9921,7 +9964,14 @@ body.rd #rd-sub{display:block}
 /* Rule E (v1.14.127): the left chrome is a 2-line stack (wordmark + COREWEAVE·site subtitle) while
    the right (shield + SYS) centers on the tall shield, so the wordmark rode ~10px above the SYS pill.
    Align the shield/SYS group to the wordmark's line so the header reads on one baseline. */
-body.rd .header-right{position:relative;top:-9px}
+/* v1.14.412 — the -9px is DELETED, not retuned. It was a nudge tuned against a 27px pill; the
+   moment the pill took the 44px floor it dragged .header-right 8px above the header's padding
+   box, and that padding IS the safe-area term (--safe-top), so on a notched iPhone the nudge
+   pushed a control into the notch. env(safe-area-inset-top) is 0 in the harness, which is why a
+   screenshot could not show it and only the arithmetic could. .header-inner already centres this
+   row, so with the pill declaring its own height there is nothing left to nudge. Third magic
+   offset deleted rather than retuned in this codebase, after .407's 92px and .408's 96px. */
+body.rd .header-right{position:relative}
 .hdr-shield-img{display:none}
 body.rd .hdr-ghost-img{display:none}
 /* v1.14.162 — retired dead redesign-only medallion cosmetics (shield-img inline-block + ghost-btn cyan border): #hdr-overflow-wrap is display:none under body.rd since .156, so these styled a hidden element. Legacy base rules untouched. */
@@ -10400,12 +10450,25 @@ body.rd #rd-botnav{display:grid}
   .btp-inner          { max-width: 640px; }
   .intake-sheet-inner { max-width: 760px; }
 
-  /* ── Fluid typography ── */
-  :root {
-    --fs-body:    clamp(12px, 1.1vw, 14px);
-    --fs-caption: clamp(10px, 0.9vw, 12px);
-    --fs-micro:   clamp(9px,  0.8vw, 10.5px);
-  }
+  /* Fluid typography: RETIRED v1.14.412, owner ruling A (2026-08-07).
+     THE LADDER IS FIXED; A BIGGER TIER BUYS COMPOSITION, NOT BIGGER TYPE. That is what section 9
+     of the approved design system already says - the surplus becomes margin, never stretched
+     cards - and growing the type is itself a form of stretching, which is the one thing desktop
+     must not be.
+
+     These three clamps produced TWO SEPARATE LADDER FAILURES, and fixing the first exposed the
+     second, which is why the whole block goes rather than one bound:
+       - --fs-micro bottomed at 9px, BELOW the app's own 10px hard floor (:158), across
+         1024-1200, on the densest labels in the product. A fluid step may interpolate; it may
+         not interpolate THROUGH a floor.
+       - --fs-caption bottomed at 10px and landed ON micro at 1024 (two adjacent steps rendering
+         identically), and at its 12px ceiling it landed on --fs-body instead.
+       - --fs-body reached 14px at >=1366 and collided with --fs-subhead, which is 14px at every
+         tier - so the two middle steps of the ladder were the same size on every laptop and
+         desktop. Hierarchy the phone has, the desktop did not.
+     Capping one bound could not fix this: each cap moved the collision to the neighbouring pair.
+     With no overrides the ladder is 10/11/12/14/16/18 at EVERY width, strictly increasing, and
+     identical to the one the phone was designed against. */
 
   /* ── Boot screen — widen content column on laptop ── */
   .boot-content { max-width: 800px; }
@@ -12786,7 +12849,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.411';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.413';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13466,7 +13529,10 @@ if (typeof window !== 'undefined') {
       </div>
       <div class="detail-close" id="detailClose">&times;</div>
     </div>
-    <div class="detail-hint">TAP A ROW TO TOGGLE RACKED / PENDING</div>
+    <!-- v1.14.413 — id added so openDetail can retract this when the table has no rows to tap.
+         Instructing an action that is not available is the same class of dishonesty as the
+         count that started this: the panel told the operator to tap rows under an empty grid. -->
+    <div class="detail-hint" id="detailHint">TAP A ROW TO TOGGLE RACKED / PENDING</div>
     <div class="detail-table" id="detailTable"></div>
     <div class="detail-footer" id="detailFooter"></div>
     <div class="detail-nav">
@@ -16724,7 +16790,23 @@ if (typeof window !== 'undefined') {
 
 <script>
 // ━━━ HAPTIC ━━━
+// v1.14.412 — GATED ON A REAL USER GESTURE. Chromium refuses navigator.vibrate() before the frame
+// has been tapped and logs "Blocked call to navigator.vibrate" as a CONSOLE ERROR. The call was
+// already a no-op in that window, so nothing worked before this and nothing works differently
+// after it — the only change is that PHANTOM stops writing an error nobody can act on into a log
+// the crash banner and the boot test both read. Fixed at the call, deliberately NOT by widening
+// the suite's BENIGN_CONSOLE allowlist: an allowlist entry would also swallow a real vibrate
+// failure, and the standing rule here is that the allowlist never grows to make a run green.
+var _hapticArmed = false;
+['pointerdown', 'touchstart', 'keydown'].forEach(function (evt) {
+  try {
+    window.addEventListener(evt, function () { _hapticArmed = true; }, { once: true, capture: true, passive: true });
+  } catch (_) {
+    window.addEventListener(evt, function () { _hapticArmed = true; }, true);
+  }
+});
 function haptic(pattern) {
+  if (!_hapticArmed) return;            // pre-gesture: the platform would refuse this anyway
   if (navigator.vibrate) navigator.vibrate(pattern);
 }
 
@@ -18002,7 +18084,7 @@ function phantom_logErr(ctx, err, opts) {
 // Security: Worker enforces Origin allowlist (rejects non-GitHub-Pages requests).
 // No token is sent from the client — protection is origin-based + server-enforced spend cap.
 const PHANTOM_PROXY_URL = 'https://phantom-api.wfj6t2fk7w.workers.dev/v1/messages';
-const PHANTOM_PROXY_KEY = '30f3479c8cffdebe9525794cc0fbda997499062217fa9e97'; // S-1 shared secret  must match Worker PHANTOM_KEY. Not secrecy (public source); raises drive-by abuse cost alongside origin check + rate limit + spend cap.
+const PHANTOM_PROXY_KEY = '30f3479c8cffdebe9525794cc0fbda997499062217fa9e97'; // S-1 shared secret - must match Worker PHANTOM_KEY. Not secrecy (public source); raises drive-by abuse cost alongside origin check + rate limit + spend cap.
 
 const PHANTOM_API_MAX_BODY = 300000; // 300KB max request body — bumped for real EDP files
 function phantomAPI(body, _retryCtx) {
@@ -19214,10 +19296,33 @@ function cshell_isOn() {
   // v1.14.384: BOTH spellings are accepted. The owner's verification order calls it
   // ?shell=1 and the ship calls it ?cshell=1; a flag that silently does nothing on the
   // URL someone actually types is a guaranteed field failure, not a naming quibble.
+  // v1.14.412 — THIS IS NO LONGER THE GATE. The desktop composition is gated in CSS, by
+  // `@media (min-width: 1024px)` around every body.rd.cshell rule (:54402 and the three tier
+  // blocks). This function now answers only "is the desktop composition PERMITTED at all?", and
+  // the answer is yes unless the operator pulled the rip-cord.
+  //
+  // WHY THE GATE MOVED. Until now the shell existed but was reachable only by typing ?cshell=1,
+  // so every laptop rendered a STRETCHED PHONE — 720px of content centred in 1440 with a phone
+  // bottom nav across the full width. The composition was never the missing piece; the gate was.
+  // The owner ruled it automatic. The first implementation did that here, in JS, at boot — and
+  // that was wrong in a way a test caught: the class outlived the width that justified it, so a
+  // laptop narrowed below 1024 kept the desktop shell crushed into a phone-width column, and an
+  // iPad rotated to portrait kept it until reload. Re-evaluating on resize would not have fixed
+  // the shape of it: the CLASS would still be deciding layout, and it would have to be toggled
+  // around a live WebGL attachment. A media query has no such problem — narrowing degrades to
+  // the phone layout with no JS, no class toggle and no reparenting, and the renderer just sees
+  // an ordinary window resize.
+  //
+  // 1024 AND NOT THE 851 THE CSS WAS WRITTEN FOR: the shell has no composition for 851-1023.
+  // Forced on at 834 it renders the phone header AND its own lockup (two wordmarks stacked), no
+  // rail, no right column, a dead band down the middle — worse than the layout it replaces.
+  // 1024 covers every landscape iPad (1194, 1366) and leaves portrait on the phone layout.
   try {
     var s = location.search;
-    return s.indexOf('cshell=1') !== -1 || s.indexOf('shell=1') !== -1;
-  } catch (_) { return false; }
+    // ?cshell=0 / ?shell=0 is the rip-cord: it pins the phone composition at ANY width.
+    if (s.indexOf('cshell=0') !== -1 || s.indexOf('shell=0') !== -1) return false;
+    return true;
+  } catch (_) { return true; }
 }
 // v1.14.380 - THE RIP-CORD'S WAY BACK. ?legacy=1 pins phantom_legacy in localStorage,
 // and until now nothing in the legacy house could clear it: the only escape was
@@ -19699,7 +19804,38 @@ function forge3d_render(mount) {
   // ' · TAP FLANKS TO WALK' (now static markup in #tagWalk, :13253). The flag count STAYS glued
   // to the count because it is conditional — see the CSS note at :9108 — and the caller pairs it
   // with the .flagged class.
-  function deploy_forge_tagState(racked, total, flags) {
+  // v1.14.413 — R-06 / RACKENGINE-SPEC §9: A RACK THAT RESOLVES WITH NO DEVICES MUST SAY WHAT
+  // THAT MEANS. `0/0 RACKED` is arithmetically true and operationally useless: it reads exactly
+  // like a broken surface, and it has now been reported as a data regression TWICE — once at
+  // v1.14.401 (s3:172), where a full production rollback was ordered before the count was
+  // confirmed honest, and again at v1.14.411 (row s4, 24 cabs), which stopped a sprint. Both
+  // times the data was correct and the SENTENCE was missing.
+  //
+  // ⛔ WHAT IT MAY NOT SAY. Per the §7.1 ruling this reports what the MASTER knows, never what
+  // the floor contains. PHANTOM cannot see the floor: SITE-VARS carries no build-state column,
+  // so "empty cabinet, ready to rack" would be fabricated presence — the same class of lie as
+  // inventing a device. The wording is therefore about the FILE, not the room.
+  //
+  // The cable count is the `source` half of §9, and it is the tell that separates the two real
+  // cases at a glance: cables present ⇒ a cabling-only cab the Master knows about (patch, OOB,
+  // spine) — s3:172 carries 31 out / 44 in; zero cables ⇒ a cab the Master merely mentions.
+  // The app already held this metadata and discarded it.
+  function deploy_forge_cableCount(id) {
+    try {
+      var m = deploy_forge_master();
+      var r = (m && m.racksByCab) ? m.racksByCab[id] : null;
+      if (!r) return 0;
+      return ((r.cablesOut && r.cablesOut.length) || 0) + ((r.cablesIn && r.cablesIn.length) || 0);
+    } catch (_) { return 0; }
+  }
+  function deploy_forge_emptyState(id) {
+    var c = deploy_forge_cableCount(id);
+    return 'NO HOST DATA IN MASTER' + (c ? ' · ' + c + ' CABLE' + (c === 1 ? '' : 'S') : '');
+  }
+  // `id` is optional and additive: omitted, this still returns the honest sentence, just without
+  // the cable clause. Both call sites (:20274, :20397) were visited rather than relying on that.
+  function deploy_forge_tagState(racked, total, flags, id) {
+    if (!total) return deploy_forge_emptyState(id);
     return racked + '/' + total + ' RACKED' + (flags ? ' · ⚠' + flags + ' FLAGGED' : '');
   }
   function deploy_forge_provenance() {
@@ -20131,15 +20267,26 @@ function forge3d_render(mount) {
   // slot that owns a single clause. Declared here, immediately under the elements they write:
   // this IIFE is ~1000 lines and has already shipped a bug where a var declared BELOW its first
   // use silently wiped an earlier assignment (the setView no-op), and node --check is blind to it.
-  function writeStatusPills(racked, total, flags) {
+  function writeStatusPills(racked, total, flags, id) {
     // v1.14.409 — the id pill is hidden by writeStatusMessage() in a message state (no rack, no id
     // worth showing). This is the symmetric reveal: a counted state always has a focused rack.
     if (tagId && tagId.parentElement) tagId.parentElement.hidden = false;
     if (tagState) {
-      tagState.textContent = deploy_forge_tagState(racked, total, flags);
+      tagState.textContent = deploy_forge_tagState(racked, total, flags, id);
       tagState.classList.toggle('flagged', !!flags);
     }
-    if (tagWalk) tagWalk.hidden = false;
+    // v1.14.413 — ONE RULE: the WALK pill is the first thing to go whenever the state pill has
+    // something specific to say. It is a standing instruction the caption above already carries;
+    // the state pill is the answer to the question the operator is actually asking.
+    //
+    // It yields in TWO cases, and the second was a live clipping defect this ship found rather
+    // than caused. Measured at 390: the empty sentence is ~2x `0/0 RACKED`, and a FLAGGED rack
+    // reads `0/6 RACKED · ⚠6 FLAGGED` — with all three pills up that ran to x=445 inside a
+    // 372px row. The row is nowrap (one baseline, owner ruling), so it CLIPPED rather than
+    // wrapping, and what got clipped was the ⚠ warning — the one clause you cannot afford to
+    // lose. It never showed in earlier measurements because every probe used an unflagged
+    // string. Restored the moment the rack is both populated and unflagged.
+    if (tagWalk) tagWalk.hidden = !total || !!flags;
   }
   // The zero state has no count and no aisle to walk, so the walk pill leaves the row entirely.
   // That is not a behaviour change: pre-.409 the message REPLACED the whole concatenated string,
@@ -20183,7 +20330,7 @@ function forge3d_render(mount) {
     // is focused (writeStatusMessage), so its mere presence already means FOCUS.
     // To restore it, put the suffix back here and shorten #tagWalk to 'TAP FLANKS' instead.
     tagId.textContent = rack.userData.label;
-    writeStatusPills(fracked, fslots.length, deploy_forge_flagCount(rack.userData.label));
+    writeStatusPills(fracked, fslots.length, deploy_forge_flagCount(rack.userData.label), rack.userData.label);
     radiusTarget = 9.8;
     focused = rack;
     store.set('deploy_forge_view_v1', rack.userData.label);
@@ -20303,10 +20450,13 @@ function forge3d_render(mount) {
     var slots = deploy_forge_slots(label);
     var racked = slots.filter(function (s) { return s.status === 'racked'; }).length;
     var info = rowOf(label);
-    D.meta.textContent = 'ROW ' + info.row.toUpperCase() + ' · POS ' + (info.idx + 1) + '/' + info.arr.length + ' · ' + racked + '/' + slots.length + ' RACKED';
+    // v1.14.413 — the meta line carried the same misleading count. Position within the row is
+    // still true and still useful for an unprovisioned cab, so only the count clause yields.
+    D.meta.textContent = 'ROW ' + info.row.toUpperCase() + ' · POS ' + (info.idx + 1) + '/' + info.arr.length + ' · '
+      + (slots.length ? (racked + '/' + slots.length + ' RACKED') : deploy_forge_emptyState(label));
     D.footer.innerHTML = '<span><b>' + slots.length + '</b> COMPONENTS</span><span><b>' + racked + '</b> RACKED · <b>' + (slots.length - racked) + '</b> PENDING</span>';
     if (focused && focused.userData.label === label)
-      writeStatusPills(racked, slots.length, deploy_forge_flagCount(label));
+      writeStatusPills(racked, slots.length, deploy_forge_flagCount(label), label);
   }
   function rebake(rack) {
     if (!heroImg.complete) return;
@@ -20362,6 +20512,18 @@ function forge3d_render(mount) {
     });
     // v1.14.237 — RU-less hosts, surfaced above the table. Gold callout, same language as
     // the Master search surface. These devices are in the Master but have no U we can place.
+    // v1.14.413 — THE SAME SENTENCE, ON THE SURFACE THE OPERATOR OPENS TO ASK WHY. With zero
+    // slots this table rendered its header row and nothing else: a blank grid under a live
+    // heading, which is the "no meaningful error or recovery path" the owner reported at .401.
+    // It is a statement, not an error state — no red, no fault colour: an unprovisioned cab is
+    // not a fault, and the channel law makes that a colour decision as much as a wording one.
+    var _dHint = document.getElementById('detailHint');
+    if (_dHint) _dHint.hidden = !slots.length ? true : false;
+    if (!slots.length) {
+      html += '<div class="forge-nodata">' + _fesc(deploy_forge_emptyState(label))
+           + '<span class="fnd-sub">This cabinet resolves from the loaded Master and carries no host rows. '
+           + 'PHANTOM reports what the Master knows — it cannot see the floor.</span></div>';
+    }
     var unp = deploy_forge_unplaced(label);
     if (unp.length) {
       html = '<div class="forge-unplaced">' + unp.length + ' HOST' + (unp.length === 1 ? '' : 'S')
@@ -54332,6 +54494,20 @@ body.rd #pg-cmd .lens { border: 2px solid #1BFFE4 !important; }
    black is var(--bg0), the LIVE near-black — the colour mapping resolved the
    spec's --phantom-page as "do not add", and a second competing near-black is
    exactly the drift that ruling forbids. */
+#cmd-shell { display: none; }
+/* === v1.14.412 THE GATE IS CSS, NOT JAVASCRIPT (owner ruling) ===
+   These base rules used to apply at ANY width the moment body.cshell was present, and the class
+   was set once at boot. A laptop narrowed below 1024 therefore kept the desktop shell crushed
+   into a phone-width column, and an iPad rotated to portrait kept it until reload. Making the
+   JS re-evaluate on resize would have been the wrong lever: the class would still be the thing
+   deciding layout, and it would have to be toggled around a live WebGL attachment.
+   The media query is the right lever. body.cshell now means only "the desktop composition is
+   PERMITTED here" (it is on unless ?cshell=0); this @media decides whether it actually applies.
+   Narrowing degrades to the phone layout with no JS, no class toggle and no reparenting - the
+   renderer sees an ordinary window resize, which it already handles.
+   1024, not the 851 these blocks were written for: the shell has no composition for 851-1023,
+   where it renders the phone header AND its own lockup with no rail and no right column. */
+@media (min-width: 1024px) {
 body.rd.cshell #cmd-shell {
   --cs-bloom-a: radial-gradient(60% 40% at 50% 0%, rgba(92,242,255,0.055), transparent 70%);
   --cs-bloom-b: radial-gradient(45% 35% at 100% 12%, rgba(155,89,255,0.045), transparent 72%);
@@ -54357,7 +54533,7 @@ body.rd.cshell #cmd-shell .cs-card {
   background: linear-gradient(145deg, rgba(16,22,32,0.91), rgba(8,12,18,0.95));
   border: 1px solid var(--cyan-border-lo);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.045), 0 20px 60px rgba(0,0,0,0.42);
-  border-radius: 20px;
+  border-radius: var(--r-sheet);
   position: relative;
 }
 /* top hairline: cyan into violet, both from the live channel tokens. */
@@ -54375,7 +54551,11 @@ body.rd.cshell #cmd-shell .cs-card::before {
    nothing that already exists. Every rule that PAINTS is body.rd.cshell-scoped.
    Spec values are exact and deliberately not rounded: 14px side padding, 118px
    bottom clearance, 16px section gap. */
-#cmd-shell { display: none; }
+/* v1.14.412 — this base hide MUST stay outside the 1024 gate. It was swept into it by the wrap
+   and the consequence was immediate: below 1024 nothing hid #cmd-shell any more, so the desktop
+   markup rendered as a plain unstyled block underneath the phone Command page. The gate decides
+   whether the desktop composition APPLIES; this line decides whether the shell is visible at all,
+   and it has to answer "no" at every width the gate does not cover. */
 body.rd.cshell #cmd-shell {
   display: block;
   padding: 0 14px calc(118px + env(safe-area-inset-bottom, 0px));
@@ -54400,11 +54580,11 @@ body.rd.cshell .cs-brandmark {
   background-image: url(phantom-prism.png);
   background-size: contain; background-repeat: no-repeat; background-position: center;
 }
-body.rd.cshell .cs-brandtext { font-size: 17px; font-weight: 800; letter-spacing: .18em; color: var(--white); line-height: 1.05; }
-body.rd.cshell .cs-brandsub { font-size: 9px; letter-spacing: .22em; color: var(--slate); text-transform: uppercase; margin-top: 2px; }
+body.rd.cshell .cs-brandtext { font-size: var(--fs-head); font-weight: 800; letter-spacing: .18em; color: var(--white); line-height: 1.05; }
+body.rd.cshell .cs-brandsub { font-size: var(--fs-micro); letter-spacing: .22em; color: var(--slate); text-transform: uppercase; margin-top: 2px; }
 body.rd.cshell .cs-sitepill {
-  height: 33px; border-radius: 12px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px;
-  font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--white); white-space: nowrap;
+  height: 33px; border-radius: var(--r-card); display: inline-flex; align-items: center; gap: 7px; padding: 0 12px;
+  font-size: var(--fs-body); font-weight: 700; letter-spacing: .12em; color: var(--white); white-space: nowrap;
   background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo); flex: 0 0 auto;
 }
 /* healthy -> --ok mint (the pass/healthy channel), NEVER --green. An UNCONFIRMED
@@ -54420,7 +54600,7 @@ body.rd.cshell .cs-sitedot.warn { background: var(--gold); box-shadow: 0 0 7px v
    text. */
 body.rd.cshell .cs-microbar {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--slate); margin-top: 10px;
+  font-size: var(--fs-micro); letter-spacing: .16em; text-transform: uppercase; color: var(--slate); margin-top: 10px;
 }
 body.rd.cshell .cs-microbar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -54435,7 +54615,7 @@ body.rd.cshell .cs-microbar span { min-width: 0; overflow: hidden; text-overflow
    .cs-card — without the id here the card's 20px radius out-specifies the
    hero's and the spec's 26px silently loses. Caught in-browser, not by eye. */
 body.rd.cshell #cmd-shell .cs-hero {
-  position: relative; min-height: 343px; border-radius: 26px; overflow: hidden;
+  position: relative; min-height: 343px; border-radius: var(--r-sheet); overflow: hidden;
   padding: 20px 18px 17px; display: flex; flex-direction: column; justify-content: flex-end;
 }
 body.rd.cshell .cs-hero-art {
@@ -54453,30 +54633,32 @@ body.rd.cshell .cs-hero-scrim {
               linear-gradient(to top, rgba(2,3,5,0.93) 0%, rgba(2,3,5,0) 58%);
 }
 body.rd.cshell .cs-hero > *:not(.cs-hero-art):not(.cs-hero-scrim) { position: relative; }
-body.rd.cshell .cs-hero-eyebrow { font-size: 9.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--cyan); }
-body.rd.cshell .cs-hero-title { font-size: 30px; font-weight: 800; letter-spacing: -.01em; color: var(--white); line-height: 1.05; margin-top: 6px; }
+body.rd.cshell .cs-hero-eyebrow { font-size: var(--fs-micro); letter-spacing: .22em; text-transform: uppercase; color: var(--cyan); }
+body.rd.cshell .cs-hero-title { font-size: var(--fs-display); font-weight: 800; letter-spacing: -.01em; color: var(--white); line-height: 1.05; margin-top: 6px; }
 body.rd.cshell .cs-hero-prog { width: 72%; margin-top: 12px; }
 body.rd.cshell .cs-hero-bar { height: 6px; border-radius: 3px; background: rgba(176,207,255,0.14); overflow: hidden; }
-body.rd.cshell .cs-hero-fill { height: 100%; width: 0; border-radius: 3px; background: linear-gradient(90deg, var(--cyan), var(--violet)); }
+body.rd.cshell .cs-hero-fill { height: 100%; width: 0; border-radius: var(--r-data); background: var(--cyan); }
 body.rd.cshell .cs-hero-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
 body.rd.cshell .cs-kpi {
-  background: rgba(8,12,18,0.62); border: 1px solid var(--cyan-border-lo); border-radius: 12px;
+  background: rgba(8,12,18,0.62); border: 1px solid var(--cyan-border-lo); border-radius: var(--r-card);
   padding: 8px 9px; min-width: 0;
 }
-body.rd.cshell .cs-kpi-n { font-family: var(--mono); font-size: 18px; font-weight: 800; color: var(--white); line-height: 1.1; }
-body.rd.cshell .cs-kpi-k { font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--slate); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.rd.cshell .cs-kpi-n { font-family: var(--mono); font-size: var(--fs-hero); font-weight: 800; color: var(--white); line-height: 1.1; }
+body.rd.cshell .cs-kpi-k { font-size: var(--fs-micro); letter-spacing: .16em; text-transform: uppercase; color: var(--slate); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* fault is the LITERAL #ff2bd6, matching all 40 live fault sites. Never
    var(--mag): that token is #boot-scoped with zero consumers and silently
    invalidates the whole declaration outside it. */
 body.rd.cshell .cs-kpi.hot .cs-kpi-n { color: #ff2bd6; }
 body.rd.cshell .cs-kpi.hot { border-color: rgba(255,43,214,0.45); }
 body.rd.cshell .cs-hero-cta {
-  min-height: 49px; border-radius: 14px; border: 0; width: 100%; margin-top: 12px;
-  background: linear-gradient(90deg, var(--cyan), var(--violet)); color: #04060a;
-  font-weight: 800; font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+  min-height: var(--tap-l); border-radius: var(--r-ctl); width: 100%; margin-top: var(--sp-3);
+  background: linear-gradient(180deg, rgba(92,242,255,0.14), rgba(92,242,255,0.04)); color: var(--cyan); border: 1px solid rgba(92,242,255,0.45); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 0 18px rgba(92,242,255,0.15);
+  font-family: var(--ff-display); font-weight: 700; font-size: var(--fs-body); letter-spacing: var(--hud-track-button); text-transform: uppercase;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 body.rd.cshell .cs-hero-cta:active { transform: scale(.985); filter: brightness(1.08); }
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    v1.14.383 — COMMAND SHELL DESKTOP (spec 9.x, breakpoints 10.3/10.4)
@@ -54512,40 +54694,40 @@ body.rd .bw-t1 { font-family: var(--ff-display); font-size: var(--fs-hero); font
 body.rd .bw-t2 { font-family: var(--ff-display); font-size: var(--fs-hero); font-weight: 400; letter-spacing: var(--hud-track-wide); color: var(--slate); }
 body.rd .bw-site {
   display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px;
-  border-radius: 11px; background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo);
-  font-size: 12px; font-weight: 700; letter-spacing: .1em; color: var(--white); white-space: nowrap;
+  border-radius: var(--r-card); background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo);
+  font-size: var(--fs-body); font-weight: 700; letter-spacing: .1em; color: var(--white); white-space: nowrap;
 }
 /* offline is stated POSITIVELY - never as a failure (offline-first law) */
 body.rd .bw-state {
   display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 0 12px; margin-bottom: 12px;
-  border-radius: 11px; background: rgba(16,22,32,0.7); border: 1px solid var(--cyan-border-lo);
-  font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--slate);
+  border-radius: var(--r-card); background: rgba(16,22,32,0.7); border: 1px solid var(--cyan-border-lo);
+  font-size: var(--fs-micro); letter-spacing: .14em; text-transform: uppercase; color: var(--slate);
 }
 body.rd .bw-state b { color: var(--ok); font-weight: 800; letter-spacing: .14em; }
 body.rd .bw-state .bw-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 7px var(--ok); flex: 0 0 7px; }
 body.rd .bw-state .bw-sep { color: rgba(176,207,255,0.25); }
 
 body.rd .bw-card {
-  position: relative; border-radius: 18px; padding: 15px 16px; margin-bottom: 12px;
+  position: relative; border-radius: var(--r-sheet); padding: 15px 16px; margin-bottom: 12px;
   background: linear-gradient(145deg, rgba(16,22,32,0.91), rgba(8,12,18,0.95));
   border: 1px solid var(--cyan-border-lo);
 }
 body.rd .bw-hero { border-color: color-mix(in srgb, var(--cyan) 42%, transparent); }
-body.rd .bw-k { font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); }
-body.rd .bw-rack { font-size: 34px; font-weight: 800; letter-spacing: -.01em; color: var(--white); line-height: 1.02; margin-top: 3px; }
+body.rd .bw-k { font-size: var(--fs-micro); letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); }
+body.rd .bw-rack { font-size: var(--fs-display); font-weight: 800; letter-spacing: -.01em; color: var(--white); line-height: 1.02; margin-top: 3px; }
 body.rd .bw-plat { display: flex; align-items: center; gap: 9px; margin-top: 9px; flex-wrap: wrap; }
 body.rd .bw-chip {
-  padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: .06em;
+  padding: 4px 10px; border-radius: var(--r-ctl); font-size: var(--fs-caption); font-weight: 800; letter-spacing: .06em;
   color: var(--violet); background: rgba(155,89,255,0.12); border: 1px solid color-mix(in srgb, var(--violet) 45%, transparent);
 }
-body.rd .bw-platn { font-size: 12.5px; letter-spacing: .06em; color: var(--slate); }
+body.rd .bw-platn { font-size: var(--fs-body); letter-spacing: .06em; color: var(--slate); }
 body.rd .bw-rule { height: 1px; background: rgba(176,207,255,0.09); margin: 13px 0 11px; }
-body.rd .bw-ph { font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--violet); }
-body.rd .bw-phn { font-size: 13.5px; color: var(--white); margin-top: 4px; }
+body.rd .bw-ph { font-size: var(--fs-caption); font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--violet); }
+body.rd .bw-phn { font-size: var(--fs-subhead); color: var(--white); margin-top: 4px; }
 body.rd .bw-bar { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
 body.rd .bw-track { flex: 1; height: 6px; border-radius: 3px; background: rgba(176,207,255,0.14); overflow: hidden; }
 body.rd .bw-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--violet), var(--cyan)); }
-body.rd .bw-pct { font-family: var(--mono); font-size: 14px; font-weight: 800; color: var(--white); }
+body.rd .bw-pct { font-family: var(--mono); font-size: var(--fs-subhead); font-weight: 800; color: var(--white); }
 /* v1.14.410 DESIGN SYSTEM — Build, step 1. THE CYAN->VIOLET GRADIENT IS GONE.
    It was two problems at once. DESIGN_RULES §1 bans the violet-gradient cliché by name as the
    single clearest generic-AI tell, and it was the loudest element on the screen. Worse, it ran
@@ -54571,7 +54753,7 @@ body.rd .bw-cta {
 body.rd .bw-cta:active { transform: scale(.99); filter: brightness(1.08); }
 body.rd .bw-hero.blocked { border-color: rgba(255,43,214,0.55); }
 body.rd .bw-blk {
-  margin-top: 11px; padding: 9px 11px; border-radius: 10px; font-size: 11.5px; line-height: 1.45;
+  margin-top: 11px; padding: 9px 11px; border-radius: var(--r-card); font-size: var(--fs-caption); line-height: 1.45;
   color: #ff2bd6; background: rgba(255,43,214,0.07); border: 1px solid rgba(255,43,214,0.42);
 }
 
@@ -54579,39 +54761,39 @@ body.rd .bw-blk {
 body.rd .bw-na { display: flex; align-items: center; gap: 12px; cursor: pointer; text-align: left; width: 100%; background: none; border: 0; padding: 0; }
 body.rd .bw-na-orb { width: 46px; height: 46px; flex: 0 0 46px; object-fit: contain; }
 body.rd .bw-na-b { min-width: 0; flex: 1; }
-body.rd .bw-na-t { font-size: 14.5px; font-weight: 700; color: var(--white); line-height: 1.25; margin-top: 3px; }
-body.rd .bw-na-s { font-size: 11.5px; color: var(--slate); line-height: 1.4; margin-top: 4px; }
-body.rd .bw-na-ar { color: var(--slate); font-size: 18px; flex: 0 0 auto; }
+body.rd .bw-na-t { font-size: var(--fs-subhead); font-weight: 700; color: var(--white); line-height: 1.25; margin-top: 3px; }
+body.rd .bw-na-s { font-size: var(--fs-caption); color: var(--slate); line-height: 1.4; margin-top: 4px; }
+body.rd .bw-na-ar { color: var(--slate); font-size: var(--fs-hero); flex: 0 0 auto; }
 
 /* RACK PREVIEW — the mount is a REAL box (never display:contents) because
    rackElevation_render3D measures it; a dissolved ancestor collapses the canvas. */
 body.rd .bw-prev { padding: 13px 14px; }
 body.rd .bw-prev-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-body.rd .bw-mount { position: relative; width: 100%; height: 250px; border-radius: 12px; overflow: hidden; background: radial-gradient(90% 70% at 50% 48%, rgba(92,242,255,.13), rgba(4,6,10,0) 70%); }
+body.rd .bw-mount { position: relative; width: 100%; height: 250px; border-radius: var(--r-card); overflow: hidden; background: radial-gradient(90% 70% at 50% 48%, rgba(92,242,255,.13), rgba(4,6,10,0) 70%); }
 body.rd .bw-aisle {
-  min-height: 38px; padding: 0 13px; border-radius: 10px; cursor: pointer; white-space: nowrap;
+  min-height: 38px; padding: 0 13px; border-radius: var(--r-card); cursor: pointer; white-space: nowrap;
   background: rgba(16,22,32,0.85); border: 1px solid color-mix(in srgb, var(--cyan) 45%, transparent);
-  color: var(--cyan); font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--cyan); font-size: var(--fs-micro); font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
 }
 
 /* METRICS */
 body.rd .bw-mx { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 12px; }
 body.rd .bw-m { min-width: 0; }
-body.rd .bw-m-k { font-size: 8px; letter-spacing: .13em; text-transform: uppercase; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-body.rd .bw-m-v { font-family: var(--mono); font-size: 17px; font-weight: 800; color: var(--white); margin-top: 3px; }
-body.rd .bw-m-v small { font-size: 11px; font-weight: 600; color: var(--slate); }
+body.rd .bw-m-k { font-size: var(--fs-micro); letter-spacing: .13em; text-transform: uppercase; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.rd .bw-m-v { font-family: var(--mono); font-size: var(--fs-head); font-weight: 800; color: var(--white); margin-top: 3px; }
+body.rd .bw-m-v small { font-size: var(--fs-caption); font-weight: 600; color: var(--slate); }
 body.rd .bw-m-t { height: 4px; border-radius: 2px; background: rgba(176,207,255,0.13); margin-top: 6px; overflow: hidden; }
 body.rd .bw-m-f { height: 100%; border-radius: 2px; background: var(--cyan); }
 body.rd .bw-m.hot .bw-m-v { color: #ff2bd6; }
-body.rd .bw-m-n { font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 5px; }
+body.rd .bw-m-n { font-size: var(--fs-micro); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 5px; }
 body.rd .bw-m.hot .bw-m-n { color: #ff2bd6; }
 
 /* CONTEXTUAL ACTIONS */
 body.rd .bw-acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
 body.rd .bw-act {
-  min-height: 52px; border-radius: 12px; cursor: pointer; padding: 0 6px;
+  min-height: 52px; border-radius: var(--r-card); cursor: pointer; padding: 0 6px;
   background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo); color: var(--white);
-  font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  font-size: var(--fs-caption); font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
   -webkit-tap-highlight-color: transparent;
 }
 body.rd .bw-act:active { transform: scale(.98); }
@@ -54629,10 +54811,10 @@ body.rd .bw-zero-t { font-family: var(--ff-display); font-size: var(--fs-head); 
   letter-spacing: var(--hud-track-wide); text-transform: uppercase; color: var(--white); }
 body.rd .bw-zero-p { font-size: var(--fs-body); color: var(--slate); line-height: 1.5; margin-top: var(--sp-2); }
 body.rd .bw-q { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 11px 12px; margin-bottom: 8px;
-  border-radius: 12px; background: rgba(16,22,32,0.75); border: 1px solid var(--cyan-border-lo); cursor: pointer; }
-body.rd .bw-q-n { font-size: 14px; font-weight: 700; color: var(--white); }
-body.rd .bw-q-s { font-size: 10.5px; color: var(--slate); margin-top: 3px; letter-spacing: .06em; text-transform: uppercase; }
-body.rd .bw-q-p { margin-left: auto; font-family: var(--mono); font-size: 13px; font-weight: 800; color: var(--cyan); }
+  border-radius: var(--r-card); background: rgba(16,22,32,0.75); border: 1px solid var(--cyan-border-lo); cursor: pointer; }
+body.rd .bw-q-n { font-size: var(--fs-subhead); font-weight: 700; color: var(--white); }
+body.rd .bw-q-s { font-size: var(--fs-micro); color: var(--slate); margin-top: 3px; letter-spacing: .06em; text-transform: uppercase; }
+body.rd .bw-q-p { margin-left: auto; font-family: var(--mono); font-size: var(--fs-body); font-weight: 800; color: var(--cyan); }
 body.rd .bw-q.blocked .bw-q-p { color: #ff2bd6; }
 body.rd .bw-q.done .bw-q-p { color: var(--teal); }
 
@@ -54657,7 +54839,7 @@ body.rd .bw-strip:empty { display: none; }
 }
 /* v1.14.390: when the rack cannot draw, the card states WHY on screen. There is no
    console in a cold aisle, and a blank box is the one thing a tech cannot report. */
-body.rd .bw-diag { margin-top: 8px; font-family: var(--mono); font-size: 9px; line-height: 1.45; color: var(--slate); word-break: break-word; }
+body.rd .bw-diag { margin-top: 8px; font-family: var(--mono); font-size: var(--fs-micro); line-height: 1.45; color: var(--slate); word-break: break-word; }
 
 /* ═══ v1.14.390 DEFECT 2 — ONE SPACING SYSTEM, ONE CONTROL LANGUAGE ═════════
    The workspace read as separate legacy blocks dropped into a container because
@@ -54680,16 +54862,16 @@ body.rd #bw-shell > * { margin: 0 0 var(--bw-gap); }
 body.rd #bw-shell > *:last-child { margin-bottom: 0; }
 body.rd .bw-card, body.rd .bw-side { padding: var(--bw-cpad); border-radius: var(--bw-rad); }
 body.rd .bw-hd { margin-bottom: var(--bw-gap); padding: 0; }
-body.rd .bw-state { min-height: 42px; border-radius: 13px; margin-bottom: var(--bw-gap); }
+body.rd .bw-state { min-height: 42px; border-radius: var(--r-card); margin-bottom: var(--bw-gap); }
 
 /* ── hero: ONE glass surface, the rack ID and CONTINUE dominant ── */
-body.rd .bw-rack { font-size: 38px; line-height: 1; margin-top: 5px; }
+body.rd .bw-rack { line-height: 1; margin-top: 5px; }   /* v1.14.412 - size comes from --fs-display; a display step does not grow by tier */
 body.rd .bw-plat { margin-top: 11px; }
 body.rd .bw-rule { margin: 15px 0 13px; }
-body.rd .bw-phn { font-size: 15px; margin-top: 5px; }
+body.rd .bw-phn { font-size: var(--fs-subhead); margin-top: 5px; }
 body.rd .bw-bar { margin-top: 12px; }
-body.rd .bw-track { height: 7px; border-radius: 4px; }
-body.rd .bw-pct { font-size: 15px; }
+body.rd .bw-track { height: 7px; border-radius: var(--r-data); }
+body.rd .bw-pct { font-size: var(--fs-subhead); }
 /* v1.14.410 — onto the R-B/R-C scales: 15px and 13.5px were on neither. min-height keeps its own
    token (--bw-cta 56px, already above the 44px floor). */
 body.rd .bw-cta { min-height: var(--bw-cta); margin-top: var(--sp-4); border-radius: var(--r-ctl); font-size: var(--fs-caption); }
@@ -54703,18 +54885,18 @@ body.rd .bw-prev-h { margin-bottom: 12px; }
    stops a zero-height ancestor from starving it. */
 body.rd .bw-mount {
   position: relative; width: 100%; min-height: 320px; aspect-ratio: 4 / 3;
-  height: auto; border-radius: 14px; overflow: hidden; contain: layout;
+  height: auto; border-radius: var(--r-card); overflow: hidden; contain: layout;
 }
-@media (min-width: 851px) { body.rd.cshell .bw-mount { min-height: 340px; } }
+@media (min-width: 1024px) { body.rd.cshell .bw-mount { min-height: 340px; } }
 @media (min-width: 1500px) { body.rd.cshell .bw-mount { min-height: 420px; } }
 body.rd .bw-strip { gap: var(--bw-cgap); margin: 0 0 12px; }
 /* ONE control language for FRONT / ISO / TOP / REAR / CABLES / EXPLODE. These are
    the renderer's own .reh-3d-seg pills - restyled ONLY inside the Build card, so the
    rack-detail panel's copies keep the look they already ship with. */
 body.rd .bw-prev .reh-3d-seg, body.rd .bw-prev .reh-3d-rail button {
-  min-height: var(--bw-ctl); padding: 0 13px; border-radius: 12px;
+  min-height: var(--bw-ctl); padding: 0 13px; border-radius: var(--r-card);
   background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo); color: var(--slate);
-  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  font-size: var(--fs-caption); font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
   font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 body.rd .bw-prev .reh-3d-seg.is-on, body.rd .bw-prev .reh-3d-rail button.is-on {
@@ -54723,67 +54905,67 @@ body.rd .bw-prev .reh-3d-seg.is-on, body.rd .bw-prev .reh-3d-rail button.is-on {
 }
 body.rd .bw-prev .reh-3d-rail { display: flex; flex-wrap: wrap; gap: var(--bw-cgap); margin: 12px 0 0; }
 /* OPEN AISLE is the one door out of this card, so it reads as primary-adjacent */
-body.rd .bw-aisle { min-height: var(--bw-ctl); border-radius: 12px; font-size: 11px; padding: 0 15px;
+body.rd .bw-aisle { min-height: var(--bw-ctl); border-radius: var(--r-card); font-size: var(--fs-caption); padding: 0 15px;
   background: rgba(92,242,255,0.10); }
 
 /* ── metrics: a deliberate 2x2 on phone, readable type, aligned rows ── */
 body.rd .bw-mx { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--bw-cgap); }
-body.rd .bw-m { padding: 12px 13px; border-radius: 14px; background: rgba(16,22,32,0.62); border: 1px solid var(--cyan-border-lo); }
-body.rd .bw-m-k { font-size: 9px; letter-spacing: .12em; }
+body.rd .bw-m { padding: 12px 13px; border-radius: var(--r-card); background: rgba(16,22,32,0.62); border: 1px solid var(--cyan-border-lo); }
+body.rd .bw-m-k { font-size: var(--fs-micro); letter-spacing: .12em; }
 body.rd .bw-m-v { font-size: 22px; margin-top: 5px; }
-body.rd .bw-m-v small { font-size: 12px; }
+body.rd .bw-m-v small { font-size: var(--fs-body); }
 body.rd .bw-m-t { margin-top: 9px; }
-body.rd .bw-m-n { font-size: 9px; margin-top: 6px; }
+body.rd .bw-m-n { font-size: var(--fs-micro); margin-top: 6px; }
 
 /* ── contextual actions + tool tabs: identical height, radius, padding ── */
 /* SCAN + LOG BLOCKER only: PORT MAP moved out, it already has a contextual tab and
    one door per feature is doctrine. */
 body.rd .bw-acts { gap: var(--bw-cgap); grid-template-columns: repeat(2, minmax(0, 1fr)); }
-body.rd .bw-act { min-height: 54px; border-radius: 14px; font-size: 11px; letter-spacing: .08em; padding: 0 4px; }
+body.rd .bw-act { min-height: 54px; border-radius: var(--r-card); font-size: var(--fs-caption); letter-spacing: .08em; padding: 0 4px; }
 body.rd .bw-tabs { gap: var(--bw-cgap); margin-bottom: 0; }
-body.rd .bw-tab { min-height: 46px; border-radius: 12px; font-size: 10.5px; }
+body.rd .bw-tab { min-height: 46px; border-radius: var(--r-card); font-size: var(--fs-micro); }
 
 /* ── worklist: readable body copy, no shouty tracking on sentences ── */
 body.rd .bw-wl { padding: 12px 0; }
-body.rd .bw-wl-t { font-size: 13.5px; line-height: 1.4; letter-spacing: 0; }
-body.rd .bw-wl-n { font-size: 11.5px; }
+body.rd .bw-wl-t { font-size: var(--fs-subhead); line-height: 1.4; letter-spacing: 0; }
+body.rd .bw-wl-n { font-size: var(--fs-caption); }
 body.rd .bw-wl-box { width: 28px; height: 28px; flex-basis: 28px; }
-body.rd .bw-wl-ev { min-height: 34px; border-radius: 10px; }
-body.rd .bw-wl-done { min-height: 52px; border-radius: 14px; font-size: 12px; }
+body.rd .bw-wl-ev { min-height: 34px; border-radius: var(--r-card); }
+body.rd .bw-wl-done { min-height: 52px; border-radius: var(--r-card); font-size: var(--fs-body); }
 
 /* ── section labels: compact uppercase technical, sentences left alone ── */
-body.rd .bw-k { font-size: 10px; letter-spacing: .18em; }
+body.rd .bw-k { font-size: var(--fs-micro); letter-spacing: .18em; }
 body.rd .bw-zero-p { letter-spacing: var(--hud-track-tight); line-height: 1.55; font-size: var(--fs-body); }
 body.rd .bw-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
 body.rd .bw-tab {
-  min-height: 44px; padding: 0 6px; border-radius: 11px; cursor: pointer;
+  min-height: 44px; padding: 0 6px; border-radius: var(--r-card); cursor: pointer;
   background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo); color: var(--cyan);
-  font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  font-size: var(--fs-micro); font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
 }
 body.rd .bw-tab:active { transform: scale(.98); }
 body.rd .bw-wl-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-body.rd .bw-wl-p { font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--violet); }
+body.rd .bw-wl-p { font-size: var(--fs-micro); letter-spacing: .16em; text-transform: uppercase; color: var(--violet); }
 body.rd .bw-wl { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(176,207,255,0.07); }
 body.rd .bw-wl:last-of-type { border-bottom: 0; }
 body.rd .bw-wl-box {
-  width: 26px; height: 26px; flex: 0 0 26px; border-radius: 8px; cursor: pointer; padding: 0;
+  width: 26px; height: 26px; flex: 0 0 26px; border-radius: var(--r-ctl); cursor: pointer; padding: 0;
   background: rgba(8,12,18,0.7); border: 1px solid var(--cyan-border-lo);
-  color: #04060a; font-size: 15px; font-weight: 800; line-height: 1;
+  color: #04060a; font-size: var(--fs-subhead); font-weight: 800; line-height: 1;
 }
 body.rd .bw-wl.done .bw-wl-box { background: var(--teal); border-color: var(--teal); }
 body.rd .bw-wl-b { flex: 1; min-width: 0; }
-body.rd .bw-wl-t { font-size: 12.5px; color: var(--white); line-height: 1.35; }
+body.rd .bw-wl-t { font-size: var(--fs-body); color: var(--white); line-height: 1.35; }
 body.rd .bw-wl.done .bw-wl-t { color: var(--slate); text-decoration: line-through; }
-body.rd .bw-wl-n { font-size: 11px; color: var(--slate); line-height: 1.35; margin-top: 4px; font-style: italic; }
+body.rd .bw-wl-n { font-size: var(--fs-caption); color: var(--slate); line-height: 1.35; margin-top: 4px; font-style: italic; }
 body.rd .bw-wl-ev {
-  flex: 0 0 auto; min-height: 30px; padding: 0 10px; border-radius: 9px; cursor: pointer;
+  flex: 0 0 auto; min-height: 30px; padding: 0 10px; border-radius: var(--r-ctl); cursor: pointer;
   background: none; border: 1px solid var(--cyan-border-lo); color: var(--slate);
-  font-size: 9.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  font-size: var(--fs-micro); font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
 }
 body.rd .bw-wl-done {
-  width: 100%; min-height: 46px; margin-top: 12px; border: 0; border-radius: 12px; cursor: pointer;
+  width: 100%; min-height: 46px; margin-top: 12px; border: 0; border-radius: var(--r-card); cursor: pointer;
   background: linear-gradient(90deg, var(--teal), var(--cyan)); color: #04060a;
-  font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  font-size: var(--fs-caption); font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
 }
 /* a phase with open items still offers completion - the owner decides - but it must
    LOOK different from a clean one, so the count is on the button and the fill is flat. */
@@ -54798,7 +54980,7 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
    (sidebar + topbar) is actually on screen. CSS Grid places the blocks; DOM
    order never changes, which is what keeps the phone composition byte-identical.
    ─────────────────────────────────────────────────────────────────────────── */
-@media (min-width: 851px) {
+@media (min-width: 1024px) {
   body.rd.cshell #pg-work { padding: 24px 28px 46px; }
   /* #pg-work is LOAD-BEARING here: the phone rule is body.rd #pg-work #bw-shell,
      which carries TWO ids and out-specifies a class-scoped selector. Without it
@@ -54835,7 +55017,7 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell #pg-work #bw-shell > #bw-queue { grid-area: queue; }
   body.rd.cshell #pg-work #bw-shell > #bw-ctx   { grid-area: ctx; }
   body.rd.cshell .bw-side {
-    display: block; padding: 15px 16px; border-radius: 18px;
+    display: block; padding: 15px 16px; border-radius: var(--r-sheet);
     background: linear-gradient(145deg, rgba(16,22,32,0.91), rgba(8,12,18,0.95));
     border: 1px solid var(--cyan-border-lo);
   }
@@ -54843,17 +55025,17 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell .bw-side .bw-k + * + .bw-k { margin-top: 16px; }
   /* desktop type scale — the phone sizes are not reused */
   body.rd.cshell .bw-t1, body.rd.cshell .bw-t2 { font-size: 22px; }
-  body.rd.cshell .bw-rack { font-size: 40px; }
+  /* v1.14.412 - retired: --fs-display is one size at every tier (ruling A). */
 
-  body.rd.cshell .bw-m-v { font-size: 20px; }
+  body.rd.cshell .bw-m-v { font-size: var(--fs-hero); }
   body.rd.cshell .bw-acts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   body.rd.cshell .bw-cta { width: auto; align-self: flex-start; padding: 0 30px; }
 
   /* rack-queue tally + rows */
   body.rd.cshell .bw-tally { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 12px; }
-  body.rd.cshell .bw-ty { padding: 7px 4px; border-radius: 10px; background: rgba(8,12,18,0.6); border: 1px solid var(--cyan-border-lo); text-align: center; }
-  body.rd.cshell .bw-ty-n { font-family: var(--mono); font-size: 16px; font-weight: 800; color: var(--white); }
-  body.rd.cshell .bw-ty-k { font-size: 7.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 2px; }
+  body.rd.cshell .bw-ty { padding: 7px 4px; border-radius: var(--r-card); background: rgba(8,12,18,0.6); border: 1px solid var(--cyan-border-lo); text-align: center; }
+  body.rd.cshell .bw-ty-n { font-family: var(--mono); font-size: var(--fs-head); font-weight: 800; color: var(--white); }
+  body.rd.cshell .bw-ty-k { font-size: var(--fs-micro); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 2px; }
   body.rd.cshell .bw-ty.done .bw-ty-n { color: var(--teal); }
   body.rd.cshell .bw-ty.act  .bw-ty-n { color: var(--cyan); }
   body.rd.cshell .bw-ty.blk  .bw-ty-n { color: #ff2bd6; }
@@ -54861,14 +55043,14 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell .bw-q.is-cur { border-color: color-mix(in srgb, var(--cyan) 60%, transparent); background: rgba(92,242,255,0.07); }
   body.rd.cshell .bw-blkrow {
     display: block; width: 100%; text-align: left; padding: 10px 11px; margin-bottom: 8px; cursor: pointer;
-    border-radius: 11px; background: rgba(255,43,214,0.06); border: 1px solid rgba(255,43,214,0.4);
+    border-radius: var(--r-card); background: rgba(255,43,214,0.06); border: 1px solid rgba(255,43,214,0.4);
   }
   body.rd.cshell .bw-blkrow .bw-q-s { color: #ff2bd6; text-transform: none; letter-spacing: 0; }
   /* local state rows */
   body.rd.cshell .bw-lsrow { padding: 8px 0; border-bottom: 1px solid rgba(176,207,255,0.06); }
   body.rd.cshell .bw-lsrow:last-child { border-bottom: 0; }
-  body.rd.cshell .bw-ls-k { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--slate); }
-  body.rd.cshell .bw-ls-v { font-size: 12.5px; color: var(--white); margin-top: 3px; line-height: 1.35; }
+  body.rd.cshell .bw-ls-k { font-size: var(--fs-micro); letter-spacing: .14em; text-transform: uppercase; color: var(--slate); }
+  body.rd.cshell .bw-ls-v { font-size: var(--fs-body); color: var(--white); margin-top: 3px; line-height: 1.35; }
 }
 
 /* FULL MISSION CONTROL — the rack queue becomes its own left contextual column
@@ -54897,12 +55079,23 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
    is not correct; this hides them on their own terms. */
 .cs-dpanel { display: none; }
 
-@media (min-width: 851px) {
+@media (min-width: 1024px) {
 
   /* §9.4 SIDEBAR — sticky full height, darker than the workspace, 1px divider */
+  /* v1.14.412 - THE DESKTOP CHROME IS NAVIGATION, SO IT SITS ON THE NAV LAYER.
+     #cs-side was z-index:90 and #cs-top was 85, both ABOVE every full-screen redesign sheet
+     (#forge3d-sheet, #rd-profile-sheet and #rd-errors-sheet are all 60). The consequence was
+     not cosmetic: opening the Forge 3D aisle on a desktop put the top bar OVER the sheet, and
+     the sheet close button sits exactly there - so the SCAN button intercepted every click on
+     the X and the operator was trapped in the aisle with no way out. It was only reachable by
+     typing ?cshell=1 before this ship; flipping the gate would have shipped it to every laptop.
+     Both organs now take --z-nav, the same layer as the bottom nav they replace, which is what
+     the layering table in PHANTOM_DESIGN_SYSTEM.md section 8 says a nav is. Every modal - the
+     detail panel (40), the search overlay (50), the loadout picker (55) and the sheets (60) -
+     now covers the chrome, which is the whole point of a modal. */
   body.rd.cshell #cs-side {
     display: flex; flex-direction: column; position: fixed; top: 0; left: 0;
-    width: 246px; height: 100vh; z-index: 90;
+    width: 246px; height: 100vh; z-index: var(--z-nav);
     background: linear-gradient(180deg, rgba(4,6,10,0.98), rgba(2,3,5,0.99));
     border-right: 1px solid var(--cyan-border-lo);
     padding: 18px 0 14px; overflow-y: auto; overscroll-behavior: contain;
@@ -54910,39 +55103,41 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell .cs-sbrand { display: flex; align-items: center; gap: 10px; padding: 0 18px 16px; }
   body.rd.cshell .cs-sbrand .cs-brandmark { width: 32px; height: 32px; flex: 0 0 32px; }
   body.rd.cshell .cs-ssite {
-    margin: 0 14px 16px; padding: 10px 12px; border-radius: 12px;
+    margin: 0 14px 16px; padding: 10px 12px; border-radius: var(--r-card);
     background: rgba(16,22,32,0.7); border: 1px solid var(--cyan-border-lo);
   }
-  body.rd.cshell .cs-ssite-k { font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--slate); }
-  body.rd.cshell .cs-ssite-v { display: flex; align-items: center; gap: 7px; margin-top: 5px; font-size: 13px; font-weight: 700; letter-spacing: .1em; color: var(--white); }
-  body.rd.cshell .cs-navlabel { font-size: 8.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--slate); padding: 0 20px; margin: 4px 0 7px; }
+  body.rd.cshell .cs-ssite-k { font-size: var(--fs-micro); letter-spacing: .2em; text-transform: uppercase; color: var(--slate); }
+  body.rd.cshell .cs-ssite-v { display: flex; align-items: center; gap: 7px; margin-top: 5px; font-size: var(--fs-body); font-weight: 700; letter-spacing: .1em; color: var(--white); }
+  body.rd.cshell .cs-navlabel { font-size: var(--fs-micro); letter-spacing: .22em; text-transform: uppercase; color: var(--slate); padding: 0 20px; margin: 4px 0 7px; }
   body.rd.cshell .cs-navitem {
     display: flex; align-items: center; gap: 11px; margin: 0 10px 3px; padding: 0 10px;
-    min-height: 44px; border-radius: 11px; cursor: pointer; position: relative;
-    color: var(--slate); font-size: 12.5px; font-weight: 700; letter-spacing: .11em;
+    min-height: 44px; border-radius: var(--r-card); cursor: pointer; position: relative;
+    color: var(--slate); font-size: var(--fs-body); font-weight: 700; letter-spacing: .11em;
     text-transform: uppercase; background: none; border: 0; width: calc(100% - 20px);
     text-align: left; -webkit-tap-highlight-color: transparent;
   }
   body.rd.cshell .cs-navitem img { width: 21px; height: 21px; flex: 0 0 21px; object-fit: contain; }
-  body.rd.cshell .cs-navitem .cs-navdot { width: 21px; flex: 0 0 21px; text-align: center; font-size: 13px; color: var(--slate); }
+  body.rd.cshell .cs-navitem .cs-navdot { width: 21px; flex: 0 0 21px; text-align: center; font-size: var(--fs-body); color: var(--slate); }
   body.rd.cshell .cs-navitem:hover { color: var(--white); background: rgba(92,242,255,0.05); }
   /* §9.4 active nav: cyan edge, subtle cyan/violet wash, light text, NO oversized glow */
   body.rd.cshell .cs-navitem.on {
     color: var(--white);
-    background: linear-gradient(90deg, rgba(92,242,255,0.11), rgba(155,89,255,0.06));
+    /* v1.14.412 - selection is the IDENTITY channel, so it is cyan alone. The cyan->violet
+       wash blended identity with derived-intelligence and meant neither. */
+    background: linear-gradient(90deg, rgba(92,242,255,0.14), rgba(92,242,255,0.04));
   }
   body.rd.cshell .cs-navitem.on::before {
     content: ''; position: absolute; left: -10px; top: 9px; bottom: 9px; width: 3px;
     border-radius: 0 3px 3px 0; background: var(--cyan);
   }
   body.rd.cshell .cs-sfoot { margin-top: auto; padding: 12px 18px 0; border-top: 1px solid rgba(176,207,255,0.07); }
-  body.rd.cshell .cs-sfoot-row { display: flex; align-items: center; gap: 8px; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--slate); margin-top: 8px; }
-  body.rd.cshell .cs-sver { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--slate); }
+  body.rd.cshell .cs-sfoot-row { display: flex; align-items: center; gap: 8px; font-size: var(--fs-micro); letter-spacing: .14em; text-transform: uppercase; color: var(--slate); margin-top: 8px; }
+  body.rd.cshell .cs-sver { font-family: var(--mono); font-size: var(--fs-micro); letter-spacing: .06em; color: var(--slate); }
 
   /* §9.5 TOPBAR — 76px, sticky, dark translucent, 22px blur, bottom divider */
   body.rd.cshell #cs-top {
     display: flex; align-items: center; gap: 14px; position: fixed; top: 0; left: 246px; right: 0;
-    height: 76px; z-index: 85; padding: 0;
+    height: 76px; z-index: var(--z-nav); padding: 0;
     background: rgba(4,7,11,0.82); border-bottom: 1px solid var(--cyan-border-lo);
     -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px);
   }
@@ -54950,31 +55145,31 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
      title sits on the hero's left edge and SCAN sits on the rail's right edge
      instead of floating against the viewport. */
   body.rd.cshell .cs-topin { display: flex; align-items: center; gap: 14px; width: 100%; max-width: 1640px; margin: 0 auto; padding: 0 28px; }
-  body.rd.cshell .cs-ttitle { font-size: 18.5px; font-weight: 800; letter-spacing: .04em; color: var(--white); }
-  body.rd.cshell .cs-tsub { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--slate); margin-top: 3px; }
+  body.rd.cshell .cs-ttitle { font-size: var(--fs-hero); font-weight: 800; letter-spacing: .04em; color: var(--white); }
+  body.rd.cshell .cs-tsub { font-size: var(--fs-micro); letter-spacing: .18em; text-transform: uppercase; color: var(--slate); margin-top: 3px; }
   body.rd.cshell .cs-tspacer { flex: 1; }
   body.rd.cshell .cs-tsearch {
-    width: 240px; height: 38px; border-radius: 12px; padding: 0 13px; font-size: 12.5px;
+    width: 240px; min-height: var(--tap-s); border-radius: var(--r-ctl); padding: 0 var(--sp-3); font-size: var(--fs-body);
     color: var(--white); background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo);
     outline: none; -webkit-appearance: none; appearance: none;
   }
   body.rd.cshell .cs-tsearch::placeholder { color: var(--slate); }
   body.rd.cshell .cs-tsearch:focus { border-color: color-mix(in srgb, var(--cyan) 55%, transparent); }
   body.rd.cshell .cs-tbtn {
-    min-width: 44px; height: 38px; border-radius: 11px; border: 1px solid var(--cyan-border-lo);
-    background: rgba(16,22,32,0.85); color: var(--slate); cursor: pointer; font-size: 15px;
+    min-width: var(--tap-s); min-height: var(--tap-s); border-radius: var(--r-ctl); border: 1px solid var(--cyan-border-lo);
+    background: rgba(16,22,32,0.85); color: var(--slate); cursor: pointer; font-size: var(--fs-head);
     display: inline-flex; align-items: center; justify-content: center; position: relative;
   }
   body.rd.cshell .cs-tbtn .cs-tbadge {
     position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px;
-    border-radius: 9px; background: #ff2bd6; color: #04060a; font-size: 9px; font-weight: 800;
+    border-radius: var(--r-ctl); background: #ff2bd6; color: #04060a; font-size: var(--fs-micro); font-weight: 800;
     display: none; align-items: center; justify-content: center;
   }
   body.rd.cshell .cs-tbtn.has .cs-tbadge { display: inline-flex; }
   body.rd.cshell .cs-tscan {
-    height: 38px; padding: 0 17px; border-radius: 11px; border: 0; cursor: pointer;
-    background: linear-gradient(90deg, var(--cyan), var(--violet)); color: #04060a;
-    font-size: 11.5px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase;
+    min-height: var(--tap-s); padding: 0 var(--sp-4); border-radius: var(--r-ctl); cursor: pointer;
+    background: linear-gradient(180deg, rgba(92,242,255,0.14), rgba(92,242,255,0.04)); color: var(--cyan); border: 1px solid rgba(92,242,255,0.45); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 0 18px rgba(92,242,255,0.15);
+    font-family: var(--ff-display); font-size: var(--fs-caption); font-weight: 700; letter-spacing: var(--hud-track-button); text-transform: uppercase;
   }
   body.rd.cshell .cs-tscan:active { filter: brightness(1.08); }
 
@@ -55028,9 +55223,9 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell #cs-build  { grid-column: 2; grid-row: 3; min-height: 0; }
 
   /* §9.8 desktop hero — same artwork, larger scale, crop and overlay only */
-  body.rd.cshell #cmd-shell .cs-hero { min-height: 425px; padding: 25px; border-radius: 22px; }
+  body.rd.cshell #cmd-shell .cs-hero { min-height: 425px; padding: 25px; border-radius: var(--r-sheet); }
   body.rd.cshell .cs-hero-art { background-position: 72% center; }
-  body.rd.cshell .cs-hero-title { font-size: 35px; }
+  /* v1.14.412 - retired: see --fs-display. */
   body.rd.cshell .cs-hero-prog { width: 54%; }
   body.rd.cshell .cs-hero-kpis { max-width: 460px; }
   body.rd.cshell .cs-hero-cta { width: auto; align-self: flex-start; padding: 0 26px; }
@@ -55045,26 +55240,26 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell .cs-ph { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
   /* desktop type is its own scale, not compressed phone type. Letter-spacing is
      eased from .17em to .12em so a two-word panel title cannot clip its column. */
-  body.rd.cshell .cs-pt { font-size: 12.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--white); white-space: nowrap; }
+  body.rd.cshell .cs-pt { font-size: var(--fs-body); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--white); white-space: nowrap; }
   /* v1.14.384: says out loud where a panel's numbers come from, so nothing on this
      dashboard can be mistaken for external monitoring or AI telemetry. */
-  body.rd.cshell .cs-pcap { font-size: 9px; line-height: 1.4; color: var(--slate); margin: -6px 0 10px; }
-  body.rd.cshell .cs-pa { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); background: none; border: 0; cursor: pointer; padding: 4px; }
+  body.rd.cshell .cs-pcap { font-size: var(--fs-micro); line-height: 1.4; color: var(--slate); margin: -6px 0 10px; }
+  body.rd.cshell .cs-pa { min-height: var(--tap-s); display: inline-flex; align-items: center; font-size: var(--fs-micro); font-weight: 700; letter-spacing: var(--hud-track-mid); text-transform: uppercase; color: var(--cyan); background: none; border: 0; cursor: pointer; padding: 0 var(--sp-2); }
   body.rd.cshell .cs-dpanel { padding: 16px 17px; }
 
   /* §9.9 Intelligence panel */
   body.rd.cshell .cs-iorb { width: 46px; height: 46px; flex: 0 0 46px; object-fit: contain; }
   body.rd.cshell .cs-irow { display: flex; align-items: flex-start; gap: 12px; }
-  body.rd.cshell .cs-ik { font-size: 8.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--violet); }
-  body.rd.cshell .cs-ititle { font-size: 16.5px; font-weight: 700; color: var(--white); line-height: 1.28; margin-top: 5px; }
-  body.rd.cshell .cs-ip { font-size: 12.5px; color: var(--slate); line-height: 1.5; margin-top: 7px; }
+  body.rd.cshell .cs-ik { font-size: var(--fs-micro); letter-spacing: .2em; text-transform: uppercase; color: var(--violet); }
+  body.rd.cshell .cs-ititle { font-size: var(--fs-head); font-weight: 700; color: var(--white); line-height: 1.28; margin-top: 5px; }
+  body.rd.cshell .cs-ip { font-size: var(--fs-body); color: var(--slate); line-height: 1.5; margin-top: 7px; }
   body.rd.cshell .cs-iact {
     margin-top: auto; padding-top: 12px; display: flex; gap: 8px;
   }
   body.rd.cshell .cs-ibtn {
-    flex: 1; min-height: 40px; border-radius: 11px; border: 0; cursor: pointer;
-    background: linear-gradient(90deg, var(--cyan), var(--violet)); color: #04060a;
-    font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+    flex: 1; min-height: var(--tap-s); border-radius: var(--r-ctl); cursor: pointer;
+    background: linear-gradient(180deg, rgba(92,242,255,0.14), rgba(92,242,255,0.04)); color: var(--cyan); border: 1px solid rgba(92,242,255,0.45); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 0 18px rgba(92,242,255,0.15);
+    font-family: var(--ff-display); font-size: var(--fs-caption); font-weight: 700; letter-spacing: var(--hud-track-button); text-transform: uppercase;
   }
   body.rd.cshell .cs-ibtn.ghost {
     background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo); color: var(--slate); flex: 0 0 auto; padding: 0 15px;
@@ -55076,9 +55271,9 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell .cs-hdot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 7px var(--ok); }
   body.rd.cshell .cs-hrow.warn .cs-hdot { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
   body.rd.cshell .cs-hrow.bad  .cs-hdot { background: #ff2bd6; box-shadow: 0 0 7px rgba(255,43,214,0.8); }
-  body.rd.cshell .cs-hk { font-size: 13px; color: var(--white); font-weight: 600; min-width: 0; }
-  body.rd.cshell .cs-hs { font-size: 10.5px; color: var(--slate); margin-top: 3px; line-height: 1.35; }
-  body.rd.cshell .cs-hv { margin-left: auto; padding-left: 10px; font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--slate); white-space: nowrap; }
+  body.rd.cshell .cs-hk { font-size: var(--fs-body); color: var(--white); font-weight: 600; min-width: 0; }
+  body.rd.cshell .cs-hs { font-size: var(--fs-micro); color: var(--slate); margin-top: 3px; line-height: 1.35; }
+  body.rd.cshell .cs-hv { margin-left: auto; padding-left: 10px; font-family: var(--mono); font-size: var(--fs-body); font-weight: 700; color: var(--slate); white-space: nowrap; }
   body.rd.cshell .cs-hrow { padding: 9px 0; }
 
   /* §9.11 Build Progress five-step rail */
@@ -55089,14 +55284,14 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   /* complete -> teal, the 'complete' channel. Active -> cyan. Never --green. */
   body.rd.cshell .cs-step.done .cs-stepfill { background: var(--teal); }
   body.rd.cshell .cs-step.blocked .cs-stepfill { background: #ff2bd6; }
-  body.rd.cshell .cs-stepk { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 6px; white-space: nowrap; }
+  body.rd.cshell .cs-stepk { font-size: var(--fs-micro); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 6px; white-space: nowrap; }
   body.rd.cshell .cs-step.done .cs-stepk { color: var(--teal); }
   body.rd.cshell .cs-step.active .cs-stepk { color: var(--cyan); }
-  body.rd.cshell .cs-stepn { font-family: var(--mono); font-size: 10px; color: var(--slate); margin-top: 2px; }
+  body.rd.cshell .cs-stepn { font-family: var(--mono); font-size: var(--fs-micro); color: var(--slate); margin-top: 2px; }
   body.rd.cshell .cs-bfoot { margin-top: auto; padding-top: 12px; display: flex; align-items: baseline; gap: 8px; }
-  body.rd.cshell .cs-bphase { font-size: 13px; font-weight: 700; color: var(--white); }
-  body.rd.cshell .cs-bpct { font-family: var(--mono); font-size: 18px; font-weight: 800; color: var(--cyan); margin-left: auto; }
-  body.rd.cshell .cs-empty { font-size: 12.5px; color: var(--slate); line-height: 1.55; }
+  body.rd.cshell .cs-bphase { font-size: var(--fs-body); font-weight: 700; color: var(--white); }
+  body.rd.cshell .cs-bpct { font-family: var(--mono); font-size: var(--fs-hero); font-weight: 800; color: var(--cyan); margin-left: auto; }
+  body.rd.cshell .cs-empty { font-size: var(--fs-body); color: var(--slate); line-height: 1.55; }
   /* a panel with nothing to say sizes to its sentence instead of reserving a slab */
   body.rd.cshell .cs-dpanel.is-empty { min-height: 0; }
 
@@ -55107,7 +55302,8 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
      title and metadata over a scrim. Same recipe as the phone TOOLS face. */
   body.rd.cshell .cs-ops { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   body.rd.cshell .cs-op {
-    position: relative; height: 211px; border-radius: 15px; overflow: hidden; cursor: pointer;
+    font-size: var(--fs-body);
+    position: relative; height: 211px; border-radius: var(--r-card); overflow: hidden; cursor: pointer;
     border: 1px solid var(--cyan-border-lo); padding: 0; display: flex; flex-direction: column;
     justify-content: flex-end; text-align: left; background: var(--bg1);
   }
@@ -55117,15 +55313,15 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
     background: linear-gradient(to top, rgba(2,3,5,0.93) 0%, rgba(2,3,5,0.25) 52%, rgba(2,3,5,0.05) 100%);
   }
   body.rd.cshell .cs-op-chip {
-    position: absolute; top: 11px; left: 11px; padding: 4px 9px; border-radius: 8px;
-    font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+    position: absolute; top: 11px; left: 11px; padding: 4px 9px; border-radius: var(--r-ctl);
+    font-size: var(--fs-micro); font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
     background: rgba(4,6,10,0.8); border: 1px solid color-mix(in srgb, var(--cyan) 45%, transparent); color: var(--cyan);
   }
   body.rd.cshell .cs-op-body { display: block; position: relative; padding: 13px 14px; }
   /* both are <span>: without display:block the title and the metadata run together
      on one line. Caught in the render, not by reading the markup. */
-  body.rd.cshell .cs-op-t { display: block; font-size: 15px; font-weight: 800; letter-spacing: .04em; color: var(--white); }
-  body.rd.cshell .cs-op-m { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 4px; }
+  body.rd.cshell .cs-op-t { display: block; font-size: var(--fs-subhead); font-weight: 800; letter-spacing: .04em; color: var(--white); }
+  body.rd.cshell .cs-op-m { display: block; font-size: var(--fs-micro); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 4px; }
   body.rd.cshell .cs-op:active { transform: scale(.99); }
 
   /* §9.15 Field Tools - three columns, two rows, 95px tiles, 9px gap. The art is
@@ -55133,7 +55329,8 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
      rd_openOpsTool(), the one canonical door. */
   body.rd.cshell .cs-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
   body.rd.cshell .cs-tool {
-    position: relative; height: 95px; border-radius: 12px; overflow: hidden; cursor: pointer;
+    font-size: var(--fs-body);
+    position: relative; height: 95px; border-radius: var(--r-card); overflow: hidden; cursor: pointer;
     border: 1px solid var(--cyan-border-lo); padding: 0; display: block; text-align: left;
     background: var(--bg1);
   }
@@ -55141,7 +55338,7 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell .cs-tool-scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(2,3,5,0.9) 0%, rgba(2,3,5,0.15) 68%); }
   body.rd.cshell .cs-tool-k {
     position: absolute; left: 9px; right: 9px; bottom: 8px;
-    font-size: 10px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--white);
+    font-size: var(--fs-micro); font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--white);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   body.rd.cshell .cs-tool:active { transform: scale(.98); }
@@ -55151,11 +55348,11 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell .cs-ringw { width: 76px; height: 76px; flex: 0 0 76px; position: relative; }
   body.rd.cshell .cs-ringn {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    font-family: var(--mono); font-size: 17px; font-weight: 800; color: var(--white);
+    font-family: var(--mono); font-size: var(--fs-head); font-weight: 800; color: var(--white);
   }
-  body.rd.cshell .cs-rk { font-size: 11.5px; color: var(--slate); line-height: 1.45; }
+  body.rd.cshell .cs-rk { font-size: var(--fs-caption); color: var(--slate); line-height: 1.45; }
   body.rd.cshell .cs-rlist { margin-top: 12px; }
-  body.rd.cshell .cs-rrow { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 11.5px; color: var(--slate); }
+  body.rd.cshell .cs-rrow { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: var(--fs-caption); color: var(--slate); }
   body.rd.cshell .cs-rrow .cs-hdot { width: 7px; height: 7px; flex: 0 0 7px; }
   body.rd.cshell .cs-rv { margin-left: auto; font-family: var(--mono); font-weight: 700; color: var(--white); }
   /* the health rows are .cs-hrow and these are .cs-rrow - the warn dot needs its
@@ -55163,9 +55360,9 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell .cs-rrow.warn .cs-hdot { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
   body.rd.cshell .cs-rrow.warn .cs-rv { color: var(--gold); }
   body.rd.cshell .cs-rbtn {
-    margin-top: auto; min-height: 42px; border-radius: 11px; border: 0; cursor: pointer; width: 100%;
-    background: linear-gradient(90deg, var(--cyan), var(--violet)); color: #04060a;
-    font-size: 11px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase;
+    margin-top: auto; min-height: var(--tap-s); border-radius: var(--r-ctl); cursor: pointer; width: 100%;
+    background: linear-gradient(180deg, rgba(92,242,255,0.14), rgba(92,242,255,0.04)); color: var(--cyan); border: 1px solid rgba(92,242,255,0.45); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 0 18px rgba(92,242,255,0.15);
+    font-family: var(--ff-display); font-size: var(--fs-caption); font-weight: 700; letter-spacing: var(--hud-track-button); text-transform: uppercase;
   }
 }
 
@@ -55174,18 +55371,18 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
 /* §10.3 compact laptop — the sidebar stays a 82px icon rail until 1100px so the
    workspace keeps its width. Owner: "the sidebar consumes too much usable
    horizontal space." */
-@media (min-width: 851px) and (max-width: 1099px) {
+@media (min-width: 1024px) and (max-width: 1099px) {
   body.rd.cshell #cs-side { width: 82px; padding-left: 0; padding-right: 0; align-items: stretch; }
   body.rd.cshell #cs-side .cs-lbl, body.rd.cshell .cs-navlabel,
   body.rd.cshell .cs-ssite-k, body.rd.cshell .cs-sfoot-row span.cs-lbl { display: none; }
   body.rd.cshell .cs-sbrand { justify-content: center; padding: 0 0 16px; }
   body.rd.cshell .cs-sbrand .cs-sbrandtext { display: none; }
   body.rd.cshell .cs-ssite { margin: 0 12px 14px; padding: 8px; text-align: center; }
-  body.rd.cshell .cs-ssite-v { justify-content: center; font-size: 10px; letter-spacing: .04em; }
+  body.rd.cshell .cs-ssite-v { justify-content: center; font-size: var(--fs-micro); letter-spacing: .04em; }
   body.rd.cshell .cs-navitem { justify-content: center; gap: 0; padding: 0; margin: 0 8px 3px; width: calc(100% - 16px); }
   body.rd.cshell .cs-navitem.on::before { left: -8px; }
   body.rd.cshell .cs-sfoot { padding: 12px 8px 0; text-align: center; }
-  body.rd.cshell .cs-sver { font-size: 9px; }
+  body.rd.cshell .cs-sver { font-size: var(--fs-micro); }
   body.rd.cshell #cs-top { left: 82px; padding: 0 20px; }
   body.rd.cshell .page { left: 82px; }
   body.rd.cshell #cmd-shell { padding: 20px 20px 40px; }
@@ -55209,7 +55406,7 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell #cs-lower { grid-template-columns: 1.1fr 1.1fr 0.8fr; }
   body.rd.cshell #cs-ready { grid-column: auto; }
   body.rd.cshell #cmd-shell .cs-hero { min-height: 470px; }
-  body.rd.cshell .cs-hero-title { font-size: 38px; }
+  /* v1.14.412 - retired: see --fs-display. */
 }
 
 /* §10.5 very large desktop — content stays near 1640px and centres; cards do

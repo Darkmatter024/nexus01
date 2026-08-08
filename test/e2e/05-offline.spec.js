@@ -47,7 +47,7 @@
 //   desktop-chromium 11 pass / 1 expected-fail / 2 skip — the full offline path
 // ─────────────────────────────────────────────────────────────────────────────
 
-const { test, expect } = require('./fixtures');
+const { test, expect, gotoMode } = require('./fixtures');
 
 // Chromium-only BROWSER POLICY message, emitted at console.error level by the
 // browser itself, not by app code. Chromium refuses navigator.vibrate on a frame

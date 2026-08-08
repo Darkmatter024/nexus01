@@ -15,16 +15,27 @@
 //
 // LOCAL HELPERS ONLY — fixtures.js is shared and was not touched.
 
-const { test, expect } = require('./fixtures');
+const { test, expect, gotoMode, railIsUp } = require('./fixtures');
 
 // ── local helpers (declared here on purpose; fixtures.js is shared and off-limits) ──
 
 const PAGES = { command: 'pg-cmd', work: 'pg-work', ref: 'pg-ref' };
 const SLOTS = { command: 'bn-command', work: 'bn-work', ref: 'bn-ref' };
 
-/** Tap a bottom-nav slot. click() (not tap()) so the same spec runs on non-touch projects. */
+/** Tap the NAVIGATION DOOR for a mode. click() (not tap()) so the same spec runs on non-touch
+ *  projects. v1.14.412: below 1024 that door is the bottom-nav slot; at 1024 and up the
+ *  desktop shell replaces the bottom nav with a left rail, and gotoMode() picks whichever
+ *  organ is actually on screen. The ROUTING tests below are about showMode() landing on the
+ *  right page — they are not about which organ was tapped, so they must run at every tier.
+ *  The tests that ARE about the bottom nav as an object guard with needsBottomNav(). */
 async function tapSlot(page, mode) {
-  await page.locator('#' + SLOTS[mode]).click();
+  await gotoMode(page, mode);
+}
+
+/** Skip when the bottom nav is not the composed navigation organ at this tier. */
+async function needsBottomNav(page) {
+  const rail = await railIsUp(page);
+  test.skip(rail, 'the desktop shell composes a left rail at this width; the bottom nav is a phone/tablet organ and is not on screen here');
 }
 
 /** Which of the three redesign pages currently carry .active. Truth, not a guess. */
@@ -76,6 +87,7 @@ test.describe('bottom nav — structure', () => {
 
   test('every nav control meets the 44px gloved-hand minimum', async ({ phantom, page }) => {
     await phantom.boot();
+    await needsBottomNav(page);
 
     const rects = await page.evaluate(() =>
       ['bn-command', 'bn-work', 'bn-ref', 'rd-exit'].map((id) => {
@@ -122,6 +134,7 @@ test.describe('bottom nav — routing', () => {
 
   test('#bn-core still tracks the active slot, but the rail is retired and paints nothing', async ({ phantom, page }) => {
     await phantom.boot();
+    await needsBottomNav(page);
 
     // showMode :18827-18829 writes left = index * 33.333%.
     const expected = { command: '0%', work: '33.333%', ref: '66.666%' };
@@ -261,6 +274,7 @@ test.describe('browser back', () => {
 test.describe('house selection', () => {
   test('a bare URL boots the redesign house with the 3-slot nav visible', async ({ phantom, page }) => {
     await phantom.boot();
+    await needsBottomNav(page);
 
     expect(await phantom.isRedesign(), 'bare URL must boot body.rd (default since v1.14.101)').toBe(true);
     await expect(page.locator('#rd-botnav')).toBeVisible();
@@ -302,6 +316,7 @@ test.describe('house selection', () => {
 test.describe('#rd-exit is hold-only', () => {
   test('a plain tap on EXIT does not navigate and does not freeze', async ({ phantom, page }) => {
     await phantom.boot();
+    await needsBottomNav(page);
     await tapSlot(page, 'work');
     await expect.poll(() => activePages(page)).toEqual(['work']);
 
@@ -323,6 +338,7 @@ test.describe('#rd-exit is hold-only', () => {
 
   test('holding EXIT past RD_HOLD_MS freezes to the sleep curtain', async ({ phantom, page }) => {
     await phantom.boot();
+    await needsBottomNav(page);
 
     // rd_holdGesture (:18721) arms on mousedown/touchstart and fires after RD_HOLD_MS
     // (850ms, :18720). No sleep: press, then poll the observable end state.

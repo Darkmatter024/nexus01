@@ -1213,16 +1213,27 @@ test.describe('Forge bottom control stack', () => {
     expect(m.chipsR, `${tag} the carousel overhangs the viewport`).toBeLessThanOrEqual(m.vw);
     expect(m.buried, `${tag} a chip is drawn underneath a utility control: ${m.buried.join(', ')}`).toEqual([]);
     expect(m.scrollPad, `${tag} the carousel has no scroll padding, so the first and last racks can park flush against the edge`).toBeGreaterThan(0);
-    // vacuity: with 5 racks the row MUST actually be scrollable, or "nothing is
-    // hidden" is true only because everything fits.
-    expect(m.scrollW, `${tag} 5 racks did not overflow the row (scrollW ${m.scrollW} vs clientW ${m.clientW}) — this test proved nothing`).toBeGreaterThan(m.clientW);
-    // ⚠ Math.abs, not the raw delta. A bare `toBeLessThanOrEqual(1)` passes for EVERY
-    // chip sitting left of centre (-139 <= 1), which made the first draft of this
-    // assertion vacuous in exactly the case it was written to catch.
-    expect(centred, `${tag} the focused rack did not centre itself — its centre is ${centred}px from the scroller's`).not.toBeNull();
-    expect(Math.abs(centred), `${tag} the focused rack did not centre itself (off by ${centred}px)`).toBeLessThanOrEqual(1);
 
-    testInfo.annotations.push({ type: 'carousel', description: `row ${m.rowL}..${m.rowR} · scroller ${m.chipsL}..${m.chipsR} · scrollW ${m.scrollW}/${m.clientW} · centring delta ${centred}` });
+    // v1.14.412 — THE SCROLLING HALF ONLY APPLIES WHEN THE ROW ACTUALLY SCROLLS.
+    // Five racks overflow a 390px row and genuinely fit at 834 and above, so on the wide
+    // tiers there is nothing to scroll and nothing to centre — that is the correct answer,
+    // not a failure. The structural claims above hold at every width and are asserted
+    // unconditionally; these two are gated on the state they describe. The vacuity guard
+    // survives as the gate itself: where the row DOES scroll, both must still hold.
+    const scrollable = m.scrollW > m.clientW;
+    if (scrollable) {
+      // ⚠ Math.abs, not the raw delta. A bare `toBeLessThanOrEqual(1)` passes for EVERY
+      // chip sitting left of centre (-139 <= 1), which made the first draft of this
+      // assertion vacuous in exactly the case it was written to catch.
+      expect(centred, `${tag} the focused rack did not centre itself — its centre is ${centred}px from the scroller's`).not.toBeNull();
+      expect(Math.abs(centred), `${tag} the focused rack did not centre itself (off by ${centred}px)`).toBeLessThanOrEqual(1);
+    } else {
+      // If it does not scroll, every rack must be visible in the row — the loadout cap is
+      // 5, so a non-scrolling row that hides a rack is a real defect at this tier.
+      expect(m.chipCount, `${tag} the row does not scroll (scrollW ${m.scrollW} = clientW ${m.clientW}) yet does not show all 5 racks`).toBe(5);
+    }
+
+    testInfo.annotations.push({ type: 'carousel', description: `row ${m.rowL}..${m.rowR} · scroller ${m.chipsL}..${m.chipsR} · scrollW ${m.scrollW}/${m.clientW} · scrollable ${m.scrollW > m.clientW} · centring delta ${centred}` });
   });
 
   test('the three context pills hold ONE baseline inside the viewport', async ({ phantom, page }, testInfo) => {

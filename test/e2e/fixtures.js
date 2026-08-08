@@ -171,4 +171,41 @@ const test = base.test.extend({
   },
 });
 
-module.exports = { test, expect, SITE_PROFILE_KEY, SEEDED_PROFILE };
+// ── v1.14.412 — ONE DOOR PER MODE, WHATEVER THE TIER ────────────────────────
+// PHANTOM has two navigation organs now. Below 1024 it is the bottom nav
+// (#bn-command / #bn-work / #bn-ref); at 1024 and up the desktop shell replaces
+// it with a left rail (#cs-nav-cmd / #cs-nav-bld / #cs-nav-tls). Both call the
+// same showMode(), so this is one door with two handles.
+//
+// Every spec that navigated by clicking #bn-* was really saying "go to Build" —
+// it just had only one way to say it when the phone layout was the only layout.
+// Those specs were not testing the bottom nav; 01-nav is where the bottom nav
+// itself is under test.
+//
+// CHOSEN BY WHAT IS ON SCREEN, NOT BY WIDTH. The tests must not carry their own
+// copy of the 1024 breakpoint — that is the app's number, declared once in CSS,
+// and a second copy here would go stale the moment it moved. Asking which organ
+// is actually visible also means these specs keep passing if the boundary is
+// ever retuned.
+const MODE_DOORS = {
+  command: { nav: '#bn-command', rail: '#cs-nav-cmd' },
+  work:    { nav: '#bn-work',    rail: '#cs-nav-bld' },
+  ref:     { nav: '#bn-ref',     rail: '#cs-nav-tls' },
+};
+
+async function railIsUp(page) {
+  return page.evaluate(() => {
+    const r = document.querySelector('#cs-nav-cmd');
+    return !!r && r.getBoundingClientRect().height > 0;
+  });
+}
+
+async function gotoMode(page, mode) {
+  const door = MODE_DOORS[mode];
+  if (!door) throw new Error(`gotoMode: unknown mode "${mode}"`);
+  const sel = (await railIsUp(page)) ? door.rail : door.nav;
+  await page.locator(sel).click();
+  return sel;
+}
+
+module.exports = { test, expect, SITE_PROFILE_KEY, SEEDED_PROFILE, gotoMode, railIsUp, MODE_DOORS };
