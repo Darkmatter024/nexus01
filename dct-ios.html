@@ -19766,7 +19766,25 @@ function forge3d_render(mount) {
   // path; the try/catch swallowed it). The live Master is `window._lastPhantomMaster`.
   // Guard mirrors master_hasMaster(): a restoredFromStorage object can carry cab-level
   // data only, so require a non-empty racksByCab. Empty is reported LOUD, never [].
+  // v1.14.415 — CACHE LAW: a cache may accelerate the active Master, never outlive it.
+  // This map had NO Master identity and NO invalidation, so slots computed under Master A were
+  // returned while B was active — and `if (_slotCache[id])` treats an empty array as a hit, so
+  // a rack read once while the Master was unusable stayed empty for the life of the page.
+  // Stamped with the Master identity and checked on every read: self-healing, and it cannot be
+  // defeated by forgetting to call an invalidator. The registered listener below is belt AND
+  // braces — the stamp alone is sufficient, and it is what makes this correct under a REPLACE
+  // that happens between two reads.
   var _slotCache = {};
+  var _slotCacheId = null;
+  function _slotCacheEnsure() {
+    var id = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.id() : null;
+    if (id !== _slotCacheId) { _slotCache = {}; _slotCacheId = id; }
+  }
+  try {
+    if (typeof PHANTOM_MASTER !== 'undefined') {
+      PHANTOM_MASTER.onChange(function () { _slotCache = {}; _slotCacheId = null; });
+    }
+  } catch (_) {}
   // v1.14.237 — hosts the Master carries with NO derivable U position. master_rackToElevation
   // already returns them (`unplaced`); Forge was the ONLY surface in the app that threw them
   // away, so those devices vanished. Parallel cache — deploy_forge_slots() must keep returning
@@ -19871,6 +19889,7 @@ function forge3d_render(mount) {
     return row + ':' + m[2];
   }
   function deploy_forge_slots(id) {
+    _slotCacheEnsure();                       // v1.14.415 — drop anything belonging to another Master
     if (_slotCache[id]) return _slotCache[id];
     var out = [];
     try {
@@ -32121,8 +32140,130 @@ var PHANTOM_MASTER_STORE = {
   }
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// PHANTOM_MASTER — THE SINGLE-MASTER CONTRACT (owner ruling, 2026-08-08)
+//
+// PHANTOM may have ONE active Master. Not one in memory and another in storage; not one
+// driving Build and another driving Forge; not a candidate that half-becomes active. Every
+// derived surface reads from this one thing.
+//
+// AN AUDIT FOUND SIX WAYS THE OLD CODE COULD DISAGREE WITH ITSELF, all reachable:
+//   1. v1.14.414's overwrite guard — save() refused, the caller assigned the candidate live
+//      anyway, leaving memory=candidate / storage=previous. Shipped by me two days ago and
+//      described as harmless; under this ruling it is the textbook forbidden state.
+//   2. v1.14.406's quota path — identical shape: save() returns false, candidate goes live.
+//   3. :49637 reads PHANTOM_MASTER_STORE.load() ONLY, never the global — so with memory=B and
+//      storage=A that consumer ran on A while Forge ran on B, simultaneously.
+//   4. _slotCache carried no Master identity and never invalidated, so slots computed under
+//      Master A were returned while B was active.
+//   5. _mscopeState.siteRef was a second "active" pointer, consulted BEFORE the global.
+//   6. phantom_parseMaster PERSISTED at parse time — a writer outside this contract that ran
+//      before anything judged the candidate. Parsing B while A was active wrote B to storage
+//      and left A live, reaching the forbidden state with no caller intending to switch.
+//      Parse is now pure; replace() is the only writer of either half.
+//
+// THE ONE DOOR. window._lastPhantomMaster stays the live pointer — 35 readers already use it
+// and rewriting them all would be a far larger blast radius than the defect. What changes is
+// that it may only be WRITTEN here, and that storage is guaranteed to agree with it.
+//
+// ORDERING IS THE WHOLE MECHANISM: persist FIRST, go live SECOND. A candidate that cannot be
+// persisted never becomes active, so the two can never diverge. That single inversion closes
+// defects 1 and 2 by construction rather than by remembering to check.
+//
+// THE ONE EXCEPTION, STATED RATHER THAN HIDDEN: if persistence fails and there is NO prior
+// Master, the candidate is accepted live with storage guaranteed EMPTY. That is not
+// split-brain — nothing disagrees, there is simply no persisted Master — and the alternative
+// is refusing to let an operator use a Master at all on a device whose quota it exceeds.
+// It is flagged `unpersisted` so every surface can say so, and it dies at restart honestly.
+// When a prior Master DOES exist, a failed candidate is rejected outright and the prior one
+// stays active everywhere: never destroy known-good data for a candidate that cannot be kept.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+var PHANTOM_MASTER = {
+  // ONE identity, present on a fresh parse AND on a restored payload. The two shapes had
+  // drifted: parse puts the hash at stats.sourceFileHash, the payload writes it top-level, and
+  // a restored Master carries no stats at all — which is why readers had grown
+  // `m.sourceFileHash || m.stats.sourceFileHash`. That compensation IS the divergence.
+  idOf: function(m) {
+    if (!m) return null;
+    var h = m.sourceFileHash || (m.stats && m.stats.sourceFileHash) || null;
+    if (h) return String(h);
+    // No hash (older payloads): fall back to something stable and specific enough to change
+    // when the Master changes. savedAt + cab count is sufficient for cache identity.
+    var cabs = (m.racksByCab && typeof m.racksByCab === 'object') ? Object.keys(m.racksByCab).length : 0;
+    var when = m.savedAt || m.ingestedAt || m.sourceFile || 'unknown';
+    return 'legacy:' + when + ':' + cabs;
+  },
+  active: function() {
+    try { return window._lastPhantomMaster || null; } catch (_) { return null; }
+  },
+  id: function() { return this.idOf(this.active()); },
+  isUsable: function(m) {
+    return !!(m && m.racksByCab && typeof m.racksByCab === 'object' && Object.keys(m.racksByCab).length > 0);
+  },
+  /**
+   * Atomically replace the active Master. Returns true only if the candidate is now
+   * authoritative in BOTH memory and storage (or, in the stated no-prior-Master exception,
+   * live with storage provably empty). On false NOTHING changed anywhere.
+   */
+  replace: function(candidate) {
+    if (!this.isUsable(candidate)) {
+      console.warn('PHANTOM_MASTER: candidate rejected — no usable racksByCab. Active Master untouched.');
+      return false;
+    }
+    var hadPrior = this.isUsable(this.active()) ||
+                   (function(){ try { return PHANTOM_MASTER.isUsable(PHANTOM_MASTER_STORE.load()); } catch (_) { return false; } })();
+
+    var persisted = false;
+    try { persisted = PHANTOM_MASTER_STORE.save(candidate) === true; } catch (_) { persisted = false; }
+
+    if (!persisted) {
+      if (hadPrior) {
+        // Never trade a known-good Master for one that cannot be kept.
+        console.warn('PHANTOM_MASTER: candidate could not be persisted and a Master is already '
+          + 'active — candidate DISCARDED, active Master untouched (no split-brain).');
+        return false;
+      }
+      // No prior Master: accept live, but guarantee storage holds nothing that could disagree.
+      try { PHANTOM_MASTER_STORE.clear(); } catch (_) {}
+      candidate.unpersisted = true;
+      console.warn('PHANTOM_MASTER: candidate accepted IN MEMORY ONLY — it could not be '
+        + 'persisted and there was no prior Master. It will not survive a restart.');
+    }
+
+    try { window._lastPhantomMaster = candidate; } catch (_) { return false; }
+    this._invalidate('replace');
+    return true;
+  },
+  /** Adopt a snapshot restored at boot. Same door, so caches stamp against it too. */
+  adoptRestored: function(loaded) {
+    if (!this.isUsable(loaded)) return false;
+    try { window._lastPhantomMaster = Object.assign({}, loaded, { restoredFromStorage: true }); }
+    catch (_) { return false; }
+    this._invalidate('restore');
+    return true;
+  },
+  clear: function() {
+    try { window._lastPhantomMaster = undefined; } catch (_) {}
+    try { PHANTOM_MASTER_STORE.clear(); } catch (_) {}
+    this._invalidate('clear');
+  },
+  // Master-derived caches register a clearer here. Kept deliberately dumb: a registry of
+  // callbacks, no ordering guarantees needed, every one wrapped so a single bad listener
+  // cannot block the others from invalidating.
+  _listeners: [],
+  onChange: function(fn) { if (typeof fn === 'function') this._listeners.push(fn); },
+  _invalidate: function(reason) {
+    var id = this.id();
+    for (var i = 0; i < this._listeners.length; i++) {
+      try { this._listeners[i](id, reason); } catch (e) {
+        try { console.warn('PHANTOM_MASTER: cache invalidator threw', e); } catch (_) {}
+      }
+    }
+  }
+};
+
 // Hidden console helper for John's test workflow. Not wired to any UI.
-window.phantom_clearMaster = function() { return PHANTOM_MASTER_STORE.clear(); };
+window.phantom_clearMaster = function() { return PHANTOM_MASTER.clear(); };
 
 // v1.14.237 — PURGE CACHED MASTER (owner-requested). The site Master snapshot persists in
 // localStorage and boot-restores into window._lastPhantomMaster, so a stale or test import
@@ -32154,9 +32295,10 @@ async function master_purgeCached() {
   });
   if (!ok2) return false;
 
-  try { PHANTOM_MASTER_STORE.clear(); }
+  // v1.14.415 - one door: PHANTOM_MASTER.clear() drops the live pointer AND the snapshot AND
+  // every Master-derived cache in one call, so a purge cannot leave a stale slot cache behind.
+  try { PHANTOM_MASTER.clear(); }
   catch (e) { if (typeof phantom_logErr === 'function') phantom_logErr('master_purgeCached:clear', e); }
-  window._lastPhantomMaster = undefined;
   try { console.warn('[master] PURGED cached Master · ' + what); } catch (_) {}
   if (typeof phantomToast === 'function') phantomToast('CACHED MASTER PURGED · ' + src);
   if (typeof master_render === 'function') master_render();
@@ -32513,20 +32655,24 @@ async function phantom_parseMaster(arrayBuffer, options) {
 
     _phantomMasterCache.set(hashHex, site);
 
-    // v1.6.28: persist to lz-string-compressed localStorage so the next
-    // app cold-start can hydrate window._lastPhantomMaster without
-    // requiring the operator to re-pick the Master file. Wrapped in
-    // try/catch so a save failure cannot break the parse return.
-    // v1.14.406 — the return value used to be discarded here, which is the other half of the
-    // silent failure above. save() now tells the operator itself in both failure branches, so
-    // this site records the outcome for the log rather than toasting a second time.
-    try {
-      if (PHANTOM_MASTER_STORE.save(site) === false) {
-        console.warn('PHANTOM_MASTER_STORE: Master NOT persisted — in-memory only for this session.');
-      }
-    } catch (e) {
-      console.warn('PHANTOM_MASTER_STORE save failed:', e);
-    }
+    // v1.14.415 — PARSE IS PURE. It returns a candidate and changes nothing outside this call.
+    //
+    // v1.6.28 persisted the parse result right here, and v1.14.406 made that save's failure
+    // audible. Both were correct about the WHAT and wrong about the WHERE, and the
+    // SINGLE-MASTER ruling is what makes the difference matter: a candidate must not touch
+    // storage before it has been ACCEPTED. This line ran at parse time — a fourth writer the
+    // contract did not own, firing before anything had decided the candidate was good.
+    //
+    // The reachable bug: with Master A active, parsing B — to inspect it, or on any path that
+    // parses and then rejects — wrote B into storage while A stayed live in memory. That is
+    // the forbidden state, arrived at without a single line intending to switch Masters, and
+    // it survived a reload as B. A parse that persists is a parse that has already
+    // half-committed.
+    //
+    // Persistence did not go away, it moved to the one door: PHANTOM_MASTER.replace() saves
+    // BEFORE it goes live, so cold-start hydration is unchanged for every Master an operator
+    // actually adopts — only the ones nobody adopted stop being written. The sole caller is
+    // master_loadFromPicker, which routes this return value through the contract.
 
     return site;
   } finally {
@@ -32595,10 +32741,28 @@ window.master_loadFromPicker = function master_loadFromPicker(opts) {
             if (typeof haptic === 'function') haptic([40, 30, 40]);
           }
         } catch (_) {}
-        window._lastPhantomMaster = site;
-        try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
-        try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (_) {}
+        // v1.14.415 — THE CANDIDATE DOES NOT BECOME ACTIVE UNTIL IT IS ACCEPTED.
+        // This line used to read `window._lastPhantomMaster = site` unconditionally, which is
+        // how a candidate that save() had just REFUSED still went live and left memory and
+        // storage holding different Masters. PHANTOM_MASTER.replace() persists first and goes
+        // live second, so the two cannot diverge; on rejection nothing here changes and every
+        // surface keeps running on the Master it already had.
+        var _accepted = PHANTOM_MASTER.replace(site);
+        if (!_accepted) {
+          try {
+            if (typeof phantomToast === 'function') {
+              phantomToast('Import not accepted — your existing Master is still active', 'warn');
+            }
+            if (typeof haptic === 'function') haptic([40, 30, 40]);
+          } catch (_) {}
+        } else {
+          try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
+          try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (_) {}
+        }
         try { input.remove(); } catch (_) {}
+        // The parse RESULT is still returned to the caller either way — the caller asked for a
+        // parse and is entitled to the counts and warnings even when the candidate is refused.
+        // What it is not entitled to do is treat that object as the active Master.
         resolve(site);
       } catch (err) {
         try { console.error('PHANTOM Master test:', err); } catch (_) {}
@@ -32906,7 +33070,13 @@ function mscope_confirm() {
   var sel = _mscopeState.selected || {};
   var ids = Object.keys(sel).filter(function(k) { return sel[k]; });
   if (ids.length === 0) { phantomToast('Select at least one cab', 'warn'); return; }
-  var m = _mscopeState.siteRef || window._lastPhantomMaster;
+  // v1.14.415 — SINGLE-MASTER LAW: siteRef was a captured reference consulted BEFORE the live
+  // Master, which made it a second "active" pointer — a scope staged against Master A could be
+  // committed against A after B had replaced it. The active Master is now authoritative, and
+  // siteRef is only honoured while it still refers to the SAME Master identity.
+  var _active = PHANTOM_MASTER.active();
+  var m = (_mscopeState.siteRef && PHANTOM_MASTER.idOf(_mscopeState.siteRef) === PHANTOM_MASTER.idOf(_active))
+    ? _mscopeState.siteRef : _active;
   if (!m || !m.racksByCab) { phantomToast('Master no longer in memory — re-load it', 'error'); return; }
   ids.sort(function(a, b) { return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' }); });
 
@@ -33109,12 +33279,15 @@ function mscope_discardStaged() {
 // trapped inside an IIFE and disappeared from devtools.
 //
 // Globals used (existing):
-//   window._lastPhantomMaster   — set by phantom_parseMaster on
-//                                  success OR by the boot-restore
-//                                  IIFE on cold start (racksByCab is
-//                                  persisted, including each cab's
-//                                  nested .hosts array — verified in
-//                                  PHANTOM_MASTER_STORE.save).
+//   window._lastPhantomMaster   — v1.14.415: WRITTEN ONLY BY
+//                                  PHANTOM_MASTER (replace/adopt-
+//                                  Restored/clear). phantom_parseMaster
+//                                  no longer sets it and no longer
+//                                  persists — it returns a candidate.
+//                                  Read it freely; never assign it.
+//                                  (racksByCab is persisted including
+//                                  each cab's nested .hosts array —
+//                                  verified in PHANTOM_MASTER_STORE.save).
 //   PHANTOM_MASTER_STORE.clear  — used by master_onReplaceTap
 //   phantomToast(text, kind)    — toasts for clipboard feedback
 //   master_loadFromPicker()   — picker + parse + stash; reused by
@@ -33206,10 +33379,13 @@ function phantomConfirmAsk(opts) {
 window.phantomConfirmAsk = phantomConfirmAsk;
 
 // Wraps master_loadFromPicker — that loader already creates a
-// hidden input, awaits arrayBuffer, calls phantom_parseMaster,
-// persists via PHANTOM_MASTER_STORE.save, and stashes the result on
-// window._lastPhantomMaster. We just show inline "Parsing…" status,
-// then re-render on completion.
+// hidden input, awaits arrayBuffer, calls phantom_parseMaster, and
+// offers the result to PHANTOM_MASTER.replace(), which persists it
+// and only then makes it the active Master (v1.14.415: the parse
+// itself no longer persists or goes live). We just show inline
+// "Parsing…" status, then re-render on completion. Note the loader
+// resolves with the parsed candidate whether or not it was accepted —
+// a refusal leaves the previous Master active and toasts to say so.
 async function master_loadFile() {
   // v1.6.76: the destructive-replace PIN gate moved out of here (it used to run
   // BEFORE the picker). Opening the OS file picker needs input.click() to fire
@@ -34307,9 +34483,10 @@ async function master_onReplaceTap() {
           });
           if (!ok) return false;
         }
-        // Guard passed — clear the old Master right before the new one commits
-        try { PHANTOM_MASTER_STORE.clear(); } catch (_) {}
-        window._lastPhantomMaster = undefined;
+        // Guard passed — clear the old Master right before the new one commits.
+        // v1.14.415 — through the contract, so every Master-derived cache invalidates with it
+        // rather than surviving into the next Master's lifetime.
+        try { PHANTOM_MASTER.clear(); } catch (_) {}
         window._masterQueryState = {
           currentInput: '', normalizedInput: '', suggestions: [],
           activeCabId: null, lastCopiedAt: 0
@@ -53226,7 +53403,8 @@ compass_loadState();
     if (typeof PHANTOM_MASTER_STORE === 'undefined' || typeof LZString === 'undefined') return;
     var loaded = PHANTOM_MASTER_STORE.load();
     if (!loaded) return;
-    window._lastPhantomMaster = Object.assign({}, loaded, { restoredFromStorage: true });
+    // v1.14.415 - adopt through the contract so caches stamp against the restored identity.
+    PHANTOM_MASTER.adoptRestored(loaded);
     try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
     try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (_) {}
     console.log('PHANTOM: Master restored from localStorage',
