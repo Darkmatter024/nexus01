@@ -18,11 +18,15 @@ open right now, 25 ships between them:**
   (`.402` is an owner-directed correction made during verify, not new scope — it stays in this batch.
   `.403`/`.404` likewise: an owner-directed instrument and the regression fix it pointed at.)
 
-⛔ **THE BATCH CANNOT BE RUN RIGHT NOW — the last two ships have never been served.** `main` is at
-**`v1.14.404`**; the live URL is still serving **`v1.14.402`**. `.403` and `.404` are committed and pushed,
-and every Pages deploy for them died during a GitHub platform incident (Actions + Pages `major_outage`) —
-`build` green every run, `deploy` cancelled/failed every run. **Not a code fault.** The pass starts when the
-live `version.json` reads `phantom-v1.14.404`, and not before. Detail in the `.404` block.
+✅ **THE PAGES BLOCK IS CLEARED — historical, left for the record.** This paragraph read *"the batch
+cannot be run right now"* because `.403`/`.404` died in a GitHub Actions+Pages `major_outage` and the
+live URL was stuck on `.402`. Both shipped; **live is now `v1.14.415` (`aad8181`), verified in the
+served bytes 2026-08-08.** Nothing blocks the pass.
+
+⛔ **RUN THE CONSOLIDATED PASS AT THE TOP OF THIS FILE, NOT THESE BLOCKS.** The debt is **39 ships**
+(`.376`–`.415`, minus `.412` which was never stamped) — the "25"/"29" counts below are stale and
+undercounted. Grouped by surface it is **16 checks**, and the automated baseline has already taken
+the `.401`/`.402` attachment behaviour, tier composition, overflow and 44px floors off your list.
 
 **✅ RESOLVED 2026-08-06 — the item that was blocking both batches is answered.** `.396` claimed the eight-ship
 blank-rack arc closes; the owner confirmed **"rack draws"** against `v1.14.401`. **The `.389`→`.396` arc is
@@ -32,6 +36,109 @@ CLOSED** and the four ships that had stacked behind that silence are unblocked.
 RENDERS. Everything else in both batches is still unverified — in particular the `.401`/`.402` attachment
 behaviour (single-entry transfer on Open Aisle, pause/resume on leaving Build, ×10 Build entries), which a
 drawing rack does not establish, and the `?legacy=1` half of `.402`.
+
+---
+
+# ⭐ CONSOLIDATED PASS — `.376` → `.415` · RUN THIS, NOT THE 39 BLOCKS BELOW
+**Written 2026-08-08 against live `v1.14.415` (`aad8181`). This section supersedes the individual
+blocks for every ship in the range.** Grouped by SURFACE, not by ship: 39 ships collapse to **16
+checks**, because thirty-nine ships touching six surfaces is six surfaces, not thirty-nine passes.
+Each item lists the ships it releases. Tick the item, release the ships.
+
+## RECONCILIATION FIRST — the recorded debt was wrong in three ways
+
+**The debt is 39 ships, not 29.** `.376`–`.415` inclusive, minus `.412` which was never stamped.
+Every other stamp in that range shipped. The "29" on record counted only to `.405`.
+
+| # | Record defect | Consequence |
+|---|---|---|
+| **D1** | **`.376` appears NOWHERE in this file** — no block, no release line | one shipped version was invisible to the process entirely |
+| **D2** | **`.412` was never stamped.** Its work shipped inside the `.413` commit (`87674df`); `.413`'s `prevVersion` is `.411` | **a whole desktop-shell ship is live, filed under a block titled "a rack with no devices"** — nobody reading this file would know the desktop composition changed. Its block below is VALID work; only its version number is fiction. Do not look for a `.412` badge |
+| **D3** | **`.377`–`.381` have no blocks** (art/tokens/Tools ships) | five ships in the failed batch never had a checklist to fail |
+
+⛔ **`.377`–`.384` remains the batch whose pass was RUN and FAILED.** `.385` diagnosed that failure —
+the Phase 2 Build workspace had never been built — and the `.385`→`.396` arc answered it. **Whether
+that arc supersedes those eight blocks is your call, not mine.** I have not marked them released.
+
+## WHAT AUTOMATION NOW PROVES — subtracted from your list, not assumed away
+
+`test/e2e`, 9 specs. **phone-webkit: 119 passed / 9 skipped / 0 failed** against `.415`.
+These were device checks in the blocks below and are now machine-checked every run:
+
+- **The whole M2 attachment story the header lists as still-open for `.401`/`.402`** — ten Build
+  entries leave exactly one `#bw-mount` · RackEngine never holds more than one interactive
+  attachment · opening the aisle TRANSFERS the single attachment and Build does not steal it back ·
+  aisle→Build round trip leaves `#bw-mount` intact · no uncaught exception across it.
+- **`.412`'s tier behaviour** — 1024px flips phone→desktop chrome · **the composition follows the
+  VIEWPORT, not a flag read once at boot** · the rip-cord pins phone composition at desktop width.
+- **Zero horizontal overflow** on Command/Build/Tools at every declared breakpoint (Rule 1).
+- **44px floor** on every visible interactive control, and on the bottom nav in both axes.
+- **`.407`/`.408`/`.409` Forge dock** — 20 layout tests incl. toast-above-row and pill baselines.
+- **`.413`/`.414`/`.415` Master truth** — 5-rack window · `0/0` only when genuinely empty · reading
+  the aisle never mutates the stored Master · storage guards and quarantine.
+- **`.374` boot entry** · **`.399` offline PDF import** · OPS wall nine tools one tap from Build.
+
+⚠ **Automation does NOT replace this pass.** Nine tests SKIP because the service worker will not
+install in this webkit, and `env(safe-area-inset-top)` resolves to **0** in the harness. Those are
+precisely the two things only your phone can answer — they are items 1 and 2 below.
+
+---
+
+## THE PASS — 16 checks. Clear the SW cache first.
+
+### A · The two the harness structurally cannot do
+- [ ] **1 · SAFE AREA, on the phone.** Header `API OFFLINE` pill sits **below the notch** and is
+      comfortably tappable; the bottom strip clears the **home indicator**. ⚠ `env(safe-area-inset-top)`
+      is **0** in the harness — it was once 8px INTO the notch and no screenshot could show it.
+      *Releases `.412`-work, `.407`, `.408`.*
+- [ ] **2 · OFFLINE, on the phone.** Airplane mode → relaunch from the home-screen icon → app boots
+      to a usable shell and says it is offline. Save something, return to network, confirm it
+      survived. ⚠ Nine harness tests skip here — the SW never installs in that browser.
+      *Releases `.399`, `.400`, and the offline half of the batch.*
+
+### B · The renderer, on real iOS WebKit (HIGH-risk — this is why the cap exists)
+- [ ] **3 · The rack draws and HOLDS in Build** — leave to Tools and come back, ×10. No blank, no
+      slowdown. *Releases `.390`–`.396`, `.401`.*
+- [ ] **4 · Open Aisle draws and holds; close returns to Build with the rack still there.** Repeat
+      ×10. *Releases `.403`, `.404`, `.405` — confirmed once on `.405`, re-confirm under `.415`.*
+- [ ] **5 · `?legacy=1` — the rack still renders and the app does not crash.** The `.402`
+      observer is redesign-only but the single-context guard applies in BOTH houses; the legacy
+      half has never been checked. *Releases the `.402` legacy half.*
+
+### C · The Master, with YOUR file (fixtures cannot prove this)
+- [ ] **6 · Load your real Master → cab count is what it has always been.** *Releases `.414`, `.415`.*
+- [ ] **7 · Load the SAME Master a second time — nothing changes, nothing is lost.** That is the
+      `.415` replace path end to end. *Releases `.415`.*
+- [ ] **8 · Forge: a populated rack resolves its devices; an unprovisioned S4 cab reads
+      `NO HOST DATA IN MASTER` in CYAN, not red.** *Releases `.413`.*
+
+### D · Surfaces that need eyes, not assertions
+- [ ] **9 · OPS wall at 768 art** — nine tiles, correct art, nothing stretched or mislabelled.
+      *Releases `.377`, `.381`.* ⚠ no block was ever written for these.
+- [ ] **10 · TOOLS card faces, phone** — art-first, legible at arm's length. *Releases `.378`.*
+- [ ] **11 · Ship 6 token slices look right** — no off-channel colour, no flat card.
+      *Releases `.375`-tail, `.376`.* ⚠ `.376` had no block at all.
+- [ ] **12 · The rip-cord has a way back** — `?legacy=1`, then return to the New UI without typing a
+      URL. *Releases `.380`.* (`.379` removed the glowtune dev tool: confirm it is simply gone.)
+- [ ] **13 · Design-system screens** — the five phone screens that took the `.410` lock still read
+      as one system; the `.411` loadout picker opens and picks. *Releases `.409`, `.410`, `.411`.*
+
+### E · Desktop / iPad (the ship nobody knows shipped — see D2)
+- [ ] **14 · iPad LANDSCAPE gets the desktop shell automatically** (left rail + right column), and
+      rotating to portrait stays phone until reload — **expected, not a bug.** *Releases `.412`-work.*
+- [ ] **15 · Command Shell on a laptop** — no stretched phone, no purple gradient anywhere (every
+      action cyan). *Releases `.382`, `.383`, `.384`.*
+
+### F · The honest one
+- [ ] **16 · Nothing says "JS ERROR" during normal use.** Open the aisle, walk it, leave, come back.
+      A healthy session must raise no crash banner. *Releases `.406`.*
+
+**ROLLBACK:** every ship is `git revert <commit>`; the range is `d3f5642..aad8181`. The riskiest
+single revert target is `.401` (`a94bb5f`, RackEngine) — `.405` is the fix that makes it safe, so
+revert `.405` and `.401` together or neither.
+
+**On release, write ONE line here** (e.g. *"pass run 2026-08-XX, `.376`–`.415` RELEASED, cap RESET"*)
+rather than ticking 39 blocks. Then reset the CALL 0 cap to 1 of 6.
 
 ---
 
@@ -1948,6 +2055,30 @@ stays live for the session, the stored one is untouched, escape is `phantom_clea
 Verified against the app's own parser and store: good Master saves (144 hosts) · host-less Master
 refused, stored Master **still 144 hosts, still `GOOD.xlsx`** · host-less on a clean slate still
 **accepted** (a cabled, unprovisioned row is legitimate) · counts survive the round trip.
+
+---
+
+
+## v1.14.415 — SINGLE-MASTER LAW (`aad8181` + `08430a0`) · rollback: revert both, in that order
+
+Owner ruling: PHANTOM may have exactly ONE authoritative Master. Six reachable ways the code could
+disagree with itself, all closed. **No UI surface changed** — this is an invariant ship.
+
+- [ ] Covered by consolidated items **6, 7, 8** — do not verify separately.
+
+**The one that matters:** load your real Master, then load the SAME file again. Nothing should
+change and nothing should be lost. That is the whole replace path.
+
+**What changed:** `PHANTOM_MASTER` is now the only writer of both the live global and the stored
+snapshot, and it **persists FIRST, goes live SECOND** — a candidate that cannot be persisted never
+becomes active. Parsing no longer persists (a parse used to write storage before anything judged the
+candidate). Reconcile stopped reading a second Master. Two caches got identity stamps.
+
+**Correcting my own `.414`:** that ship's overwrite guard refused the write and let the caller go
+live anyway — memory holding one Master, storage another. Described then as "costs nothing
+in-session". It cost the invariant. This ship is the correction.
+
+**Escape unchanged:** `phantom_clearMaster()` in the console.
 
 ---
 
