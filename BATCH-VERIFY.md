@@ -1930,4 +1930,25 @@ Measured at 390 across six status-row states incl. a fully-flagged 48U rack: wor
 
 ---
 
+## v1.14.414 — ingest guards
+
+Found during the `.411` investigation. **None of them caused it** — that was honest data — but they
+are why honest data could not be told apart from lost data quickly. No UI surface changed.
+
+- [ ] **Re-import your CURRENT Master.** It must load and report its real cab count as before.
+- [ ] If a Master ever imports with a sheet that contributed **no rows**, a toast now names that
+      sheet. **That is the guard working, not a new fault.**
+- [ ] Nothing else should look different — this ship has no visual surface.
+
+**What changed:** `sheetsParsed` now means *contributed rows* (new `sheetsEmpty` bucket carries
+present-but-empty) · a host-less Master is **refused** if it would overwrite a populated one — it
+stays live for the session, the stored one is untouched, escape is `phantom_clearMaster()` ·
+`totalHosts`/`totalCables` are persisted so a restored Master can state its own emptiness.
+
+Verified against the app's own parser and store: good Master saves (144 hosts) · host-less Master
+refused, stored Master **still 144 hosts, still `GOOD.xlsx`** · host-less on a clean slate still
+**accepted** (a cabled, unprovisioned row is legitimate) · counts survive the round trip.
+
+---
+
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->

@@ -12849,7 +12849,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.413';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.414';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -31979,9 +31979,57 @@ function _phantom_master_findSheet(wb, name) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 var PHANTOM_MASTER_STORE = {
   KEY: 'phantom_master_v1',
+  // v1.14.414 — ONE COUNTER, USED ON BOTH SHAPES. A fresh parseResult carries stats.totalHosts;
+  // a payload restored from storage does not (that is defect 3 below, fixed in the same ship).
+  // Counting from racksByCab works on both and cannot disagree with itself, which matters
+  // because the overwrite guard compares an incoming Master against a stored one.
+  hostCount: function(m) {
+    try {
+      if (!m || !m.racksByCab) return 0;
+      var n = 0, k = Object.keys(m.racksByCab);
+      for (var i = 0; i < k.length; i++) {
+        var r = m.racksByCab[k[i]];
+        if (r && r.hosts && r.hosts.length) n += r.hosts.length;
+      }
+      return n;
+    } catch (_) { return 0; }
+  },
   save: function(parseResult) {
     try {
       if (!parseResult || !parseResult.racksByCab) return false;
+
+      // ── v1.14.414 — A HOST-LESS MASTER MAY NOT SILENTLY ERASE A POPULATED ONE ──────────────
+      // This key holds ONE generation. There is no history and no automatic backup, so a
+      // mis-exported file — the SITE-HOSTS column drifting one place is enough, and that is
+      // reproducible — overwrote a working Master and the operator learned about it on the
+      // next cold start. save() guarded only on racksByCab EXISTING, which a cable-only parse
+      // satisfies perfectly.
+      //
+      // Refusing to PERSIST costs the operator nothing in this session: the caller assigns
+      // window._lastPhantomMaster regardless, so the newly imported Master is fully live until
+      // the app restarts. What is refused is the destruction of the stored one.
+      // The escape is deliberate and already exists: phantom_clearMaster() then re-import.
+      var incoming = this.hostCount(parseResult);
+      if (incoming === 0) {
+        var prior = null;
+        try { prior = this.load(); } catch (_) { prior = null; }
+        var priorHosts = this.hostCount(prior);
+        if (priorHosts > 0) {
+          console.warn('PHANTOM_MASTER_STORE: refused to overwrite a stored Master carrying '
+            + priorHosts + ' hosts with one carrying 0. The imported Master is live for this '
+            + 'session; the stored one is untouched. To replace it deliberately: '
+            + 'phantom_clearMaster() then re-import.');
+          try {
+            if (typeof phantomToast === 'function') {
+              phantomToast('Imported Master has no hosts — kept your saved Master. New one works this session.', 'warn');
+            }
+            if (typeof haptic === 'function') haptic([40, 30, 40]);
+          } catch (_) {}
+          try { window.__phantomMasterOverwriteRefused = true; } catch (_) {}
+          return false;
+        }
+      }
+
       var payload = {
         schemaVersion: 1,
         savedAt: new Date().toISOString(),
@@ -31998,6 +32046,16 @@ var PHANTOM_MASTER_STORE = {
         // the session that imported the file. Weight is ~18 short strings — negligible
         // against the quota ceiling this handler already guards.
         siteVars: parseResult.siteVars || null,
+        // v1.14.414 — PERSIST THE COUNTS. The parse records totalHosts/totalCables and the
+        // whitelist dropped both, so a RESTORED Master could not state its own emptiness: the
+        // app had no way to tell "this Master genuinely has no hosts" from "the hosts were
+        // lost", which is exactly the ambiguity that turned an honest 0/0 into an investigation.
+        // Additive and optional — load() validates only schemaVersion, so payloads written
+        // before this ship restore fine and simply report unknown counts. Two integers.
+        totalHosts: (parseResult.stats && parseResult.stats.totalHosts != null)
+          ? parseResult.stats.totalHosts : this.hostCount(parseResult),
+        totalCables: (parseResult.stats && parseResult.stats.totalCables != null)
+          ? parseResult.stats.totalCables : null,
         racksByCab: parseResult.racksByCab
       };
       var compressed = LZString.compressToUTF16(JSON.stringify(payload));
@@ -32415,7 +32473,29 @@ async function phantom_parseMaster(arrayBuffer, options) {
         cableSource: cableSource,
         // v1.14.346 — honest accounting: SITE-VARS reports as parsed only when it actually
         // parsed, and stays in sheetsSkipped when this Master doesn't carry it.
-        sheetsParsed:  siteVars ? [cableSource, 'SITE-HOSTS', 'SITE-VARS'] : [cableSource, 'SITE-HOSTS'],
+        // v1.14.414 — "PARSED" NOW MEANS "CONTRIBUTED ROWS", NOT "WAS PRESENT".
+        // This was a STATIC list: SITE-HOSTS appeared in sheetsParsed whether it yielded four
+        // thousand hosts or none. Reproduced end to end — a Master whose SITE-HOSTS column D is
+        // shifted one place parses to 24 cabs / 0 hosts / 24 cables and reports EXACTLY the same
+        // sheetsParsed as the healthy control that yielded 144 hosts. The ingest report told the
+        // operator the host sheet parsed. It did; it matched nothing. A required sheet that reads
+        // as success while contributing zero rows is a silent failure in a required input.
+        //
+        // Three buckets now, because "absent" and "present but empty" are different facts and
+        // only one of them is a problem:
+        //   parsed  — the sheet was found AND produced rows
+        //   empty   — the sheet was found and produced NOTHING (a real ingest signal)
+        //   skipped — the sheet was never read (by design, or absent)
+        // sheetsSkipped keeps its existing meaning so no reader of it breaks.
+        sheetsParsed: [].concat(
+          cables.length ? [cableSource] : [],
+          hosts.length ? ['SITE-HOSTS'] : [],
+          siteVars ? ['SITE-VARS'] : []
+        ),
+        sheetsEmpty: [].concat(
+          cables.length ? [] : [cableSource],
+          hosts.length ? [] : ['SITE-HOSTS']
+        ),
         sheetsSkipped: siteVars
           ? ['OVERHEAD', 'LEGEND-NET', 'LEGEND-GPU', 'LEGEND-CPU', 'SITE-NODE-DATA']
           : ['OVERHEAD', 'LEGEND-NET', 'LEGEND-GPU', 'LEGEND-CPU', 'SITE-NODE-DATA', 'SITE-VARS'],
@@ -32498,6 +32578,22 @@ window.master_loadFromPicker = function master_loadFromPicker(opts) {
                        site.stats.totalCables + ' cables');
           console.log(site.stats);
           console.info('PHANTOM Master: result stashed at window._lastPhantomMaster');
+        } catch (_) {}
+        // v1.14.414 — SAY IT ON GLASS, NOT ONLY IN THE CONSOLE. A required sheet that was read
+        // and contributed nothing is an ingest failure, and until now the ONLY report of it was
+        // a console line — invisible on the iPhone this app is used on. The operator saw an
+        // import that looked entirely successful and found out at the next cold start.
+        // Stated as fact, not as an error: a Master with no hosts is legitimate for a row that
+        // is cabled and not yet provisioned, which is exactly the case that cost a sprint. So
+        // it names WHICH sheet came back empty and leaves the judgement to the person who knows
+        // the site. 'warn' is the attention channel and is correct here: this one needs a human.
+        try {
+          var _empty = (site.stats && site.stats.sheetsEmpty) || [];
+          if (_empty.length && typeof phantomToast === 'function') {
+            phantomToast(_empty.join(' + ') + ' parsed but contributed no rows — '
+              + site.stats.totalCabinets + ' cabs, ' + site.stats.totalHosts + ' hosts', 'warn');
+            if (typeof haptic === 'function') haptic([40, 30, 40]);
+          }
         } catch (_) {}
         window._lastPhantomMaster = site;
         try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
