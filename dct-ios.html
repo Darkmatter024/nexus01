@@ -12849,7 +12849,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.414';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.415';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -32152,8 +32152,11 @@ var PHANTOM_MASTER_STORE = {
 //      anyway, leaving memory=candidate / storage=previous. Shipped by me two days ago and
 //      described as harmless; under this ruling it is the textbook forbidden state.
 //   2. v1.14.406's quota path — identical shape: save() returns false, candidate goes live.
-//   3. :49637 reads PHANTOM_MASTER_STORE.load() ONLY, never the global — so with memory=B and
-//      storage=A that consumer ran on A while Forge ran on B, simultaneously.
+//   3. reconcile_run read PHANTOM_MASTER_STORE.load() ONLY, never the global — so with
+//      memory=B and storage=A it ran on A while Forge ran on B, simultaneously and with equal
+//      confidence. Every Master consumer now reads active() through this contract; the store
+//      is read in exactly two places, both of them here and both about persistence, never
+//      about which Master is current.
 //   4. _slotCache carried no Master identity and never invalidated, so slots computed under
 //      Master A were returned while B was active.
 //   5. _mscopeState.siteRef was a second "active" pointer, consulted BEFORE the global.
@@ -33864,12 +33867,11 @@ function phantom_rackGeometry(slots, totalU, rackLabel) {
 function master_findRack(query) {
   var q = String(query == null ? '' : query).trim().toLowerCase();
   if (!q) return null;
-  // Live hydrated handle first (what every other master reader uses), then the
-  // persisted store as a cold-start fallback. Neither is mutated.
-  var m = window._lastPhantomMaster;
-  if (!(m && m.racksByCab) && typeof PHANTOM_MASTER_STORE !== 'undefined') {
-    try { m = PHANTOM_MASTER_STORE.load(); } catch (e) { m = null; }
-  }
+  // v1.14.415 — the active Master, not mutated. The old two-step (live handle, then the
+  // persisted store as a cold-start fallback) is one accessor now: boot-restore adopts through
+  // PHANTOM_MASTER.adoptRestored, so on a cold start the live handle is ALREADY the stored
+  // Master and the fallback could only ever return a second opinion or the same object twice.
+  var m = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.active() : null;
   var racks = (m && m.racksByCab && typeof m.racksByCab === 'object') ? m.racksByCab : null;
   if (!racks) return null;
   var keys = Object.keys(racks);
@@ -49811,12 +49813,26 @@ async function reconcile_run(force){
   if (_reconcile.running) return { ok:false, reason:'Reconcile already running.' };
   var dep = (typeof deploy_getActive === 'function') ? deploy_getActive() : null;
   if (!dep) return { ok:false, reason:'No active deployment.' };
-  var master = (typeof PHANTOM_MASTER_STORE !== 'undefined') ? PHANTOM_MASTER_STORE.load() : null;
+  // v1.14.415 — SINGLE-MASTER LAW, defect 3. This read used to be
+  // PHANTOM_MASTER_STORE.load() and NOTHING else: the one consumer in the app that consulted
+  // storage without ever looking at the live Master. Every other surface reads the global, so
+  // whenever the two differed, Reconcile ran against a different Master than Build and Forge —
+  // simultaneously, silently, and reporting its answer with equal confidence. The contract now
+  // guarantees the two agree, but this reads the active Master directly so that it stays
+  // correct on its own terms rather than by relying on an invariant enforced elsewhere.
+  var master = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.active() : null;
   var bomDeps = [];
   try { if (typeof bom_dep_listByPhantomDeployment === 'function') bomDeps = await bom_dep_listByPhantomDeployment(dep.id) || []; } catch(_){ bomDeps = []; }
   var have = { master: !!(master && master.racksByCab), bom: bomDeps.length > 0, edp: !!dep.edpParsed };
   var bomRev = bomDeps.map(function(b){ return (b && (b.revisionHash || b.hash || b.id)) || ''; }).join(',');
-  var cacheKey = dep.id + '|' + ((master && master.sourceFileHash) || '') + '|' + (dep.edpHash || '') + '|' + bomRev + '|' + (dep.vendorEdpAttachedAt || '');
+  // v1.14.415 — the Master term of this key was `master.sourceFileHash` with NO stats fallback,
+  // and a freshly parsed Master carries its hash at stats.sourceFileHash (only the persisted
+  // payload writes it top-level). So on a fresh import the term silently degraded to '' and TWO
+  // DIFFERENT MASTERS PRODUCED THE SAME cacheKey — Reconcile served Master A's stored result
+  // under Master B. Same disease as the Forge slot cache, different cache. idOf() is the one
+  // definition of Master identity and absorbs both shapes.
+  var masterId = (typeof PHANTOM_MASTER !== 'undefined') ? (PHANTOM_MASTER.idOf(master) || '') : '';
+  var cacheKey = dep.id + '|' + masterId + '|' + (dep.edpHash || '') + '|' + bomRev + '|' + (dep.vendorEdpAttachedAt || '');
   if (!force){
     var cached = safeGet(RECONCILE_KEY, null);
     if (cached && cached.cacheKey === cacheKey){ _reconcile.last = cached; return { ok:true, cached:true, result: cached }; }
@@ -50076,10 +50092,14 @@ async function preflight_run(force){
   if (_preflight.running) return { ok:false, reason:'Pre-Flight already running.' };
   var dep = (typeof deploy_getActive === 'function') ? deploy_getActive() : null;
   if (!dep) return { ok:false, reason:'No active deployment.' };
-  var master = (typeof window !== 'undefined' && window._lastPhantomMaster) ? window._lastPhantomMaster
-             : ((typeof PHANTOM_MASTER_STORE !== 'undefined') ? PHANTOM_MASTER_STORE.load() : null);
+  // v1.14.415 — the active Master, through the one accessor. The store fallback this used to
+  // carry is gone: under the contract, storage can no longer hold a Master that memory does
+  // not, so consulting it could only ever reintroduce a second opinion.
+  var master = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.active() : null;
   var racks = (dep.edpParsed && Array.isArray(dep.edpParsed.racks)) ? dep.edpParsed.racks : [];
-  var masterHash = (master && (master.sourceFileHash || (master.stats && master.stats.sourceFileHash))) || '';
+  // v1.14.415 — this site's own `sourceFileHash || stats.sourceFileHash` compensation IS the
+  // shape drift the contract was written to absorb; idOf() is now the single definition.
+  var masterHash = (typeof PHANTOM_MASTER !== 'undefined') ? (PHANTOM_MASTER.idOf(master) || '') : '';
   var cacheKey = dep.id + '|' + masterHash + '|' + (dep.edpHash || '');
   if (!force){
     var cached = safeGet(PREFLIGHT_KEY, null);
