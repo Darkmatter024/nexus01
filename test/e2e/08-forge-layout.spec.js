@@ -72,6 +72,46 @@ async function settle(page) {
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 }
 
+/**
+ * Wait until an element's transform has actually STOPPED MOVING.
+ *
+ * settle() is two animation frames (~32ms). It is the right wait for an instant change
+ * — .picker and .search-overlay are display:none -> flex and need nothing more. It is
+ * the WRONG wait for anything transitioned: #forge3d-sheet .detail-panel (:9316) slides
+ * `transform` over .34s, so a probe taken after settle() alone samples it MID-SLIDE.
+ *
+ * That is not hypothetical. It made the overlay-layering test below pass on four
+ * projects and fail on the fifth, with an IDENTICAL app: measured at the assertion, the
+ * panel had 9.4px left to travel on phone-webkit (99% arrived, covers the buttons, green)
+ * and 241.4px on reduced-motion (26% arrived, does not cover, red). reduced-motion has no
+ * competing animations, so its frames pace faster and two rAF land earlier in the slide.
+ * The four greens were frame-timing luck with about 1% of margin, not correctness — at
+ * rest the invariant holds everywhere.
+ *
+ * This is the repo's own v1.14.408 lesson — "a rect measured in the same turn a transition
+ * starts samples MID-FLIGHT; settle per element, before measuring" — which this spec was
+ * written after and did not apply. Condition-based, not a fixed timeout: it polls per frame
+ * until the computed transform is unchanged, so it costs one frame when nothing is moving
+ * and exactly as long as the real transition when something is.
+ */
+async function settleTransform(page, selector) {
+  // Clear any marker from a previous call, or a second call on the same element would
+  // compare against the OLD value, match immediately, and return before the new transition
+  // has even started — reintroducing the very race this exists to close.
+  await page.evaluate((sel) => {
+    const el = document.querySelector(sel);
+    if (el) delete el.__tfPrev;
+  }, selector);
+  await page.waitForFunction((sel) => {
+    const el = document.querySelector(sel);
+    if (!el) return true;                       // absent element is not a moving one
+    const now = getComputedStyle(el).transform;
+    const prev = el.__tfPrev;
+    el.__tfPrev = now;
+    return prev !== undefined && prev === now;  // stable across two consecutive frames
+  }, selector, { timeout: 5000, polling: 'raf' });
+}
+
 // ── Chip markup ──────────────────────────────────────────────────────────────
 // Copied VERBATIM from the app's own emitter, buildChips() at dct-ios.html
 // :20149-20151, including the .active class that updateChips() (:20169) toggles and
@@ -1138,12 +1178,17 @@ test.describe('Forge bottom control stack', () => {
       return true;
     });
     if (hasPanel) {
-      await settle(page);
+      // The panel SLIDES (transform .34s). Probing after settle() alone samples it mid-flight —
+      // see settleTransform(). The invariant under test is about the overlay at REST.
+      await settleTransform(page, '#forge3d-sheet .detail-panel');
       const overPanel = await topmostAtUtils();
       expect(overPanel.grid, `${tag} the grid button is drawn OVER the open detail panel (got ${overPanel.grid})`).not.toBe('loadoutBtn');
       expect(overPanel.search, `${tag} the search button is drawn OVER the open detail panel (got ${overPanel.search})`).not.toBe('searchBtn');
       await page.evaluate(() => document.getElementById('detailPanel').classList.remove('open'));
-      await settle(page);
+      // The close slides too. Step (4) below asserts the buttons come BACK, and it was racing
+      // the same 340ms in the other direction — passing only because a barely-started close
+      // also leaves the probe point uncovered. Wait for the panel to be fully gone.
+      await settleTransform(page, '#forge3d-sheet .detail-panel');
     }
 
     // (4) And they come back. A control permanently buried is the opposite failure.
