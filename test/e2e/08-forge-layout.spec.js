@@ -1084,6 +1084,75 @@ test.describe('Forge bottom control stack', () => {
     testInfo.annotations.push({ type: 'scene-utils', description: `grid ${JSON.stringify(m.lo)} · search ${JSON.stringify(m.se)} · header bottom ${m.hdr.bottom}` });
   });
 
+  test('every overlay covers the scene utilities — they are not a floating hit target', async ({ phantom, page }, testInfo) => {
+    // v1.14.410 — THE REGRESSION THE MOVE INTRODUCED, AND WHY THE NUMBER IS LOAD-BEARING.
+    // #forge3d-hud is position:absolute with z-index:5, so it ESTABLISHES A STACKING CONTEXT
+    // and every z-index inside it — picker 55, search overlay 50, detail panel 40 — is flattened
+    // to 5 at sheet level. The utility cluster lives OUTSIDE that context (the header is
+    // position:relative/z-auto and makes none), so its own z-index competes with the whole HUD.
+    // At 6 it painted OVER an open picker and elementFromPoint RETURNED IT: a tap while choosing
+    // racks fired the loadout button instead. Screenshots caught this; the rect measurements did
+    // not, because nothing moved — only the paint order changed.
+    //
+    // This asserts the OUTCOME, not the number: whatever z-index anyone chooses later, an open
+    // overlay must own the pixels where these buttons are.
+    await phantom.boot();
+    await openAisle(page);
+    await populateDock(page);
+
+    const topmostAtUtils = () => page.evaluate(() => {
+      const su = document.getElementById('sceneUtils');
+      if (!su) return { grid: 'NO CLUSTER', search: 'NO CLUSTER' };
+      const b = su.getBoundingClientRect();
+      const cx = Math.round((b.x + b.right) / 2);
+      const nameAt = (y) => {
+        const e = document.elementFromPoint(cx, y);
+        if (!e) return 'null';
+        // an <svg> child still means the button owns the pixel
+        const owner = e.closest('#loadoutBtn, #searchBtn, #picker, .detail-panel, .search-overlay') || e;
+        return owner.id || (typeof owner.className === 'string' ? owner.className.split(/\s+/)[0] : owner.tagName);
+      };
+      return { grid: nameAt(Math.round(b.y + 22)), search: nameAt(Math.round(b.bottom - 22)) };
+    });
+    const tag = `[${testInfo.project.name}]`;
+
+    // (1) On the bare scene the utilities must be LIVE — the floor case.
+    const onScene = await topmostAtUtils();
+    expect(onScene.grid, `${tag} the grid button is not hit-testable on the open scene (got ${onScene.grid}) — a control that renders but cannot be tapped is a dead control`).toBe('loadoutBtn');
+    expect(onScene.search, `${tag} the search button is not hit-testable on the open scene (got ${onScene.search})`).toBe('searchBtn');
+
+    // (2) With the loadout picker open, the picker owns those pixels.
+    await page.evaluate(() => document.getElementById('picker').classList.add('open'));
+    await settle(page);
+    const overPicker = await topmostAtUtils();
+    expect(overPicker.grid, `${tag} the grid button is drawn OVER the open loadout picker — tapping while choosing racks would fire it (got ${overPicker.grid})`).toBe('picker');
+    expect(overPicker.search, `${tag} the search button is drawn OVER the open loadout picker (got ${overPicker.search})`).toBe('picker');
+    await page.evaluate(() => document.getElementById('picker').classList.remove('open'));
+    await settle(page);
+
+    // (3) Same for the detail panel, which opens while a rack is focused.
+    const hasPanel = await page.evaluate(() => {
+      const dp = document.getElementById('detailPanel');
+      if (!dp) return false;
+      dp.classList.add('open');
+      return true;
+    });
+    if (hasPanel) {
+      await settle(page);
+      const overPanel = await topmostAtUtils();
+      expect(overPanel.grid, `${tag} the grid button is drawn OVER the open detail panel (got ${overPanel.grid})`).not.toBe('loadoutBtn');
+      expect(overPanel.search, `${tag} the search button is drawn OVER the open detail panel (got ${overPanel.search})`).not.toBe('searchBtn');
+      await page.evaluate(() => document.getElementById('detailPanel').classList.remove('open'));
+      await settle(page);
+    }
+
+    // (4) And they come back. A control permanently buried is the opposite failure.
+    const back = await topmostAtUtils();
+    expect(back.grid, `${tag} the grid button never became tappable again after the overlays closed (got ${back.grid})`).toBe('loadoutBtn');
+
+    testInfo.annotations.push({ type: 'utils-layering', description: `scene ${onScene.grid}/${onScene.search} · picker ${overPicker.grid} · restored ${back.grid}` });
+  });
+
   test('the carousel owns row 1 alone, and no chip hides under a control', async ({ phantom, page }, testInfo) => {
     await phantom.boot();
     await openAisle(page);

@@ -1847,4 +1847,28 @@ search fields on Tools · six tile border colours vs the channel law · `OPTICS`
 
 ---
 
+## v1.14.411 — loadout picker, and a `.410` regression that reached production
+
+**The regression was mine.** `.410` moved grid/search into a cluster hanging from the sheet header;
+there they painted **over** the open loadout picker and `elementFromPoint` returned the cluster, so a
+tap in that corner while choosing racks fired the loadout button instead of ticking a rack.
+
+- [ ] **THE ONE THAT MATTERS.** Open the aisle → tap ⊞ to open the loadout picker → **tap the
+      top-right corner where those buttons used to be.** The picker must take it. The loadout
+      button must NOT fire. If it does, stop and report.
+- [ ] Rack IDs in the picker are legible at arm's length, gloved.
+- [ ] Every picker row is comfortable with a gloved finger (they were 43px, one under the floor).
+- [ ] The `n/5` count reads as **information, not a warning** — it was gold.
+
+Cause was a stacking context, not a typo: `#forge3d-hud` is `absolute; z-index:5` and establishes
+one, so the picker's 55, the search overlay's 50 and the detail panel's 40 all flatten to 5 at sheet
+level, while the cluster sat outside that context and competed at 6. Now 4. **Rect measurement said
+the layout was perfect — nothing moved, only paint order changed.** A screenshot caught it; the new
+guard asserts hit-testing rather than geometry.
+
+`.410` context: its phone suite finished **112 passed / 9 skipped / 0 failed** after that ship went
+out, so `.410` is verified as shipped and this is a follow-on, not a rollback.
+
+---
+
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
