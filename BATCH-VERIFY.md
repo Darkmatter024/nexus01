@@ -25,8 +25,9 @@ served bytes 2026-08-08.** Nothing blocks the pass.
 
 ⛔ **RUN THE CONSOLIDATED PASS AT THE TOP OF THIS FILE, NOT THESE BLOCKS.** The debt was **39 ships**
 (`.376`–`.415`, minus `.412` which was never stamped) — the "25"/"29" counts below are stale and
-undercounted. ✅ **`.377`–`.384` RELEASED by owner ruling 2026-08-08** (superseded by the
-`.385`→`.396` arc), leaving **31 open: `.376` and `.385`–`.415`, grouped into 12 checks.** The
+undercounted. ✅ **`.376`–`.384` RELEASED by owner ruling 2026-08-08** (`.377`–`.384` superseded by
+the `.385`→`.396` arc; `.376` released in the same ruling), leaving **30 open: `.385`–`.415`,
+grouped into 11 checks.** The
 automated baseline has already taken the `.401`/`.402` attachment behaviour, tier composition,
 overflow and the 44px floors off that list.
 
@@ -41,18 +42,24 @@ drawing rack does not establish, and the `?legacy=1` half of `.402`.
 
 ---
 
-# ⭐ CONSOLIDATED PASS — `.376` + `.385`→`.415` · RUN THIS, NOT THE BLOCKS BELOW
+# ⭐ CONSOLIDATED PASS — `.385`→`.415` · RUN THIS, NOT THE BLOCKS BELOW
 **Written 2026-08-08 against live `v1.14.415` (`aad8181`). This section supersedes the individual
-blocks for every ship in the range.** Grouped by SURFACE, not by ship: **31 open ships collapse to
-12 checks**, because thirty-one ships touching five surfaces is five surfaces, not thirty-one
-passes. Each item lists the ships it releases. Tick the item, release the ships.
+blocks for every ship in the range.** Grouped by SURFACE, not by ship: **30 open ships collapse to
+11 checks**, because thirty ships touching five surfaces is five surfaces, not thirty passes.
+Each item lists the ships it releases. Tick the item, release the ships.
 
-## ✅ BATCH `.377`–`.384` — RELEASED BY OWNER RULING, 2026-08-08
+## ✅ `.376`–`.384` — RELEASED BY OWNER RULING, 2026-08-08
 
 **"`.377`-`.384` is superseded by the arc, mark it released."** Eight ships closed. The pass that
 was RUN and FAILED on the Build surface is answered by the `.385`→`.396` arc, which found the real
 cause — *the Phase 2 Build workspace had never been built* — and rebuilt it. **CALL 0 cap reset for
 that batch.** Ships released: `.377` `.378` `.379` `.380` `.381` `.382` `.383` `.384`.
+
+**`.376` released in the same ruling** — *"`.376` too, mark it released."* It is the ship that had
+**neither a block nor a release line anywhere in this file**, stranded between the released
+`.371`–`.375` and the batch above. It is now closed by ruling rather than by checklist, which is the
+only way it could have been closed: no checklist for it was ever written. **Nine ships released
+total: `.376`–`.384`.**
 
 📌 **What this release asserts, recorded so it is not read wider than it is.** The ruling supersedes
 the *Build-surface failure* that stopped the pass. Four of those eight are art/Tools ships
@@ -67,17 +74,18 @@ on the right tile. If a wrong tile face turns up later, this is the release that
 
 **The debt was 39 ships, not 29** (`.376`–`.415` inclusive, minus `.412`, which was never stamped;
 every other stamp in that range shipped — the "29" on record counted only to `.405`). **With
-`.377`–`.384` released, 31 remain: `.376`, and `.385`–`.415`.**
+`.376`–`.384` released, 30 remain: `.385`–`.415`, minus the never-stamped `.412`.**
 
 | # | Record defect | Consequence |
 |---|---|---|
 | **D1** | **`.376` appears NOWHERE in this file** — no block, no release line | one shipped version was invisible to the process entirely |
 | **D2** | **`.412` was never stamped.** Its work shipped inside the `.413` commit (`87674df`); `.413`'s `prevVersion` is `.411` | **a whole desktop-shell ship is live, filed under a block titled "a rack with no devices"** — nobody reading this file would know the desktop composition changed. Its block below is VALID work; only its version number is fiction. Do not look for a `.412` badge |
-| **D3** | **`.377`–`.381` had no blocks** (art/tokens/Tools ships) | five ships in the failed batch never had a checklist to fail — **moot as of the release above**, recorded because it is how five ships went un-listed for a month |
+| **D3** | **`.376`–`.381` had no blocks** (art/tokens/Tools ships) | six ships never had a checklist to fail against — **all moot as of the release above**, recorded because it is how six ships went un-listed for a month |
 
-⛔ **`.376` IS THE ONE THAT SURVIVES THE RELEASE.** It sits outside both batches — after the released
-`.371`–`.375` and before the just-released `.377`–`.384` — so no ruling has ever covered it. It is
-item **9** below and it is the only ship here with no block and no release line of its own.
+📌 **All three record defects are now closed by ruling, not by repair.** D1 and D3 were *missing
+checklists*; the release means no checklist will ever be written for them. **D2 is different and
+survives: `.412` is not a missing block, it is a missing STAMP** — its desktop-shell work is live
+inside `.413` and still needs verifying. That is item **10** below.
 
 ## WHAT AUTOMATION NOW PROVES — subtracted from your list, not assumed away
 
@@ -103,10 +111,11 @@ precisely the two things only your phone can answer — they are items 1 and 2 b
 
 ---
 
-## THE PASS — 12 checks. Clear the SW cache first.
-*(Was 16. Four dropped whole with the `.377`–`.384` release: OPS-wall art, TOOLS card faces, the
-rip-cord way-back, and the Command Shell on a laptop. Item 12 keeps the rip-cord's `?legacy=1` leg
-because `.402`'s legacy half is still open and is not part of the released batch.)*
+## THE PASS — 11 checks. Clear the SW cache first.
+*(Was 16. FIVE dropped whole with the `.376`–`.384` release: OPS-wall art, TOOLS card faces, the
+rip-cord way-back, the Command Shell on a laptop, and the Ship 6 token slices. Item 11 keeps the
+rip-cord's `?legacy=1` leg because `.402`'s legacy half is still open and is NOT in the released
+range.)*
 
 ### A · The two the harness structurally cannot do
 - [ ] **1 · SAFE AREA, on the phone.** Header `API OFFLINE` pill sits **below the notch** and is
@@ -135,30 +144,27 @@ because `.402`'s legacy half is still open and is not part of the released batch
       `NO HOST DATA IN MASTER` in CYAN, not red.** *Releases `.413`.*
 
 ### D · Surfaces that need eyes, not assertions
-- [ ] **9 · Ship 6 token slices look right** — no off-channel colour, no flat card.
-      *Releases `.376`.* ⚠ **the only ship here with no block and no release line of its own** — it
-      fell between two batches and no ruling has ever covered it.
-- [ ] **10 · Design-system screens** — the five phone screens that took the `.410` lock still read
+- [ ] **9 · Design-system screens** — the five phone screens that took the `.410` lock still read
       as one system; the `.411` loadout picker opens and picks. *Releases `.409`, `.410`, `.411`.*
 
 ### E · iPad (the ship nobody knows shipped — see D2)
-- [ ] **11 · iPad LANDSCAPE gets the desktop shell automatically** (left rail + right column), and
+- [ ] **10 · iPad LANDSCAPE gets the desktop shell automatically** (left rail + right column), and
       rotating to portrait stays phone until reload — **expected, not a bug.** *Releases `.412`-work.*
       ⚠ The laptop leg of this went with the `.382`–`.384` release; the iPad leg did not, because
       `.412`-work shipped under `.413` and is outside the released batch.
 
 ### F · The honest one
-- [ ] **12 · Nothing says "JS ERROR" during normal use.** Open the aisle, walk it, leave, come back.
+- [ ] **11 · Nothing says "JS ERROR" during normal use.** Open the aisle, walk it, leave, come back.
       A healthy session must raise no crash banner. *Releases `.406`.* (Also covers the `?legacy=1`
       leg of item 5 — pull the rip-cord and confirm the same silence in the other house.)
 
-**ROLLBACK:** every open ship is `git revert <commit>`; the range is `9043c50..aad8181` (`.376`
-onward — `.377`–`.384` are released and out of scope). The riskiest single revert target is `.401`
+**ROLLBACK:** every open ship is `git revert <commit>`; the range is `c261d28^..aad8181` (`.385`
+onward — `.376`–`.384` are released and out of scope). The riskiest single revert target is `.401`
 (`a94bb5f`, RackEngine) — `.405` is the fix that makes it safe, so revert `.405` and `.401`
 together or neither.
 
-**On release, write ONE line here** (e.g. *"pass run 2026-08-XX, `.376` + `.385`–`.415` RELEASED,
-cap RESET"*) rather than ticking 31 blocks. Then reset the CALL 0 cap to 1 of 6.
+**On release, write ONE line here** (e.g. *"pass run 2026-08-XX, `.385`–`.415` RELEASED, cap
+RESET"*) rather than ticking 30 blocks. Then reset the CALL 0 cap to 1 of 6.
 
 ---
 
