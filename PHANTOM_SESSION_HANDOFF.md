@@ -40,8 +40,11 @@ refused, and the caller assigned the candidate live anyway. It was described in 
 
 ### Open, needing an owner ruling
 
-- **SHIFT vs the shipped nav.** Contract A8 says pillar; the nav carries EXIT in slot 4 and
-  `01-nav.spec.js:65` pins its absence. Restoring SHIFT is a product change nobody has scoped.
+- ✅ **SHIFT — CLOSED as an open question, 2026-08-08.** It was already scoped: **R-02** (blueprint
+  §3.4) specifies Command · Build · Scan · Tools · Shift with no EXIT, delivered at **M4**, and
+  **R-02a** (new, this session) rules that hold-to-freeze **moves into Shift** rather than dying
+  with the slot. Gated behind M3 — 3 of Shift's 9 questions have zero data sources today.
+  ⛔ Do not restore the nav slot early; it would be a dead door. Detail in `PHANTOM_CURRENT_STATE.md` D-1.
 - **M2-b step 1b** — blocked on a channel-colour ruling (`TYPE_COLOR` and the flat CSS disagree on
   pdu / storage / server). Step 1 is built and HELD unpushed on branch `m2b-step1-hold`.
 - `.391`'s two remaining disclosures: the rack-preview control rail wraps 4-then-1 and carries

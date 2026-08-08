@@ -47,13 +47,34 @@ the pass survives — is the service worker (will not install in that webkit, 9 
 
 | # | Defect | Status |
 |---|---|---|
-| D-1 | **SHIFT is a pillar (Contract A8) but the nav carries EXIT in slot 4.** `01-nav.spec.js:65` pins the absence — **that test pins a KNOWN GAP, not a spec.** Revisit it when SHIFT lands | **Needs an owner-scoped product change** |
+| D-1 | **SHIFT is a pillar (Contract A8) but the nav does not carry it.** ✅ **SCOPED, NOT UNANSWERED — the resolution is owner ruling R-02 + R-02a, delivered at M4.** See below | **Scheduled (M4), not open** |
 | D-2 | **`.412` was never stamped.** Its desktop-shell work (auto-desktop at ≥1024, notch pill, type sizes) shipped inside `.413`, so a live ship is filed under another ship's title | Live, unverified — pass item 10 |
 | D-3 | M2-b step 1b blocked: `TYPE_COLOR` and the flat CSS disagree on **pdu** (gold/green), **storage** (pink/gold), **server** (light-blue/slate). Owner ruled patch/media/unknown stay GREY for now | Blocked on ruling |
 | D-4 | Rack-preview control rail wraps 4-then-1 and carries REAR + EXPLODE, which the approved reference does not show | Disclosed `.391`, unruled |
 | D-5 | Build metrics layout has never been seen against a populated rack | Disclosed `.391`, unruled |
 | D-6 | `handoffDraft` truthiness bug at the `phantom_handoff_v1` read | Deferred to M4 with Shift |
 | D-7 | Two RESERVED `.askrow` slots unnamed · `#ff8a00` AUDITS accent off-token · 2 icon assets with 0 refs · inert `.164 body.rd .ask` rule | Cosmetic residue |
+
+### D-1 in full — SHIFT is scheduled, not unanswered
+
+Scoped 2026-08-08 against the approved blueprint. **The nav is two pillars short, not one:** R-02 specifies
+**Command · Build · Scan · Tools · Shift**, and *both* `Scan` and `Shift` have zero nav references today.
+**`EXIT` is removed** — but per **R-02a**, hold-to-freeze **moves into Shift**; the slot goes, the feature does not.
+
+**SHIFT is undoored, not unbuilt** — 12 `shift_*` functions, a sheet, a hero, a report generator, and
+`phantom_shift_end` already hardened through `safeStore` at `.406`. It renders today as one pill on Command.
+
+**Why it cannot be pulled forward: 6 of Shift's 9 questions have sources, 3 have nothing** —
+the `Store` write journal (§6.1), the derived readiness gate list, and `PhantomIntelligence.queue` (§7.5)
+all measure **0 references** in the live file, and two of the three are **M3 deliverables.** Shift cannot
+answer its own questions before M3 exists, which is why the blueprint puts it at M4. Current milestone is
+M2, and the standing directive stops broad UI work until M2 passes on hardware.
+
+**Geometry was never the constraint:** 390px − 12px padding ÷ 5 = **75.6px per slot** against a 44px floor.
+
+⛔ **Do not "restore the nav slot" as a quick win.** A pillar door onto a modal that cannot answer 3 of its
+9 questions is a dead door under Contract 14, and all of it would be rebuilt at M4.
+`01-nav.spec.js:65` pins the **pre-M4** nav deliberately — it is a checkpoint, not a specification.
 
 ## 5 · Locks in force
 

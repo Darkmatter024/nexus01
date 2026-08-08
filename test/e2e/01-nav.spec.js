@@ -62,7 +62,21 @@ function modeClasses(page) {
 }
 
 test.describe('bottom nav — structure', () => {
-  test('the nav is exactly three slots plus EXIT — no Scan, no Shift', async ({ phantom, page }) => {
+  // ── PINS THE PRE-M4 NAV. THIS IS A CHECKPOINT, NOT A SPECIFICATION. ──────────────
+  // The shipped nav is three slots plus EXIT. The APPROVED nav is five slots and no
+  // EXIT: Command · Build · Scan · Tools · Shift (owner ruling R-02, blueprint §3.4),
+  // delivered at M4. So this test is currently green against a state the product has
+  // already ruled against — it exists to catch DRIFT before M4, not to defend 3+EXIT.
+  //
+  // It is deliberately NOT a test.fail(): the current nav is correct FOR NOW, and
+  // marking it as a defect would make the baseline lie in the other direction.
+  //
+  // WHEN M4 LANDS this test must be rewritten, not deleted — to five slots, no EXIT,
+  // and with hold-to-freeze re-homed inside Shift rather than removed (R-02a).
+  // Scan and Shift are BOTH absent today; the nav is two pillars short, not one.
+  // Full reasoning: PHANTOM_CURRENT_STATE.md, defect D-1.
+  // ────────────────────────────────────────────────────────────────────────────────
+  test('the nav pins the pre-M4 shape: three slots plus EXIT (R-02 replaces this at M4)', async ({ phantom, page }) => {
     await phantom.boot();
 
     const census = await page.evaluate(() => ({

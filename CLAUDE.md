@@ -30,9 +30,12 @@ behavioral-rule test. Changing one requires an owner ruling.
    everything else is scenery. One live WebGL attachment, ever (spec I1).
 7. **Build is the operational center.** The shift runs from Build; Command is situational
    awareness, Tools is reference.
-8. **SHIFT is a primary product pillar.** ⚠ Owner ruling 2026-08-08: SHIFT stays a pillar. The
-   shipped nav currently carries EXIT in the 4th slot and `01-nav.spec.js:65` pins that absence —
-   **that test now pins a KNOWN GAP, not a specification.** See `PHANTOM_CURRENT_STATE.md` §defects.
+8. **SHIFT is a primary product pillar.** Primary nav is **Command · Build · Scan · Tools · Shift**
+   and `EXIT` does not occupy a pillar slot (**R-02**, blueprint §3.4). Removing that slot removes
+   the slot, **not the feature** — hold-to-freeze re-homes into Shift (**R-02a**, §3.4a).
+   **Delivered at M4, gated behind M3** — 3 of Shift's 9 questions have no data source yet.
+   The shipped nav is 3 slots + EXIT; `01-nav.spec.js` pins that as a **pre-M4 checkpoint, not a
+   specification.** ⛔ Do not restore the slot early — see `PHANTOM_CURRENT_STATE.md` D-1.
 9. **Offline-first, not offline-only.** Full function with no network; the network is an
    enhancement, never a precondition.
 

@@ -146,6 +146,19 @@ Shift is not a consolidation of the four existing half-surfaces (`:22092`, `:133
 
 **Absorbed surfaces:** Handoff (8 doors → inside Shift), shift notes, the desktop-only shift report `:22092`, and blockers-as-a-view (the store stays where it is — Shift reads, it does not become a second writer).
 
+⚠ **Count re-measured 2026-08-08: Handoff is 14 `handoff_*` functions, not 8** (`close · exportHTML · gen · generate · launch · listDeployments · loadAll · loadForDeployment · log · pickDeployment · purge · quick · render · renderDeployPicker`). The absorption is larger than this section estimated. Note `handoff_gen` **and** `handoff_generate` both exist — resolve which is canonical before absorbing, or the merge carries a duplicate door through the one-door rule.
+
+### 3.4a Hold-to-freeze re-homes into Shift (OWNER RULING R-02a, 2026-08-08)
+
+R-02 removes `EXIT` from primary navigation because leaving the app is a browser behaviour. **That removes the slot, not the feature.** The control being removed does not actually exit — it calls `rd_freeze`, which raises `#rd-freeze-curtain`, a full-screen hold-to-wake lock whose own copy reads **"shift state saved · nothing lost."**
+
+That is a shift-boundary action. A tech freezes the app when they step away or hand off, which is precisely Shift's moment. **`rd_freeze` / `rd_wake` / `#rd-freeze-curtain` / `rd_freezeBootRestore` move into Shift as an action; none of them is deleted with the slot.**
+
+Two things for whoever lands this:
+
+- **The freeze is a real safety affordance, not chrome.** Deleting the nav item without re-homing it would silently remove a working feature — the exact "silent success" failure class, arriving through a layout change.
+- **`rd_freezeBootRestore` means the freeze has boot-time state.** Re-homing the trigger is not enough; the restore path has to keep working from whatever surface now owns it, or a device that was frozen at shutdown wakes into the wrong place.
+
 ---
 
 ## §4 — State architecture
@@ -815,11 +828,13 @@ Standing checks, run at every milestone, derived from bugs that already shipped 
 | D-14 | `sourceHash` on every cache entry | Without it, "has the source changed?" is unanswerable and stale AI output reads as fact (§7.6) |
 | D-15 | Shift readiness is a gate list with a met/total count, never a percentage | R-03's *do not fabricate a score*, and the standing never-label-absent-telemetry rule (§3.4) |
 | D-16 | `Store` gains a write journal | The only honest source for Shift's "what changed locally?" — diffing would be guesswork (§6.1) |
+| D-17 | **Hold-to-freeze survives the EXIT slot and moves INTO Shift** (owner ruling 2026-08-08) | R-02 removes `EXIT` from primary nav as a browser behaviour, but the control it removes does not *leave* — it raises the freeze curtain, whose own copy reads **"shift state saved · nothing lost."** That is a shift-boundary action, not a browser action. Deleting the slot without re-homing `rd_freeze` would delete a real safety affordance by accident (§3.4a) |
 
 ### 14.2 Standing owner rulings, incorporated
 
 - **R-01** — `.cshell` default above 851px, with all seven binding constraints (§10.4)
 - **R-02** — **SHIFT is a real PHANTOM pillar.** Primary nav is Command · Build · Scan · Tools · Shift. `EXIT` must not occupy a primary slot. Handoff, shift notes, blockers, work completed/pending, evidence, synchronization state and report generation consolidate into one coherent Shift experience answering nine questions. **Readiness derives from real local gates; no fabricated score.** (§3.4, Stage 6)
+- **R-02a — HOLD-TO-FREEZE MOVES INTO SHIFT** (owner ruling 2026-08-08, closing the one question R-02 left open). Removing `EXIT` from primary nav removes the **slot**, not the **feature**. `rd_freeze` / `rd_wake` / `#rd-freeze-curtain` are re-homed as a Shift action — ending a shift is exactly when a tech freezes the app, and the curtain already says *"shift state saved · nothing lost."* **The freeze must not be deleted alongside the slot.** See §3.4a.
 - **R-03** — **PHANTOM is offline-first, not offline-only.** All AI capabilities retained and treated as first-class. Core law: *no essential field workflow may become unusable because the proxy, connection or external service is unavailable.* Six honest capability states; a local/manual path per capability; a persisted, user-released queue; cached results with provenance; one canonical `PhantomIntelligence` boundary with the provider replaceable behind it. The Anthropic proxy is an approved external dependency. (§7, Stage 4)
 - **R-06 — PHYSICAL RACK TOPOLOGY EXISTS INDEPENDENTLY OF MASTER CONTENT.** (2026-08-06, from the `s3:172` field report.) PHANTOM must separate **physical rack topology** from **Master-provided rack contents**. Topology defines which cabinets exist and where they appear; the Master *enriches* them with devices, assignments, cabling and metadata. **The Master must not determine whether a physical cabinet exists.** A zero-component rack is a **valid rack state, not a missing-rack state.** Required rendering, per cabinet: full data → cabinet + all known devices · partial → cabinet + devices + honest missing-data states · no Master devices → **a complete empty 48U cabinet shell** · cabling-only → shell plus available cabling/assignment metadata · unknown assignment → shell marked unassigned/unknown, **never absent**. If the front rendering represents five cabinet positions, **all five always render.** Required data architecture: resolve the row topology and expected positions → create one canonical rack shell per expected position → merge Master records into the matching shell → **leave unmatched shells present as empty racks** → preserve stable IDs and ordering → render the row from that canonical topology. **Never build the row list by filtering to populated Master records.** Lands with `_resolve` at M2-b (RACKENGINE-SPEC §7/§7.1/§9).
 - **RACK SCENE LOCK** — camera OPEN; materials, §A light rig, fog, tone mapping, tray geometry, type colours, bezel strips, floor, reflection, boot LOCKED. No stage touches these.
