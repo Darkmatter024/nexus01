@@ -1,6 +1,7 @@
 # PHANTOM — Design System (LOCKED)
 
-> **Status:** proposed 2026-08-07, awaiting owner ruling on §0.
+> **Status:** **APPROVED by the owner 2026-08-07** — all six rulings in §0 carried. The tokens
+> landed in `dct-ios.html` at `v1.14.410`; screens consume them in the Step-2 order (§11).
 > **Authority:** once approved, these are *the* values. Screens consume them; screens do not
 > redefine them. A screen that needs a value not in this file needs a ruling, not a local token.
 >
@@ -172,11 +173,16 @@ a weight and a tracking token — size alone is not hierarchy.
 **Numerals** (rack IDs, U positions, counts) always run `--hud-track-data` (0.3px) — data is read,
 not scanned.
 
-⚠ **The fluid overrides conflict.** A second `:root` re-declares `--fs-micro/caption/body` as
-`clamp()` values. Two declarations of one token is the "which one wins" trap. **Resolution: the
-`clamp()` block is the winner and the fixed-px block is removed**, so one declaration survives per
-token — but the clamps must be re-authored against this table, since `--fs-body` currently clamps
-up to 14px and would collide with `--fs-subhead`.
+⚠ **CORRECTION to the audit as first written.** I reported the second `:root` re-declaring
+`--fs-micro/caption/body` as `clamp()` values as a cascade conflict. **It is not.** That block sits
+inside `@media (min-width: 1024px)` (`:10223`), so it is a deliberate *tier override*: the phone
+gets the fixed steps, laptop and up get the fluid ones. The mechanism is correct and nothing needs
+removing.
+
+The real defect it hides is narrower: **at ≥1024px `--fs-body` clamps up to 14px, which collides
+exactly with `--fs-subhead` (14px, unchanged at every tier)**, so two adjacent steps of the ladder
+become the same size on laptop and desktop. Fix belongs to Step 3 (responsive translation), not to
+the phone pass.
 
 ---
 
@@ -340,9 +346,21 @@ Per screen, in the Step-2 order (Command → Build → Forge → Tools → Shift
 
 | Screen | Status |
 |---|---|
-| Command | not started |
-| Build | not started |
-| Forge | dock landed `v1.14.409`; screen not started |
-| Tools | not started |
-| Shift | not started |
+| Command | **pass done** `v1.14.410` — offline state, header truncation, display tier, dropzone tightened + centred |
+| Build | **pass done** `v1.14.410` — cyan→violet gradient retired, zero-state typography, screen title |
+| Forge | **pass done** `v1.14.410` — HUD onto the scale, sheet close to 44px, **permanent control placement ruling** |
+| Tools | **pass done** `v1.14.410` — search input to the floor, tile type + radius, all scoped to `#ref-grid` |
+| Shift | **pass done** `v1.14.410` — close button was 260.5×30, title wrap, type + radius onto the scale |
 | Tablet / laptop / desktop | blocked on phone freeze |
+
+### Carried, with the ruling that owns each
+
+| Item | Owner ruling |
+|---|---|
+| Tools shows **two stacked search fields** (global + grid filter) | open — structural, not spacing |
+| Tool tiles run **six border colours** vs the §5 channel law | open — is the tool palette a carve-out, or does it collapse to cyan? |
+| `OPTICS` subtitle truncates to `Fiber · Form factors · …` | open |
+| Forge id pill drops `· FOCUS` | ruled: the 10px floor wins over fitting more words |
+| `EXIT` is red in the nav; red means fault | deferred with the SHIFT pillar — navigation is frozen |
+| Four cyan→violet gradients + two sub-44px buttons in `body.rd.cshell` | Step 3 |
+| `--fs-body` collides with `--fs-subhead` at ≥1024px | Step 3 |

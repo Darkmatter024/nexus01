@@ -111,6 +111,44 @@
   --badge-radius: 6px;
   --btn-radius:   6px;
 
+  /* ━━━ v1.14.410 DESIGN SYSTEM LOCK — owner-approved 2026-08-07 ━━━
+     Source of truth: PHANTOM_DESIGN_SYSTEM.md. Rulings R-A/R-B/R-D/R-F land here as
+     DECLARATIONS ONLY. Per R-E the 1116 existing literal padding/margin/gap declarations are
+     deliberately NOT mass-refactored — high blast radius in a 55k-line single file, zero visible
+     improvement. Each screen consumes the scale as that screen is finished (Command → Build →
+     Forge → Tools → Shift), so blast radius stays at one surface at a time. */
+
+  /* R-A · SPACING — one 4px scale. Every gap/pad/margin resolves to a step. */
+  --sp-1: 4px;    /* icon↔label, inside a chip        */
+  --sp-2: 8px;    /* between siblings in a row        */
+  --sp-3: 12px;   /* inside a card                    */
+  --sp-4: 16px;   /* between cards                    */
+  --sp-5: 20px;   /* screen gutter (phone)            */
+  --sp-6: 24px;   /* between sections                 */
+  --sp-8: 32px;   /* between major regions            */
+
+  /* R-B · RADIUS — 25 distinct literals collapse to 5. Radius encodes WHAT a thing is.
+     The three tokens above are kept as aliases so no existing consumer moves. */
+  --r-data:  2px;    /* data cells, elevation faces, hairline surfaces */
+  --r-ctl:   6px;    /* buttons, inputs, small controls                */
+  --r-card: 12px;    /* cards, panels, tiles                           */
+  --r-sheet:20px;    /* bottom sheets, modals, Build workspace         */
+  --r-pill: 999px;   /* chips, tabs, status pills                      */
+
+  /* R-D · The 3D surfaces run a HOTTER cyan/gold than the app chrome. That was already true —
+     #forge3d-sheet and the entry screen both re-declared --cyan/--gold locally, which made
+     "cyan" mean two different colours with nothing saying so. Naming it is the whole fix: the
+     scoped blocks now point at these, so the variant is deliberate and greppable. No value moves. */
+  --cyan-scene: #28e0ff;
+  --gold-scene: #ffcb45;
+
+  /* R-F · DISPLAY FACE. --orb/--raj resolve to the system stack (376 uses), which DESIGN_RULES §1
+     bans as a display face. PhantomBrand (Audiowide) is already inlined at :37 for the wordmark,
+     so the top of the type ladder costs ZERO new bytes and carries zero offline risk.
+     Display tier ONLY — hero and head. Body, caption, micro and all data stay on the system
+     stack and --mono, where legibility at 10-12px under aisle lighting beats character. */
+  --ff-display: 'PhantomBrand', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+
   /* P1.3 FIX: System font stacks — zero network, full offline. iOS-optimized.
      --raj  → SF Pro Text (labels, readable UI)
      --orb  → SF Pro Display (headings, brand — letter-spacing + weight carry the brutalist character)
@@ -3835,6 +3873,11 @@ body.rd #fs-fiber > .card:nth-child(7) .ico-tile { --optic: url("icons/phantom-o
 .hdr-agg-pill[data-state="warn"]     { color: #ffd60a;      border-color: rgba(255,214,10,0.5); }
 .hdr-agg-pill[data-state="critical"] { color: #ff3b3b;      border-color: rgba(255,59,59,0.6); }
 .hdr-agg-pill[data-state="checking"] { color: var(--slate); border-color: rgba(138,175,191,0.25); }
+/* v1.14.410 — OFFLINE: the design-system offline treatment (cyan, quiet, content stays live).
+   Deliberately dimmer than [data-state="ok"]: offline is normal, but it is not the healthy
+   nominal state either, so it reads as a fact rather than either an alarm or an all-clear. */
+.hdr-agg-pill[data-state="offline"]  { color: var(--cyan);  border-color: rgba(92,242,255,0.22);
+                                       background: rgba(92,242,255,0.03); }
 
 /* EKG vitals glyph — always shows the SYS label; the heartbeat trace sweeps
    left->right and beats faster as health degrades. Quiet cyan when ok, gold
@@ -8745,7 +8788,7 @@ body.rd #pg-ref:not(.rf-grid) #ref-back { display: flex; }
    recovery. rd-only, idle-dark (no glow; #srch untouched). The bar lives inside #ref-grid so it shows on
    the landing ONLY (grid is display:none on drill-in); z-index:5 < nav 40 and NO transform → FIX-2-safe. ── */
 body.rd #ref-grid .rf-search-bar { position: sticky; top: 0; z-index: 5; background: #0a0c10; padding: 12px 16px 10px; }
-body.rd #ref-grid .rf-search-input { width: 100%; box-sizing: border-box; height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(120,150,175,.22); background: #06080b; color: var(--white, #e8eef4); font: 13px var(--mono, ui-monospace, monospace); letter-spacing: .3px; -webkit-appearance: none; appearance: none; }
+body.rd #ref-grid .rf-search-input { width: 100%; box-sizing: border-box; height: var(--tap-m); padding: 0 var(--sp-3); border-radius: var(--r-ctl); border: 1px solid rgba(120,150,175,.22); background: #06080b; color: var(--white, #e8eef4); font: var(--fs-body) var(--mono, ui-monospace, monospace); letter-spacing: var(--hud-track-data); -webkit-appearance: none; appearance: none; }
 body.rd #ref-grid .rf-search-input:focus { outline: none; border-color: color-mix(in srgb, var(--cyan) 40%, transparent); }
 body.rd #ref-grid .rf-search-input::placeholder { color: rgba(140,165,185,.55); }
 body.rd #ref-grid .rf-card.rf-hidden { display: none !important; }
@@ -8787,8 +8830,15 @@ body.rd #ref-grid .rf-card.rf-art { aspect-ratio:1/1; padding:0; justify-content
   background-image:linear-gradient(to top, rgba(4,6,10,.85) 0%, rgba(4,6,10,0) 42%), var(--rfimg);
   background-size:100% 100%, cover; background-position:center, center; background-repeat:no-repeat, no-repeat; }
 body.rd #ref-grid .rf-card.rf-art .rf-cic { display:none; }
-body.rd #ref-grid .rf-card.rf-art .rf-cname { font-size:12.5px; letter-spacing:.12em; text-align:left; align-self:flex-start; padding:0 10px; }
-body.rd #ref-grid .rf-card.rf-art .rf-cmeta { font-size:9.5px; text-align:left; align-self:flex-start; padding:0 10px 10px; max-width:100%; box-sizing:border-box; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+body.rd #ref-grid .rf-card.rf-art .rf-cname { font-family:var(--ff-display); font-size:var(--fs-body); letter-spacing:var(--hud-track-mid); text-align:left; align-self:flex-start; padding:0 var(--sp-3); }
+body.rd #ref-grid .rf-card.rf-art .rf-cmeta { font-size:var(--fs-micro); letter-spacing:var(--hud-track-data); text-align:left; align-self:flex-start; padding:0 var(--sp-3) var(--sp-3); max-width:100%; box-sizing:border-box; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* v1.14.410 DESIGN SYSTEM  Tools. Scoped to #ref-grid ON PURPOSE: .rf-card and .rf-glabel are
+   UNSCOPED shared rules that also dress #work-grid and .deploy-tools-grid, and .rf-card is not
+   body.rd-gated at all, so editing them in place would reach outside this screen and could move
+   ?legacy=1. Rule 7 protects the invariant; per R-E each screen takes the scale as it is
+   finished. 16px was on no radius step. */
+body.rd #ref-grid .rf-card { border-radius: var(--r-card); }
+body.rd #ref-grid .rf-glabel { font-family: var(--ff-display); font-size: var(--fs-caption); letter-spacing: var(--hud-track-wide); }
 /* v1.14.157 — responsive card grids + centered nav. Phone (<640) unchanged (2-col). */
 @media (min-width: 640px) {
   body.rd #work-grid, body.rd #ref-grid { max-width: 760px; margin-inline: auto; }
@@ -9051,7 +9101,10 @@ body.rd #forge3d-sheet.open { display: flex; }
    --gold/--ink/--dim were UNDEFINED inside the Forge sheet from .233 onward, so every
    token-colored HUD element silently fell back to inherited/global values. Do not
    reintroduce a star-slash sequence inside a CSS comment. */
-#forge3d-sheet{--fbg:#04060a;--cyan:#28e0ff;--vio:#8a4bff;--teal:#1fffd0;--gold:#ffcb45;--ink:#c9d6e2;--dim:#5a6b7d}
+/* R-D (v1.14.410): the hot values are now NAMED in :root as --cyan-scene/--gold-scene and merely
+   consumed here. Same colours, same cascade, but "cyan means two things" is stated instead of
+   hidden. Every var(--cyan) inside this scope keeps resolving exactly as it did. */
+#forge3d-sheet{--fbg:#04060a;--cyan:var(--cyan-scene);--vio:#8a4bff;--teal:#1fffd0;--gold:var(--gold-scene);--ink:#c9d6e2;--dim:#5a6b7d}
 /* v1.14.407 — BOTTOM STACK GEOMETRY, DECLARED ONCE.
    The control row's height used to be an accident: .hudbtn declared no height and took
    whatever align-items:stretch handed it from a sibling's content, which is why both
@@ -9082,6 +9135,7 @@ body.rd #forge3d-sheet.open { display: flex; }
                      v1.14.408 because it stopped being one element's cosmetic margin and became
                      a shared term the moment .toast joined .hint in that slot: two elements
                      restating the same 10px is how the next 92px gets born. */
+#forge3d-sheet .rd-sheet-hdr{position:relative}
 #forge3d-sheet{--forge-tap:var(--tap-s,44px);--forge-glow:14px;
   --forge-gutter:calc(var(--forge-glow) / 2);
   --forge-row-h:calc(var(--forge-tap) + var(--forge-gutter) * 2);
@@ -9130,12 +9184,19 @@ body.rd #forge3d-sheet.open { display: flex; }
    ⛔ NOT CONTROLS. No handler, no role, no tabindex, no cursor:pointer. They are read-outs, and
    they are exempt from the 44px gloved floor that governs row 1 ONLY because they never look
    tappable — a thing that invites a gloved tap and does nothing is a silent failure. */
-#forge3d-sheet .statrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;pointer-events:none}
+/* v1.14.410  the pills must share ONE baseline at 390 with the strings the app actually
+   writes (setFocus appends ' � FOCUS', :20105  a .409 probe injected a shorter label and hid
+   that they no longer fit). nowrap makes the constraint explicit instead of silently stacking. */
+#forge3d-sheet .statrow{display:flex;flex-wrap:nowrap;align-items:center;gap:var(--sp-1);pointer-events:none}
 #forge3d-sheet .statpill{display:inline-flex;align-items:center;gap:7px;min-width:0;
   pointer-events:none;-webkit-user-select:none;user-select:none;
-  background:rgba(8,14,22,.55);border:1px solid rgba(60,80,100,.35);border-radius:10px;
-  padding:5px 10px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  font-size:10px;letter-spacing:.14em;line-height:1.4;color:var(--dim)}
+  background:rgba(8,14,22,.55);border:1px solid rgba(60,80,100,.35);border-radius:var(--r-pill);
+  padding:5px var(--sp-2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);line-height:1.4;color:var(--dim);
+  white-space:nowrap;flex:0 0 auto}
+/* the rack id is DATA  it takes the data tracking step, which is both correct and the width
+   this row needs. */
+#forge3d-sheet .statpill.st-id{letter-spacing:var(--hud-track-data)}
 /* The walk pill LEAVES the row in the zero state rather than being dimmed — with no racks there
    is nothing to walk. `hidden` alone cannot do that: the UA's own [hidden] display:none rule loses
    to the author display:inline-flex above, so the author rule is stated here. */
@@ -9179,15 +9240,15 @@ body.rd #forge3d-sheet.open { display: flex; }
    suppresses two lines down, and 2px of a 14px blur is not clearance, it is a sliver. */
 #forge3d-sheet .chips{display:flex;gap:6px;flex:1;min-width:0;align-self:stretch;
   overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-x;
-  scrollbar-width:none;padding:var(--forge-gutter) 0}
+  scrollbar-width:none;padding:var(--forge-gutter) 0;scroll-padding-inline:var(--sp-3)}
 #forge3d-sheet .chips::-webkit-scrollbar{display:none}
-#forge3d-sheet .chip{flex:0 0 auto;width:76px;min-height:var(--forge-tap);
+#forge3d-sheet .chip{flex:0 0 auto;min-width:76px;width:auto;min-height:var(--forge-tap);
   display:flex;flex-direction:column;justify-content:center;
   background:rgba(8,14,22,.55);border:1px solid rgba(60,80,100,.35);
-  border-radius:10px;padding:7px 6px 6px;text-align:center;cursor:pointer;
+  border-radius:var(--r-card);padding:7px var(--sp-2) 6px;text-align:center;cursor:pointer;
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:border-color .25s,box-shadow .25s}
 #forge3d-sheet .chip.active{border-color:rgba(40,224,255,.55);box-shadow:0 0 var(--forge-glow) rgba(40,224,255,.18)}
-#forge3d-sheet .chip .cid{font-family:'Orbitron','Chakra Petch',sans-serif;font-size:8.5px;letter-spacing:.08em;color:#8fa6ba}
+#forge3d-sheet .chip .cid{font-family:var(--ff-display);font-size:var(--fs-micro);letter-spacing:var(--hud-track-data);color:#8fa6ba;white-space:nowrap}
 #forge3d-sheet .chip.active .cid{color:var(--cyan)}
 #forge3d-sheet .chip .bar{height:3px;border-radius:2px;background:#141c26;margin-top:5px;overflow:hidden}
 #forge3d-sheet .chip .bar i{display:block;height:100%;border-radius:2px;background:#5a6b7d;transition:width .4s}
@@ -9195,12 +9256,23 @@ body.rd #forge3d-sheet.open { display: flex; }
 /* height is DECLARED, not stretched off .chips. This is the empty-state collapse: with no
    Master the pill strip has no content, so align-items:stretch gave both buttons the line box
    of their glyph — 46x24.5 measured — and 46x35 once chips existed. Neither cleared 44. */
-#forge3d-sheet .hudbtn{flex:0 0 auto;width:46px;height:var(--forge-tap);border-radius:10px;cursor:pointer;
+#forge3d-sheet .hudbtn{flex:0 0 auto;width:46px;height:var(--forge-tap);border-radius:var(--r-card);cursor:pointer;
   background:rgba(8,14,22,.7);border:1px solid rgba(40,224,255,.3);
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   display:flex;align-items:center;justify-content:center;color:var(--cyan);font-size:17px}
 #forge3d-sheet .hudbtn svg{width:18px;height:18px;stroke:var(--cyan);fill:none;stroke-width:2}
+/* v1.14.410  .gold retired from the grid button per the owner ruling: amber is reserved for
+   warning/attention and a view toggle is neither. The rule itself stays for any control that
+   genuinely needs the attention channel. */
 #forge3d-sheet .hudbtn.gold{border-color:rgba(255,203,69,.4);color:var(--gold)}
+/* SCENE UTILITY CLUSTER  hangs from the header bottom (top:100%), so its clearance is derived
+   rather than constant. Same dimensions, material, radius and 44px floor as before; only the
+   home changed. Quiet at rest on the chips ring, cyan on press. */
+#forge3d-sheet .scene-utils{position:absolute;top:100%;right:var(--forge-pad-x);
+  margin-top:var(--forge-gap);display:flex;flex-direction:column;gap:var(--forge-gap);
+  pointer-events:auto;z-index:6}
+#forge3d-sheet .hudbtn{border-color:rgba(60,80,100,.45)}
+#forge3d-sheet .hudbtn:active{border-color:rgba(40,224,255,.55);background:rgba(40,224,255,.10)}
 #forge3d-sheet .hudbtn.dim{border-color:rgba(90,107,125,.4);color:var(--dim)}
 #forge3d-sheet .detail-panel{position:fixed;inset:0;z-index:40;pointer-events:auto;
   background:rgba(4,6,10,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
@@ -9209,7 +9281,7 @@ body.rd #forge3d-sheet.open { display: flex; }
 #forge3d-sheet .detail-panel.open{transform:translateY(0)}
 #forge3d-sheet .detail-header{display:flex;justify-content:space-between;align-items:center;
   padding:16px 20px 12px;border-bottom:1px solid rgba(40,224,255,.1);flex-shrink:0}
-#forge3d-sheet .detail-title{font-family:'Orbitron',sans-serif;font-size:16px;letter-spacing:.15em;color:var(--cyan);
+#forge3d-sheet .detail-title{font-family:var(--ff-display);font-size:var(--fs-head);letter-spacing:var(--hud-track-wide);color:var(--cyan);
   text-shadow:0 0 12px rgba(40,224,255,.3)}
 #forge3d-sheet .detail-meta{font-size:10px;color:var(--dim);letter-spacing:.1em;margin-top:2px}
 #forge3d-sheet .detail-close{width:32px;height:32px;border-radius:50%;border:1px solid rgba(40,224,255,.3);
@@ -9256,11 +9328,11 @@ body.rd #forge3d-sheet.open { display: flex; }
   border-top:1px solid rgba(40,224,255,.1);font-size:10px;color:var(--dim);
   letter-spacing:.08em;flex-shrink:0}
 #forge3d-sheet .detail-footer b{color:var(--ink);font-weight:600}
-#forge3d-sheet .detail-hint{padding:6px 20px 2px;font-size:9px;letter-spacing:.2em;color:var(--dim);flex-shrink:0}
+#forge3d-sheet .detail-hint{padding:6px var(--sp-5) 2px;font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);color:var(--dim);flex-shrink:0}
 #forge3d-sheet .detail-nav{display:flex;gap:10px;padding:10px 16px calc(env(safe-area-inset-bottom,0px) + 14px);
   border-top:1px solid rgba(40,224,255,.12);flex-shrink:0;background:rgba(4,6,10,.9)}
-#forge3d-sheet .navbtn{flex:1;padding:15px 0;border-radius:12px;text-align:center;cursor:pointer;
-  font-family:'Orbitron','Chakra Petch',sans-serif;font-size:11px;letter-spacing:.18em;
+#forge3d-sheet .navbtn{flex:1;padding:15px 0;border-radius:var(--r-card);text-align:center;cursor:pointer;
+  font-family:var(--ff-display);font-size:var(--fs-caption);letter-spacing:var(--hud-track-ui);
   border:1px solid rgba(40,224,255,.28);color:var(--cyan);background:rgba(8,14,22,.7)}
 #forge3d-sheet .navbtn:active{background:rgba(40,224,255,.12)}
 #forge3d-sheet .navbtn.exit{border-color:rgba(255,203,69,.4);color:var(--gold);flex:1.2}
@@ -9279,7 +9351,7 @@ body.rd #forge3d-sheet.open { display: flex; }
 #forge3d-sheet .search-result{padding:12px 16px;border-top:1px solid rgba(40,224,255,.06);cursor:pointer;
   font-size:12px;color:var(--ink);display:flex;justify-content:space-between;align-items:center}
 #forge3d-sheet .search-result:active,#forge3d-sheet .search-result.sel{background:rgba(40,224,255,.08)}
-#forge3d-sheet .search-result-id{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--cyan)}
+#forge3d-sheet .search-result-id{font-family:var(--ff-display);font-size:var(--fs-caption);letter-spacing:var(--hud-track-data);color:var(--cyan)}
 #forge3d-sheet .search-empty{padding:20px;text-align:center;color:var(--dim);font-size:11px}
 /* v1.14.407 — DEAD CONTROL FIX. showToast() (:20239) toggles only the .show class, and this
    rule hid the toast with opacity alone while leaving pointer-events:auto, display:flex and
@@ -9324,7 +9396,7 @@ body.rd #forge3d-sheet.open { display: flex; }
    pinned flex:0 0 auto so a wrapping message can never shrink the affordance it exists to offer.
    NOTE: a fixed element contributes nothing to documentElement.scrollWidth, so no overflow test in
    the suite could ever have caught this — it is bounded here by construction, not by a gate. */
-#forge3d-sheet .toast .undo{flex:0 0 auto;font-family:'Orbitron','Chakra Petch',sans-serif;font-size:10px;
+#forge3d-sheet .toast .undo{flex:0 0 auto;font-family:var(--ff-display);font-size:var(--fs-micro);
   letter-spacing:.16em;color:var(--gold);cursor:pointer;padding:4px 2px}
 #forge3d-sheet .picker{position:fixed;inset:0;z-index:55;background:rgba(4,6,10,.96);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:none;
@@ -9332,7 +9404,7 @@ body.rd #forge3d-sheet.open { display: flex; }
 #forge3d-sheet .picker.open{display:flex}
 #forge3d-sheet .picker-head{display:flex;justify-content:space-between;align-items:center;
   padding:16px 20px 12px;border-bottom:1px solid rgba(40,224,255,.1);flex-shrink:0}
-#forge3d-sheet .picker-title{font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:.18em;color:var(--cyan)}
+#forge3d-sheet .picker-title{font-family:var(--ff-display);font-size:var(--fs-subhead);letter-spacing:var(--hud-track-ui);color:var(--cyan)}
 #forge3d-sheet .picker-count{font-size:11px;letter-spacing:.12em;color:var(--gold)}
 #forge3d-sheet .picker-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:4px 16px}
 #forge3d-sheet .picker-rowhead{font-size:9px;letter-spacing:.24em;color:var(--dim);padding:14px 4px 6px}
@@ -9367,7 +9439,7 @@ body.rd #forge3d-sheet.open { display: flex; }
    it overrunning a 390px viewport by 41px per side (it was white-space:nowrap at 472px wide). */
 #forge3d-sheet .hint{position:absolute;left:0;right:0;bottom:100%;margin-bottom:var(--forge-gap);
   padding:0 var(--forge-pad-x);text-align:center;line-height:1.5;
-  font-size:9px;letter-spacing:.3em;color:var(--dim);
+  font-size:var(--fs-micro);letter-spacing:var(--hud-track-wide);color:var(--dim);
   pointer-events:none;transition:opacity .8s ease}
 #forge3d-sheet .hint.gone{opacity:0}
 /* v1.14.226 — persistent build badge (§10): subtle top-right, redesign-only, taps pass through */
@@ -9377,7 +9449,12 @@ body.rd #ver-stamp { display: inline-flex; align-items: center; align-self: cent
 .rd-sheet-titles { min-width: 0; }
 .rd-sheet-titles .t { font-family: var(--orb); font-weight: 700; letter-spacing: .14em; font-size: 18px; color: var(--white); }
 .rd-sheet-titles .s { font-family: var(--mono); font-weight: 600; font-size: 10px; letter-spacing: .22em; color: var(--slate); margin-top: 3px; }
-.rd-sheet-close { width: 40px; height: 40px; border-radius: 11px; border: 1px solid rgba(120,150,200,0.18); background: rgba(16,22,34,0.55); color: var(--white); font-size: 17px; cursor: pointer; flex: 0 0 auto; -webkit-tap-highlight-color: transparent; }
+/* v1.14.410 — 40x40 was UNDER the 44px gloved floor, and this is the escape hatch from a
+   full-screen sheet: the one control that must never need a second try. Now --tap-s exactly.
+   It also declared no font-family, so the glyph fell through to the UA default (measured as
+   MS Shell Dlg in the harness) instead of the app stack. All four consumers are redesign sheets
+   (phases, profile, errors, Forge), so ?legacy=1 is untouched. */
+.rd-sheet-close { width: var(--tap-s); height: var(--tap-s); border-radius: var(--r-ctl); border: 1px solid rgba(120,150,200,0.18); background: rgba(16,22,34,0.55); color: var(--white); font-family: var(--raj); font-size: var(--fs-head); line-height: 1; cursor: pointer; flex: 0 0 auto; -webkit-tap-highlight-color: transparent; }
 .rd-sheet-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 18px 28px; }
 
 /* ━━━ v1.14.325 — PLATFORMS feature-hero art (PHANTOM_FEATURE_ART_HANDOFF.md).
@@ -9516,6 +9593,33 @@ body.rd #ph-sheet.open {
 #shiftend-sheet .se-custom-row label{font-family:var(--mono);font-size:12px;letter-spacing:1px;color:var(--slate)}
 #shiftend-sheet input.se-custom{flex:1;min-height:var(--tap-xl,56px);padding:0 14px;border-radius:10px;border:1px solid rgba(92,242,255,.22);background:rgba(10,14,20,.6);color:var(--cyan);font-family:var(--mono);font-size:16px;-webkit-appearance:none}
 #shiftend-sheet .se-clear{display:block;width:calc(100% - 40px);margin:14px 20px 12px;min-height:var(--tap-xl,56px);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--slate);font-family:var(--mono);font-size:13px;letter-spacing:1px;cursor:pointer;-webkit-appearance:none}
+/*  v1.14.410 DESIGN SYSTEM  SHIFT 
+   body.rd-scoped on purpose. .va-close-btn, .va-sheet-title and .va-sheet-inner are UNSCOPED
+   rules shared by #shiftend-sheet, #log-sheet and #vaSheet, and all three exist in the legacy
+   DOM (verified: present, zero-size, closed). Rule 7 keeps ?legacy=1 byte-identical, and the
+   .402 precedent is the test  gate the PRESENTATION, never the INVARIANT. This is presentation,
+   so it is gated; the redesign house is the default UI and gets the fix.
+
+   THE CLOSE BUTTON WAS 260.5 x 30. It was swept up by the "sheet action buttons  full width in
+   bottom-sheet context" group at :745, a rule written for SAVE/CANCEL bars, not for a glyph. So
+   the  stretched across the whole header as a 30px-tall invisible strip: under the gloved floor
+   in height, and a 260px-wide close target sitting right next to the title, where nobody expects
+   one. It also starved the title of width, which is why "SET SHIFT END" wrapped to two lines at
+   390  that wrap fixes itself here, no type change needed. */
+body.rd #shiftend-sheet .va-close-btn, body.rd #log-sheet .va-close-btn {
+  width: var(--tap-s); min-width: var(--tap-s); height: var(--tap-s); min-height: var(--tap-s);
+  flex: 0 0 auto; padding: 0; border-radius: var(--r-ctl); font-family: var(--raj);
+  font-size: var(--fs-head); line-height: 1; display: flex; align-items: center; justify-content: center;
+}
+body.rd #shiftend-sheet .va-sheet-title { font-family: var(--ff-display); font-size: var(--fs-caption); letter-spacing: var(--hud-track-wide); }
+body.rd #shiftend-sheet .va-sheet-inner { border-radius: var(--r-sheet) var(--r-sheet) 0 0; }
+/* onto the R-B/R-C scales: 15px, 13px, 8px and 10px were on none of them. The preset VALUE is
+   the thing being read at arm's length, so it takes the subhead step, not the body step. */
+body.rd #shiftend-sheet .se-preset { border-radius: var(--r-ctl); font-size: var(--fs-subhead); }
+body.rd #shiftend-sheet .se-preset .se-sub { font-size: var(--fs-body); letter-spacing: var(--hud-track-tight); }
+body.rd #shiftend-sheet input.se-custom { border-radius: var(--r-ctl); font-size: var(--fs-head); }
+body.rd #shiftend-sheet .se-clear { border-radius: var(--r-ctl); font-size: var(--fs-body); }
+
 /* v1.14.335 Command v2 D12: the Command ghost hero (.ghosthero/#cc-ghost) is removed — the rack is the identity object now. Assistant stays reachable via the header ghost menu button. */
 /* v1.14.330 INSPECT-3D LANDING — first Master rack live in the Command hero. Bare #pg-cmd (redesign-only page, never rendered under legacy). Height-capped so it never eats the phone screen; hidden until a Master loads. */
 #pg-cmd .cc-rackhero{position:relative;width:100%;height:clamp(240px,36vh,340px);margin:0 0 10px;border:1px solid var(--cyan-border-lo);border-radius:14px;overflow:hidden;background:var(--rd-cardfill);cursor:pointer;-webkit-tap-highlight-color:transparent}   /* v1.14.335 Command v2 D6: 36vh (min240/max340) so Z0-Z4 incl. the NBA button clear the fold on 390x844; hero is now tap-to-bay (cursor). */
@@ -9556,11 +9660,25 @@ body.rd #ph-sheet.open {
 #pg-cmd .cc-vital.v-next:active{filter:brightness(1.2)}
 #pg-cmd .cc-ingest-zone{display:none}
 #pg-cmd[data-master="0"] .cc-rackline,#pg-cmd[data-master="0"] .cc-rackhero,#pg-cmd[data-master="0"] .cc-rackvitals,#pg-cmd[data-master="0"] .nba,#pg-cmd[data-master="0"] .lens,#pg-cmd[data-master="0"] .stats,#pg-cmd[data-master="0"] .trow,#pg-cmd[data-master="0"] .sig-h,#pg-cmd[data-master="0"] #cc-sig,#pg-cmd[data-master="0"] .cmd-grid,#pg-cmd[data-master="0"] .cc-asst,#pg-cmd[data-master="0"] .cc-qtools,#pg-cmd[data-master="0"] .cc-z0 .statusrow,#pg-cmd[data-master="0"] .cc-agechip,#pg-cmd[data-master="0"] #cc-sugg,#pg-cmd[data-master="0"] #cc-chat,#pg-cmd[data-master="0"] #cc-aistat,#pg-cmd[data-master="0"] #cc-foot,#pg-cmd[data-master="0"] #cc-openbay{display:none!important}
-#pg-cmd[data-master="0"] .cc-ingest-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;width:100%;box-sizing:border-box;min-height:min(64vh,520px);padding:32px 20px;border:1.5px dashed rgba(92,242,255,.35);border-radius:18px;background:radial-gradient(120% 90% at 50% 30%,rgba(40,224,255,.08),rgba(4,6,10,0) 60%),#04060a;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center}
+#pg-cmd[data-master="0"] .cc-ingest-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--sp-3);width:100%;box-sizing:border-box;min-height:min(34vh,280px);padding:var(--sp-8) var(--sp-5);border:1.5px dashed rgba(92,242,255,.35);border-radius:var(--r-sheet);background:radial-gradient(120% 90% at 50% 30%,rgba(40,224,255,.08),rgba(4,6,10,0) 60%),#04060a;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center}
+/* v1.14.410 — tightening the zone from 520px to 280px left it floating at the top of a mostly
+   empty screen, which reads as unfinished rather than as empty. #cc-center already wraps the zone
+   and #pg-cmd is already a flex column, so growing that ONE wrapper and centring inside it is the
+   whole fix: the SITE label keeps its place at the top, the zone sits in the optical centre of the
+   space that is actually free, and the 128px nav clearance is respected because the centring
+   happens inside the padded box. Scoped to [data-master="0"] — the populated Command, where
+   #cc-center carries the rack hero and every vital, is untouched. */
+#pg-cmd[data-master="0"] #cc-center{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center}
 #pg-cmd[data-master="0"] .cc-ingest-zone:active{background:radial-gradient(120% 90% at 50% 30%,rgba(40,224,255,.14),rgba(4,6,10,0) 60%),#060a12}
 #pg-cmd .cc-ingest-zone .ciz-mark{font-size:42px;line-height:1}
-#pg-cmd .cc-ingest-zone .ciz-title{font-family:var(--orb);font-weight:700;font-size:20px;letter-spacing:3px;color:var(--cyan)}
-#pg-cmd .cc-ingest-zone .ciz-sub{font-family:var(--mono);font-size:13px;letter-spacing:.5px;color:var(--slate);max-width:24ch;line-height:1.4}
+/* v1.14.410 DESIGN SYSTEM — Command, step 1. This is the screen's primary title and the first
+   consumer of the R-F display tier: var(--orb) resolved to the raw system stack, which is exactly
+   the face DESIGN_RULES §1 bans as a display face. PhantomBrand costs zero new bytes (already
+   inlined at :37 for the wordmark). Type moves onto the R-C scale as well — 20px/3px was on
+   neither the size scale nor the tracking scale; --fs-hero + --hud-track-display are the steps
+   this element was reaching for. The sub drops 13px -> --fs-body for the same reason. */
+#pg-cmd .cc-ingest-zone .ciz-title{font-family:var(--ff-display);font-weight:700;font-size:var(--fs-hero);letter-spacing:var(--hud-track-display);color:var(--cyan)}
+#pg-cmd .cc-ingest-zone .ciz-sub{font-family:var(--mono);font-size:var(--fs-body);letter-spacing:var(--hud-track-tight);color:var(--slate);max-width:24ch;line-height:1.4}
 /* ━━━ v1.14.336 FINAL-LOOK (OPTION 2) — phone assistant-first. Card skin uses REAL :root tokens
    (--cyan-border-lo / --surf-1 / --surf-inset / --ok), NOT the spec's mock --edge-lo/--surf (owner-ruled). All #pg-cmd → ?legacy safe. ━━━ */
 #pg-cmd .cc-asst{border:1px solid var(--cyan-border-lo);border-radius:14px;background:var(--rd-cardfill);box-shadow:var(--surf-inset),0 8px 20px -14px rgba(0,0,0,.85);padding:16px 18px;margin:0 16px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}   /* v1.14.343: fill → shared stat-tile surface (was --surf-1 blue). v1.14.344: whole card taps openVaSheet (gloved target). */
@@ -9721,7 +9839,10 @@ body.rd{--rd-cardfill:linear-gradient(158deg,#050506 0%,#010102 46%,#000000 76%,
    the frame shows, so ?redesign=0 is byte-for-byte untouched. Selectors scoped to ids/
    descendants (NOT bare .sub/.wmimg/.botnav) so they can't collide with app classes. */
 .header-left-text .wmimg{display:none;width:172px;max-width:52vw;height:auto}
-#rd-sub{display:none;font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--slate);margin-top:7px}
+/* v1.14.410 — onto the R-C scale: 11px is --fs-caption exactly, and 3px was a near-miss of the
+   --hud-track-mid step. min-width:0 lets the flex parent shrink this instead of clipping the site
+   name to "S…" — the truncation was the header row refusing to give, not the text being too long. */
+#rd-sub{display:none;min-width:0;font-family:var(--mono);font-size:var(--fs-caption);letter-spacing:var(--hud-track-mid);color:var(--slate);margin-top:7px}
 #rd-sub .site{color:var(--cyan)}
 #rd-sub .site.warn{color:var(--gold)}
 /* ===== v1.14.321 Option C nav — icon-forward CSS grid (can't wrap). Replaces the .159 reactor-rail flex nav.
@@ -11811,7 +11932,8 @@ body.rd #master-section-bar [data-section="profile"] { display:none; }
    Replaces the v1.14.48 baked landing. ALL selectors scoped under #boot; classes/ids/keyframes pe-* namespaced
    (@keyframes pulse collides 7x in-app); tokens on #boot; full-bleed via position:fixed (immune to #boot padding). ══ */
 #boot {
-  --bg:#04060a; --ink:#cdd6e4; --dim:#5b6678; --mag:#ff2bd6; --vio:#8a4bff; --cyan:#28e0ff; --teal:#1fffd0; --gold:#ffcb45;
+  /* R-D (v1.14.410): hot scene values consumed from the named :root tokens — same colours. */
+  --bg:#04060a; --ink:#cdd6e4; --dim:#5b6678; --mag:#ff2bd6; --vio:#8a4bff; --cyan:var(--cyan-scene); --teal:#1fffd0; --gold:var(--gold-scene);
   background:var(--bg); color:var(--ink); font-family:'Rajdhani',sans-serif;
 }
 #boot * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
@@ -12653,7 +12775,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.409';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.410';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13272,6 +13394,18 @@ if (typeof window !== 'undefined') {
     <div class="rd-sheet-hdr">
       <div class="rd-sheet-titles"><div class="t">FORGE &middot; 3D AISLE</div><div class="s" id="forge3d-prov">&mdash;</div></div>
       <button class="rd-sheet-close" onclick="forge3d_close()" aria-label="Close Forge 3D">&#10005;</button>
+      <!-- v1.14.410 OWNER RULING — SCENE UTILITIES. Grid and search are scene-level tools, not
+           rack navigation, so they leave the bottom row entirely and live here.
+           WHY THIS IS A CHILD OF THE HEADER: the cluster has to hang directly below the header,
+           and the header has NO height token — it computes to 81px from its content. A
+           `top: 81px` would be exactly the kind of constant that went stale twice already (the
+           .341 nav clearance, the .351 phase dock). Anchoring at top:100% of the header itself
+           means the clearance is DERIVED: if the header ever grows a line, the cluster moves with
+           it and cannot overlap. Nothing is measured in JS and no constant can drift. -->
+      <div class="scene-utils" id="sceneUtils">
+        <div class="hudbtn" id="loadoutBtn" role="button" tabindex="0" title="3D loadout" aria-label="3D loadout — pick up to 5 racks">&#8862;</div>
+        <div class="hudbtn" id="searchBtn" role="button" tabindex="0" aria-label="Search racks"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></div>
+      </div>
     </div>
     <div id="forge3d-mount"></div>
 <div id="forge3d-hud">
@@ -13290,10 +13424,12 @@ if (typeof window !== 'undefined') {
          (:20252, :20259), so DOM position is irrelevant to the JS. -->
     <div class="toast" id="toast"><span id="toastMsg"></span><span class="undo" id="toastUndo">UNDO</span></div>
     <div class="hint" id="hint">TAP A RACK TO FOCUS · ⊞ PICK UP TO 5 FOR THE 3D</div>
+    <!-- v1.14.410 OWNER RULING — ROW 1 IS THE RACK CAROUSEL AND NOTHING ELSE. The grid and search
+         buttons moved up to .scene-utils under the header, so .chips now owns the full row width
+         between the two --forge-pad-x gutters. This is a layout fix, not a masked overflow: the
+         scroller's box genuinely spans the row, so no chip can sit under another control. -->
     <div class="toprow">
       <div class="chips" id="chips"></div>
-      <div class="hudbtn gold" id="loadoutBtn" title="3D loadout">&#8862;</div>
-      <div class="hudbtn" id="searchBtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></div>
     </div>
     <!-- v1.14.409 — ROW 2. The single .herotag card is now three named status pills, which is a
          decomposition of the string it already rendered (see the CSS note at :9108). #tagId is
@@ -20026,7 +20162,16 @@ function forge3d_render(mount) {
     var info = rowOf(rack.userData.label);
     var fslots = deploy_forge_slots(rack.userData.label);
     var fracked = fslots.filter(function (s) { return s.status === 'racked'; }).length;
-    tagId.textContent = rack.userData.label + ' · FOCUS';
+    // v1.14.410 — the ' · FOCUS' suffix is dropped, and this is the ONE deviation from the
+    // owner's literal pill list. MEASURED at 390 with the row already tightened as far as it
+    // honestly goes (nowrap, --sp-1 gap, --sp-2 padding, data tracking on the id): the three
+    // strings need 384px inside a 354px row and the walk pill ran to x=402, past the viewport.
+    // The owner's own rule settles which term gives: operational text never drops below the
+    // 10px floor to fit more items — so the redundant word goes, not the size. The suffix is
+    // redundant twice over: the pill carries a lit dot, and it is HIDDEN entirely unless a rack
+    // is focused (writeStatusMessage), so its mere presence already means FOCUS.
+    // To restore it, put the suffix back here and shorten #tagWalk to 'TAP FLANKS' instead.
+    tagId.textContent = rack.userData.label;
     writeStatusPills(fracked, fslots.length, deploy_forge_flagCount(rack.userData.label));
     radiusTarget = 9.8;
     focused = rack;
@@ -51167,9 +51312,15 @@ function hdr_refreshAggregate() {
   if (storePct >= 85) {
     state = 'critical'; text = 'STORAGE ' + storePct + '%';
   } else if (isRed(net.color)) {
-    state = 'warn';     text = 'OFFLINE';
+    // v1.14.410 — OFFLINE IS PHANTOM'S NORMAL, NOT A FAULT. This app is offline-first: the
+    // whole product works with no network, so classifying offline as 'warn' painted the single
+    // loudest element on Command gold with an accelerated heartbeat, out-shouting the actual
+    // call to action. That is the colour law inverted — gold means "needs a human", and this
+    // needs nobody. Its own quiet state instead; the operator still reads it, it just stops
+    // asking for help it does not need. Genuine faults (storage) keep the loud channels.
+    state = 'offline';  text = 'OFFLINE';
   } else if (isRed(api.color)) {
-    state = 'warn';     text = 'API OFFLINE';
+    state = 'offline';  text = 'API OFFLINE';
   } else if (isAmber(sw.color) || isRed(sw.color)) {
     state = 'warn';     text = 'SW ' + (sw.val || '').toString().toUpperCase();
   } else if (isGrey(net.color) && isGrey(api.color) && isGrey(sw.color) && isGrey(store.color)) {
@@ -54343,8 +54494,11 @@ body.rd #pg-work #bw-shell { display: block; padding: 0 0 8px; }
 body.rd #pg-work.bw-on #work-grid { display: none; }
 
 body.rd .bw-hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 10px; }
-body.rd .bw-t1 { font-size: 19px; font-weight: 800; letter-spacing: .06em; color: var(--cyan); }
-body.rd .bw-t2 { font-size: 19px; font-weight: 700; letter-spacing: .06em; color: var(--slate); }
+/* v1.14.410 — the screen title takes the R-F display tier and the R-C hero step. 19px was on
+   neither scale, and .06em resolved to a different absolute tracking at each size it was reused
+   at, which is the reason the tracking scale is expressed in px. */
+body.rd .bw-t1 { font-family: var(--ff-display); font-size: var(--fs-hero); font-weight: 700; letter-spacing: var(--hud-track-wide); color: var(--cyan); }
+body.rd .bw-t2 { font-family: var(--ff-display); font-size: var(--fs-hero); font-weight: 400; letter-spacing: var(--hud-track-wide); color: var(--slate); }
 body.rd .bw-site {
   display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px;
   border-radius: 11px; background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo);
@@ -54381,11 +54535,26 @@ body.rd .bw-bar { display: flex; align-items: center; gap: 10px; margin-top: 9px
 body.rd .bw-track { flex: 1; height: 6px; border-radius: 3px; background: rgba(176,207,255,0.14); overflow: hidden; }
 body.rd .bw-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--violet), var(--cyan)); }
 body.rd .bw-pct { font-family: var(--mono); font-size: 14px; font-weight: 800; color: var(--white); }
+/* v1.14.410 DESIGN SYSTEM — Build, step 1. THE CYAN->VIOLET GRADIENT IS GONE.
+   It was two problems at once. DESIGN_RULES §1 bans the violet-gradient cliché by name as the
+   single clearest generic-AI tell, and it was the loudest element on the screen. Worse, it ran
+   BETWEEN two semantic channels: cyan means identity/action, violet means derived intelligence,
+   so a blend of the two asserts nothing — it was pure decoration wearing meaning's clothes, on
+   the primary action of the surface.
+   What replaces it is PHANTOM's own language: recessed cyan fill, 1px cyan ring, cyan label,
+   one soft outer glow. NOT the machined border-box ring — that primitive does not paint on a
+   raw <button> on iOS even with appearance:none, and .bw-cta is a <button>. This is the
+   padding-box primitive that does. */
 body.rd .bw-cta {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  width: 100%; min-height: 50px; margin-top: 13px; border: 0; border-radius: 13px; cursor: pointer;
-  background: linear-gradient(90deg, var(--cyan), var(--violet)); color: #04060a;
-  font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  width: 100%; min-height: var(--tap-xl); margin-top: var(--sp-3);
+  border: 1px solid rgba(92,242,255,0.45); border-radius: var(--r-ctl); cursor: pointer;
+  background: linear-gradient(180deg, rgba(92,242,255,0.14), rgba(92,242,255,0.04));
+  color: var(--cyan);
+  font-family: var(--ff-display);
+  font-size: var(--fs-caption); font-weight: 700; letter-spacing: var(--hud-track-button);
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 0 18px rgba(92,242,255,0.15);
   -webkit-tap-highlight-color: transparent;
 }
 body.rd .bw-cta:active { transform: scale(.99); filter: brightness(1.08); }
@@ -54438,9 +54607,16 @@ body.rd .bw-act:active { transform: scale(.98); }
 body.rd .bw-act.warn { border-color: rgba(255,43,214,0.45); color: #ff2bd6; }
 
 /* zero / overview states */
-body.rd .bw-zero { text-align: center; padding: 26px 18px; }
-body.rd .bw-zero-t { font-size: 17px; font-weight: 800; color: var(--white); }
-body.rd .bw-zero-p { font-size: 12.5px; color: var(--slate); line-height: 1.5; margin-top: 8px; }
+/* v1.14.410 DESIGN SYSTEM — Build zero state. "No Master loaded" rendered as sentence-case
+   Helvetica at 17px, which is the one card in PHANTOM that looked like it came from a different
+   product. The heading takes the R-F display tier and the R-C head step; the paragraph stays
+   sentence case on purpose — §8 of DESIGN_RULES says an empty state is an invitation to act, and
+   an instruction reads faster as a sentence than as tracked caps. Hierarchy comes from the
+   heading and the action, not from shouting the explanation. */
+body.rd .bw-zero { text-align: center; padding: var(--sp-6) var(--sp-5); }
+body.rd .bw-zero-t { font-family: var(--ff-display); font-size: var(--fs-head); font-weight: 700;
+  letter-spacing: var(--hud-track-wide); text-transform: uppercase; color: var(--white); }
+body.rd .bw-zero-p { font-size: var(--fs-body); color: var(--slate); line-height: 1.5; margin-top: var(--sp-2); }
 body.rd .bw-q { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 11px 12px; margin-bottom: 8px;
   border-radius: 12px; background: rgba(16,22,32,0.75); border: 1px solid var(--cyan-border-lo); cursor: pointer; }
 body.rd .bw-q-n { font-size: 14px; font-weight: 700; color: var(--white); }
@@ -54503,7 +54679,9 @@ body.rd .bw-phn { font-size: 15px; margin-top: 5px; }
 body.rd .bw-bar { margin-top: 12px; }
 body.rd .bw-track { height: 7px; border-radius: 4px; }
 body.rd .bw-pct { font-size: 15px; }
-body.rd .bw-cta { min-height: var(--bw-cta); margin-top: 16px; border-radius: 15px; font-size: 13.5px; }
+/* v1.14.410 — onto the R-B/R-C scales: 15px and 13.5px were on neither. min-height keeps its own
+   token (--bw-cta 56px, already above the 44px floor). */
+body.rd .bw-cta { min-height: var(--bw-cta); margin-top: var(--sp-4); border-radius: var(--r-ctl); font-size: var(--fs-caption); }
 
 /* ── rack preview: controls ABOVE the render area, never over it ── */
 body.rd .bw-prev { padding: var(--bw-cpad); }
@@ -54564,7 +54742,7 @@ body.rd .bw-wl-done { min-height: 52px; border-radius: 14px; font-size: 12px; }
 
 /* ── section labels: compact uppercase technical, sentences left alone ── */
 body.rd .bw-k { font-size: 10px; letter-spacing: .18em; }
-body.rd .bw-zero-p { letter-spacing: 0; line-height: 1.55; font-size: 13px; }
+body.rd .bw-zero-p { letter-spacing: var(--hud-track-tight); line-height: 1.55; font-size: var(--fs-body); }
 body.rd .bw-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
 body.rd .bw-tab {
   min-height: 44px; padding: 0 6px; border-radius: 11px; cursor: pointer;

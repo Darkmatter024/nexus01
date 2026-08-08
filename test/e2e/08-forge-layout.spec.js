@@ -545,19 +545,21 @@ test.describe('Forge bottom control stack', () => {
     // STATUS-ROW strings, written into the STATE pill (#tagState). These are LAYOUT
     // fixtures for the box height, not claims about what any site reports.
     //
-    // ⚠ v1.14.409 — the short string is DELIBERATELY still the pre-.409 whole-card
-    // format (site · racked/total · TAP FLANKS TO WALK). The app no longer builds
-    // that string — deploy_forge_tagState now returns the count clause ALONE and the
-    // other two clauses are their own pills — but this test needs a string long
-    // enough to wrap the row, and re-pointing it at the real 10-char format would
-    // silently make the perturbation too small to move the box and turn the vacuity
-    // guard below into the thing it exists to prevent. So: a fixture, named as one.
-    // The REAL format is pinned instead by 02-build-forge (zero state) and by the
-    // structure test at the bottom of this file.
-    const SUB_SHORT = 'US-SPK03 · 21/42 RACKED · TAP FLANKS TO WALK';
-    const SUB_LONG = new Array(6).fill('US-SPK03 · 21/42 RACKED · ⚠3 FLAGGED · TAP FLANKS TO WALK').join(' · ');
-    const setSub = async (s) => {
-      await page.evaluate((v) => { document.getElementById('tagState').textContent = v; }, s);
+    // ⚠ v1.14.410 — THE OLD STATUS-ROW LEVER IS GONE, ON PURPOSE. This test used to
+    // grow the status row by writing a very long string into #tagState and letting
+    // .statrow WRAP. The owner's permanent-layout ruling made the three pills share
+    // ONE baseline (.statrow is now flex-wrap:nowrap), so no string can grow that box
+    // any more and the vacuity guard correctly reported that half of this test had
+    // stopped proving anything. It was not silently deleted — it is REPLACED by a
+    // lever that still varies the status row for a reason the app can actually
+    // experience: the TYPE SCALE. The pills consume --fs-micro, so if that step ever
+    // moves the clearance must still hold. Same shape of proof, live mechanism.
+    // The one-baseline rule itself is now pinned by its own test further down.
+    const setMicro = async (v) => {
+      await page.evaluate((px) => {
+        const s = document.getElementById('forge3d-sheet');
+        if (px) s.style.setProperty('--fs-micro', px); else s.style.removeProperty('--fs-micro');
+      }, v);
       await settle(page);
     };
     const setTap = async (v) => {
@@ -570,21 +572,25 @@ test.describe('Forge bottom control stack', () => {
 
     const runs = [{ label: 'at rest', m: rest }];
 
-    // (1) STATUS ROW, one line — data-driven, and it SHRINKS the stack on the phone.
-    await setSub(SUB_SHORT);
-    runs.push({ label: 'short status row', m: await snapshot(page) });
+    // (1) STATUS ROW, taller type — the pills consume --fs-micro, so this grows row 2.
+    await setMicro('22px');
+    runs.push({ label: 'status row at --fs-micro 22px', m: await snapshot(page) });
 
-    // (2) STATUS ROW, wrapped — data-driven, and it grows the stack on every tier.
-    await setSub(SUB_LONG);
-    runs.push({ label: 'wrapped status row', m: await snapshot(page) });
+    // (2) STATUS ROW, taller still — a second distinct height for the same member.
+    await setMicro('34px');
+    runs.push({ label: 'status row at --fs-micro 34px', m: await snapshot(page) });
 
     // (3) CONTROL ROW, through its own declared token — a different member entirely.
     await setTap('76px');
-    runs.push({ label: 'wrapped row2 + --forge-tap 76px', m: await snapshot(page) });
+    runs.push({ label: 'tall row2 + --forge-tap 76px', m: await snapshot(page) });
 
-    // (4) Back to the declared row height, card still wrapped.
+    // (4) Back to the declared row height, row 2 still tall.
     await setTap(null);
-    runs.push({ label: 'wrapped row2 only', m: await snapshot(page) });
+    runs.push({ label: 'tall row2 only', m: await snapshot(page) });
+
+    // (5) Everything back to the declared scale — the stack must return to rest.
+    await setMicro(null);
+    runs.push({ label: 'back at rest', m: await snapshot(page) });
 
     const heights = runs.map((r) => r.m.rects.strip.h);
     const statHeights = runs.map((r) => r.m.rects.statrow.h);
@@ -603,7 +609,7 @@ test.describe('Forge bottom control stack', () => {
     // Both are asserted SEPARATELY so a half-dead perturbation cannot hide behind the
     // other one — which is precisely the hole the first draft of this test had.
     const spread = (a) => Math.max(...a) - Math.min(...a);
-    expect(spread(statHeights), `${tag} the STATUS ROW never changed height (${statHeights.join(', ')}) — the data-driven half of this test proved nothing; either the state clause is no longer written to #tagState or .statrow stopped wrapping`).toBeGreaterThan(5);
+    expect(spread(statHeights), `${tag} the STATUS ROW never changed height (${statHeights.join(', ')}) — this half of the test proved nothing; the pills have stopped consuming --fs-micro, so the type scale can move under the caption without this noticing`).toBeGreaterThan(5);
     expect(spread(rows), `${tag} the CONTROL ROW never changed height (${rows.join(', ')}) — the row no longer derives its height from --forge-tap`).toBeGreaterThan(5);
     expect(spread(heights), `${tag} the stack never changed height (${heights.join(', ')}) — this test proved nothing`).toBeGreaterThan(5);
 
@@ -1009,5 +1015,185 @@ test.describe('Forge bottom control stack', () => {
     expect(m.stripCss.padBottom, `.hud-bottom's bottom padding (${m.stripCss.padBottom}px) does not clear the ${m.safeInset}px inset`).toBeGreaterThan(m.safeInset);
     expect(m.rects.statrow.b, 'the status row sits inside the home-indicator inset')
       .toBeLessThanOrEqual(await page.evaluate(() => window.innerHeight) - m.safeInset + 0.5);
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // E · THE PERMANENT FORGE CONTROL PLACEMENT — v1.14.410 owner ruling
+  //
+  // "Grid and search are scene-level utilities. They do not belong beside rack
+  // navigation." These pin the RULING, not the implementation: each asserts an
+  // outcome the owner stated in words, so a future refactor that quietly puts a
+  // utility back into the carousel row fails here instead of in the aisle.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  test('the scene utilities live above the scene, not in the rack row', async ({ phantom, page }, testInfo) => {
+    await phantom.boot();
+    await openAisle(page);
+    await populateDock(page);
+    await setChips(page, 5);
+
+    const m = await page.evaluate(() => {
+      const r = (el) => { if (!el) return null; const b = el.getBoundingClientRect();
+        return { x:+b.x.toFixed(1), y:+b.y.toFixed(1), w:+b.width.toFixed(1), h:+b.height.toFixed(1), right:+b.right.toFixed(1), bottom:+b.bottom.toFixed(1) }; };
+      const lo = document.getElementById('loadoutBtn'), se = document.getElementById('searchBtn');
+      const row = document.querySelector('#forge3d-sheet .toprow');
+      const dock = document.querySelector('#forge3d-sheet .hud-bottom');
+      const hdr = document.querySelector('#forge3d-sheet .rd-sheet-hdr');
+      const cs = lo ? getComputedStyle(lo) : null;
+      return {
+        lo: r(lo), se: r(se), row: r(row), dock: r(dock), hdr: r(hdr),
+        loInRow: !!(row && lo && row.contains(lo)),
+        seInRow: !!(row && se && row.contains(se)),
+        loInDock: !!(dock && lo && dock.contains(lo)),
+        seInDock: !!(dock && se && dock.contains(se)),
+        loColour: cs && cs.color, loRing: cs && cs.borderTopColor,
+        vw: document.documentElement.clientWidth,
+      };
+    });
+    const tag = `[${testInfo.project.name}]`;
+
+    // (1) They are OUT of the rack row and out of the bottom dock entirely.
+    expect(m.loInRow, `${tag} the grid button is back inside .toprow — the carousel row must hold nothing else`).toBe(false);
+    expect(m.seInRow, `${tag} the search button is back inside .toprow`).toBe(false);
+    expect(m.loInDock, `${tag} the grid button is back inside the bottom dock`).toBe(false);
+    expect(m.seInDock, `${tag} the search button is back inside the bottom dock`).toBe(false);
+
+    // (2) Upper region, below the header, right-aligned — and the clearance is
+    //     DERIVED from the header's own box, so a taller header pushes them down
+    //     instead of drawing over them.
+    expect(m.lo.y, `${tag} the utility cluster (y=${m.lo.y}) is not below the header (bottom=${m.hdr.bottom})`).toBeGreaterThanOrEqual(m.hdr.bottom);
+    expect(m.lo.y, `${tag} the utility cluster has drifted into the lower half of the scene (y=${m.lo.y})`).toBeLessThan(m.dock.y / 2);
+    expect(m.lo.right, `${tag} the cluster is not right-aligned with the search button`).toBeCloseTo(m.se.right, 1);
+    expect(m.lo.right, `${tag} the cluster overhangs the viewport`).toBeLessThanOrEqual(m.vw);
+
+    // (3) Same dimensions, and the gloved floor still holds in their new home.
+    for (const [name, b] of [['grid', m.lo], ['search', m.se]]) {
+      expect(b.w, `${tag} ${name} is ${b.w}px wide — under the 44px gloved floor`).toBeGreaterThanOrEqual(44);
+      expect(b.h, `${tag} ${name} is ${b.h}px tall — under the 44px gloved floor`).toBeGreaterThanOrEqual(44);
+    }
+    expect(m.lo.w, `${tag} the two utilities are no longer the same width`).toBeCloseTo(m.se.w, 1);
+    expect(m.lo.h, `${tag} the two utilities are no longer the same height`).toBeCloseTo(m.se.h, 1);
+
+    // (4) NO AMBER. Gold is the attention channel; a view toggle needs no attention.
+    //     Asserted on the resolved colour so re-adding the class OR hard-coding the
+    //     hex both fail.
+    const amber = /rgba?\(\s*255,\s*(203|214),/;
+    expect(m.loColour, `${tag} the grid button is drawing amber text (${m.loColour}) — gold is reserved for warning/attention`).not.toMatch(amber);
+    expect(m.loRing, `${tag} the grid button is drawing an amber ring (${m.loRing})`).not.toMatch(amber);
+
+    testInfo.annotations.push({ type: 'scene-utils', description: `grid ${JSON.stringify(m.lo)} · search ${JSON.stringify(m.se)} · header bottom ${m.hdr.bottom}` });
+  });
+
+  test('the carousel owns row 1 alone, and no chip hides under a control', async ({ phantom, page }, testInfo) => {
+    await phantom.boot();
+    await openAisle(page);
+    await populateDock(page);
+    await setChips(page, 5);
+
+    const m = await page.evaluate(() => {
+      const sheet = document.getElementById('forge3d-sheet');
+      const row = sheet.querySelector('.toprow');
+      const chips = sheet.querySelector('.chips');
+      const rb = row.getBoundingClientRect(), cb = chips.getBoundingClientRect();
+      // anything in row 1 that is not the scroller itself
+      const strangers = [...row.children].filter((c) => c !== chips)
+        .map((c) => c.id || c.className || c.tagName.toLowerCase());
+      // does any chip sit under either utility?
+      const util = [document.getElementById('loadoutBtn'), document.getElementById('searchBtn')]
+        .filter(Boolean).map((e) => e.getBoundingClientRect());
+      const buried = [];
+      sheet.querySelectorAll('.chip').forEach((ch) => {
+        const b = ch.getBoundingClientRect();
+        util.forEach((u) => {
+          if (Math.min(b.right, u.right) - Math.max(b.x, u.x) > 0.5 &&
+              Math.min(b.bottom, u.bottom) - Math.max(b.y, u.y) > 0.5) buried.push(ch.textContent.trim());
+        });
+      });
+      // setChips() marks the FIRST chip active, and a first chip can never centre —
+      // it is already at scrollLeft 0. Move the active state to the middle rack, which
+      // is the case the ruling is actually about, then drive the app's own centring
+      // path (updateChips, :20405).
+      sheet.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+      const all = [...sheet.querySelectorAll('.chip')];
+      const act = all[Math.floor(all.length / 2)];
+      if (act) { act.classList.add('active'); act.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'auto' }); }
+      return {
+        strangers, buried, chipCount: all.length,
+        rowW: +rb.width.toFixed(1), chipsW: +cb.width.toFixed(1),
+        chipsL: +cb.left.toFixed(1), chipsR: +cb.right.toFixed(1),
+        rowL: +rb.left.toFixed(1), rowR: +rb.right.toFixed(1),
+        scrollPad: parseFloat(getComputedStyle(chips).scrollPaddingInlineStart) || 0,
+        scrollW: chips.scrollWidth, clientW: chips.clientWidth,
+        vw: document.documentElement.clientWidth,
+      };
+    });
+    await settle(page);
+    const centred = await page.evaluate(() => {
+      const sheet = document.getElementById('forge3d-sheet');
+      const act = sheet.querySelector('.chip.active'); const sc = sheet.querySelector('.chips');
+      if (!act) return null;
+      const a = act.getBoundingClientRect(), s = sc.getBoundingClientRect();
+      return +(((a.x + a.right) / 2) - ((s.x + s.right) / 2)).toFixed(1);
+    });
+    const tag = `[${testInfo.project.name}]`;
+
+    expect(m.strangers, `${tag} row 1 holds something other than the carousel: ${m.strangers.join(', ')}`).toEqual([]);
+    expect(m.chipsW, `${tag} the carousel (${m.chipsW}px) does not span its row (${m.rowW}px)`).toBeCloseTo(m.rowW, 1);
+    expect(m.chipsL, `${tag} the carousel's left edge left the row gutter`).toBeCloseTo(m.rowL, 1);
+    expect(m.chipsR, `${tag} the carousel's right edge left the row gutter`).toBeCloseTo(m.rowR, 1);
+    expect(m.chipsR, `${tag} the carousel overhangs the viewport`).toBeLessThanOrEqual(m.vw);
+    expect(m.buried, `${tag} a chip is drawn underneath a utility control: ${m.buried.join(', ')}`).toEqual([]);
+    expect(m.scrollPad, `${tag} the carousel has no scroll padding, so the first and last racks can park flush against the edge`).toBeGreaterThan(0);
+    // vacuity: with 5 racks the row MUST actually be scrollable, or "nothing is
+    // hidden" is true only because everything fits.
+    expect(m.scrollW, `${tag} 5 racks did not overflow the row (scrollW ${m.scrollW} vs clientW ${m.clientW}) — this test proved nothing`).toBeGreaterThan(m.clientW);
+    // ⚠ Math.abs, not the raw delta. A bare `toBeLessThanOrEqual(1)` passes for EVERY
+    // chip sitting left of centre (-139 <= 1), which made the first draft of this
+    // assertion vacuous in exactly the case it was written to catch.
+    expect(centred, `${tag} the focused rack did not centre itself — its centre is ${centred}px from the scroller's`).not.toBeNull();
+    expect(Math.abs(centred), `${tag} the focused rack did not centre itself (off by ${centred}px)`).toBeLessThanOrEqual(1);
+
+    testInfo.annotations.push({ type: 'carousel', description: `row ${m.rowL}..${m.rowR} · scroller ${m.chipsL}..${m.chipsR} · scrollW ${m.scrollW}/${m.clientW} · centring delta ${centred}` });
+  });
+
+  test('the three context pills hold ONE baseline inside the viewport', async ({ phantom, page }, testInfo) => {
+    // This is the test the .409 probe should have had. populateDock() injected a
+    // SHORTER id than setFocus actually writes, so the pills looked like they fitted
+    // when the real strings overflowed to x=402 on a 390px screen. Here the id comes
+    // from the app's own writer, and the assertion is the owner's words: one
+    // baseline, consistent height, fits cleanly at 390.
+    await phantom.boot();
+    await openAisle(page);
+    await populateDock(page);
+
+    const m = await page.evaluate(() => {
+      const sheet = document.getElementById('forge3d-sheet');
+      const pills = [...sheet.querySelectorAll('.statpill')].filter((e) => !e.hidden && e.getBoundingClientRect().height > 0);
+      const row = sheet.querySelector('.statrow');
+      return {
+        pills: pills.map((e) => { const b = e.getBoundingClientRect();
+          return { txt: e.textContent.trim(), y: +b.y.toFixed(1), h: +b.height.toFixed(1), x: +b.x.toFixed(1), right: +b.right.toFixed(1) }; }),
+        rowH: +row.getBoundingClientRect().height.toFixed(1),
+        rowR: +row.getBoundingClientRect().right.toFixed(1),
+        wrap: getComputedStyle(row).flexWrap,
+        vw: document.documentElement.clientWidth,
+        docOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+    const tag = `[${testInfo.project.name}]`;
+
+    expect(m.pills.length, `${tag} expected three context pills, found ${m.pills.length}`).toBe(3);
+    const ys = m.pills.map((p) => p.y), hs = m.pills.map((p) => p.h);
+    expect(Math.max(...ys) - Math.min(...ys), `${tag} the pills are not on one baseline (tops ${ys.join(', ')}) — the row wrapped`).toBeLessThanOrEqual(0.5);
+    expect(Math.max(...hs) - Math.min(...hs), `${tag} the pills are not the same height (${hs.join(', ')})`).toBeLessThanOrEqual(0.5);
+    expect(m.wrap, `${tag} .statrow can wrap again, so a longer string will silently stack the pills`).toBe('nowrap');
+
+    // THE ONE THAT ACTUALLY BROKE: the last pill must end inside the row, not past it.
+    const last = m.pills[m.pills.length - 1];
+    expect(last.right, `${tag} "${last.txt}" ends at x=${last.right}, past the row's right edge (${m.rowR}) — the pills no longer fit at ${m.vw}px`).toBeLessThanOrEqual(m.rowR + 0.5);
+    expect(last.right, `${tag} "${last.txt}" runs off the ${m.vw}px viewport (ends at ${last.right})`).toBeLessThanOrEqual(m.vw);
+    expect(m.docOverflow, `${tag} the pills pushed the document past the viewport`).toBe(0);
+
+    testInfo.annotations.push({ type: 'context-pills', description: m.pills.map((p) => `"${p.txt}" ${p.x}..${p.right}`).join(' · ') + ` · row h${m.rowH}` });
   });
 });

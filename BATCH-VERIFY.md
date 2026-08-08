@@ -1807,4 +1807,44 @@ and 5 sit off-screen at a full five-rack loadout with nothing signalling the str
 
 ---
 
+## v1.14.410 — design system locked + four phone screens take it
+
+Step 1 of the UI finishing sprint. `PHANTOM_DESIGN_SYSTEM.md` is the authority; all six rulings in
+its §0 were carried by the owner on 2026-08-07. Per **R-E the 1116 existing literal spacing
+declarations are deliberately NOT refactored** — each screen takes the scale as it is finished.
+
+**The four device-only checks. A harness proves none of these.**
+
+- [ ] **PhantomBrand actually RENDERS on the iPhone** — not a silent fallback to the system stack.
+      Check `INGEST MASTER` on Command and `NO MASTER LOADED` on Build: the glyphs must be the
+      wide Audiowide forms, not Helvetica. This is the one change that alters how the app *reads*.
+- [ ] **Forge utility cluster** clears the notch and the header at device scale, and both buttons
+      are reachable one-handed. It is anchored at `top:100%` of the header, so if the header wraps
+      on a narrower device the cluster must move DOWN with it, never over the scene edge.
+- [ ] **Bottom strip still clears the home indicator** — `env(safe-area-inset-bottom)` resolves to
+      **0** in the harness, so this is verified by **nothing** off-device.
+- [ ] **The quiet offline pill is still readable in cold-aisle lighting.** It was deliberately
+      dimmed from gold to a low-alpha cyan. If it cannot be read at arm's length under the aisle
+      strobes, say so — the fix is contrast, not going back to amber.
+
+**Also confirm, quickly:**
+
+- [ ] Command with no Master: dropzone is centred, ~280px, and says its sentence once.
+- [ ] Build: the primary action is cyan — **no purple gradient anywhere**.
+- [ ] Forge: rack IDs legible at arm's length; focused rack centres itself; grid button is **not**
+      amber; row 1 holds the carousel and nothing else.
+- [ ] Tools: tile subtitles readable; filter field is comfortably tappable with a glove.
+- [ ] SHIFT sheet: `SET SHIFT END` reads on ONE line, and the ✕ is a **44px square in the corner** —
+      **not** a 260px-wide invisible strip next to the title. Tap beside the title: nothing should
+      close. Same close button also serves `#log-sheet`.
+- [ ] `?legacy=1` still byte-identical — every Tools rule was scoped to `#ref-grid` and every SHIFT
+      rule to `body.rd` for this reason. The `.va-*` sheets exist in BOTH houses.
+
+**Known and NOT fixed here** (each owns a ruling in `PHANTOM_DESIGN_SYSTEM.md` §11): two stacked
+search fields on Tools · six tile border colours vs the channel law · `OPTICS` subtitle truncation ·
+`EXIT` red in the nav (navigation frozen) · four cyan→violet gradients and two sub-44px buttons in
+`body.rd.cshell` (Step 3) · `--fs-body` colliding with `--fs-subhead` at ≥1024px (Step 3).
+
+---
+
 <!-- append new ships above this line — checkpoint at 6 deep or before any HIGH-risk ship -->
