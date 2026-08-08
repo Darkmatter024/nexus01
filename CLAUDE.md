@@ -1,71 +1,124 @@
 # CLAUDE.md — PHANTOM (darkmatter024/phantom)
 
-## What this is
-PHANTOM is an offline-first, single-file iOS Safari PWA (`dct-ios.html`, ~48.5k lines) for CoreWeave data-center technicians. Live at darkmatter024.github.io/phantom/dct-ios.html. Built and owned by John (Lead DCT). It is a FLEET-WIDE app: ships site-agnostic; the loaded master file provides all site-specific data (§ Design Law 6).
+Offline-first single-file iOS Safari PWA (`dct-ios.html`, ~48.5k lines) for CoreWeave DCTs.
+Live: darkmatter024.github.io/phantom/dct-ios.html. Owned by John (Lead DCT); his word is final.
+Ships site-agnostic — the loaded Master supplies every site-specific fact (Law A6).
+
+**State lives in `PHANTOM_CURRENT_STATE.md`, and nowhere else.** Do not record live version,
+queue, or open defects in this file — five documents once claimed five different live versions and
+none was correct. Start a session with `PHANTOM_SESSION_BOOTSTRAP.md`.
+
+---
+
+## THE CONTRACTS — architecture and data law
+
+These are contracts, not reminders. They do not expire, and they are not subject to the
+behavioral-rule test. Changing one requires an owner ruling.
+
+**A · Product / architecture**
+1. **ONE ACTIVE MASTER.** Exactly one authoritative Master at a time — never one in memory and
+   another in storage, never a candidate half-active. `PHANTOM_MASTER` is the only writer of both
+   halves; it persists FIRST and goes live SECOND. Parsers return candidates; only acceptance writes.
+2. **One canonical engine per concept.** No second renderer, no second door, no parallel
+   implementation of a thing that already exists. New entry points call the one canonical function.
+3. **Physical topology creates racks; the Master populates them.** (blueprint R-06) A rack exists
+   because the floor has one, not because a spreadsheet mentions it.
+4. **Empty racks remain real and visible.** A cab with no devices says what that means — it is
+   never hidden, never silently zeroed, never treated as absent.
+5. **Forge uses the canonical Rack Engine.** No private renderer inside Forge.
+6. **Only the active foreground rack window gets full interactive 3D.** Five foreground racks;
+   everything else is scenery. One live WebGL attachment, ever (spec I1).
+7. **Build is the operational center.** The shift runs from Build; Command is situational
+   awareness, Tools is reference.
+8. **SHIFT is a primary product pillar.** ⚠ Owner ruling 2026-08-08: SHIFT stays a pillar. The
+   shipped nav currently carries EXIT in the 4th slot and `01-nav.spec.js:65` pins that absence —
+   **that test now pins a KNOWN GAP, not a specification.** See `PHANTOM_CURRENT_STATE.md` §defects.
+9. **Offline-first, not offline-only.** Full function with no network; the network is an
+   enhancement, never a precondition.
+
+**B · Data / safety**
+10. **Real data only.** Never fabricate telemetry, never label a panel after data PHANTOM does not
+    receive, never present a mock's number as a measurement. Structural no-data is correct, not
+    unfinished. Caption where a number came from.
+11. **User data is preserved.** Merge, never overwrite — Master loads fill gaps; hand-entered
+    values always win and always survive reloads. Never rebuild a persisted object as a fresh
+    literal. Never destroy known-good data for a candidate that cannot be kept.
+12. **Cache identity and invalidation.** Every Master-derived cache carries the Master's identity
+    and is checked on read. A cache may accelerate the active Master, never outlive it.
+    (`if (cache[id])` treats an empty array as a hit — check identity, not truthiness.)
+13. **No base64 images in localStorage.** Ephemeral or IndexedDB only.
+14. **No silent failures.** Never `if (!x) return;` on a user-facing path. Fail loudly:
+    `console.warn` + `phantomToast`. A tappable control that does nothing is a violation.
+
+**C · Presentation**
+15. **Approved PHANTOM visual identity.** `PHANTOM_DESIGN_SYSTEM.md` is the lock (approved
+    2026-08-07). Verify token NAMES against `:root` before use — an undefined `var()` invalidates
+    the whole declaration silently. ⛔ R-E: no mass refactor of the 1116 literals; per-screen only.
+16. **Intentional compositions per tier.** Phone / tablet / laptop / desktop are designed, not
+    stretched. Desktop composition is automatic at ≥1024 via media query. Rule 1: nothing pushes
+    the viewport past 100vw, ever.
+17. **No legacy UI leakage.** `?legacy=1` is byte-identical behavior. Nothing under `body.rd` may
+    `nav_push` a legacy `p:` value. Gate the PRESENTATION, never the INVARIANT — Rule 7 protects
+    legacy from churn, not from crash fixes.
+
+---
+
+## Ship discipline
+
+0. **Batching (CALL 0, owner-delegated).** Ships may stack; device verification is one consolidated
+   pass via `BATCH-VERIFY.md` — run the consolidated section at the top, not the per-ship blocks.
+   Cap: every 6 stacked ships or before any HIGH-risk ship. *(This supersedes the old "one ship per
+   version" rule, which contradicted it in the same section.)*
+1. **OODA first.** `curl` live `main` before any edit. If live ≠ the spec baseline, STOP and
+   re-anchor. Verbatim strings are truth; line numbers are hints.
+2. **Surgical edits only.** Unique anchors, no rewrites, no drive-by refactors.
+3. **Mechanical gates are enforced by hook, not by memory** — `tools/hooks/phantom-guard.js` blocks
+   a commit on broken three-stamp lockstep, a non-compiling inline script, brace imbalance, damaged
+   CRLF, or a backtick in a commit body. Do not work around it; fix the cause.
+4. **Device verify is a HARD STOP.** Critical iPhone/WebGL behaviour is verified on physical
+   hardware or it is not verified. After push, hand John the checklist and PARK.
+5. **No new features during the current stabilization / UI-finish phase.** The queue is empty by
+   design. New scope needs an owner ruling.
+
+## Design law
+
+1. **Shift-shape, not history-shape.** COMMAND = situational awareness · BUILD/WORK = the job chain
+   in execution order · CRASH CART = zero-state bench.
+2. **Zero-state test.** Works with no deployment → CRASH CART reference. Needs deploy state → lives
+   inside the Deploy flow.
+3. **Additive over surgery.** Re-homed legacy organs get new layers routed into existing content.
+4. **Cold Aisle Filter.** Every feature must help a gloved tech in the aisle *now*. Tap depth
+   matters; four taps to a reference is a defect. **Mock the phone first — 390 before 1080.**
+5. **Aesthetic bar: "$10M, not cheesy."** Minimum formatting, no clutter. Values live in
+   `PHANTOM_DESIGN_SYSTEM.md` — that file, not this one, is the source of truth for tokens.
+6. **Site data flows from the Master; the app carries only fleet truth.**
 
 ## Roles
-- **John**: owner. All gate decisions. All device verifies (iPhone, real hardware). His word is final.
-- **web-Claude**: authors `.md` handoff specs with verbatim `str_replace` anchors.
-- **You (Claude Code)**: execute specs, git operations, verification. You may fix draft-spec bugs against live code (verify helper names, selectors, signatures before use) — report every deviation from spec in the commit message.
 
-## Ship discipline — every ship, no exceptions
-0. **BATCH VERIFY (CALL 0, DIRECTIVE 2026-07-06, owner-delegated):** ships may stack; device verification = one consolidated pass via `BATCH-VERIFY.md` (repo root, Claude Code maintains). Cap: every 6 stacked ships or before any HIGH-risk (LR-2 class) ship. All other gates stay per-ship. Every ship note cites the CALL number it relies on; owner veto reverts the specific call.
-1. **OODA first**: `curl` live `main` (`dct-ios.html`, `sw.js`, `version.json`) before ANY edit. If live version ≠ spec baseline, STOP and re-anchor. Verbatim strings are truth; line numbers are hints.
-2. **Surgical edits only**: `str_replace` with unique anchors. No rewrites, no "while I'm here" changes, no drive-by refactors.
-3. **Gates before push**: `node --check` ×3 · CSS brace-balance check · CRLF preserved.
-4. **Three-stamp lockstep**: `dct-ios.html` + `sw.js` CACHE_VERSION + `version.json` bump together, always.
-5. **One ship per version.** Never stack a second UI change on an unverified one.
-6. **Device verify is a HARD STOP.** After push, hand John the verify checklist and PARK. Do not proceed to the next ship on your own initiative.
-7. **`?legacy=1` is byte-identical-behavior.** Legacy markup, `showPage`/`showOpsTab`, `#ops-tab-strip`, and legacy render paths are untouchable except in a John-signed R1 deletion pass. "Hide, not delete; rip-cord restores it."
+- **John** — owner. All gate decisions, all device verifies. Terse and field-operational: lead with
+  status, state deviations plainly, no cheerleading. He rewards honest pushback and penalizes churn.
+  When parked, say exactly what you are waiting on, in one line.
+- **web-Claude** — authors `.md` handoff specs with verbatim anchors. Its zips may restamp a version
+  already shipped: diff against the shared base and re-apply on top of live, never drop-in.
+- **You** — execute, verify, push. You may fix draft-spec bugs against live code; report every
+  deviation in the commit message.
 
-## Hard rules (violations found in the field — never reintroduce)
-- **No silent failures.** Never `if (!x) return;` on a user-facing path. Fail loudly: `console.warn` + `phantomToast`. (Root cause of the dead Work-grid cards.)
-- **No legacy page IDs in nav state under redesign.** Nothing running under `body.rd` may `nav_push` a legacy `p:` value (e.g. `p:'sop'`). Back-nav must never be able to resurrect a legacy surface. (Root cause of the legacy-leak bug.)
-- **One door per feature.** Never wire the same surface to two hand-built entry points. New entry points call the ONE canonical `rd_open*` function.
-- **No silent host fallbacks.** Renderers targeting a redesign host must not quietly fall back to a legacy container (`deploy_opsHost` pattern). Warn and abort instead.
-- **Merge, never overwrite.** Master-file loads fill gaps in user data; hand-entered values always win and always survive reloads.
-- **No base64 images in localStorage.** Photos/attachments: ephemeral or IndexedDB only.
-- **Names say what the door opens.** No aspirational or historical labels (MASTER DOC→SITE PROFILE precedent).
-- **Icon law (owner ruling 2026-07-05):** No large legible title words on icon art (they ghost against card labels); ambient numerals / micro-labels / readouts are approved texture and encouraged for realism. Owner exception of record: the MASTER FILE plaque text ("MASTER DOC / DEPLOYMENT AUTHORIZED").
-- **Verify token NAMES against `:root` (mock-token trap, `.280` field fix).** web-Claude specs/mocks use `--vio`/`--mag`, but the live app defines only `--violet` (#9b59ff) / `--magenta` (#ff006e) on `:root` — `--vio`/`--mag` exist ONLY under `#boot`/`#forge3d-sheet`. Before shipping any `var()`/`color-mix()`, confirm the custom-property name is defined in the tree it renders in: an undefined var silently invalidates the whole declaration (no error, no paint). Same family as the mock-helper trap (spec helpers like `fracToU`/`buildUMap` don't exist here). (Root cause of the `.279` Ask border+glow that never rendered.)
-- **Art dimension attribute matches aspect (bug class — 2nd field occurrence).** Art sized by a single dimension attribute must match that attribute to its aspect: near-square art takes `width`, portrait art takes `height`. A portrait bust (184×256) carries `height="62"`; `width="62"` renders 62×86 and spills its plate. Verify the decoded `naturalWidth`/`naturalHeight` on the live `<img>`, not the intent.
-- **Reserved slots are inert by design (owner ruling).** A placeholder control (e.g. `.rpill` RESERVED) carries NO `onclick`/`role`/`tabindex`; it uses `cursor:default` + `aria-hidden="true"`. A tappable element that does nothing is a No-Silent-Failures violation. Claiming a slot means REPLACING the placeholder element wholesale with a real control — never bolting a handler onto the placeholder.
-## Design law (test every change against these)
-1. Shift-shape, not history-shape: COMMAND = situational awareness · WORK = job chain in execution order (Deploy → Master → BOM → Manifest → Port Map → Rack Map → Scan → Handoff) · CRASH CART = zero-state troubleshooting bench.
-2. Zero-state test: works with no deployment loaded → CRASH CART reference. Needs deploy state → lives inside the Deploy flow.
-3. Additive over surgery: re-homed legacy organs (pg-power family) get new redesign-native layers routed into existing content. No internal rewrites before R4.
-4. Cold Aisle Filter: every feature must help a gloved tech in the aisle right now. Tap depth matters. Four taps to reach a reference is a defect. **Mock the phone first — 390 before 1080:** Command-page specs and mockups get rendered and checked at 390px FIRST, 1080px second; a layout that fits desktop can still overlap on-device. Mocking only at the convenient desktop width is how the Ask-tile fault shipped four times before it was caught.
-5. Aesthetic bar: "$10M, not cheesy." Tokens: `--bg:#04060a --cyan:#28e0ff --vio:#8a4bff --mag:#ff2bd6 --teal:#1fffd0 --gold:#ffcb45`. **Fonts: system stack — `-apple-system, 'Helvetica Neue', Arial, sans-serif`** (v1.14.381 doc correction: this line previously read "Orbitron/Chakra Petch/Rajdhani". Those were never the live values — `--orb` and `--raj` both resolve to the system stack, and `--mono` to `ui-monospace, 'Menlo', 'Courier New'`. The token NAMES are historical; the VALUES are system fonts. Documentation-only correction, no visual change). Minimum formatting, no clutter.
-   - ⚠ **The token hexes on this line are ALSO drifted** and were deliberately left alone (typography-only ruling): live `:root` has `--cyan:#5cf2ff` (not `#28e0ff`), `--gold:#ffd60a` (not `#ffcb45`), `--bg0:#04070b` (there is no `--bg`), and `--mag`/`--vio` exist ONLY under `#boot` with **zero** `var()` consumers — outside `#boot` they silently paint nothing (mock-token trap). Verify against `:root` before using any value from this line. Channel mapping of record: `Downloads\PHANTOM-SPEC-COLOR-MAPPING.md`.
-6. Site data flows from the master; the app carries only fleet truth. One master load hydrates Site Profile, Rack Map, Port Map. Profiles are per-facility; switching masters switches context.
+## Working rules
 
-## Current state & queue (update this section every ship)
-- **Live: `v1.14.408`** (`73acdb1`, 2026-08-07) — **the Forge toast moves ABOVE the row (owner ruling), closing the one item `.407` escalated.** The magic `96px` is DELETED — last one in the stack, twin of the `92px`; `#toast` is now a child of `.hud-bottom` at `bottom:100%`, so it clears the row and the focus card at any height. ⭐ **THE LEVER, and the durable lesson: `position:fixed` ALWAYS establishes a stacking context, whatever its z-index.** That is exactly why the toast could not be moved at `.407` — as a child of a fixed strip it was capped below `.detail-panel` (z-40), and the UNDO for the status toggle (which fires WITH that panel open) would have died silently. `.hud` → `position:absolute` + `z-index:auto` establishes NO stacking context, so the toast's own `z-index:60` resolves in `#forge3d-hud`'s context and beats the panel/overlay/picker, while `.toprow` and `.herotag` stay at auto and remain correctly covered. Measured: the gap above the row is **exactly 10.0px in all six** card-height × viewport combinations, and with the panel open `elementFromPoint` at the toast's centre returns the toast with UNDO hit-testable. Also: the centring `transform` retires (a transform at rest makes the element a containing block for any fixed descendant — the `.212` trap), and `--forge-gap` is named because 10px became a SHARED term the moment two elements sat in that slot. 📌 **Second durable lesson — three "failures" came from the PROBE, not the CSS: a rect measured in the same turn a transition starts samples MID-FLIGHT (`.toast` reads 20px low for 250ms), and sibling elements carry DIFFERENT durations (`.toast` 250ms vs `.hint` 800ms) so a single settle time is wrong. Settle per element, before measuring. And `showToast` is IIFE-scoped — unreachable at page scope, the same trap that bit M2-b.**
-- **`v1.14.407`** (`a8360df`, 2026-08-07) — **FORGE BOTTOM CONTROL STACK, one clean pass.** ⭐ **ROOT CAUSE IN ONE SENTENCE: the control row had no declared height, so every control in it was sized by a SIBLING.** `.hudbtn` declared `width:46px` and no height, taking whatever `align-items:stretch` handed it from the chips → **46×24.5** on a fresh device, **46×35** populated, against the app's own 44px `--tap-s`; the pills were 76×33 and carry click handlers. Now every control consumes the tap floor as its OWN height: 46×44 buttons, 76×44 pills, row a constant 58px. Also: `.chips` set `overflow-x:auto` and left `overflow-y` visible — per css-overflow-3 the omitted axis **blockifies**, so it clipped VERTICALLY in silence and amputated the active pill's glow (0.00px of room above a declared 14px blur); both axes now declared, room derived from the same token that feeds the shadow. **The `.hint`'s magic 92px is DELETED, not retuned** — the caption is now a CHILD of the strip at `bottom:100%`, and the guard proves it derived: the gap holds at 10px across a stack forced from 142→300px. ⭐ **BLOCKER the request did not name, found by OPENING the aisle rather than reading CSS:** the zero state opened with a RED ERROR BAR across both buttons — `deploy_forge_zeroState` called `phantomToast` with no type and `phantomToast` defaults `colors[type]||colors.error`, so an expected condition was painted error-red; it was also the 4th copy of the same sentence. Deleted. **Three of the owner's own suspicions were REFUTED by measurement** (the focus card never overlapped the row — −12.00px, a clean gap, the `.hint` was the intruder · no ancestor clips these controls · zero negative lengths exist in the block) and no change was manufactured to satisfy them. Provenance: `git log -L` = ONE commit per rule; the CSS was byte-identical to a mock authored as a **full-window demo, never validated at 390px inside a sheet**. 📌 **Durable: when a control declares no height, `align-items:stretch` will size it off a sibling's content — and the honest zero state is where that collapses hardest. And a mock ported byte-identically is only validated for the container it was authored in.** ⛔ Open rulings: the Forge toast's magic 96px (moving it puts it behind the detail panel and kills UNDO) · 2 of 5 pills off-screen at 390px · `--tap-m` 48px upgrade is now a one-token edit · `.rd-sheet-close` 40×40.
-- **`v1.14.406`** (`997716e`, 2026-08-06) — **NO SILENT FAILURES: two P0 storage defects + the false crash banner.** ⭐ **First ship found by AUTOMATION, not by the owner in the aisle** — the new `test/e2e` Playwright baseline (104 tests, 7 specs, `retries: 0`) pinned all three. **P0-1** `PHANTOM_MASTER_STORE.save` wrote through a raw `setItem` whose quota branch warned and returned false with no toast, and its only caller discarded the boolean → operator loads a Master, UI reports success, **nothing persists**. **P0-2** `shift_end_write` was a raw `setItem` in a bare `catch(_){}` over registry-classified user data. **P1** `.403`'s `aisle_trace` routed 14 NORMAL lifecycle events through `phantom_logErr`, so a healthy Open Aisle raised *"JS ERROR"* every time — which would have poisoned this very batch pass. `phantom_logErr` gains an optional `opts.trace`; all 64 existing call sites byte-identical. One new predicate `phantom_crashErrors` is the single definition of *"is this ring entry an error"* for the three surfaces that ask. ⚠ **`?legacy=1` is NOT byte-identical, deliberately** — the two quota toasts fire in both houses (`.402` precedent: only the presentation is house-scoped, the invariant never is) and the trace filter *restores* legacy's pre-`.403` boot-banner behaviour. 📌 **Durable: a diagnostic that shares the crash channel will be read as a crash. Instrumentation must declare what it is at the write, and the predicate that answers "is this an error" belongs in exactly one place — three surfaces asked it and a second copy is how they drift.**
-- **`v1.14.405`** (`6d862e5`, 2026-08-06) — ✅ **BLANK FORGE AISLE FIXED AND DEVICE-CONFIRMED: owner "aisle draws and holds." The `.390`→`.404` arc is CLOSED.** Found by a **focused regression pass**, not another device-log cycle: pickaxe from the last device-verified good aisle (`v1.14.353` `4f84c65`, batch `.351`–`.354` CLEARED) returned four suspect commits; extracting `forge3d_render` whole from both revisions gave **five functional deltas in 1,093 lines**, and four were eliminated at the desk (the M1 `safeGet`/`safeStore` swap is symmetric — no double-encoding; traces and `.404`'s repaint are additive). ⭐ **CAUSE — an interaction of three ships, none wrong alone:** `.391` gave `bw_mount3D` a bounded re-arm (12×400ms ≈ **5s** of `setTimeout` retries) guarded only by `document.body.contains(mount)`; `.401` made release **symmetric** (`releaseOthers`, I1). **Opening the aisle never removes `#bw-mount` from the DOM** — the aisle is a separate full-screen sheet, a direct child of `#app` — so Build's re-arm kept firing for 5s *after* the aisle opened and each retry re-registered `bw-mount` and **disposed the live aisle.** The HUD is static markup, so it stayed perfect while only the scene died. `.404` removed only the **observer** half of `.401` and left `releaseOthers`, which is why it missed. **FIX: correct the guard, add no machinery** — `draw()` aborts while the aisle is open. No timeout/retry/fallback/instrumentation; it *removes* work on a path that must not run. **I1 not weakened.** 📌 **Durable: a retry loop's liveness guard must ask "am I still the visible surface", not "is my element still in the DOM" — a full-screen modal leaves the underlying mount mounted, so DOM-presence guards survive navigation and let a stale retry steal the context from the surface that replaced it. And when you make a release SYMMETRIC, audit every re-arm loop that can re-acquire: symmetry converts a previously benign retry into a destroyer.**
-- **`v1.14.402`** (`1f47b87`, 2026-08-06) — **owner ruling: the `.401` visibility observer is REDESIGN-HOUSE ONLY.** `_observe` returns early unless `document.body` carries `rd`, so `?legacy=1` behaves exactly as it did on `.400` (no observer, `att.paused` false for the attachment's life, each renderer's own `document.hidden` handler is again the only thing that stops its loop). `body.rd` is added **once** at boot by `redesign_initToggle` `:18895` and never toggled — the only add/remove/toggle site in the file — so a register-time class check is sound. Class chosen over `redesign_isOn()` deliberately: that helper **writes `phantom_legacy` to localStorage** as a side effect of parsing the URL, which a hot lifecycle path must not do. ⛔ **The single-live-context guard (`releaseOthers`, I1) is NOT gated and applies in BOTH houses** — two live GL contexts on iOS is the crash class M2 exists to close, and legacy is entitled to that fix. **Only the observer is house-scoped; the invariant is not.** Functional diff: one line + the stamp.
-- **`v1.14.401`** (`a94bb5f`) — **M2-a: the graphics lifecycle has an owner.** New `RackEngine` object owns every WebGL attachment. Registration happens at the boundary that CREATES the renderer, so the single-live-context guard (spec I1) is now an INVARIANT, not a convention — it replaces two asymmetric hand-written guards where the rack disposed the aisle but the aisle did not dispose the rack (its guard sat one level up in `forge3d_open`, so any other caller left both live). Coverage measured, not assumed: the app has exactly two `new THREE.WebGLRenderer` sites (`:19174` aisle, `:35359` rack) and both register. Per-attachment `IntersectionObserver` drives named pause/resume (spec I4) — `document.hidden` is NOT set by a `display:none` ancestor, which is how leaving Build for Tools left the rack's rAF at full rate on an invisible canvas for the rest of a shift. `_reh3dActive`/`_forge3dActive` retained as read-only shims; they and standalone `PhantomGL` retire at M2-b. ⏳ **AWAITING DEVICE VERIFY.**
-- ⛔ **THE PROGRAM IS `ARCHITECTURE-BLUEPRINT.md` (APPROVED) — read it and `RACKENGINE-SPEC.md` before any renderer work.** Milestones: **M0 ✅** (`.395` instrument, `.396` the fix it found) · **M1 ✅ COMPLETE** (`.397` derived backup coverage → `.398` coverage measured against live storage → `.399` every write path guarded + offline PDF → `.400` read side hardened, `safeGet`/`safeRemove`, corrupt-data quarantine) · **M2 IN PROGRESS** — `.401` = M2-a (lifecycle owner). **M2-b is owed: `RackEngine.attach`, the reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation, and the deletions in spec §8.** M3–M6 not started. **M2 is the unblock — Phase 3 and broad UI work stay stopped until M2 passes on the physical iPhone, per owner directive.** Rulings **R-04** (delete legacy at M2, its own ship, does not stack) and **R-05** (one engine, many hosts — no presentation is removed) are in `ARCHITECTURE-BLUEPRINT.md` §14.
-- **Arc `.385`→`.396` = PHASE 2 ACTIVE BUILD WORKSPACE + the blank-rack hunt.** `.385` found the honest thing first: the Phase 2 Build workspace **had never been built** — `#pg-work` held static markup and no renderer, so it was never a regression. New `#bw-shell` via `bw_render()`, `body.rd`-gated, legacy `#work-grid` hidden not deleted. Then `.386`/`.387`/`.388` three purpose-built shells (the three-column grid was CLIPPING, not scrolling, at 1280) · `.389` feature-complete, all writes through the existing hardened path · `.390`–`.396` the blank rack, which took six ships because the cause moved: mount-lifecycle → wrong surface in the log (`cmd_rackHero3D`, not the Build mount) → a genuine second-context refusal (`.394`) → **and finally `.396`: the rack was never refused at all. three.js r128 creates a WebGL2 context, and a canvas holding `webgl2` returns NULL for `getContext('webgl')` — the capability check was asking the wrong question and reporting a refusal that never happened.**
-- ⛔ **VERIFY DEBT — 26 SHIPS ACROSS TWO OPEN BATCHES. `BATCH-VERIFY.md` went dark from `.385` to `.401` and was reconciled 2026-08-06.** Batch `.377`–`.384` (8 of 6): pass was RUN and FAILED on the Build surface — that failure is what `.385` diagnosed — but **no release is on record.** Batch `.385`–`.402` (18 of 6, contains the M2 renderer work = HIGH-risk): OPEN. **Nothing ships after `.402` until this clears.** ✅ **`.396` RESOLVED 2026-08-06 — owner confirmed "rack draws" against `v1.14.401`. The eight-ship blank-rack arc `.389`→`.396` is CLOSED.** ⚠ That pass establishes the rack RENDERS and nothing more — the `.401`/`.402` attachment checks (single-entry transfer on Open Aisle, pause/resume on leaving Build, ×10 Build entries) and the `?legacy=1` half of `.402` are still open, and neither batch is released.
-- **Queue: empty by design.** No feature work is authorised until the batch clears and M2-b is scoped. Older roadmap residue (SERVICE EXTEND · cross-rack links · spec panel [R5 PARKED — fabricates] · projected U-ruler · `.reh-3d-seg` 22→44px gloved floor) still needs a NEW owner ruling.
-- ⛔ **RACK SCENE LOCK ARMED (INTEGRATION-STATE §47/§52):** the `camera` term is OPEN; everything else — materials · the §A JOHN-LOCKED light rig · fog · tone mapping · tray geometry/internals · type colours · bezel strips · **floor** · reflection · boot — is **LOCKED. No change without a NEW explicit owner ruling; if a task would touch it, STOP AND ASK.** The floor is UNLIT BY RULING — any sheen/gloss/roughness ask is a P0 revert; the lever is the tile paint, never the lights.
-- **Redesign is the default UI since `v1.14.101`** (bare URL boots `body.rd`; `?legacy=1` rip-cord persists `phantom_legacy`). Legacy 5-tab surfaces are re-homed into the New UI; the R1 cold-delete pass is still gated on John's census sign-off.
-- **Open items needing a ruling — NEW, from the `.385`+ arc:** `.391` disclosed three and none are answered — the bottom-nav 4th item is **EXIT** where the approved reference shows **SHIFT** · the rack-preview control rail wraps 4-then-1 and carries REAR + EXPLODE, which the reference does not show · **the Build metrics layout has never been seen against a populated rack** (the harness rack has no Master-linked platform, so they render honest em-dashes). (✅ the `.401` shared-house flag is CLOSED — owner ruled 2026-08-06 "gate the observer on `body.rd`", shipped as `.402`.) Deferred with reasons on record from M1: the six dead `else localStorage.setItem` arms (unreachable) and the `handoffDraft` truthiness bug at the `phantom_handoff_v1` read (a logic defect, belongs with Shift at M4).
-- **Older open items (cosmetic/residue, none blocking):** the two RESERVED `.askrow` slots are unnamed · **the `.280` OG card (`manifest-og-v2.png`) still owes John a fresh-Slack-message unfurl check** · `#ff8a00` AUDITS accent off-token · `phantom-tool-crashcart-256.webp` + `phantom-assistant-mark-256.webp` have 0 refs · the inert `.164` `body.rd .ask` rule at ~L8749 · deleting the orphaned old assistant asset · broader `var(--vio)` usage outside `#boot`/`#forge3d-sheet` may be silently un-violet — pre-existing, unaudited.
-- ⚠ **LIVE-STATE SOURCE OF TRUTH HAS MOVED. `INTEGRATION-STATE.md` STOPS AT §63 (`v1.14.286`) AND HAS NOT BEEN WRITTEN TO SINCE 2026-07-18** — do not read it as current. Ship-by-ship truth for `.287`→`.401` is: **`git log` + the `version.json` `notes` field of each ship** (they are long-form and carry the reasoning, the gates and the device-verify checklist), plus `ARCHITECTURE-BLUEPRINT.md` and `RACKENGINE-SPEC.md` for the program and `BATCH-VERIFY.md` for verify debt. Recurring code lessons in memory: `feedback_declare_above_first_use` · `feedback_verify_env_artifacts_before_fixing` · `feedback_fixed_child_transform_trap`, plus the standing MOCK-TOKEN / ART-SIZING / RESERVED-SLOT / MOCK-AT-390-FIRST rules.
-- RETIRED by owner decision: Crash-Cart Mode (do NOT build doors for it; physical deletion waits for the R1 pass).
+- **Match process to task size.** Localized UI/CSS is your own work: inspect → implement →
+  verify → finish. Reach for specialists only at architecture boundaries, data safety, WebGL
+  lifecycle, offline/storage, or independent release verification.
+- **When John hands BYTES, reproduce them VERBATIM.** No silent improvements. Stop and ask before
+  any change; only the named target moves.
+- **After a push, close the loop** — show `git log -1 --oneline` and `git status` so he can verify
+  origin actually has it before anything else proceeds.
+- **Tests carry the mechanical truth.** `test/e2e` — 128 tests, `retries: 0`. A `test.fail()` is a
+  PINNED DEFECT; *"Expected to fail, but passed"* is proof a fix landed. Never widen the console
+  allow-list to get green. Automation does not replace the iPhone gate.
 
-## Communication style
-John is terse and field-operational. Match it: lead with status, state deviations plainly, no cheerleading, no hedging. Push back with evidence when the spec or the ask conflicts with live code or these rules — he rewards honest pushback and penalizes churn. When parked, say exactly what you're waiting on and from whom, in one line.
+## New-rule policy
 
-## Subagent delegation
-
-During implementation, delegate to these subagents based on expertise — do not do their checks yourself in the main context:
-- Use `lockstep-auditor` before every commit or ship to verify the three-stamp version lockstep.
-- Use `surgical-edit-reviewer` before applying any multi-line edit to dct-ios.html.
-- Use `data-honesty-auditor` before shipping any OPS terminal or dashboard change.
-- Use `cold-aisle-qa` after any CSS/layout/tap-target change.
-`phantom-ship-gate` and `phantom-rd-reviewer` remain the mechanical/doctrine gate; the four above are advisory pre-checks.
-A ship is blocked until lockstep-auditor and data-honesty-auditor both report PASS. iPhone device-verify remains the final hard gate.
+Do not create a permanent behavioral rule after every correction. Correct the issue, and prefer
+automated enforcement. Add a permanent rule only when the same meaningful failure **recurs**, or
+when the mistake could cause data loss, architectural corruption, or a critical release regression.
+**Architecture and product rulings are exempt — they are recorded on first statement.**
