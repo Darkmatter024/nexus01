@@ -126,6 +126,59 @@ test.describe('staging — a candidate never participates in the UI', () => {
   });
 });
 
+test.describe('the restore path — RECOVERY ONLY, never a door into a running app', () => {
+
+  test('restore hands control back to the boot state machine instead of asking the operator to', async ({ phantom, page }) => {
+    await phantom.boot();
+    const shape = await page.evaluate(() => {
+      const src = String(window.phantom_restoreComplete || '');
+      return {
+        exists: typeof window.phantom_restoreComplete === 'function',
+        reloads: /location\.reload\(\)/.test(src),
+        // The old copy told the operator to reload. That sentence WAS the split-brain,
+        // handed over as a chore — if it comes back, so has the defect.
+        asksTheOperator: /Reload the app to see restored data/.test(src),
+      };
+    });
+    expect(shape.exists, 'both restore paths must converge on one door').toBe(true);
+    expect(shape.reloads, 'a restore must re-enter boot, not return to a half-updated app').toBe(true);
+    expect(shape.asksTheOperator, 'restoring must not leave consistency as a manual follow-up step').toBe(false);
+  });
+
+  test('a boot after a restored snapshot ends with memory and storage AGREEING', async ({ phantom, page }) => {
+    await phantom.boot();
+    // Simulate what a restore leaves behind: a Master snapshot written straight to storage,
+    // with the running app never told. Then re-enter boot the way the reload does.
+    await page.evaluate(() => {
+      PHANTOM_MASTER.clear();
+      PHANTOM_MASTER_STORE.save({
+        racksByCab: { 'restored:01': { hosts: [{ u: 1 }] } },
+        sourceFileHash: 'RESTORED-MASTER', sourceFile: 'FROM-BACKUP.xlsx',
+        stats: { sourceFileHash: 'RESTORED-MASTER' },
+      });
+    });
+    await page.reload();
+    await page.waitForFunction(() => typeof window.PHANTOM_MASTER !== 'undefined', { timeout: 20_000 });
+
+    const out = await page.evaluate(() => {
+      const live = PHANTOM_MASTER.active();
+      const stored = PHANTOM_MASTER_STORE.load();
+      return {
+        liveId: PHANTOM_MASTER.id(),
+        storedId: PHANTOM_MASTER.idOf(stored),
+        liveFile: (live || {}).sourceFile,
+        restoredFlag: !!(live || {}).restoredFromStorage,
+      };
+    });
+    // This is the assertion the whole SINGLE-MASTER ruling exists for: after recovery, the two
+    // halves of "active" name the same Master. Before this ship they could not.
+    expect(out.liveId, 'boot adopted the restored snapshot').toBe('RESTORED-MASTER');
+    expect(out.storedId, 'and storage still holds it').toBe('RESTORED-MASTER');
+    expect(out.liveId).toBe(out.storedId);
+    expect(out.restoredFlag, 'adopted through the contract, not assigned raw').toBe(true);
+  });
+});
+
 test.describe('the identity split reaches the assistant context', () => {
 
   test('the context block names authority and actor DISTINCTLY', async ({ phantom, page }) => {

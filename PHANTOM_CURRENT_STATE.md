@@ -5,7 +5,7 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-09, after `v1.14.422`.**
+**Last updated: 2026-08-09, after `v1.14.423`.**
 
 ---
 
@@ -13,10 +13,10 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.422`** |
-| Commits | `ffdba11` (head) — .416 through .422 shipped 2026-08-08/09 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.422` |
-| Verified | Served bytes confirmed on Pages through `.417`; `.418`-`.422` pushed, Pages not re-polled |
+| **Version** | **`phantom-v1.14.423`** |
+| Commits | `.416` through `.423` shipped 2026-08-08/09 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.423` |
+| Verified | Served bytes confirmed on Pages through `.417`; `.418`-`.423` pushed, Pages NOT re-polled |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 
@@ -47,8 +47,14 @@ rather than edited into the spec, per its own §10 "ambiguity resolutions must b
 
 📌 **Identity is TWO people (spec §2), not one.** `siteLead` = authority; `currentOperator` = the
 actor doing the work on this device. Every Event Log entry credits the ACTOR — work is never
-auto-credited to the Site Lead. This SUPERSEDES the earlier architecture-reset wording
-("name = configured Site Lead, role = Site Lead"), and `v1.14.417` implements the split.
+auto-credited to the Site Lead. Implemented `.417`/`.418`.
+
+⭐ **RE-AFFIRMED 2026-08-09 — THE SPLIT HOLDS.** The SITE-PROFILE architecture reset was re-issued
+verbatim, and its §8 reads *"name = configured Site Lead, role = Site Lead"* — a single identity.
+That is **superseded** by the frozen spec's §2 and by this ruling. Owner confirmed when the
+conflict was raised rather than resolved silently: **the split holds.** Reverting it would
+re-break who gets credited for work, which is the one thing the Event Log exists to get right.
+⛔ **Do not "restore" §8's single-identity wording from the reset document.** It is the older text.
 
 ## 2 · Milestone
 
@@ -66,7 +72,8 @@ PHASE-ENGINE needs next to be useful to anyone.**
 🔄 **Workstream 2 — SITE-PROFILE: substantially landed, one piece deliberately held.**
 `.415` atomic swap · `.417` root record + migration · `.418` identity split · `.422` staging, the
 validation summary and explicit ACTIVATE SITE, plus §4.3 proven (events survive a Master swap and
-still name the Master that produced them).
+still name the Master that produced them) · `.423` the restore path re-enters boot instead of
+returning to a half-updated app — the LAST split-brain door, now closed (§9 RECOVERY ONLY).
 ⛔ **HELD BY OWNER RULING — the boot gate** (invalid profile → SITE SETUP only). It is the single
 riskiest change available: a misfire locks an operator out of a working app in a cold aisle. It
 waits until after a physical device pass.
@@ -82,11 +89,11 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — 38 ships, OPEN
+## 3 · Verify debt — 39 ships, OPEN
 
-**`.385`–`.422`** (minus the never-stamped `.412`) = **38 ships**. **Run the consolidated section at
-the top of `BATCH-VERIFY.md` — 14 surface-grouped checks — not the per-ship blocks.** The seven
-ships of 2026-08-08/09 added only THREE checks, because six of them render nothing.
+**`.385`–`.423`** (minus the never-stamped `.412`) = **39 ships**. **Run the consolidated section at
+the top of `BATCH-VERIFY.md` — 15 surface-grouped checks — not the per-ship blocks.** The EIGHT
+ships of 2026-08-08/09 added only FOUR checks, because six of them render nothing at all.
 
 ✅ **`.376`–`.384` RELEASED** by owner ruling 2026-08-08 (`.377`–`.384` superseded by the
 `.385`→`.396` arc; `.376` closed by ruling because no checklist for it ever existed).

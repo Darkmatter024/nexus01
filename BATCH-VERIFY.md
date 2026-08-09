@@ -111,7 +111,7 @@ precisely the two things only your phone can answer — they are items 1 and 2 b
 
 ---
 
-## THE PASS — 14 checks. Clear the SW cache first.
+## THE PASS — 15 checks. Clear the SW cache first.
 *(Was 16, then 11 after the `.376`–`.384` release dropped five whole. Now 14: `.416`–`.422` added
 three, and only three, because **six of those seven ships have no visible surface at all.**)*
 
@@ -159,7 +159,7 @@ behaviour) and `.422` (a new confirmation step in import) changed anything you c
       ⚠ The laptop leg of this went with the `.382`–`.384` release; the iPad leg did not, because
       `.412`-work shipped under `.413` and is outside the released batch.
 
-### G · The 2026-08-08/09 batch (`.416`–`.422`) — three checks for seven ships (items 11-13)
+### G · The 2026-08-08/09 batch (`.416`–`.422`) — four checks for eight ships (items 11, 12, 13, 13a)
 - [ ] **11 · THE TAP WINDOW (`.416`).** Open the Forge aisle, tap a rack to open the detail panel,
       and **while it is sliding up** try to tap the grid or search button under the header.
       Nothing should happen until the panel is closed — and both buttons must work normally the
@@ -170,6 +170,14 @@ behaviour) and `.422` (a new confirmation step in import) changed anything you c
       import again, activate, and confirm the counts you saw are the counts you got.
       ⚠ If your Master is the host-less one, this is where it will say so **at import** — that is
       the guard working, and the number it shows is the answer to the open column-D question.
+- [ ] **13a · RESTORE RELOADS ITSELF (`.423`).** ⚠ **Do this LAST, and on a device you can afford
+      to disturb — it reloads the app.** Export a full backup, then restore it. PHANTOM should
+      **reload on its own** and come back with your data. **You must NOT be told to reload.**
+      Afterwards confirm the version still reads `v1.14.423` and that your site, Master and
+      blockers are the ones from the backup.
+      *Why it matters: before this, a restore left memory holding the OLD Master while storage
+      held the restored one, and the app asked you to fix that by hand. If the old sentence
+      "Reload the app to see restored data" appears, the defect is back.*
 - [ ] **13 · NOTHING ELSE MOVED (`.417`, `.418`, `.419`, `.420`, `.421`).** Open the app and
       confirm: same site, same Master, same deployments, and **any blockers you already had are
       still listed with the notes you wrote.** Nothing should ask you to set anything up.

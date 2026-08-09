@@ -12865,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.422';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.423';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -52828,6 +52828,34 @@ setInterval(phantomStorageCheck, 300000);
   };
 })();
 
+// v1.14.423 — A RESTORE RE-ENTERS THE BOOT STATE MACHINE. IT DOES NOT ASK THE OPERATOR TO.
+//
+// THE LAST SPLIT-BRAIN PATH. The restore below writes ~20 storage keys directly — including
+// phantom_master_v1 — and then returned to a RUNNING app holding all of them in memory. So after
+// a restore, memory held Master A while storage held Master B: precisely the state the
+// SINGLE-MASTER ruling forbids, and the one path v1.14.415's contract could not see, because this
+// writes localStorage itself rather than going through PHANTOM_MASTER.
+//
+// It is not only the Master. Deployments, phases, racks, audit, blockers, the site profile and
+// the phase model are all rewritten underneath a live app that has already read them. The old
+// copy stayed authoritative until someone happened to reload.
+//
+// THE APP ALREADY KNEW. The alert it showed read "Restore complete. Reload the app to see
+// restored data." — an accurate description of a split-brain, handed to the operator as a chore.
+// A recovery mechanism that leaves the app inconsistent unless a human remembers a follow-up step
+// is not recovery; it is a trap with instructions.
+//
+// So the reload happens here, automatically, and that is the whole fix: boot re-reads every key,
+// adopts the Master through PHANTOM_MASTER.adoptRestored, re-runs both migrations, and rebuilds
+// every derived index. §9's classification for this path is RECOVERY ONLY — it restores state and
+// hands control straight back to the one boot path, never to a half-updated running app.
+function phantom_restoreComplete() {
+  try {
+    alert('Restore complete. PHANTOM will reload now so every surface reads the restored data.');
+  } catch (_) {}
+  try { location.reload(); } catch (_) {}
+}
+
 // ━━━ DCT-03: IMPORT / RESTORE ━━━
 function phantomImport() {
   const input = document.createElement('input');
@@ -52991,10 +53019,10 @@ function phantomImport() {
             store.clear().onsuccess = function() {
               bundle.ghostEcho.forEach(function(entry) { store.put(entry); });
             };
-            tx.oncomplete = function() { alert('Restore complete. Reload the app to see restored data.'); };
+            tx.oncomplete = function() { phantom_restoreComplete(); };
           };
         } else {
-          alert('Restore complete. Reload the app to see restored data.');
+          phantom_restoreComplete();
         }
       } catch(err) {
         alert('Failed to parse backup file: ' + err.message);
