@@ -12865,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.421';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.422';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -26876,6 +26876,13 @@ function siteProfile_getContextBlock() {
   if (p.rackNamingConvention) lines.push('- Rack naming: ' + p.rackNamingConvention);
   if (p.pduType)              lines.push('- PDU type: ' + p.pduType);
   if (p.buildLead)            lines.push('- Build lead: ' + p.buildLead);
+  // v1.14.422 — THE IDENTITY SPLIT REACHES THE CONTEXT. This block emitted only `buildLead`, a
+  // deployment-level field, so the one surface that tells the assistant who it is talking to knew
+  // nothing about the site's authority or the person actually holding the device. Both are named,
+  // and named DISTINCTLY, because conflating them is how work gets credited to whoever is
+  // accountable rather than whoever did it (spec §2).
+  if (p.siteLead)             lines.push('- Site lead (authority): ' + p.siteLead);
+  if (p.operator)             lines.push('- Current operator on this device (the actor): ' + p.operator);
   // Hard guard: if no GB300 in platforms, tell AI explicitly
   var hasGB300 = (p.platforms || []).some(function(pl) { return ((pl.id || '') + ' ' + (pl.display || '')).toLowerCase().indexOf('gb300') >= 0; });
   if (!hasGB300) lines.push('Site does NOT run GB300 NVL72. Do not reference GB300 specs in answers unless the user explicitly brings it up.');
@@ -32643,6 +32650,73 @@ var PHANTOM_MASTER = {
     this._invalidate('replace');
     return true;
   },
+  // ── v1.14.422 — STAGING (spec §4.2). A CANDIDATE NEVER PARTICIPATES IN THE UI. ────────────
+  // Parse has been pure since v1.14.415, so a candidate already touched nothing. What was still
+  // missing is the operator's DECISION: replace() accepted whatever it was handed, so a file
+  // became the site the moment it parsed. The spec wants it staged, counted, shown, and adopted
+  // only on a tap — and that summary is precisely what would have caught a Master with cables and
+  // no hosts at IMPORT rather than in an aisle days later.
+  //
+  // The staged candidate lives in a closure-free property so a surface can ASK whether one is
+  // pending, but nothing derives from it: no cache is stamped against it, no consumer reads it.
+  _staged: null,
+  staged: function() { return this._staged || null; },
+  stage: function(candidate) {
+    if (!candidate || typeof candidate !== 'object') return false;
+    this._staged = candidate;
+    return true;
+  },
+  /** "Your current site has not been changed" is a HARD GUARANTEE, so discard touches nothing else. */
+  discardStaged: function() { this._staged = null; return true; },
+
+  /**
+   * What a validation summary is allowed to say. Counts only — never a verdict about the floor.
+   *
+   * ZERO HOSTS IS A WARNING, NOT A REJECTION (owner ruling 2026-08-08). A cabled, unprovisioned
+   * row is legitimate data — that was established at v1.14.413 and it is why the earlier
+   * "0/0 RACKED" report turned out to be honest. So this reports what it found and lets the
+   * operator decide, rather than refusing a Master that may be perfectly correct.
+   */
+  validate: function(m) {
+    var racks = 0, hosts = 0, cables = 0, warnings = [];
+    try {
+      var byCab = (m && m.racksByCab) || {};
+      var keys = Object.keys(byCab);
+      racks = keys.length;
+      for (var i = 0; i < keys.length; i++) {
+        var cab = byCab[keys[i]] || {};
+        hosts += ((cab.hosts || []).length);
+      }
+      cables = (m && m.stats && typeof m.stats.totalCables === 'number') ? m.stats.totalCables
+             : (Array.isArray(m && m.cables) ? m.cables.length : 0);
+    } catch (_) {}
+
+    var usable = this.isUsable(m);
+    if (!usable) warnings.push('No racks could be read from this file — it cannot become the active Master.');
+    if (usable && hosts === 0) {
+      warnings.push('This Master describes ' + racks + ' rack' + (racks === 1 ? '' : 's') +
+        ' and NO host/device rows. That is legitimate for a row that is cabled but not yet ' +
+        'provisioned — but if you expected devices, check the SITE-HOSTS sheet before activating.');
+    }
+    try {
+      var empty = (m && m.stats && m.stats.sheetsEmpty) || [];
+      if (empty.length) warnings.push('Sheet(s) present but contributed no rows: ' + empty.join(', ') + '.');
+    } catch (_) {}
+    return { ok: usable, counts: { racks: racks, hosts: hosts, cables: cables }, warnings: warnings };
+  },
+
+  /** Adopt the staged candidate. The ONLY way staging becomes active. */
+  activateStaged: function() {
+    var c = this._staged;
+    if (!c) return false;
+    var ok = this.replace(c);          // persist-first, cache-invalidating, atomic
+    if (ok) {
+      this._staged = null;
+      try { if (typeof PHANTOM_SITE !== 'undefined') PHANTOM_SITE.bindMaster(this.active()); } catch (_) {}
+    }
+    return ok;
+  },
+
   /** Adopt a snapshot restored at boot. Same door, so caches stamp against it too. */
   adoptRestored: function(loaded) {
     if (!this.isUsable(loaded)) return false;
@@ -33397,17 +33471,53 @@ window.master_loadFromPicker = function master_loadFromPicker(opts) {
         // storage holding different Masters. PHANTOM_MASTER.replace() persists first and goes
         // live second, so the two cannot diverge; on rejection nothing here changes and every
         // surface keeps running on the Master it already had.
-        var _accepted = PHANTOM_MASTER.replace(site);
-        if (!_accepted) {
+        // v1.14.422 — STAGE, SHOW, THEN ACTIVATE ON A TAP (spec §4.1/§4.2).
+        // Until now a file became the site the moment it parsed. That is how a Master carrying
+        // cables and no hosts became active silently, leaving Forge to report the emptiness days
+        // later in an aisle. The candidate is now staged, counted, and shown; it becomes active
+        // only when the operator taps ACTIVATE. Cancel discards it and — the hard guarantee from
+        // §4.2 — the current site is not changed in any way.
+        var _accepted = false;
+        PHANTOM_MASTER.stage(site);
+        var _v = PHANTOM_MASTER.validate(site);
+        var _c = _v.counts;
+        var _summary = (site.siteCode ? site.siteCode + '\n' : '')
+          + _c.racks + ' RACKS · ' + _c.hosts + ' HOSTS · ' + _c.cables + ' CABLES'
+          + (_v.warnings.length ? '\n\n' + _v.warnings.join('\n\n') : '');
+
+        if (!_v.ok) {
+          // Unusable: never offered for activation. Nothing changed anywhere.
+          PHANTOM_MASTER.discardStaged();
           try {
-            if (typeof phantomToast === 'function') {
-              phantomToast('Import not accepted — your existing Master is still active', 'warn');
-            }
+            if (typeof phantomToast === 'function') phantomToast('Master not usable — your current site has not been changed', 'error');
             if (typeof haptic === 'function') haptic([40, 30, 40]);
           } catch (_) {}
         } else {
-          try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
-          try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (_) {}
+          var _go = false;
+          try {
+            _go = await phantomConfirmAsk({
+              title: 'Activate this Master?',
+              body: _summary,
+              confirmLabel: 'ACTIVATE SITE',
+              cancelLabel: 'Cancel'
+            });
+          } catch (_) { _go = false; }
+
+          if (_go) {
+            _accepted = PHANTOM_MASTER.activateStaged();
+            if (!_accepted) {
+              try {
+                if (typeof phantomToast === 'function') phantomToast('Could not be saved — your existing Master is still active', 'warn');
+                if (typeof haptic === 'function') haptic([40, 30, 40]);
+              } catch (_) {}
+            } else {
+              try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
+              try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (_) {}
+            }
+          } else {
+            PHANTOM_MASTER.discardStaged();
+            try { if (typeof phantomToast === 'function') phantomToast('Import cancelled — your current site has not been changed'); } catch (_) {}
+          }
         }
         try { input.remove(); } catch (_) {}
         // The parse RESULT is still returned to the caller either way — the caller asked for a

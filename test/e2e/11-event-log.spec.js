@@ -128,6 +128,39 @@ test.describe('the Event Log — folding without breaking the chain', () => {
     expect(out.tampered.brokenAt).toBe(0);
   });
 
+  test('§4.3 — the Event Log SURVIVES a Master swap, with masterId preserving the truth-context', async ({ phantom, page }) => {
+    await phantom.boot();
+    const out = await page.evaluate((key) => {
+      localStorage.removeItem(key);
+      const p = siteProfile_load();
+      p.facilityId = 'US-SPK03'; p.operator = 'R. Vega'; p.confirmedAt = Date.now(); p.id = 'sp_swap';
+      siteProfile_save(p);
+
+      // work logged under Master A
+      PHANTOM_MASTER.adoptRestored({ racksByCab: { 'a:01': { hosts: [] } }, sourceFileHash: 'MASTER-A', sourceFile: 'A.xlsx' });
+      deploy_logAudit('DEP-S', 'STEP_STATE_CHANGE', 'step', 'network-S01', 'done under A', { rack: 'u1:001' });
+
+      // ...then the operator swaps to Master B through the one door
+      const swapped = PHANTOM_MASTER.replace({ racksByCab: { 'b:01': { hosts: [{ u: 1 }] } }, sourceFileHash: 'MASTER-B', sourceFile: 'B.xlsx' });
+      deploy_logAudit('DEP-S', 'STEP_STATE_CHANGE', 'step', 'power-S01', 'done under B', { rack: 'u1:002' });
+
+      const all = JSON.parse(localStorage.getItem(key) || '[]');
+      return { swapped, all, chain: deploy_verifyAuditChain(), live: PHANTOM_MASTER.id() };
+    }, AUDIT_KEY);
+
+    expect(out.swapped, 'fixture: the swap must have happened').toBe(true);
+    expect(out.live).toBe('MASTER-B');
+    // §4.3 is explicit: events created under Master A REMAIN after B activates. "Helpfully"
+    // clearing stale events during a swap would erase the operator's shift.
+    expect(out.all.length, 'the pre-swap event was destroyed by the swap').toBe(2);
+    expect(out.all[0].summary).toBe('done under A');
+    // And each event still names the Master that produced it — that is what makes the surviving
+    // history readable rather than merely present.
+    expect(out.all[0].masterId, 'the old event must still name Master A').toBe('MASTER-A');
+    expect(out.all[1].masterId, 'the new event names Master B').toBe('MASTER-B');
+    expect(out.chain.ok, 'and the chain still verifies across the swap').toBe(true);
+  });
+
   test('the truncation marker is still unhashed, so eviction does not read as tampering', async ({ phantom, page }) => {
     await phantom.boot();
     const out = await page.evaluate((key) => {
