@@ -22,13 +22,48 @@ doc is stale — fix the doc, do not fork the fact.
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
+## 1a · GOVERNING PROGRAMME — owner rulings 2026-08-08
+
+⭐ **`SHIP-TECH-FLOW-V2-FROZEN.md` GOVERNS.** Owner ruled 2026-08-08: the frozen spec is the
+programme of record. Its seven workstreams — PHASE-ENGINE → SITE-PROFILE → CONTEXT-CHIP →
+NAV-LOCK → CONTEXTUAL-SCAN → HONEST-HANDOFF → FINISH-PASS — supersede the blueprint's M0→M6
+ordering as the delivery sequence. **The blueprint is not retired**: its architecture rulings
+(R-01…R-06, R-02a) and the RackEngine spec remain law. What changed is WHICH ORDER work lands in.
+Where the two disagree on sequencing, the spec wins; where they disagree on architecture, the
+owner rulings win and the conflict gets reported, never silently resolved.
+
+⛔ **`?legacy=1`, the Cold Aisle Filter, Data Honesty, three-stamp lockstep and the iPhone gate
+are unchanged** — the spec restates them as non-negotiable doctrine.
+
+⭐ **SHIP GATE = THE COMMIT HOOK, NOT THE FOUR SUBAGENTS.** Owner ruled 2026-08-08. Spec §10
+mandates passes from `lockstep-auditor`, `surgical-edit-reviewer`, `data-honesty-auditor` and
+`cold-aisle-qa`. **Those four cannot run.** They exist as files in `nexus01/.claude/agents/`, but
+the session CWD is the home directory, so they are not loadable — which is why `BATCH-VERIFY`
+records *"Agents barred, equivalents run inline"* three separate times over ~40 ships. A gate that
+has never executed is not a gate. **`tools/hooks/phantom-guard.js` replaces them** and blocks a
+commit on broken three-stamp lockstep, a non-compiling inline script, brace imbalance, damaged
+CRLF, or a backtick in a commit body. This is an amendment to a FROZEN spec and is logged here
+rather than edited into the spec, per its own §10 "ambiguity resolutions must be logged".
+
+📌 **Identity is TWO people (spec §2), not one.** `siteLead` = authority; `currentOperator` = the
+actor doing the work on this device. Every Event Log entry credits the ACTOR — work is never
+auto-credited to the Site Lead. This SUPERSEDES the earlier architecture-reset wording
+("name = configured Site Lead, role = Site Lead"), and `v1.14.417` implements the split.
+
 ## 2 · Milestone
 
-**M2 IN PROGRESS** (`ARCHITECTURE-BLUEPRINT.md`). M0 ✅ · M1 ✅ · M2-a ✅ (`.401`, RackEngine owns
-the graphics lifecycle). **M2-b is owed:** `RackEngine.attach`, the reclaim barrier (I6), modes,
-the data contract, `Vocabulary` normalisation, and the deletions in spec §8. M3–M6 not started.
+**Programme: `SHIP-TECH-FLOW-V2-FROZEN.md` (see §1a).** Workstream 1 = PHASE-ENGINE, not started.
+Workstream 2 = SITE-PROFILE, **partially landed ahead of order**: `v1.14.417` ships S0 (the root
+record + migration + identity split), which is inert scaffolding rather than UI. ⚠ **Logged as a
+deviation, not resolved**: the spec says each step gates the next, and S0 is workstream-2 work
+that landed before workstream 1. It was authorised directly by the owner before the spec arrived.
 
-**Phase posture: STABILIZATION / UI-FINISH. No new features** (CLAUDE.md ship discipline 5).
+**Carried from the blueprint (architecture, still law):** M2-b is owed — `RackEngine.attach`, the
+reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a ✅ (`.401`).
+
+**Phase posture: no new features outside the governing spec.** Its add-nothing rule is stricter
+than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
+the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
 ## 3 · Verify debt — 30 ships, OPEN
 

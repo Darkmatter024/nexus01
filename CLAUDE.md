@@ -8,6 +8,11 @@ Ships site-agnostic — the loaded Master supplies every site-specific fact (Law
 queue, or open defects in this file — five documents once claimed five different live versions and
 none was correct. Start a session with `PHANTOM_SESSION_BOOTSTRAP.md`.
 
+⭐ **The governing programme is `SHIP-TECH-FLOW-V2-FROZEN.md`** (owner ruling 2026-08-08). It sets
+the delivery ORDER; the contracts below and the blueprint rulings remain the law it delivers
+against. It is FROZEN — a genuine contradiction gets **reported, never silently resolved**, and
+every ambiguity resolution is logged in `PHANTOM_CURRENT_STATE.md` §1a.
+
 ---
 
 ## THE CONTRACTS — architecture and data law
@@ -38,6 +43,12 @@ behavioral-rule test. Changing one requires an owner ruling.
    specification.** ⛔ Do not restore the slot early — see `PHANTOM_CURRENT_STATE.md` D-1.
 9. **Offline-first, not offline-only.** Full function with no network; the network is an
    enhancement, never a precondition.
+
+9a. **Identity is two people, not one.** `siteLead` = **authority**, set at Site Setup and changed
+   only in SITE/SYSTEM. `currentOperator` = the **actor** working on this device now. Usually the
+   same person; the model never assumes it. **Every Event Log entry credits the ACTOR — work is
+   never auto-credited to the Site Lead.** (spec §2; supersedes the earlier single-identity
+   wording. Landed `v1.14.417`.)
 
 **B · Data / safety**
 10. **Real data only.** Never fabricate telemetry, never label a panel after data PHANTOM does not
@@ -78,6 +89,10 @@ behavioral-rule test. Changing one requires an owner ruling.
 3. **Mechanical gates are enforced by hook, not by memory** — `tools/hooks/phantom-guard.js` blocks
    a commit on broken three-stamp lockstep, a non-compiling inline script, brace imbalance, damaged
    CRLF, or a backtick in a commit body. Do not work around it; fix the cause.
+   ⭐ **THE HOOK IS THE GATE** (owner ruling 2026-08-08). Spec §10 names four subagents —
+   `lockstep-auditor`, `surgical-edit-reviewer`, `data-honesty-auditor`, `cold-aisle-qa` — which
+   are **not loadable from this session's CWD** and have never once run; `BATCH-VERIFY` records
+   *"Agents barred, equivalents run inline"* three times. Do not block a ship waiting for them.
 4. **Device verify is a HARD STOP.** Critical iPhone/WebGL behaviour is verified on physical
    hardware or it is not verified. After push, hand John the checklist and PARK.
 5. **No new features during the current stabilization / UI-finish phase.** The queue is empty by
