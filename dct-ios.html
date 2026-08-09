@@ -12865,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.420';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.421';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -29502,6 +29502,157 @@ const DEPLOY_PHASE_TYPES = ['mechanical', 'power', 'network', 'compute', 'valida
 const DEPLOY_PHASE_LABELS = { mechanical: 'MECHANICAL', power: 'POWER', network: 'NETWORK', compute: 'COMPUTE', validation: 'VALIDATION' };
 const DEPLOY_PHASE_LABELS_FULL = { mechanical: 'MECHANICAL', power: 'POWER', network: 'NETWORK', compute: 'COMPUTE', validation: 'VALIDATION' };
 const DEPLOY_PHASE_COLORS = { mechanical: 'var(--gold)', power: 'var(--gold)', network: 'var(--cyan)', compute: 'var(--green)', validation: 'var(--violet)' };
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// PHANTOM_PHASE_MODEL — the step model (v1.14.421, P3 of PHASE-ENGINE, spec §6.1/§6.2)
+//
+// STEPS HANG BENEATH THE EXISTING FIVE PHASES. DEPLOY_PHASE_TYPES above is already the app's
+// phase taxonomy, already drives labels, colours, gating and the phase matrix. The spec's
+// examples use ids like "P4", and inventing a second P1..P5 vocabulary beside this one would be
+// exactly the duplicate-concept failure this programme exists to delete. So a step id is
+// <phaseType>-S<nn> and the phase it belongs to is one of the five that already exist.
+//
+// ⚠ PROVENANCE IS THE HONEST PART, AND IT IS NOT DECORATION. §6.1: if the Master carries
+// step-level workflow data the model is source:'MASTER'; if not, ship site templates as
+// source:'SITE_TEMPLATE' and describe them as "your site template" — NEVER phrased as if the
+// customer Master specified them. Measured against the live parser: PHANTOM's Master carries
+// cabs, hosts, cables and SITE-VARS, and NO step-level workflow whatsoever. So today every model
+// is SITE_TEMPLATE, and any surface that renders one must say so.
+//
+// ⚠ THE STEP TEXT BELOW IS DELIBERATELY MINIMAL, AND THAT IS A HONESTY DECISION. Real per-
+// platform commissioning procedure is site knowledge this code does not have. Shipping thirty
+// invented steps that LOOK authoritative would be fabricated telemetry wearing a checklist —
+// the operator would read procedure that nobody wrote. Each template therefore seeds ONE step
+// per real phase, generic and clearly a placeholder, and the model is editable: the Site Lead
+// fills in real procedure in SITE/SYSTEM. An empty honest model beats a full invented one.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+var PHASE_MODEL_KEY = 'phantom_phase_model_v1';
+var PHASE_STEP_STATES = ['NOT_STARTED', 'IN_PROGRESS', 'BLOCKED', 'COMPLETE'];
+
+// Platforms per owner ruling: all four ship, fleet-wide, regardless of what one site runs today.
+var PHASE_TEMPLATE_PLATFORMS = ['H100', 'H200', 'GB200', 'GB300'];
+
+var PHANTOM_PHASE_MODEL = {
+  KEY: PHASE_MODEL_KEY,
+  STATES: PHASE_STEP_STATES,
+
+  /**
+   * A seed model for a platform. One step per existing phase — a scaffold to be filled in,
+   * never a claim about how this site commissions hardware.
+   * `requires` reuses TA_PHASE_CATS, which already maps a phase to its component categories:
+   * existing data, folded in rather than a second mapping invented beside it.
+   */
+  template: function(platform) {
+    var plat = String(platform || '').toUpperCase();
+    if (PHASE_TEMPLATE_PLATFORMS.indexOf(plat) === -1) plat = '';
+    var phases = [];
+    for (var i = 0; i < DEPLOY_PHASE_TYPES.length; i++) {
+      var t = DEPLOY_PHASE_TYPES[i];
+      phases.push({
+        id: t,
+        name: DEPLOY_PHASE_LABELS[t] || t.toUpperCase(),
+        steps: [{
+          id: t + '-S01',
+          label: (DEPLOY_PHASE_LABELS[t] || t.toUpperCase()) + ' — step not yet defined for this site',
+          requires: (typeof TA_PHASE_CATS !== 'undefined' && TA_PHASE_CATS[t]) ? TA_PHASE_CATS[t].slice() : [],
+          expectScan: null,        // null, never a guess — a wrong expectation misroutes a scan
+          expectMatch: null,
+          state: 'NOT_STARTED',
+          blockerId: null,
+          doneAt: null, doneBy: null, evidence: []
+        }]
+      });
+    }
+    return {
+      version: 1,
+      rackType: plat || 'UNKNOWN',
+      // No Master PHANTOM parses carries step-level workflow, so this is always SITE_TEMPLATE
+      // today. It is stored, not inferred at read time, so a model built when a Master DID carry
+      // steps would keep saying so.
+      source: 'SITE_TEMPLATE',
+      seeded: true,
+      phases: phases
+    };
+  },
+
+  loadAll: function() {
+    var v = safeGet(PHASE_MODEL_KEY, {});
+    return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+  },
+  saveAll: function(map) { return safeStore(PHASE_MODEL_KEY, JSON.stringify(map || {})); },
+
+  /** The model for one rack, seeded from the platform template on first ask. */
+  forRack: function(rackId, platform) {
+    var all = this.loadAll();
+    if (all[rackId]) return all[rackId];
+    var m = this.template(platform);
+    all[rackId] = m;
+    this.saveAll(all);
+    return m;
+  },
+
+  findStep: function(model, stepId) {
+    if (!model || !Array.isArray(model.phases)) return null;
+    for (var i = 0; i < model.phases.length; i++) {
+      var steps = model.phases[i].steps || [];
+      for (var j = 0; j < steps.length; j++) if (steps[j].id === stepId) return steps[j];
+    }
+    return null;
+  },
+
+  /**
+   * THE STATE MACHINE (§6.2). No booleans, four named states, and every transition writes an
+   * event. Returns {ok, reason} — a rejected transition says WHY, because "it didn't work" is
+   * not something a technician in an aisle can act on.
+   *
+   * BLOCKED REQUIRES A blockerId REFERENCING A REAL RECORD. That is the invariant P2 built the
+   * record for, and it is enforced here rather than trusted: a blocked step with no blocker is
+   * an invalid state, so the transition is REJECTED instead of written and repaired later.
+   */
+  transition: function(rackId, stepId, next, meta) {
+    meta = meta || {};
+    next = String(next || '').toUpperCase();
+    if (PHASE_STEP_STATES.indexOf(next) === -1) {
+      return { ok: false, reason: 'unknown state "' + next + '"' };
+    }
+    var all = this.loadAll();
+    var model = all[rackId];
+    if (!model) return { ok: false, reason: 'no phase model for rack ' + rackId };
+    var step = this.findStep(model, stepId);
+    if (!step) return { ok: false, reason: 'no step ' + stepId + ' in this model' };
+
+    if (next === 'BLOCKED') {
+      var bid = meta.blockerId || step.blockerId;
+      var rec = (typeof PHANTOM_BLOCKERS !== 'undefined') ? PHANTOM_BLOCKERS.byId(bid) : null;
+      if (!bid || !rec) {
+        return { ok: false, reason: 'BLOCKED requires a Blocker record — open one first (spec 6.2)' };
+      }
+      step.blockerId = bid;
+    } else if (step.state === 'BLOCKED' && next === 'IN_PROGRESS') {
+      // Clearing: §6.4 says the step returns to IN_PROGRESS and the record closes.
+      try { if (typeof PHANTOM_BLOCKERS !== 'undefined') PHANTOM_BLOCKERS.clear(step.blockerId); } catch (_) {}
+      step.blockerId = null;
+    }
+
+    var from = step.state;
+    step.state = next;
+    if (next === 'COMPLETE') {
+      step.doneAt = Date.now();
+      step.doneBy = (typeof PHANTOM_SITE !== 'undefined' ? PHANTOM_SITE.currentOperator() : '') || 'Unknown';
+    }
+    if (Array.isArray(meta.evidence) && meta.evidence.length) {
+      step.evidence = (step.evidence || []).concat(meta.evidence);
+    }
+    if (!this.saveAll(all)) return { ok: false, reason: 'storage full — the step did not move' };
+
+    try {
+      deploy_logAudit(meta.deploymentId || '', 'STEP_STATE_CHANGE', 'step', stepId,
+        from + ' -> ' + next, { rack: rackId, stepId: stepId, evidence: meta.evidence || [] });
+    } catch (_) {}
+    return { ok: true, from: from, to: next, step: step };
+  }
+};
+window.PHANTOM_PHASE_MODEL = PHANTOM_PHASE_MODEL;
 
 // ─────────────────────────────────────────────────────────────────────
 // GHOST ECHO — Tribal Knowledge Cache (Phase 1: capture + retrieval)
@@ -51982,6 +52133,7 @@ var PHANTOM_BACKUP_EXTRA_KEYS = [
   { k: 'phantom_classifier_overrides_v1',  why: 'BOM classifier overrides — hand-entered, never re-derivable' },
   { k: 'phantom_current_user_v1',          why: 'operator identity (superseded by the site profile at v1.14.418; retained — it holds a name a human typed)' },
   { k: 'phantom_blockers_v1',              why: 'Blocker records — open blockers are what the next technician inherits (spec §6.4/§9.3)' },
+  { k: 'phantom_phase_model_v1',           why: 'per-rack step model — step state, evidence and who completed what (spec §6.1)' },
   { k: 'phantom_device_lead_pin_v1',       why: 'lead PIN — travels so a device migration keeps it' },
   { k: 'phantom_rack_recent_v1',           why: 'recent racks' },
   { k: 'phantom_rack_view_v1',             why: 'rack view state' },
