@@ -12865,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.419';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.420';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -23943,6 +23943,110 @@ function blocker_saveFromForm() {
   blocker_save(_blockerModal.deployId, _blockerModal.rackId, _blockerModal.phaseId, note);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// PHANTOM_BLOCKERS — the Blocker record (v1.14.420, P2 of PHASE-ENGINE, spec §6.4)
+//
+// A blocker used to be three fields ON a phase: blockerNote, blockedAt, status:'blocked'. That
+// cannot satisfy §6.2, which says a BLOCKED step REQUIRES a blockerId referencing a Blocker
+// record — a note has no identity, so nothing can reference it, and Shift §9.2 must render
+// blockers "with descriptions, never bare counts".
+//
+// THE TRAP THIS MIGRATION EXISTS FOR. §6.2 also says a blocked step with no blocker record is an
+// invalid state and the transition must be REJECTED. Enforcing that on a device that already has
+// blocked phases would retroactively invalidate every blocker the operator has already logged —
+// their notes still on disk, their phases still blocked, and the app now calling that state
+// illegal. So migration runs FIRST and adopts what is already there: every blocked phase without
+// a blockerId gets a record synthesised from its own note and timestamp. Nothing is invented and
+// nothing is discarded — the note becomes the description it always was.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+var PHANTOM_BLOCKERS_KEY = 'phantom_blockers_v1';
+var PHANTOM_BLOCKERS = {
+  loadAll: function() {
+    var v = safeGet(PHANTOM_BLOCKERS_KEY, []);
+    return Array.isArray(v) ? v : [];
+  },
+  saveAll: function(list) { return safeStore(PHANTOM_BLOCKERS_KEY, JSON.stringify(list || [])); },
+  byId: function(id) {
+    if (!id) return null;
+    var all = this.loadAll();
+    for (var i = 0; i < all.length; i++) if (all[i] && all[i].blockerId === id) return all[i];
+    return null;
+  },
+  /** Open blockers, site-wide — what §9.3 hands the next technician. */
+  open: function() { return this.loadAll().filter(function(b) { return b && !b.clearedAt; }); },
+
+  /** Create a record and return its id. Never mutates an existing one. */
+  create: function(o) {
+    o = o || {};
+    var all = this.loadAll();
+    var rec = {
+      blockerId: 'blk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      rack: o.rack || '', stepId: o.stepId || '', phaseId: o.phaseId || '',
+      deploymentId: o.deploymentId || '',
+      desc: String(o.desc == null ? '' : o.desc),
+      openedBy: (typeof PHANTOM_SITE !== 'undefined' ? PHANTOM_SITE.currentOperator() : '') || 'Unknown',
+      openedAt: o.openedAt || Date.now(),
+      clearedBy: null, clearedAt: null
+    };
+    all.push(rec);
+    if (!this.saveAll(all)) return null;
+    return rec.blockerId;
+  },
+
+  clear: function(blockerId) {
+    var all = this.loadAll(), hit = null;
+    for (var i = 0; i < all.length; i++) {
+      if (all[i] && all[i].blockerId === blockerId && !all[i].clearedAt) {
+        all[i].clearedBy = (typeof PHANTOM_SITE !== 'undefined' ? PHANTOM_SITE.currentOperator() : '') || 'Unknown';
+        all[i].clearedAt = Date.now();
+        hit = all[i];
+        break;
+      }
+    }
+    if (!hit) return null;
+    return this.saveAll(all) ? hit : null;
+  },
+
+  /**
+   * ADOPT WHAT IS ALREADY THERE. Idempotent; runs before any guard can reject a transition.
+   * Returns how many pre-existing blockers were given records.
+   */
+  migrate: function() {
+    try {
+      var phases = safeGet(DEPLOY_PHASES_KEY, []);
+      if (!Array.isArray(phases)) return 0;
+      var all = this.loadAll(), made = 0, changed = false;
+      for (var i = 0; i < phases.length; i++) {
+        var ph = phases[i];
+        if (!ph || ph.status !== 'blocked' || ph.blockerId) continue;
+        var rec = {
+          blockerId: 'blk_migrated_' + (ph.id || i) + '_' + (ph.blockedAt || 0),
+          rack: ph.rackId || '', stepId: '', phaseId: ph.id || '',
+          deploymentId: ph.deploymentId || '',
+          // The note IS the description. It was always the description; it just had no home.
+          desc: String(ph.blockerNote || '') || '(no description recorded before v1.14.420)',
+          openedBy: 'Unknown (pre-v1.14.420)',   // never attribute to whoever is holding the device now
+          openedAt: ph.blockedAt || ph.updatedAt || Date.now(),
+          clearedBy: null, clearedAt: null, migrated: true
+        };
+        all.push(rec);
+        phases[i].blockerId = rec.blockerId;
+        made++; changed = true;
+      }
+      if (changed) {
+        if (!this.saveAll(all)) return 0;
+        try { deploy_saveAllPhases(phases); } catch (_) {}
+        try { console.info('[PHANTOM_BLOCKERS] adopted ' + made + ' pre-existing blocker(s) into records'); } catch (_) {}
+      }
+      return made;
+    } catch (e) {
+      try { console.warn('PHANTOM_BLOCKERS.migrate failed:', e); } catch (_) {}
+      return 0;
+    }
+  }
+};
+window.PHANTOM_BLOCKERS = PHANTOM_BLOCKERS;
+
 function blocker_save(deployId, rackId, phaseId, note) {
   try {
     var all = safeGet(DEPLOY_PHASES_KEY, []);
@@ -23955,6 +24059,33 @@ function blocker_save(deployId, rackId, phaseId, note) {
     var wasBlocked = all[idx].status === 'blocked';
     all[idx].blockerNote = note;
     all[idx].blockedAt   = Date.now();
+    // v1.14.420 — §6.2: BLOCKED requires a blockerId. The record is created BEFORE the phase is
+    // moved to blocked, so the invalid state (blocked with no record) never exists on disk, not
+    // even between two writes. If the record cannot be written, the phase does not move.
+    if (!all[idx].blockerId) {
+      var _bid = PHANTOM_BLOCKERS.create({
+        rack: rackId, phaseId: phaseId, deploymentId: deployId, desc: note
+      });
+      if (!_bid) {
+        if (typeof phantomToast === 'function') phantomToast('Storage full — blocker not saved', 'error');
+        return false;
+      }
+      all[idx].blockerId = _bid;
+      try {
+        deploy_logAudit(deployId, 'BLOCKER_OPENED', 'phase', phaseId, note || 'Blocker opened',
+          { rack: rackId, stepId: '' });
+      } catch (_) {}
+    } else {
+      // Updating the description of an open record — the record keeps its identity.
+      var _list = PHANTOM_BLOCKERS.loadAll();
+      for (var _j = 0; _j < _list.length; _j++) {
+        if (_list[_j] && _list[_j].blockerId === all[idx].blockerId && !_list[_j].clearedAt) {
+          _list[_j].desc = String(note == null ? '' : note);
+          PHANTOM_BLOCKERS.saveAll(_list);
+          break;
+        }
+      }
+    }
     if (!deploy_saveAllPhases(all)) {
       if (typeof phantomToast === 'function') phantomToast('Storage full — blocker not saved', 'error');
       return false;
@@ -51849,7 +51980,8 @@ var PHANTOM_BACKUP_EXTRA_KEYS = [
   { k: 'phantom_checklist_site_v1',        why: 'site-level checklist state' },
   { k: 'phantom_power_topo_v1',            why: 'power topology' },
   { k: 'phantom_classifier_overrides_v1',  why: 'BOM classifier overrides — hand-entered, never re-derivable' },
-  { k: 'phantom_current_user_v1',          why: 'operator identity' },
+  { k: 'phantom_current_user_v1',          why: 'operator identity (superseded by the site profile at v1.14.418; retained — it holds a name a human typed)' },
+  { k: 'phantom_blockers_v1',              why: 'Blocker records — open blockers are what the next technician inherits (spec §6.4/§9.3)' },
   { k: 'phantom_device_lead_pin_v1',       why: 'lead PIN — travels so a device migration keeps it' },
   { k: 'phantom_rack_recent_v1',           why: 'recent racks' },
   { k: 'phantom_rack_view_v1',             why: 'rack view state' },
@@ -53796,6 +53928,10 @@ compass_loadState();
     // masterId is read from the live Master, so ordering is the whole point. Additive, idempotent,
     // and it overwrites nothing a human set. Gates nothing at this stage.
     try { if (typeof PHANTOM_SITE !== 'undefined') PHANTOM_SITE.migrate(); } catch (_) {}
+    // v1.14.420 (P2) — adopt pre-existing blockers into records. Runs at boot, before any surface
+    // can assert §6.2's "BLOCKED requires a blockerId": a device that already has blocked phases
+    // must never be told its own logged blockers are an invalid state.
+    try { if (typeof PHANTOM_BLOCKERS !== 'undefined') PHANTOM_BLOCKERS.migrate(); } catch (_) {}
     try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
     try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (_) {}
     console.log('PHANTOM: Master restored from localStorage',
