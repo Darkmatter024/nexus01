@@ -13,10 +13,10 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.425`** (`62d4c1b`) |
-| Commits | `.416` through `.425` shipped 2026-08-08/09 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.425` |
-| Verified | **`.425` confirmed in the SERVED bytes 2026-08-09** — app stamp, `sw.js` CACHE_VERSION, both opened gates, the phone block, the desktop-only chrome sub-gate and the `#cs-lower` reset. `.418`–`.423` were pushed but never re-polled |
+| **Version** | **`phantom-v1.14.426`** (`a4d818d`) |
+| Commits | `.416` through `.426` shipped 2026-08-08/09 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.426` |
+| Verified | **`.426` confirmed in the SERVED bytes 2026-08-09** — both stamps plus `MASTER_NORM_VERSION`, `master_migrateStoredNormalization` and `master_normalizeEndpoints`. `.425` was confirmed the same way. `.418`–`.423` were pushed but never re-polled |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 
@@ -57,8 +57,29 @@ re-break who gets credited for work, which is the one thing the Event Log exists
 ⛔ **Do not "restore" §8's single-identity wording from the reset document.** It is the older text.
 
 ✅ **`.425` IS DEVICE-VERIFIED AND RELEASED** — owner, 2026-08-09: *"command deck looks right on the
-phone."* Verify item 15 and its three legs are ticked. It is the **only** ship in the open debt that
-is closed on hardware; `.385`–`.424` remain open.
+phone."* Verify item 15 and its three legs are ticked.
+
+⭐ **`.426` — DERIVED CACHES ARE NOT PERMANENT TRUTH (owner ruling, 2026-08-09).** A
+parser/normalization upgrade **must not require the user to re-upload the Master**. If persisted
+data was built under an older normalization: detect it, preserve the source data, rebuild the
+derived inventory with the current normalizer, and persist the upgrade atomically.
+
+📌 **The failure that produced that rule, worth not repeating.** `.424` was correct and served —
+three stamps matched and the bytes carried the normalization — and the device verify still FAILED
+with `s4:099` at 0 components. ⛔ **`.424` derived components only inside `phantom_parseMaster`, so
+the fix ran at IMPORT and nowhere else**; `adoptRestored` normalizes nothing, so a device that
+already held a Master restored the old normalizer's output forever. Correct code in front of data
+built by code that no longer exists. **The general shape: when a fix is proven present but absent
+in behaviour, ask which generation of code built the DATA in front of it.** `schemaVersion` could
+not answer that — it says whether a payload can be READ, never which normalizer BUILT it.
+✅ **Confirmed on hardware the same day** — owner: *"s4:099 shows 19 components now"*, rebuilt from
+the phone's own persisted cable endpoints with no re-import. ⚠ Verify leg **0b (reload → 19, not
+38)** is still unreported: a migration that re-applies every boot also shows 19 the first time.
+
+⚠ **Round-trip trap fixed in the same ship, and it generalises:** `PHANTOM_MASTER_STORE.save()` read
+`sourceFileHash`/`totalCables` from `.stats`, which **only a fresh parse has** — a restored payload
+carries them at top level. Re-saving a restored Master wrote `null` over both. Any code that feeds
+a RESTORED Master back into a function written for a PARSED one must be checked field by field.
 
 ⭐ **OWNER OVERRIDE 2026-08-09 — COMMAND DECK LAYOUT (`.425`).** The approved Command Deck mock
 was ported into the real app's Command page **ahead of NAV-LOCK**, an explicit override of the

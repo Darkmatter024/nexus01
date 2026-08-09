@@ -134,7 +134,7 @@ Master kept the old inventory forever. `.426` migrates it at boot. ⚠ **The old
 told you to re-import. Do NOT. The entire point of `.426` is that no re-import is required** — and
 re-importing would mask exactly the thing this item now tests.
 
-- [ ] **0 · `s4:099` REBUILDS ITSELF, WITH NO RE-IMPORT.** Just open PHANTOM and go to **`s4:099`**
+- [x] **0 · `s4:099` REBUILDS ITSELF, WITH NO RE-IMPORT.** Just open PHANTOM and go to **`s4:099`**
       in Forge. Touch nothing else — no import, no storage clear. It must show **19 components**,
       not `0 COMPONENTS`: **nine GPU-B300-01 at RU 35·32·29·26·23·20·17·14·11**, an
       **SN2201 at RU46**, **eight PS-1RU-06** (42·41·40·39 and 9·8·7·6), a **CDU-4RU-03 at RU2** —
@@ -151,6 +151,13 @@ re-importing would mask exactly the thing this item now tests.
       the round-trip bug: re-saving a restored Master used to write `null` over the source hash and
       the cable count. *(`0c` used to be the import-summary check. That still matters and moves to
       item 12 — it only happens at import, and you are not importing here.)*
+✅ **0 CONFIRMED ON HARDWARE 2026-08-09** — owner: *"s4:099 shows 19 components now."* The boot
+migration rebuilt a stored Master in the field, off the device's own data, with **no re-import**.
+That closes the `.424` P0 in code AND the `.426` rule that fixed its delivery.
+⚠ **0b IS STILL THE ONE THAT MATTERS** and is NOT covered by that word: a rebuild that re-applies
+on every boot also shows 19 the first time. Only a reload separates "migrated once and stamped"
+from "migrating forever" — and the failure signature is **38**, not an error.
+
 - [ ] **0d · ONE CONSOLE LINE, IF YOU HAVE ONE.** `window.__phantomNormMigration` should read
       `status:"migrated"`, `from:1`, `to:2`, and a nonzero `added`. If it reads
       `"no-cables-retained"` then your stored Master genuinely has no endpoints to rebuild from and
