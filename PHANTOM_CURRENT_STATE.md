@@ -5,7 +5,7 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-09, after `v1.14.423`.**
+**Last updated: 2026-08-09, after `v1.14.424` (P0).**
 
 ---
 
@@ -13,9 +13,9 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.423`** |
+| **Version** | **`phantom-v1.14.424`** |
 | Commits | `.416` through `.423` shipped 2026-08-08/09 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.423` |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.424` |
 | Verified | Served bytes confirmed on Pages through `.417`; `.418`-`.423` pushed, Pages NOT re-polled |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
@@ -89,10 +89,10 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — 39 ships, OPEN
+## 3 · Verify debt — 40 ships, OPEN · ⛔ P0 ITEM 0 BLOCKS THE REST
 
-**`.385`–`.423`** (minus the never-stamped `.412`) = **39 ships**. **Run the consolidated section at
-the top of `BATCH-VERIFY.md` — 15 surface-grouped checks — not the per-ship blocks.** The EIGHT
+**`.385`–`.424`** (minus the never-stamped `.412`) = **40 ships**. **Run the consolidated section at
+the top of `BATCH-VERIFY.md` — 19 surface-grouped checks — not the per-ship blocks.** The EIGHT
 ships of 2026-08-08/09 added only FOUR checks, because six of them render nothing at all.
 
 ✅ **`.376`–`.384` RELEASED** by owner ruling 2026-08-08 (`.377`–`.384` superseded by the
@@ -102,6 +102,39 @@ The automated baseline has already taken the `.401`/`.402` attachment behaviour,
 zero overflow and the 44px floors off the human list. What it structurally **cannot** do — and why
 the pass survives — is the service worker (will not install in that webkit, 9 tests skip) and
 `env(safe-area-inset-top)` (resolves to 0 in the harness).
+
+## 3a · P0 — CLOSED IN CODE, OPEN ON HARDWARE (`v1.14.424`)
+
+⛔ **The owner stop-condition stands: no other milestone resumes until `s4:099` populates on the
+physical iPhone.** It is **item 0** of the pass.
+
+**What was wrong.** SITE-HOSTS was the ONLY source of rack components since `v1.6.26` — the first
+Master parser ever shipped. Git proves it: the line reading column D has exactly **one** real
+commit (the one that wrote it), the host push is byte-identical today, and cables only ever
+populated `cablesOut`/`cablesIn`. **This was never a regression — the capability never existed.**
+`v1.6.61` even shipped a *host-less cab cabling list* around it.
+
+**Why it mattered here.** In `MASTER-US-WEST-10A-US-SPK03-SPARKS.xlsx`, SITE-HOSTS carries 4,143
+rows and **not one is an s4 cab**, while CUTSHEET names 98 s4 racks. **215 of 511 racks (42%) exist
+only as cable endpoints.** `s4:099` explicitly holds nine GPU-B300 nodes, eight power shelves, an
+SN2201 and a CDU — with model, DNS and RU — and the app said `NO HOST DATA IN MASTER`.
+
+**The fix.** Cable endpoints carry `LOC:CAB:RU` + DNS + MODEL — explicit Master records — and are
+normalised into the SAME inventory SITE-HOSTS feeds, so Build and Forge get identical data without
+either choosing a source (both read `master_rackToElevation`). Three rules, in order:
+**SITE-HOSTS wins** where both describe a U · **dedupe by identity, not by cable** (68 refs → 19
+components; one-per-cable would have invented 68 devices) · **provenance kept**
+(`SITE_HOSTS` / `CUTSHEET_ENDPOINT`).
+
+**Measured through the real parser:** 511 racks · 7,574 components (4,143 + 3,431) · 28,264 cables ·
+`s4:099` = 19 at the exact RUs · `s1:002` unchanged at 19, all SITE_HOSTS · compressed payload
+1.36 MB against the ~5 MB quota.
+
+⭐ **NEW STANDING RULE (owner).** Any change to Master parsing, the normalized rack inventory,
+storage restoration, `ACTIVE_MASTER`, or RackEngine data binding must keep
+`test/e2e/15-dual-source-master.spec.js` green **before it ships**. Its rows are lifted verbatim
+from the real workbook and it runs the PRODUCTION parser, not a copy of it. The owner should never
+again have to discover that a working rack went empty.
 
 ## 4 · Open defects
 

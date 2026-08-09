@@ -12865,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.423';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.424';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -33277,13 +33277,100 @@ async function phantom_parseMaster(arrayBuffer, options) {
         plane: n(hr[17]),
         superpodId: n(hr[18]),
         leafGroupId: n(hr[19]),
-        fabric: n(hr[20])
+        fabric: n(hr[20]),
+        // v1.14.424 — provenance. SITE-HOSTS is the canonical, richer source; a consumer that
+        // needs to say WHERE a component came from must never have to guess.
+        source: 'SITE_HOSTS'
       };
       hosts.push(host);
       ensureRack(hRack, hLocode).hosts.push(host);
       if (k > 0 && (k % chunkSize) === 0) {
         await new Promise(function(r) { setTimeout(r, 0); });
       }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // 9a. SOURCE 2 — CUTSHEET ENDPOINTS ARE MASTER DATA (v1.14.424, owner P0)
+    //
+    // WHAT WAS MISSING, PROVEN FROM THE FILE AND FROM GIT. SITE-HOSTS has been the ONLY source of
+    // rack components since v1.6.26 — the first parser ever shipped — and the host push is
+    // byte-identical today. Cables only ever populated cablesOut/cablesIn. So a cabinet that
+    // appears in CUTSHEET but has no SITE-HOSTS row rendered as ZERO COMPONENTS, forever. That is
+    // not a regression; the capability never existed. v1.6.61 even shipped a "host-less cab
+    // cabling list" around it.
+    //
+    // In the owner's US-SPK03 Master that is not an edge case: SITE-HOSTS carries 4,143 rows and
+    // NOT ONE of them is an s4 cab, while CUTSHEET names 98 s4 racks. 215 of 511 racks (42%)
+    // exist only as cable endpoints. For s4:099 the sheet explicitly holds nine GPU-B300 nodes,
+    // eight power shelves, an SN2201 and a CDU — with model, DNS and RU — and PHANTOM showed none
+    // of it while saying "NO HOST DATA IN MASTER".
+    //
+    // WHAT THIS DOES. Every cable endpoint carries LOC:CAB:RU + DNS + MODEL. Those are explicit
+    // Master records, not inference, so they are normalised into the SAME rack inventory that
+    // SITE-HOSTS feeds — which is why Build and Forge get identical data without either of them
+    // choosing a source: both read racksByCab[].hosts through master_rackToElevation.
+    //
+    // THREE RULES, IN THIS ORDER:
+    //   1. SITE-HOSTS WINS. If a host already occupies that rack+RU, the endpoint is dropped —
+    //      the SITE-HOSTS record is richer (serial, role, IPs, grid). Measured on the owner's
+    //      file: 4,128 of 7,559 endpoints suppressed exactly this way, so nothing double-counts.
+    //   2. DEDUPE BY IDENTITY, NOT BY CABLE. A component is rack+RU+DNS+model. s4:099 has 68
+    //      endpoint references that normalise to 19 physical components — matching the owner's
+    //      hand count exactly. One component per cable would have invented 68 devices.
+    //   3. PROVENANCE IS KEPT. Every component records source: SITE_HOSTS or CUTSHEET_ENDPOINT.
+    //      A device visible only because something is cabled to it must never be presented as
+    //      though SITE-HOSTS declared it, and nothing here invents a device the Master does not
+    //      name.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    var _epAdded = 0, _epSuppressed = 0, _epDeduped = 0;
+    try {
+      var _EP_RE = /^([a-z0-9]+:[0-9]+):([0-9]+)/;
+      var _claimed = {}, _seen = {};
+      Object.keys(racksByCab).forEach(function(rid) {
+        _claimed[rid] = {}; _seen[rid] = {};
+        var hh = racksByCab[rid].hosts || [];
+        for (var q = 0; q < hh.length; q++) {
+          var pp = String(hh[q].locCabRu || '').split(':');
+          if (pp.length >= 3) _claimed[rid][parseInt(pp[2], 10)] = true;
+        }
+      });
+      var _sides = [{ l: 'aLoc', d: 'aDns', m: 'aModel' }, { l: 'zLoc', d: 'zDns', m: 'zModel' }];
+      for (var ci = 0; ci < cables.length; ci++) {
+        var cb = cables[ci];
+        for (var si = 0; si < 2; si++) {
+          var sd = _sides[si];
+          var locv = nLow(cb[sd.l]);
+          var mm = _EP_RE.exec(locv);
+          if (!mm) continue;
+          var rid2 = mm[1], ru2 = parseInt(mm[2], 10);
+          var rk2 = racksByCab[rid2];
+          if (!rk2) continue;                       // topology already came from the cable loop
+          if (_claimed[rid2] && _claimed[rid2][ru2]) { _epSuppressed++; continue; }   // rule 1
+          var dns2 = n(cb[sd.d]), mod2 = n(cb[sd.m]);
+          var key2 = ru2 + '|' + dns2.toLowerCase() + '|' + mod2.toLowerCase();
+          if (!_seen[rid2]) _seen[rid2] = {};
+          if (_seen[rid2][key2]) { _epDeduped++; continue; }                          // rule 2
+          _seen[rid2][key2] = true;
+          var comp = {
+            lastProvisioned: '', locode: rk2.locode || '', locCabRu: locv,
+            dns: dns2, model: mod2, serial: '', rowType: '', role: '', tags: '',
+            ipv4: '', ipv6: '', gridGroup: '', grid: '', gridPod: '', asn: '',
+            rail: '', plane: '', superpodId: '', leafGroupId: '', fabric: '',
+            source: 'CUTSHEET_ENDPOINT'                                               // rule 3
+          };
+          rk2.hosts.push(comp);
+          hosts.push(comp);
+          _epAdded++;
+        }
+        if (ci > 0 && (ci % chunkSize) === 0) await new Promise(function(r) { setTimeout(r, 0); });
+      }
+      try {
+        console.info('[master] CUTSHEET endpoints normalised: +' + _epAdded + ' components · '
+          + _epSuppressed + ' suppressed (SITE-HOSTS owns the U) · ' + _epDeduped + ' duplicate refs collapsed');
+      } catch (_) {}
+    } catch (epErr) {
+      // A malformed cable row must never kill a parse that already has 4,143 good hosts.
+      try { console.warn('[master] endpoint normalisation failed, SITE-HOSTS retained:', epErr); } catch (_) {}
     }
 
     // 9b. SITE-VARS → flat key/value map (v1.14.346, ingest Phase 2). KEY-DRIVEN, never
@@ -33337,6 +33424,15 @@ async function phantom_parseMaster(arrayBuffer, options) {
         totalHosts: hosts.length,
         totalCables: cables.length,
         cableSource: cableSource,
+        // v1.14.424 — SOURCE COVERAGE IS REPORTED SEPARATELY (owner ruling). A Master must never
+        // be summarised as "0 hosts" because ONE source lacks one cabinet, and a component
+        // recovered from a cable endpoint must never be counted as though SITE-HOSTS declared it.
+        // totalHosts above is the NORMALISED total across both sources; these two say where it
+        // came from, and they always sum to it.
+        hostsFromSiteHosts: hosts.length - _epAdded,
+        hostsFromCutsheet: _epAdded,
+        endpointsSuppressedBySiteHosts: _epSuppressed,
+        endpointDuplicateRefsCollapsed: _epDeduped,
         // v1.14.346 — honest accounting: SITE-VARS reports as parsed only when it actually
         // parsed, and stays in sheetsSkipped when this Master doesn't carry it.
         // v1.14.414 — "PARSED" NOW MEANS "CONTRIBUTED ROWS", NOT "WAS PRESENT".

@@ -111,7 +111,7 @@ precisely the two things only your phone can answer — they are items 1 and 2 b
 
 ---
 
-## THE PASS — 15 checks. Clear the SW cache first.
+## THE PASS — 19 checks. Clear the SW cache first. ⛔ START AT ITEM 0.
 *(Was 16, then 11 after the `.376`–`.384` release dropped five whole. Now 14: `.416`–`.422` added
 three, and only three, because **six of those seven ships have no visible surface at all.**)*
 
@@ -122,6 +122,25 @@ Seven ships: `.416` tap window · `.417` site-profile root · `.418` one operato
 screen. Verifying them by eye is not possible and not required; what they need is that the app
 still opens and your data is still there, which items 12–14 cover. Only `.416` (a real tap
 behaviour) and `.422` (a new confirmation step in import) changed anything you can see.
+
+### ⛔ 0 · THE P0 — DO THIS FIRST, IT BLOCKS EVERYTHING (`.424`)
+- [ ] **0 · `s4:099` RESOLVES ITS REAL COMPONENTS.** Re-import
+      `MASTER-US-WEST-10A-US-SPK03-SPARKS.xlsx`, then open **`s4:099`** in Forge.
+      It must show **19 components**, not `0 COMPONENTS`:
+      **nine GPU-B300-01 nodes at RU 35·32·29·26·23·20·17·14·11**, an **SN2201 at RU46**,
+      **eight PS-1RU-06 power shelves** (42·41·40·39 and 9·8·7·6), and a **CDU-4RU-03 at RU2**.
+- [ ] **0a · NOTHING REGRESSED ON THE SITE-HOSTS RACKS.** Open an **s1**, **s2** and **s3**
+      cabinet. They must look exactly as they always have — same devices, no extra rows.
+      *(`s1:002` is 19 components in the harness, all from SITE-HOSTS, zero endpoint padding.)*
+- [ ] **0b · IT PERSISTS.** Reload the app. `s4:099` must still show the same 19 components.
+- [ ] **0c · THE IMPORT SUMMARY IS HONEST.** On import you should see counts that reconcile —
+      the normalized total equals SITE-HOSTS plus CUTSHEET-derived, never one number hiding the
+      other. ⚠ The Master's **own** totals are 511 racks · 7,574 components (4,143 + 3,431) ·
+      28,264 cables. If the summary says anything materially different, stop and tell me.
+
+*Why this is item 0: a cabinet present in CUTSHEET but absent from SITE-HOSTS rendered zero
+components for the entire life of the product — since v1.6.26, proven by git. 42% of this site's
+racks are in that class. Everything below is meaningless if this is wrong.*
 
 ### A · The two the harness structurally cannot do
 - [ ] **1 · SAFE AREA, on the phone.** Header `API OFFLINE` pill sits **below the notch** and is
