@@ -12865,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.417';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.418';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -23484,11 +23484,38 @@ const DEPLOY_LARGE_EDP_LINES = 5000;         // 5000 lines triggers slow-parse w
 // ━━━ IDENTITY + RBAC ━━━
 const IDENTITY_USER_KEY  = 'phantom_current_user_v1';
 
+// v1.14.418 (P0 of PHASE-ENGINE) — ONE ANSWER TO "WHO IS WORKING".
+//
+// `phantom_current_user_v1` was a SECOND persisted operator identity, independent of the site
+// profile, and `deploy_logAudit` used it for `actor` on every audit entry. So the log that
+// credits work to people was reading from a source the profile did not own — the split-brain
+// class this whole consolidation exists to delete, sitting in the one field that attributes
+// work to a human. Spec §2 is explicit: the actor is currentOperator.
+//
+// THE DOOR CHANGES, THE 12 CALLERS DO NOT. Every reader keeps calling identity_getUser(); it
+// now resolves through the profile. That is the whole blast radius — one function — instead of
+// twelve edits and a thirteenth someone forgets.
+//
+// THE LEGACY KEY IS MIGRATED, NEVER ABANDONED. It holds a name a human typed. It is still read
+// as a fallback for a device that has not migrated yet, and PHANTOM_SITE.migrate() copies it
+// into the profile. Nothing is deleted: this ship stops it being a competing WRITE target, it
+// does not destroy what it holds.
 function identity_getUser() {
+  try {
+    if (typeof PHANTOM_SITE !== 'undefined') {
+      var who = PHANTOM_SITE.currentOperator();
+      if (who) return who;
+    }
+  } catch (_) {}
   return (localStorage.getItem(IDENTITY_USER_KEY) || '').trim();
 }
 function identity_setUser(name) {
-  safeStore(IDENTITY_USER_KEY, (name || '').trim());
+  try {
+    if (typeof PHANTOM_SITE !== 'undefined' && PHANTOM_SITE.setCurrentOperator(name)) return true;
+  } catch (_) {}
+  // Only reached if the profile could not be written (quota, corrupt record). Writing the legacy
+  // key here is a last resort that keeps the operator's name somewhere rather than losing it.
+  return safeStore(IDENTITY_USER_KEY, (name || '').trim());
 }
 function identity_promptUser() {
   var current = identity_getUser();
@@ -32366,13 +32393,37 @@ var PHANTOM_SITE = {
 
   /**
    * THE ACTOR. Every Event Log entry records this, never the Site Lead — spec §2 is explicit
-   * that work is never auto-credited to authority. Falls back to siteLead only because they are
-   * usually the same person and a device that has never switched operator has nothing else to
-   * say; it is a default, not an assumption, and switching writes an OPERATOR_CHANGE event.
+   * that work is never auto-credited to authority.
+   *
+   * STRICT: NO FALLBACK TO siteLead. v1.14.417 shipped this with a read-time coalesce to
+   * siteLead, on the reasoning that they are usually the same person. That was wrong, and
+   * v1.14.418 removes it: this accessor also backs identity_getUser(), which gates LEAD-ONLY
+   * RBAC actions. A read-time coalesce would silently grant those actions to whoever was on a
+   * device whose operator field happened to be empty. Spec §2 says the operator DEFAULTS to the
+   * Site Lead at Site Setup — that is a value WRITTEN once and then editable, not a fallback
+   * computed on every read. An empty actor must read as empty.
    */
   currentOperator: function() {
     var p = this.load() || {};
-    return String(p.operator || '').trim() || String(p.siteLead || '').trim() || '';
+    return String(p.operator || '').trim();
+  },
+
+  /**
+   * Set the actor. ONE owner for operator identity — v1.14.418 routes identity_setUser() here so
+   * `phantom_current_user_v1` stops being a second persisted answer to "who is working".
+   * Read-modify-write; returns false rather than throwing.
+   */
+  setCurrentOperator: function(name) {
+    try {
+      var v = String(name == null ? '' : name).trim();
+      var p = siteProfile_load();
+      if (String(p.operator || '') === v) return true;      // no write when nothing changes
+      p.operator = v;
+      return siteProfile_save(p) !== false;
+    } catch (e) {
+      try { console.warn('PHANTOM_SITE.setCurrentOperator failed:', e); } catch (_) {}
+      return false;
+    }
   },
 
   /** THE AUTHORITY. Changed only in SITE/SYSTEM (spec §2). */
@@ -32458,6 +32509,33 @@ var PHANTOM_SITE = {
         p.id = 'sp_' + String(p.facilityId || 'unset').toLowerCase().replace(/[^a-z0-9]+/g, '') + '_' + Date.now();
         p.createdAt = p.createdAt || p.confirmedAt || Date.now();
         filled.push('id');
+      }
+
+      // v1.14.418 — carry the legacy identity key into the profile before anything reads the
+      // profile as the only answer. `phantom_current_user_v1` holds a name a human typed and was
+      // the source of `actor` on every audit entry; dropping it silently would re-credit that
+      // person's work to whatever the profile happened to hold. Copied, never moved — the legacy
+      // key is left on disk untouched.
+      var legacyUser = '';
+      try { legacyUser = (localStorage.getItem(IDENTITY_USER_KEY) || '').trim(); } catch (_) {}
+      if (!String(p.operator || '').trim()) {
+        if (legacyUser) { p.operator = legacyUser; filled.push('operator(from legacy identity)'); }
+      } else if (legacyUser && legacyUser !== String(p.operator).trim()) {
+        // THE TWO STORES DISAGREE, AND SOMEONE'S NAME IS ABOUT TO STOP BEING USED.
+        // The profile wins by ruling — it is the one owner of operator identity. But this device
+        // has been crediting work to `legacyUser` and will now credit it to the profile operator,
+        // and a silent switch of who gets credited is exactly the kind of quiet change this app
+        // does not do. The value is NOT altered here; the divergence is recorded so it is
+        // inspectable and, when a surface exists for it, sayable.
+        if (p.legacyOperatorDiverged !== legacyUser) {
+          p.legacyOperatorDiverged = legacyUser;
+          filled.push('legacyOperatorDiverged');
+          try {
+            console.warn('[PHANTOM_SITE] operator identity diverged: profile="' + p.operator
+              + '" vs legacy phantom_current_user_v1="' + legacyUser
+              + '". The PROFILE wins from v1.14.418 on. Past audit entries credited the legacy name.');
+          } catch (_) {}
+        }
       }
 
       if (!String(p.siteLead || '').trim() && String(p.operator || '').trim()) {

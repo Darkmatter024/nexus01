@@ -171,6 +171,121 @@ test.describe('ACTIVE_SITE_PROFILE — migration is the thing that protects the 
   });
 });
 
+test.describe('ONE ANSWER TO "WHO IS WORKING" (v1.14.418, P0 of PHASE-ENGINE)', () => {
+
+  const LEGACY_KEY = 'phantom_current_user_v1';
+
+  test('currentOperator is STRICT — an empty actor never inherits the Site Lead', async ({ phantom, page }) => {
+    await phantom.boot();
+    await seedProfile(page, {
+      facilityId: 'US-SPK03', siteLead: 'J. Hamilton', operator: '',   // authority set, actor NOT
+      confirmedAt: Date.now(), lastUpdated: Date.now(), schemaVersion: 2,
+    });
+    const out = await page.evaluate(() => ({
+      actor: window.PHANTOM_SITE.currentOperator(),
+      lead: window.PHANTOM_SITE.siteLead(),
+    }));
+    // This accessor also backs identity_getUser(), which gates LEAD-ONLY RBAC actions. A
+    // read-time fallback to siteLead would hand those actions to whoever is holding a device
+    // whose operator field happens to be empty. Spec §2's "defaults to Site Lead" is a value
+    // WRITTEN at setup, not a coalesce evaluated on every read.
+    expect(out.lead, 'fixture: authority is set').toBe('J. Hamilton');
+    expect(out.actor, 'an unset actor must read as empty, never as the Site Lead').toBe('');
+  });
+
+  test('identity_getUser() resolves through the PROFILE, not the legacy key', async ({ phantom, page }) => {
+    await phantom.boot();
+    const out = await page.evaluate((lk) => {
+      localStorage.setItem(lk, 'LEGACY NAME');
+      const p = siteProfile_load();
+      p.facilityId = 'US-SPK03'; p.operator = 'PROFILE NAME'; p.siteLead = 'J. Hamilton';
+      p.confirmedAt = Date.now();
+      siteProfile_save(p);
+      return { who: identity_getUser(), legacyStillThere: localStorage.getItem(lk) };
+    }, LEGACY_KEY);
+    expect(out.who, 'the profile must win — it is the one owner of operator identity').toBe('PROFILE NAME');
+    expect(out.legacyStillThere, 'the legacy key holds a name a human typed; it is not destroyed').toBe('LEGACY NAME');
+  });
+
+  test('identity_setUser() writes the PROFILE — the legacy key stops being a write target', async ({ phantom, page }) => {
+    await phantom.boot();
+    const out = await page.evaluate((lk) => {
+      localStorage.removeItem(lk);
+      const p = siteProfile_load();
+      p.facilityId = 'US-SPK03'; p.confirmedAt = Date.now(); siteProfile_save(p);
+      identity_setUser('R. Vega');
+      return {
+        profileOperator: siteProfile_load().operator,
+        legacyWritten: localStorage.getItem(lk),
+        readBack: identity_getUser(),
+      };
+    }, LEGACY_KEY);
+    expect(out.profileOperator, 'setUser must write the profile').toBe('R. Vega');
+    expect(out.legacyWritten, 'the legacy key must NOT be written any more').toBeNull();
+    expect(out.readBack).toBe('R. Vega');
+  });
+
+  test('a legacy-only device is MIGRATED, so its operator keeps their attribution', async ({ phantom, page }) => {
+    await phantom.boot();
+    const out = await page.evaluate((lk) => {
+      localStorage.setItem(lk, 'LEGACY TECH');
+      const p = siteProfile_load();
+      p.facilityId = 'US-SPK03'; p.operator = ''; p.siteLead = ''; p.confirmedAt = Date.now();
+      siteProfile_save(p);
+      const res = PHANTOM_SITE.migrate();
+      return { res, after: siteProfile_load(), legacy: localStorage.getItem(lk) };
+    }, LEGACY_KEY);
+    // Dropping the legacy key silently would re-credit this person's past work to whatever the
+    // profile happened to hold. Copied, never moved.
+    expect(out.after.operator, 'the typed name must survive into the profile').toBe('LEGACY TECH');
+    expect(out.legacy, 'copied, not moved — nothing is deleted').toBe('LEGACY TECH');
+    expect(out.res.filled.join(','), 'migration must say what it carried across').toContain('legacy identity');
+  });
+
+  test('a DIVERGENCE between the two stores is recorded, not silently resolved', async ({ phantom, page }) => {
+    await phantom.boot();
+    const out = await page.evaluate((lk) => {
+      localStorage.setItem(lk, 'OLD NAME');
+      const p = siteProfile_load();
+      p.facilityId = 'US-SPK03'; p.operator = 'NEW NAME'; p.siteLead = 'NEW NAME';
+      p.confirmedAt = Date.now(); delete p.legacyOperatorDiverged;
+      siteProfile_save(p);
+      const res = PHANTOM_SITE.migrate();
+      return { res, after: siteProfile_load(), actor: PHANTOM_SITE.currentOperator(), legacy: localStorage.getItem(lk) };
+    }, LEGACY_KEY);
+    // The profile wins by ruling — but this device HAS been crediting work to "OLD NAME", and
+    // from now on it credits "NEW NAME". A silent switch of who gets credited is not something
+    // this app does, so the divergence is recorded where it can be inspected and said.
+    expect(out.actor, 'the profile is the owner').toBe('NEW NAME');
+    expect(out.after.legacyOperatorDiverged, 'the superseded name must be recorded, not dropped').toBe('OLD NAME');
+    expect(out.legacy, 'and the legacy key itself is still untouched on disk').toBe('OLD NAME');
+    expect(out.res.filled.join(','), 'the migration must report that it saw a divergence').toContain('legacyOperatorDiverged');
+  });
+
+  test('THE POINT: the audit log credits the actor from the PROFILE', async ({ phantom, page }) => {
+    await phantom.boot();
+    const out = await page.evaluate((lk) => {
+      localStorage.setItem(lk, 'WRONG PERSON');       // the old source, deliberately different
+      const p = siteProfile_load();
+      p.facilityId = 'US-SPK03'; p.operator = 'R. Vega'; p.siteLead = 'J. Hamilton';
+      p.confirmedAt = Date.now(); siteProfile_save(p);
+      if (typeof deploy_logAudit !== 'function') return { skip: true };
+      deploy_logAudit('e2e-dep-p0', 'STEP_STATE_CHANGE', 'step', 'P4-S02', 'e2e actor check');
+      const all = (typeof deploy_loadAllAudit === 'function') ? deploy_loadAllAudit() : [];
+      const mine = all.filter((e) => e && e.deploymentId === 'e2e-dep-p0');
+      return { skip: false, last: mine[mine.length - 1] || null, count: mine.length };
+    }, LEGACY_KEY);
+    test.skip(out.skip, 'deploy_logAudit is not reachable at page scope in this build');
+    expect(out.count, 'the audit entry was not written').toBeGreaterThan(0);
+    // Before P0 this read WRONG PERSON, from a store the profile did not own.
+    expect(out.last.actor, 'work must be credited to the profile actor, not a second identity store').toBe('R. Vega');
+    expect(out.last.actor, 'and never to the Site Lead').not.toBe('J. Hamilton');
+    // The chain must still verify — P0 changed who is named, not the append-only guarantees.
+    const chain = await page.evaluate(() => (typeof deploy_verifyAuditChain === 'function') ? deploy_verifyAuditChain() : null);
+    if (chain) expect(chain.brokenAt, 'P0 must not break the tamper-evident chain').toBeFalsy();
+  });
+});
+
 test.describe('ACTIVE_SITE_PROFILE — the Master binding', () => {
 
   test('binding reports no-master / no-binding / match as DISTINCT states', async ({ phantom, page }) => {

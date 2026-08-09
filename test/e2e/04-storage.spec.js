@@ -524,7 +524,22 @@ test.describe('export → clear → restore round trip', () => {
     }));
     expect(readBack.profile.facilityId).toBe('TEST-01');
     expect(readBack.sops[0].title).toBe('Torque spec');
-    expect(readBack.user).toBe('E2E-TECH');
+
+    // ── v1.14.418: THIS EXPECTATION CHANGED, AND THE CHANGE IS THE POINT. ──────────────
+    // This fixture seeds TWO different operator identities — the profile carries
+    // operator:'E2E' (fixtures.js) and phantom_current_user_v1 carries 'E2E-TECH'. That
+    // divergence IS the defect P0 fixes: two persisted answers to "who is working", with
+    // deploy_logAudit crediting work from the one the profile did not own.
+    //
+    // This test used to assert 'E2E-TECH' — the legacy key winning. From .418 the PROFILE
+    // owns operator identity, so 'E2E' is correct. The assertion is not relaxed: it still
+    // pins an exact name, and it still proves identity survives the round trip. What moved
+    // is WHICH store is authoritative, by owner ruling.
+    expect(readBack.user, 'the profile owns operator identity from v1.14.418').toBe('E2E');
+    // And the legacy value must still be on disk — it is a name a human typed, so P0 stops
+    // WRITING it, it does not destroy it. If this ever goes null, data was thrown away.
+    expect(after['phantom_current_user_v1'],
+      'the legacy identity key must survive the round trip — copied, never destroyed').toBe('E2E-TECH');
   });
 
   // ── HARNESS GAP, PROVEN NOT ASSUMED ───────────────────────────────────────────
