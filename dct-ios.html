@@ -9310,6 +9310,22 @@ body.rd #forge3d-sheet.open { display: flex; }
      This is the .408 lesson running the other way: moving an element out of a stacking context
      silently changes what its z-index means. */
   pointer-events:auto;z-index:4}
+/* v1.14.416 - THE 340ms TAP WINDOW. z-index:4 above makes every overlay cover this cluster AT
+   REST, and that is what the layering test asserted. But .detail-panel does not appear at rest -
+   it SLIDES (transform .34s, :9316), and until it has travelled far enough its own box does not
+   yet sit over these buttons. For that third of a second the panel was open, visibly moving, and
+   a tap here still fired the loadout button. Stacking order was never the issue: the panel simply
+   was not there yet.
+   Fixed in CSS on purpose, keyed to the SAME .open class the overlays already toggle, because the
+   alternative was a class set by hand at five call sites (openDetail :20591, closeDetail :20593,
+   openSearch :20613, closeSearch :20614, picker :20713/:20720/:20722) - five chances to drift, and
+   a sixth overlay later would silently miss it. This rule cannot be forgotten by a future caller.
+   No behaviour change at rest: an open overlay already owned these pixels, so this only removes a
+   hit target that was live while its own overlay was on screen. Not a dead control either - the
+   cluster is only inert while an overlay is visibly covering it, and returns the moment it closes.
+   :has() is already used elsewhere in this file, and if it were ever unsupported the declaration
+   is dropped and behaviour falls back to exactly what shipped before - it cannot fail closed. */
+#forge3d-sheet:has(.detail-panel.open, .picker.open, .search-overlay.open) .scene-utils{pointer-events:none}
 #forge3d-sheet .hudbtn{border-color:rgba(60,80,100,.45)}
 #forge3d-sheet .hudbtn:active{border-color:rgba(40,224,255,.55);background:rgba(40,224,255,.10)}
 #forge3d-sheet .hudbtn.dim{border-color:rgba(90,107,125,.4);color:var(--dim)}
@@ -12849,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.415';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.416';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,

@@ -1195,6 +1195,52 @@ test.describe('Forge bottom control stack', () => {
     const back = await topmostAtUtils();
     expect(back.grid, `${tag} the grid button never became tappable again after the overlays closed (got ${back.grid})`).toBe('loadoutBtn');
 
+    // (5) v1.14.416 — THE 340ms TAP WINDOW, pinned by sampling MID-SLIDE ON PURPOSE.
+    // Every check above measures at rest, which is correct for a layering invariant. This one
+    // is deliberately the opposite: it opens the panel and probes two frames later, while the
+    // panel is still travelling. That window was real — the panel was open and visibly moving,
+    // its box had not yet reached these buttons, and a tap fired the loadout button instead.
+    // The fix is a :has() rule keyed to .open, so the cluster goes inert the instant an overlay
+    // opens rather than when it finishes arriving. If someone later "simplifies" that rule away,
+    // this is the test that says so.
+    if (hasPanel) {
+      // DETERMINISTIC, not a race. Sampling the real slide with rAF cannot pin this: how far the
+      // panel has travelled after two frames depends on frame pacing, and it varies between the
+      // first open and the second on the SAME machine (241px cold, 66px warm — measured). So this
+      // reproduces the window's GEOMETRY directly: panel open, transition suspended, parked at a
+      // position it genuinely occupies during the slide and which does NOT yet cover the buttons.
+      // That is the exact state a tap could land in. Without the :has() rule the probe returns
+      // loadoutBtn here; with it the cluster is inert the moment .open appears.
+      const midSlide = await page.evaluate(() => {
+        const dp = document.getElementById('detailPanel');
+        const su = document.getElementById('sceneUtils');
+        dp.classList.add('open');
+        dp.style.transition = 'none';
+        dp.style.transform = 'translateY(60%)';   // mid-slide: panel top ~506px, buttons ~112px
+        void dp.offsetHeight;                      // force layout so the probe reads the new box
+        const b = su.getBoundingClientRect();
+        const cx = Math.round((b.x + b.right) / 2);
+        const py = Math.round(b.y + 22);
+        const panelTop = dp.getBoundingClientRect().top;
+        const e = document.elementFromPoint(cx, py);
+        const owner = e ? (e.closest('#loadoutBtn, #searchBtn, .detail-panel') || e) : null;
+        const name = owner ? (owner.id || (typeof owner.className === 'string' ? owner.className.split(/\s+/)[0] : owner.tagName)) : 'null';
+        dp.style.transition = ''; dp.style.transform = ''; dp.classList.remove('open');
+        return { hit: name, panelTop: Math.round(panelTop), probeY: py, utilsPE: getComputedStyle(su).pointerEvents };
+      });
+      // Guard the fixture itself: if the parked panel already covered the probe point, this test
+      // would pass for the wrong reason and pin nothing.
+      expect(midSlide.panelTop,
+        `${tag} fixture invalid — the parked panel already covers the probe point, so this asserts nothing`)
+        .toBeGreaterThan(midSlide.probeY);
+      expect(midSlide.hit,
+        `${tag} the loadout button is hit-testable while the detail panel is OPEN but still sliding `
+        + `(panel top ${midSlide.panelTop}px, probe ${midSlide.probeY}px, cluster pointer-events: ${midSlide.utilsPE}) `
+        + `— a tap in that ~340ms window fires the button instead of the panel`)
+        .not.toBe('loadoutBtn');
+      await settleTransform(page, '#forge3d-sheet .detail-panel');
+    }
+
     testInfo.annotations.push({ type: 'utils-layering', description: `scene ${onScene.grid}/${onScene.search} · picker ${overPicker.grid} · restored ${back.grid}` });
   });
 
