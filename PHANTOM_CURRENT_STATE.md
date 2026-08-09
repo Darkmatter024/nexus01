@@ -5,7 +5,7 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-08, after `v1.14.415`.**
+**Last updated: 2026-08-09, after `v1.14.422`.**
 
 ---
 
@@ -13,10 +13,10 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.415`** |
-| Commits | `08430a0` (contract) + `aad8181` (stamps) |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.415` |
-| Verified | Served bytes confirmed on Pages 2026-08-08, not just the stamp |
+| **Version** | **`phantom-v1.14.422`** |
+| Commits | `ffdba11` (head) — .416 through .422 shipped 2026-08-08/09 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.422` |
+| Verified | Served bytes confirmed on Pages through `.417`; `.418`-`.422` pushed, Pages not re-polled |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 
@@ -52,11 +52,28 @@ auto-credited to the Site Lead. This SUPERSEDES the earlier architecture-reset w
 
 ## 2 · Milestone
 
-**Programme: `SHIP-TECH-FLOW-V2-FROZEN.md` (see §1a).** Workstream 1 = PHASE-ENGINE, not started.
-Workstream 2 = SITE-PROFILE, **partially landed ahead of order**: `v1.14.417` ships S0 (the root
-record + migration + identity split), which is inert scaffolding rather than UI. ⚠ **Logged as a
-deviation, not resolved**: the spec says each step gates the next, and S0 is workstream-2 work
-that landed before workstream 1. It was authorised directly by the owner before the spec arrived.
+**Programme: `SHIP-TECH-FLOW-V2-FROZEN.md` (see §1a).**
+
+✅ **Workstream 1 — PHASE-ENGINE: COMPLETE** (2026-08-09). P0 `.418` one operator identity ·
+P1 `.419` the Event Log folded into the existing hash-chained audit log rather than built beside
+it · P2 `.420` the Blocker record, adopting pre-existing blockers instead of invalidating them ·
+P3 `.421` the step model, state machine and four platform templates.
+⚠ **The step TEXT is a placeholder by design.** Real per-platform commissioning procedure is site
+knowledge the code does not have, and inventing thirty authoritative-looking steps would be
+fabricated telemetry wearing a checklist. **Filling those in is the owner's, and it is what
+PHASE-ENGINE needs next to be useful to anyone.**
+
+🔄 **Workstream 2 — SITE-PROFILE: substantially landed, one piece deliberately held.**
+`.415` atomic swap · `.417` root record + migration · `.418` identity split · `.422` staging, the
+validation summary and explicit ACTIVATE SITE, plus §4.3 proven (events survive a Master swap and
+still name the Master that produced them).
+⛔ **HELD BY OWNER RULING — the boot gate** (invalid profile → SITE SETUP only). It is the single
+riskiest change available: a misfire locks an operator out of a working app in a cold aisle. It
+waits until after a physical device pass.
+
+⚠ **Sequencing deviation, logged not resolved:** `.417` (workstream 2) landed before workstream 1.
+Authorised directly by the owner before the spec arrived, and it is inert scaffolding rather than
+UI — but the spec says each step gates the next, so it is recorded rather than argued away.
 
 **Carried from the blueprint (architecture, still law):** M2-b is owed — `RackEngine.attach`, the
 reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a ✅ (`.401`).
@@ -65,10 +82,11 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — 30 ships, OPEN
+## 3 · Verify debt — 38 ships, OPEN
 
-**`.385`–`.415`** (minus the never-stamped `.412`). **Run the consolidated section at the top of
-`BATCH-VERIFY.md` — 11 surface-grouped checks — not the per-ship blocks.**
+**`.385`–`.422`** (minus the never-stamped `.412`) = **38 ships**. **Run the consolidated section at
+the top of `BATCH-VERIFY.md` — 14 surface-grouped checks — not the per-ship blocks.** The seven
+ships of 2026-08-08/09 added only THREE checks, because six of them render nothing.
 
 ✅ **`.376`–`.384` RELEASED** by owner ruling 2026-08-08 (`.377`–`.384` superseded by the
 `.385`→`.396` arc; `.376` closed by ruling because no checklist for it ever existed).

@@ -111,11 +111,17 @@ precisely the two things only your phone can answer — they are items 1 and 2 b
 
 ---
 
-## THE PASS — 11 checks. Clear the SW cache first.
-*(Was 16. FIVE dropped whole with the `.376`–`.384` release: OPS-wall art, TOOLS card faces, the
-rip-cord way-back, the Command Shell on a laptop, and the Ship 6 token slices. Item 11 keeps the
-rip-cord's `?legacy=1` leg because `.402`'s legacy half is still open and is NOT in the released
-range.)*
+## THE PASS — 14 checks. Clear the SW cache first.
+*(Was 16, then 11 after the `.376`–`.384` release dropped five whole. Now 14: `.416`–`.422` added
+three, and only three, because **six of those seven ships have no visible surface at all.**)*
+
+⭐ **`.416`–`.422` — WHAT LANDED 2026-08-08/09 AND WHAT IT COSTS YOU TO CHECK.**
+Seven ships: `.416` tap window · `.417` site-profile root · `.418` one operator identity ·
+`.419` Event Log folded in · `.420` Blocker records · `.421` step model · `.422` Master staging.
+**`.417` and `.419`–`.421` render nothing** — they are data contracts with test coverage and no
+screen. Verifying them by eye is not possible and not required; what they need is that the app
+still opens and your data is still there, which items 12–14 cover. Only `.416` (a real tap
+behaviour) and `.422` (a new confirmation step in import) changed anything you can see.
 
 ### A · The two the harness structurally cannot do
 - [ ] **1 · SAFE AREA, on the phone.** Header `API OFFLINE` pill sits **below the notch** and is
@@ -153,8 +159,29 @@ range.)*
       ⚠ The laptop leg of this went with the `.382`–`.384` release; the iPad leg did not, because
       `.412`-work shipped under `.413` and is outside the released batch.
 
+### G · The 2026-08-08/09 batch (`.416`–`.422`) — three checks for seven ships (items 11-13)
+- [ ] **11 · THE TAP WINDOW (`.416`).** Open the Forge aisle, tap a rack to open the detail panel,
+      and **while it is sliding up** try to tap the grid or search button under the header.
+      Nothing should happen until the panel is closed — and both buttons must work normally the
+      moment it is. *This is the only one of the seven with a behaviour you can feel.*
+- [ ] **12 · IMPORT NOW ASKS (`.422`).** Import a Master. You should see a summary — site, RACKS,
+      HOSTS, CABLES — and an **ACTIVATE SITE** button, instead of the file silently becoming your
+      site. **Tap Cancel once** and confirm your existing Master is exactly what it was. Then
+      import again, activate, and confirm the counts you saw are the counts you got.
+      ⚠ If your Master is the host-less one, this is where it will say so **at import** — that is
+      the guard working, and the number it shows is the answer to the open column-D question.
+- [ ] **13 · NOTHING ELSE MOVED (`.417`, `.418`, `.419`, `.420`, `.421`).** Open the app and
+      confirm: same site, same Master, same deployments, and **any blockers you already had are
+      still listed with the notes you wrote.** Nothing should ask you to set anything up.
+      In the console, three lines confirm the invisible half:
+      `PHANTOM_SITE.describe()` — your real site, `siteLead` and `currentOperator` both your name,
+      master binding `match` · `deploy_verifyAuditChain()` — `ok:true`, `brokenAt:null` ·
+      `PHANTOM_BLOCKERS.open()` — your blockers, each with its description.
+      ⚠ If you ever typed a name into "Enter Your Name" that differs from your setup name, boot
+      logs a **divergence warning** naming both. That is the guard, not a fault.
+
 ### F · The honest one
-- [ ] **11 · Nothing says "JS ERROR" during normal use.** Open the aisle, walk it, leave, come back.
+- [ ] **14 · Nothing says "JS ERROR" during normal use.** Open the aisle, walk it, leave, come back.
       A healthy session must raise no crash banner. *Releases `.406`.* (Also covers the `?legacy=1`
       leg of item 5 — pull the rip-cord and confirm the same silence in the other house.)
 
