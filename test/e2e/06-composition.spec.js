@@ -272,12 +272,18 @@ test.describe('tier boundaries', () => {
       }));
 
     // ── 1023px: phone composition. Bottom nav, no side rail, no top bar.
+    //    v1.14.425 — owner override (COMMAND DECK LAYOUT): the Command Deck card
+    //    composition is now the layout at EVERY width, so #cmd-shell composes here
+    //    where it used to be display:none. What did NOT change is the chrome
+    //    contract this test exists to protect: the rail and top bar are desktop
+    //    organs, they stay inert below 1024, and the bottom nav keeps routing.
+    //    Shell composed ≠ desktop chrome composed — that is the whole distinction.
     await setWidth(page, 1023);
-    expect(await chrome(), 'at 1023px the desktop chrome must stay inert — every body.rd.cshell rule now sits inside @media (min-width:1024px), and #cmd-shell keeps its base display:none outside that gate').toEqual({
+    expect(await chrome(), 'at 1023px the desktop CHROME must stay inert — #cs-side/#cs-top only exist at >=1024 and the bottom nav is still the only nav').toEqual({
       side: 'none',
       top: 'none',
       botnav: 'grid',
-      cmdshell: 'none',
+      cmdshell: 'block',
     });
     let o = await overflow(page);
     expect(o.scrollW, `1023px overflows: ${o.offenders.join(', ')}`).toBeLessThanOrEqual(o.clientW + 1);
@@ -330,11 +336,15 @@ test.describe('tier boundaries', () => {
       botnav: getComputedStyle(document.getElementById('rd-botnav')).display,
     }));
 
+    // v1.14.425 — owner override: the Command Deck composes at every width now, so the
+    // thing that still has to follow the VIEWPORT is the desktop CHROME (rail + top bar
+    // + the bottom nav standing down), not the shell. The probe below moved to #cs-side
+    // for that reason: it is the organ that must appear and disappear on resize.
     for (const w of [390, 834, 1023]) {
       await setWidth(page, w);
       const c = await compose();
       expect(c.side, `${w}px must not compose the desktop rail`).toBe('none');
-      expect(c.cmdshell, `${w}px must not compose the desktop shell — #cmd-shell keeps its base display:none outside the 1024 gate`).toBe('none');
+      expect(c.cmdshell, `${w}px must still compose the Command Deck — the owner override made it the layout at every width`).not.toBe('none');
       expect(c.botnav, `${w}px must keep the bottom nav`).toBe('grid');
     }
     for (const w of [1024, 1366, 1440, 1600]) {
@@ -344,10 +354,11 @@ test.describe('tier boundaries', () => {
       expect(c.cmdshell, `${w}px must compose the desktop shell`).not.toBe('none');
       expect(c.botnav, `${w}px must stand the bottom nav down — two primary navs on screen at once is the defect this boundary exists to prevent`).toBe('none');
     }
-    // and back down again: the shell must RELEASE the layout, not merely fail to take it.
+    // and back down again: the desktop chrome must RELEASE the layout, not merely fail to
+    // take it. The rail is the probe — it is what a boot-time flag would leave stuck on.
     await setWidth(page, 390);
     const back = await compose();
-    expect(back.cmdshell, 'narrowing left the desktop shell composed at 390px — the gate is being read once instead of continuously').toBe('none');
+    expect(back.side, 'narrowing left the desktop rail composed at 390px — the gate is being read once instead of continuously').toBe('none');
     expect(back.botnav, 'narrowing did not restore the bottom nav').toBe('grid');
   });
 

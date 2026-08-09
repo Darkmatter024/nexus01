@@ -12865,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.424';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.425';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -55694,7 +55694,13 @@ body.rd #pg-cmd .lens { border: 2px solid #1BFFE4 !important; }
    renderer sees an ordinary window resize, which it already handles.
    1024, not the 851 these blocks were written for: the shell has no composition for 851-1023,
    where it renders the phone header AND its own lockup with no rail and no right column. */
-@media (min-width: 1024px) {
+/* v1.14.425 - OWNER OVERRIDE: the Command Deck composition renders at EVERY width. It was gated
+   to >=1024 since .412 because no phone composition existed for it - so a phone fell back to the
+   older Command page while the approved layout sat inert in the same file. The gate now opens
+   everywhere and one max-width:1023px block adapts the desktop-only parts (fixed rail, two-column
+   grid). Scope is unchanged: every rule stays body.rd.cshell, so ?legacy=1 has no .rd and cannot
+   see any of it. */
+@media (min-width: 0px) {
 body.rd.cshell #cmd-shell {
   --cs-bloom-a: radial-gradient(60% 40% at 50% 0%, rgba(92,242,255,0.055), transparent 70%);
   --cs-bloom-b: radial-gradient(45% 35% at 100% 12%, rgba(155,89,255,0.045), transparent 72%);
@@ -56266,7 +56272,13 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
    is not correct; this hides them on their own terms. */
 .cs-dpanel { display: none; }
 
-@media (min-width: 1024px) {
+/* v1.14.425 - OWNER OVERRIDE: the Command Deck composition renders at EVERY width. It was gated
+   to >=1024 since .412 because no phone composition existed for it - so a phone fell back to the
+   older Command page while the approved layout sat inert in the same file. The gate now opens
+   everywhere and one max-width:1023px block adapts the desktop-only parts (fixed rail, two-column
+   grid). Scope is unchanged: every rule stays body.rd.cshell, so ?legacy=1 has no .rd and cannot
+   see any of it. */
+@media (min-width: 0px) {
 
   /* §9.4 SIDEBAR — sticky full height, darker than the workspace, 1px divider */
   /* v1.14.412 - THE DESKTOP CHROME IS NAVIGATION, SO IT SITS ON THE NAV LAYER.
@@ -56365,9 +56377,20 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
      and an absolutely positioned box resolves its offsets against the containing
      block's PADDING BOX - so padding on .main moves it not one pixel. Offsetting
      .page works because right/bottom stay 0 and it simply stretches less. */
-  body.rd.cshell .page { left: 246px; top: 76px; }
-  body.rd.cshell .app-header { display: none; }
-  body.rd.cshell #rd-botnav { display: none !important; }
+  /* DESKTOP-ONLY chrome hand-off. #cs-side and #cs-top only exist at >=1024, so
+     only there may the shared .app-header and #rd-botnav stand down - below that
+     width they ARE the navigation and the instrument row, and hiding them strands
+     the phone with no nav and no version/SW/net pills. This sub-gate is why the
+     enclosing block could be opened to every width for the card composition
+     without the phone inheriting a desktop chrome contract it cannot honour. */
+  @media (min-width: 1024px) {
+    body.rd.cshell .page { left: 246px; top: 76px; }
+    body.rd.cshell .app-header { display: none; }
+    body.rd.cshell #rd-botnav { display: none !important; }
+  }
+  /* the shell header duplicates the brand the shared .app-header already carries,
+     so it stays down at EVERY width - on desktop because #cs-top replaces it, on
+     phone because .app-header is still there. */
   body.rd.cshell .cs-hd, body.rd.cshell .cs-microbar { display: none; }
   /* the shell owns the Command page on desktop - the legacy zones it replaces
      stand down. Their doors survive in the sidebar (Master, Deploy, Handoff).
@@ -56542,6 +56565,63 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell .cs-rrow { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: var(--fs-caption); color: var(--slate); }
   body.rd.cshell .cs-rrow .cs-hdot { width: 7px; height: 7px; flex: 0 0 7px; }
   body.rd.cshell .cs-rv { margin-left: auto; font-family: var(--mono); font-weight: 700; color: var(--white); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════
+   v1.14.425 — THE PHONE COMPOSITION FOR THE COMMAND DECK (owner override).
+
+   Everything above was authored for a desktop: a fixed 246px rail, a two-column main/right
+   grid, and paired tool/ops grids. On a phone those are the only parts that do not survive,
+   so this block adapts exactly those and nothing else. The cards, the hero, the KPIs, the
+   intelligence panel, LOCAL SYSTEM STATE, build progress and field ops all keep the styling
+   they already had — that is the point of opening the gate rather than rebuilding them.
+
+   WHAT IS DELIBERATELY NOT TOUCHED HERE: no state logic, no gates, no metadata removal, no
+   navigation change (the bottom nav still owns routing on the phone; the rail is desktop
+   chrome and simply hides), no data-honesty behaviour, and no baked artwork. Layout only.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  /* the rail and the desktop top bar are desktop chrome. The phone already has the bottom
+     nav and the shared .app-header, so showing either here would duplicate navigation. */
+  body.rd.cshell #cs-side, body.rd.cshell #cs-top { display: none; }
+
+  /* THE GUTTER THEY RESERVED GOES WITH THEM, but not from here: `.page` is position:absolute
+     and the desktop rule insets it by the rail's 246px and the top bar's 76px, so that rule is
+     gated to >=1024 at its own source rather than undone here. Hiding chrome and reclaiming its
+     gutter are two separate edits and the first one alone looks like a broken layout — measured
+     before the gate: #pg-cmd sat at x=246 in a 390px viewport, 144px wide, right column
+     off-screen. Gating at the source keeps one owner for the offset instead of two. */
+
+  /* the shell owns the page flow; give it the phone gutters + bottom-nav clearance back. */
+  body.rd.cshell #cmd-shell { margin-left: 0; padding: 0 14px calc(118px + env(safe-area-inset-bottom, 0px)); }
+
+  /* main/right becomes one column, in the mock order: hero, intelligence, state, progress. */
+  body.rd.cshell #cs-grid, body.rd.cshell .cs-grid { grid-template-columns: minmax(0, 1fr); }
+  /* #cs-lower is a GRID CONTAINER that wears .cs-dpanel only to inherit that class's
+     display toggle — and inherits its 16px/17px CARD padding along with it. Harmless in a
+     wide three-up row; at 390 it inset the lower three cards to 328px against the 362px
+     stack above them, a visible 17px step in a single column. The padding belongs to the
+     cards, not their container. */
+  body.rd.cshell #cs-lower { grid-template-columns: minmax(0, 1fr); padding: 0; }
+
+  /* AND THE CHILDREN HAVE TO COME WITH IT. Narrowing the template alone is not enough: the
+     right-column cards carry an explicit `grid-column: 2`, and a child placed in column 2 of a
+     one-column grid creates an IMPLICIT second column. Measured before this line: the template
+     computed to `0px 347px`, so the hero — the only child in column 1 — was squeezed to 52px
+     wide and 741px tall and sat underneath the stack. The layout looked broken in a way that
+     reads like a width bug and is actually a placement bug.
+     The same is true of the ROW: the desktop places the hero and the intelligence panel both in
+     row 1 (side by side). Released from the column but not the row, they stack ON TOP OF each
+     other in one cell — measured at hero y=0 h=741 and intel y=0 h=225. Column and row are two
+     separate placements and a single-column layout has to release both. */
+  body.rd.cshell #cs-grid > *,
+  body.rd.cshell #cs-lower > * { grid-column: 1 / -1; grid-row: auto; }
+
+  /* ops and tools: two-up reads better than three at 390 and keeps every tile above the
+     44px floor without shrinking type. The 5-wide build rail stays 5 — it is a progress
+     rail, not a tap target. */
+  body.rd.cshell .cs-ops { grid-template-columns: minmax(0, 1fr); }
+  body.rd.cshell .cs-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
   /* the health rows are .cs-hrow and these are .cs-rrow - the warn dot needs its
      OWN rule or every open gate renders a healthy mint dot, which is a lie. */
   body.rd.cshell .cs-rrow.warn .cs-hdot { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
