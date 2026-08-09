@@ -12865,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.418';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.419';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -28980,12 +28980,38 @@ function deploy_loadAuditFor(deployId) {
 function deploy_saveAllAudit(arr) { return safeStore(DEPLOY_AUDIT_KEY, JSON.stringify(arr)); }
 
 // C4: tamper-evident audit chain. Canonical = FIXED whitelist (annotation fields excluded).
-var _AUDIT_HASH_FIELDS = ['id','deploymentId','ts','actor','action','entityType','entityId','summary','prevHash'];
+// v1.14.419 (P1 of PHASE-ENGINE) — THE CANONICAL FORM IS VERSIONED, AND IT HAD TO BE.
+//
+// This list is the input to every entry's hash, and deploy_verifyAuditChain RE-HASHES each
+// STORED entry with it before comparing to the digest that entry was written with. So simply
+// appending the five spec fields here would have re-hashed every pre-existing entry under a
+// 14-field canonical form, produced a different digest for all of them, and made the chain
+// report TAMPERING across the operator's entire history.
+//
+// A tamper-evident log that cries wolf is worse than not having one: it destroys the single
+// signal it exists to give, and it would have done so on a device where nothing was wrong.
+//
+// So each entry carries the version it was hashed under and is verified under THAT version.
+// v1 entries have no `hashV` and keep verifying exactly as they always did; v2 entries carry
+// hashV:2 and are hashed over the wider set. Neither generation is ever hashed under the
+// other's schema. It is self-protecting too — flipping hashV on a v2 entry to make it verify
+// as v1 changes the field set, so the digest fails either way.
+var _AUDIT_HASH_FIELDS_V1 = ['id','deploymentId','ts','actor','action','entityType','entityId','summary','prevHash'];
+var _AUDIT_HASH_FIELDS_V2 = _AUDIT_HASH_FIELDS_V1.concat(
+  ['hashV','siteProfileId','masterId','rack','stepId','evidence']);
+// Retained under its original name: read-only consumers and any future reader that just wants
+// "what does a legacy entry hash over" still resolve. Never used for a v2 entry.
+var _AUDIT_HASH_FIELDS = _AUDIT_HASH_FIELDS_V1;
 function _audit_canonical(e) {
+  var fields = (e && e.hashV === 2) ? _AUDIT_HASH_FIELDS_V2 : _AUDIT_HASH_FIELDS_V1;
   var o = {};
-  for (var i = 0; i < _AUDIT_HASH_FIELDS.length; i++) {
-    var k = _AUDIT_HASH_FIELDS[i];
-    o[k] = (e[k] === undefined || e[k] === null) ? '' : e[k];
+  for (var i = 0; i < fields.length; i++) {
+    var k = fields[i];
+    var v = e[k];
+    if (v === undefined || v === null) v = '';
+    // `evidence` is an array (spec §6.3). JSON.stringify already serialises it deterministically
+    // for a fixed key order, and the array is only ever appended to, never reordered.
+    o[k] = v;
   }
   return JSON.stringify(o);
 }
@@ -29014,12 +29040,27 @@ function deploy_verifyAuditChain() {
 }
 
 // Append a single immutable audit entry. Never updates existing records.
-function deploy_logAudit(deploymentId, action, entityType, entityId, summary) {
+// v1.14.419 (P1) — THIS IS THE EVENT LOG. Spec §6.3 describes an append-only log with no edits
+// and no deletes, where corrections are new entries referencing the old id. That is this
+// function, and it already had the harder half: hash chaining and tamper evidence. Owner ruled
+// FOLD rather than build a second store — a parallel Event Log would be the duplicate state this
+// whole programme exists to delete, and it would arrive without the chain.
+//
+// `meta` is OPTIONAL and the 25 existing call sites do not pass it. The two PROVENANCE fields are
+// not passed at all — they are stamped here, automatically, from the profile and the live Master.
+// That is what makes spec §4.3 work: events survive a Master swap carrying the truth-context that
+// produced them, without 25 call sites having to remember to attach it. Automatic provenance,
+// optional detail.
+function deploy_logAudit(deploymentId, action, entityType, entityId, summary, meta) {
   try {
     var dep = deploy_getById(deploymentId);
     var actor = identity_getUser() || (dep && dep.buildLead) || 'System';
     var all = safeGet(DEPLOY_AUDIT_KEY, []);
     if (!Array.isArray(all)) all = [];
+    meta = meta || {};
+    var _sp = null, _mid = null;
+    try { _sp = (typeof PHANTOM_SITE !== 'undefined') ? (PHANTOM_SITE.load() || {}).id || null : null; } catch (_) {}
+    try { _mid = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.id() : null; } catch (_) {}
     var _entry = {
       id: 'audit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       deploymentId: deploymentId,
@@ -29028,7 +29069,14 @@ function deploy_logAudit(deploymentId, action, entityType, entityId, summary) {
       action: action,
       entityType: entityType,
       entityId: entityId,
-      summary: summary || action
+      summary: summary || action,
+      // ── spec §6.3 fields. hashV MUST be set before the hash is taken. ──
+      hashV: 2,
+      siteProfileId: _sp || '',        // binds to ACTIVE_SITE_PROFILE.id
+      masterId: _mid || '',            // the Master active WHEN THE EVENT OCCURRED
+      rack: meta.rack || '',
+      stepId: meta.stepId || '',
+      evidence: Array.isArray(meta.evidence) ? meta.evidence : []
     };
     // C4: chain to previous entry, then self-hash
     var _prev = all.length ? all[all.length - 1] : null;
