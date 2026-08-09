@@ -172,26 +172,32 @@ racks are in that class. Everything below is meaningless if this is wrong.*
 ### D · Surfaces that need eyes, not assertions
 - [ ] **9 · Design-system screens** — the five phone screens that took the `.410` lock still read
       as one system; the `.411` loadout picker opens and picks. *Releases `.409`, `.410`, `.411`.*
-- [ ] **15 · THE COMMAND DECK ON THE PHONE (`.425`, owner override).** Open **Command**. One column,
+- [x] **15 · THE COMMAND DECK ON THE PHONE (`.425`, owner override).** Open **Command**. One column,
       top to bottom: **hero card with rack art** (NO ACTIVE DEPLOYMENT / your deployment, the
       RACKS · BLOCKERS · COMPLETE row, START A DEPLOYMENT) → **PHANTOM INTELLIGENCE** →
       **LOCAL SYSTEM STATE** → **BUILD PROGRESS** → **FIELD OPERATIONS** → **FIELD TOOLS** →
       **SHIFT READINESS**.
-- [ ] **15a · ⚠ THE CHROME IS STILL THERE — CHECK THIS ONE FIRST.** The **PHANTOM header with the
+- [x] **15a · ⚠ THE CHROME IS STILL THERE — CHECK THIS ONE FIRST.** The **PHANTOM header with the
       version badge** is at the top and the **bottom nav is on screen and still routes**. This is
       the regression the port caused and it was caught in the harness, not by eye: the desktop
       block hands navigation to the side rail, and carrying that to a phone left no nav and no
       version/SW/network pills. If either is missing, **stop and tell me** — do not keep going.
-- [ ] **15b · NO SIDEWAYS SCROLL, anywhere in that stack** — including across the FIELD TOOLS tile
+- [x] **15b · NO SIDEWAYS SCROLL, anywhere in that stack** — including across the FIELD TOOLS tile
       grid and the FIELD OPERATIONS art. Measured `docW=390` at 390px, but the harness cannot see
       a real iOS rubber-band.
-- [ ] **15c · THE CARDS LINE UP.** All seven share one left edge. There must be **no step inward**
+- [x] **15c · THE CARDS LINE UP.** All seven share one left edge. There must be **no step inward**
       where FIELD OPERATIONS begins — that was a 17px inset from a container inheriting card
       padding, fixed in this ship, and it is the thing most likely to look "almost right".
       ⚠ **Rip cord if it is wrong in the aisle: `?cshell=0`** returns the old phone Command page
       without clearing storage or losing anything.
       *iPad: single column at 834 is an OWNER RULING this ship, not a defect — see item 10 for the
       landscape/desktop leg, which is unchanged.*
+
+✅ **ITEM 15 CLEARED BY OWNER 2026-08-09 — *"command deck looks right on the phone."*** `.425` is
+verified on hardware and **RELEASED**. The chrome leg (15a) is confirmed by the same word: it was
+written as a stop-and-report check, and the pass was reported without one. ⚠ **15b (no sideways
+scroll) was not called out separately** — it is the only leg of the four that is a gesture rather
+than a look, so if a rubber-band shows up later it is unproven, not disproven.
 
 ### E · iPad (the ship nobody knows shipped — see D2)
 - [ ] **10 · iPad LANDSCAPE gets the desktop shell automatically** (left rail + right column), and

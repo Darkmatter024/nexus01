@@ -56,6 +56,10 @@ conflict was raised rather than resolved silently: **the split holds.** Revertin
 re-break who gets credited for work, which is the one thing the Event Log exists to get right.
 ⛔ **Do not "restore" §8's single-identity wording from the reset document.** It is the older text.
 
+✅ **`.425` IS DEVICE-VERIFIED AND RELEASED** — owner, 2026-08-09: *"command deck looks right on the
+phone."* Verify item 15 and its three legs are ticked. It is the **only** ship in the open debt that
+is closed on hardware; `.385`–`.424` remain open.
+
 ⭐ **OWNER OVERRIDE 2026-08-09 — COMMAND DECK LAYOUT (`.425`).** The approved Command Deck mock
 was ported into the real app's Command page **ahead of NAV-LOCK**, an explicit override of the
 sequencing rule that barred visual redesign before that workstream completes. ⛔ **The override is
