@@ -12865,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.425';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.426';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -32465,7 +32465,15 @@ var PHANTOM_MASTER_STORE = {
       var payload = {
         schemaVersion: 1,
         savedAt: new Date().toISOString(),
-        sourceFileHash: (parseResult.stats && parseResult.stats.sourceFileHash) || null,
+        // v1.14.426 — READ BOTH SHAPES. Everything below used to be read from `.stats`, which
+        // ONLY a fresh parse has: a payload restored from storage carries these same facts at the
+        // TOP level. That never mattered while the only thing ever saved was a parse result — but
+        // the boot normalization migration re-saves a RESTORED Master, and through the old code
+        // that round trip silently wrote sourceFileHash:null and totalCables:null, discarding the
+        // Master's identity and its cable count to fix its components. Same whitelist trap that
+        // ate the enrichment fields: this store keeps what it is told to keep and nothing else.
+        sourceFileHash: (parseResult.stats && parseResult.stats.sourceFileHash)
+          || parseResult.sourceFileHash || null,
         siteCode: parseResult.siteCode || null,
         // v1.14.237 — persist the import filename alongside the hash. Additive and
         // OPTIONAL: load() validates only `schemaVersion !== 1`, so payloads written
@@ -32487,7 +32495,12 @@ var PHANTOM_MASTER_STORE = {
         totalHosts: (parseResult.stats && parseResult.stats.totalHosts != null)
           ? parseResult.stats.totalHosts : this.hostCount(parseResult),
         totalCables: (parseResult.stats && parseResult.stats.totalCables != null)
-          ? parseResult.stats.totalCables : null,
+          ? parseResult.stats.totalCables
+          : (parseResult.totalCables != null ? parseResult.totalCables : null),
+        // v1.14.426 — the normalizer generation that BUILT racksByCab. Absent on payloads written
+        // before this ship, and absent means 1 by definition (see MASTER_NORM_VERSION). A parse
+        // states its own outcome; anything else that reaches this store is current by construction.
+        normVersion: (parseResult.normVersion != null) ? parseResult.normVersion : MASTER_NORM_VERSION,
         racksByCab: parseResult.racksByCab
       };
       var compressed = LZString.compressToUTF16(JSON.stringify(payload));
@@ -33101,6 +33114,212 @@ var PHANTOM_JOBSNAP_STORE = {
 // Console helper — mirrors window.phantom_clearMaster. Not wired to any UI.
 window.phantom_clearJobSnap = function() { return PHANTOM_JOBSNAP_STORE.clear(); };
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// MASTER NORMALIZATION VERSION — v1.14.426
+//
+// DERIVED CACHES ARE NOT PERMANENT TRUTH (owner ruling, 2026-08-09). `schemaVersion` says whether
+// a stored payload can be READ. It says nothing about which normalizer BUILT it, and that is the
+// gap that failed a device verify: `.424` taught the parser that CUTSHEET endpoints are Master
+// data, but a phone whose Master was stored under the older normalizer restored that older
+// derived inventory verbatim and kept rendering `s4:099` as 0 components / 68 cables. The code
+// was correct and served; the data in front of it predated the code.
+//
+//   1 — SITE-HOSTS is the only source of components (every build up to and including v1.14.423)
+//   2 — dual-source: SITE-HOSTS + CUTSHEET endpoints, with provenance (v1.14.424 onward)
+//
+// A stored payload with no `normVersion` is version 1 by definition — it was written before the
+// field existed. This is additive and optional exactly like `sourceFile`, `siteVars` and the
+// `.414` counts: `load()` still validates ONLY `schemaVersion`, so nothing that already restores
+// stops restoring.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+var MASTER_NORM_VERSION = 2;
+
+/**
+ * THE ONE CUTSHEET-ENDPOINT NORMALIZER. Called by the parser on import and by the boot migration
+ * on a Master restored from storage — the same engine over the same inputs, which is the only
+ * reason a rebuilt Master is guaranteed to equal a re-imported one (Contract A2).
+ *
+ * PURE ON PURPOSE. It reads `racksByCab` and returns what SHOULD be added; it mutates nothing.
+ * The migration depends on that: it has to be able to persist the upgraded Master BEFORE anything
+ * goes live, and if that persist fails the restored Master must still be untouched. A normalizer
+ * that mutated in place would have already contaminated the live object by then — the exact
+ * split-brain the SINGLE-MASTER LAW exists to make unrepresentable.
+ *
+ * @param {Object} racksByCab  rack map; each rack carries hosts[] and cablesOut[]/cablesIn[]
+ * @param {Array}  cables      flat cable list. Omit it and the cables are reconstructed from the
+ *                             racks — every cable is pushed to exactly ONE rack's cablesOut at
+ *                             parse time (and to the far rack's cablesIn), so concatenating
+ *                             cablesOut across racks rebuilds the list once each, no duplicates.
+ * @returns {{additions:Object, flat:Array, added:number, suppressed:number, deduped:number,
+ *            cablesSeen:number, ok:boolean}}
+ */
+function master_normalizeEndpoints(racksByCab, cables) {
+  var res = { additions: {}, flat: [], added: 0, suppressed: 0, deduped: 0, cablesSeen: 0, ok: false };
+  // `n`/`nLow` inside phantom_parseMaster are LOCAL aliases (:33295) for these two module-level
+  // helpers. Extracting the loop out of that function put it beyond their scope, so the aliases
+  // are re-declared here against the same functions — the values are identical, and a bare `n(...)`
+  // at file scope would have been a ReferenceError that no brace or compile check can see.
+  var n = _phantom_master_norm, nLow = _phantom_master_normLower;
+  try {
+    if (!racksByCab) return res;
+    if (!Array.isArray(cables)) {
+      cables = [];
+      Object.keys(racksByCab).forEach(function(rid) {
+        var out = racksByCab[rid] && racksByCab[rid].cablesOut;
+        if (out && out.length) cables = cables.concat(out);
+      });
+    }
+    res.cablesSeen = cables.length;
+
+    var _EP_RE = /^([a-z0-9]+:[0-9]+):([0-9]+)/;
+    var _claimed = {}, _seen = {};
+    Object.keys(racksByCab).forEach(function(rid) {
+      _claimed[rid] = {}; _seen[rid] = {};
+      var hh = (racksByCab[rid] && racksByCab[rid].hosts) || [];
+      for (var q = 0; q < hh.length; q++) {
+        var pp = String(hh[q].locCabRu || '').split(':');
+        if (pp.length >= 3) _claimed[rid][parseInt(pp[2], 10)] = true;
+      }
+    });
+    var _sides = [{ l: 'aLoc', d: 'aDns', m: 'aModel' }, { l: 'zLoc', d: 'zDns', m: 'zModel' }];
+    for (var ci = 0; ci < cables.length; ci++) {
+      var cb = cables[ci];
+      if (!cb) continue;
+      for (var si = 0; si < 2; si++) {
+        var sd = _sides[si];
+        var locv = nLow(cb[sd.l]);
+        var mm = _EP_RE.exec(locv);
+        if (!mm) continue;
+        var rid2 = mm[1], ru2 = parseInt(mm[2], 10);
+        var rk2 = racksByCab[rid2];
+        if (!rk2) continue;                       // topology already came from the cable loop
+        if (_claimed[rid2] && _claimed[rid2][ru2]) { res.suppressed++; continue; }   // rule 1
+        var dns2 = n(cb[sd.d]), mod2 = n(cb[sd.m]);
+        var key2 = ru2 + '|' + dns2.toLowerCase() + '|' + mod2.toLowerCase();
+        if (!_seen[rid2]) _seen[rid2] = {};
+        if (_seen[rid2][key2]) { res.deduped++; continue; }                          // rule 2
+        _seen[rid2][key2] = true;
+        var comp = {
+          lastProvisioned: '', locode: rk2.locode || '', locCabRu: locv,
+          dns: dns2, model: mod2, serial: '', rowType: '', role: '', tags: '',
+          ipv4: '', ipv6: '', gridGroup: '', grid: '', gridPod: '', asn: '',
+          rail: '', plane: '', superpodId: '', leafGroupId: '', fabric: '',
+          source: 'CUTSHEET_ENDPOINT'                                               // rule 3
+        };
+        if (!res.additions[rid2]) res.additions[rid2] = [];
+        res.additions[rid2].push(comp);
+        res.flat.push(comp);                      // parse order, so the flat host list is unchanged
+        res.added++;
+      }
+    }
+    res.ok = true;
+  } catch (epErr) {
+    // A malformed cable row must never kill a parse that already has 4,143 good hosts, and must
+    // never take down a boot. Partial additions are discarded rather than half-applied.
+    try { console.warn('[master] endpoint normalisation failed, SITE-HOSTS retained:', epErr); } catch (_) {}
+    res.additions = {}; res.flat = []; res.added = 0; res.ok = false;
+  }
+  return res;
+}
+
+/**
+ * REBUILD A STORED MASTER'S DERIVED INVENTORY UNDER THE CURRENT NORMALIZER (v1.14.426).
+ *
+ * THE RULE THIS IMPLEMENTS (owner, 2026-08-09): *a parser/normalization upgrade must not require
+ * the user to manually re-upload the Master.* Derived caches are not permanent truth. `.424`
+ * corrected how components are derived, and a device that had already stored a Master under the
+ * old normalizer kept rendering the old inventory — `s4:099` as 0 components / 68 cables — with
+ * correct, served code in front of it. The code was never the problem after `.424`; the DATA was
+ * built by code that no longer exists.
+ *
+ * WHY NO RE-UPLOAD IS NEEDED. The raw workbook bytes are NOT retained anywhere — but the
+ * normalizer does not need them. Its only inputs are the cable endpoints, and every cable object
+ * persists inside racksByCab carrying aLoc/aDns/aModel and zLoc/zDns/zModel verbatim (:33212).
+ * Everything `.424` derives at import can therefore be re-derived at boot from what is already on
+ * the device. That is what makes this a migration rather than a re-import.
+ *
+ * ORDERING IS THE SAFETY, NOT VALIDATION. It routes through PHANTOM_MASTER.replace(), which
+ * persists FIRST and goes live SECOND, and which DISCARDS a candidate that cannot be persisted
+ * while a good Master is already active. So the three outcomes are: upgraded in both halves,
+ * or untouched in both halves. There is no path that leaves memory and storage disagreeing —
+ * which is why this must not mutate the restored object, and why the normalizer is pure.
+ *
+ * @returns {{status:string, added:number, suppressed:number, deduped:number, cablesSeen:number,
+ *            from:number, to:number}} status: current | migrated | nothing-to-derive |
+ *            no-cables-retained | rebuild-failed | persist-refused
+ */
+function master_migrateStoredNormalization(loaded) {
+  var out = { status: 'none', added: 0, suppressed: 0, deduped: 0, cablesSeen: 0, from: 0, to: MASTER_NORM_VERSION };
+  try {
+    if (!loaded || !loaded.racksByCab) return out;
+    var from = (typeof loaded.normVersion === 'number' && loaded.normVersion > 0) ? loaded.normVersion : 1;
+    out.from = from;
+    if (from >= MASTER_NORM_VERSION) { out.status = 'current'; return out; }
+
+    var res = master_normalizeEndpoints(loaded.racksByCab, null);
+    out.added = res.added; out.suppressed = res.suppressed;
+    out.deduped = res.deduped; out.cablesSeen = res.cablesSeen;
+
+    if (!res.ok) {
+      // The pass threw. Leave the stamp alone so a later boot retries rather than recording a
+      // rebuild that never happened.
+      out.status = 'rebuild-failed';
+      console.warn('[master] normalization migration FAILED to rebuild — stored Master left exactly '
+        + 'as it was, and it will be retried on the next boot. Nothing was lost.');
+      return out;
+    }
+    if (res.cablesSeen === 0) {
+      // PROVE IT RATHER THAN ASK. No cables retained means this normalizer has no input, so no
+      // rebuild is possible from what is on the device and only a re-import can populate it.
+      out.status = 'no-cables-retained';
+      console.warn('[master] normalization migration cannot run: the stored Master retains NO cable '
+        + 'endpoints, which are this normalizer’s only input. Components cannot be rebuilt on '
+        + 'device; this Master must be re-imported to gain CUTSHEET components.');
+      return out;
+    }
+
+    // Structural sharing: only the racks that actually gain components get new objects. Racks that
+    // change nothing are reused by reference, so a 511-rack Master is not deep-copied to add
+    // components to a few hundred of them.
+    var changed = Object.keys(res.additions);
+    var upgraded = Object.assign({}, loaded);
+    upgraded.normVersion = MASTER_NORM_VERSION;
+    if (changed.length) {
+      var byCab = Object.assign({}, loaded.racksByCab);
+      for (var i = 0; i < changed.length; i++) {
+        var rid = changed[i], rk = byCab[rid] || {};
+        byCab[rid] = Object.assign({}, rk, { hosts: (rk.hosts || []).concat(res.additions[rid]) });
+      }
+      upgraded.racksByCab = byCab;
+    }
+    upgraded.totalHosts = PHANTOM_MASTER_STORE.hostCount(upgraded);
+
+    if (res.added === 0) {
+      // v2 ran over real cables and legitimately produced nothing — every endpoint was already
+      // owned by SITE-HOSTS. That is a CORRECT v2 result, so it stamps and stops re-running.
+      out.status = 'nothing-to-derive';
+    }
+
+    if (PHANTOM_MASTER.replace(upgraded) !== true) {
+      out.status = 'persist-refused';
+      console.warn('[master] normalization migration could not be persisted — the restored Master '
+        + 'is untouched in BOTH memory and storage (no split-brain). Free space and reload to retry.');
+      return out;
+    }
+
+    if (out.status !== 'nothing-to-derive') out.status = 'migrated';
+    console.info('[master] normalization migrated v' + from + ' → v' + MASTER_NORM_VERSION
+      + ': +' + res.added + ' components rebuilt from ' + res.cablesSeen + ' stored cables · '
+      + res.suppressed + ' suppressed (SITE-HOSTS owns the U) · ' + res.deduped
+      + ' duplicate refs collapsed · persisted and live.');
+    return out;
+  } catch (e) {
+    out.status = 'rebuild-failed';
+    try { console.warn('[master] normalization migration threw — stored Master untouched:', e); } catch (_) {}
+    return out;
+  }
+}
+
 async function phantom_parseMaster(arrayBuffer, options) {
   options = options || {};
   var chunkSize = options.chunkSize || 5000;
@@ -33322,55 +33541,25 @@ async function phantom_parseMaster(arrayBuffer, options) {
     //      though SITE-HOSTS declared it, and nothing here invents a device the Master does not
     //      name.
     // ═══════════════════════════════════════════════════════════════════════════════════════
-    var _epAdded = 0, _epSuppressed = 0, _epDeduped = 0;
-    try {
-      var _EP_RE = /^([a-z0-9]+:[0-9]+):([0-9]+)/;
-      var _claimed = {}, _seen = {};
-      Object.keys(racksByCab).forEach(function(rid) {
-        _claimed[rid] = {}; _seen[rid] = {};
-        var hh = racksByCab[rid].hosts || [];
-        for (var q = 0; q < hh.length; q++) {
-          var pp = String(hh[q].locCabRu || '').split(':');
-          if (pp.length >= 3) _claimed[rid][parseInt(pp[2], 10)] = true;
-        }
-      });
-      var _sides = [{ l: 'aLoc', d: 'aDns', m: 'aModel' }, { l: 'zLoc', d: 'zDns', m: 'zModel' }];
-      for (var ci = 0; ci < cables.length; ci++) {
-        var cb = cables[ci];
-        for (var si = 0; si < 2; si++) {
-          var sd = _sides[si];
-          var locv = nLow(cb[sd.l]);
-          var mm = _EP_RE.exec(locv);
-          if (!mm) continue;
-          var rid2 = mm[1], ru2 = parseInt(mm[2], 10);
-          var rk2 = racksByCab[rid2];
-          if (!rk2) continue;                       // topology already came from the cable loop
-          if (_claimed[rid2] && _claimed[rid2][ru2]) { _epSuppressed++; continue; }   // rule 1
-          var dns2 = n(cb[sd.d]), mod2 = n(cb[sd.m]);
-          var key2 = ru2 + '|' + dns2.toLowerCase() + '|' + mod2.toLowerCase();
-          if (!_seen[rid2]) _seen[rid2] = {};
-          if (_seen[rid2][key2]) { _epDeduped++; continue; }                          // rule 2
-          _seen[rid2][key2] = true;
-          var comp = {
-            lastProvisioned: '', locode: rk2.locode || '', locCabRu: locv,
-            dns: dns2, model: mod2, serial: '', rowType: '', role: '', tags: '',
-            ipv4: '', ipv6: '', gridGroup: '', grid: '', gridPod: '', asn: '',
-            rail: '', plane: '', superpodId: '', leafGroupId: '', fabric: '',
-            source: 'CUTSHEET_ENDPOINT'                                               // rule 3
-          };
-          rk2.hosts.push(comp);
-          hosts.push(comp);
-          _epAdded++;
-        }
-        if (ci > 0 && (ci % chunkSize) === 0) await new Promise(function(r) { setTimeout(r, 0); });
-      }
+    // v1.14.426 — the loop that used to live here is now master_normalizeEndpoints (:33141), so
+    // the boot migration can run the SAME engine over a Master restored from storage. Behaviour
+    // here is unchanged: identical rules in identical order, and `hosts` still receives the new
+    // components in cable-iteration order because the normalizer returns that flat list verbatim.
+    // The one difference is that it computes first and applies after, which is what lets the
+    // migration persist before it goes live.
+    await new Promise(function(r) { setTimeout(r, 0); });   // yield once before a synchronous pass
+    var _ep = master_normalizeEndpoints(racksByCab, cables);
+    var _epAdded = _ep.added, _epSuppressed = _ep.suppressed, _epDeduped = _ep.deduped;
+    Object.keys(_ep.additions).forEach(function(rid) {
+      var add = _ep.additions[rid];
+      for (var ai = 0; ai < add.length; ai++) racksByCab[rid].hosts.push(add[ai]);
+    });
+    for (var fi = 0; fi < _ep.flat.length; fi++) hosts.push(_ep.flat[fi]);
+    if (_ep.ok) {
       try {
         console.info('[master] CUTSHEET endpoints normalised: +' + _epAdded + ' components · '
           + _epSuppressed + ' suppressed (SITE-HOSTS owns the U) · ' + _epDeduped + ' duplicate refs collapsed');
       } catch (_) {}
-    } catch (epErr) {
-      // A malformed cable row must never kill a parse that already has 4,143 good hosts.
-      try { console.warn('[master] endpoint normalisation failed, SITE-HOSTS retained:', epErr); } catch (_) {}
     }
 
     // 9b. SITE-VARS → flat key/value map (v1.14.346, ingest Phase 2). KEY-DRIVEN, never
@@ -33470,7 +33659,12 @@ async function phantom_parseMaster(arrayBuffer, options) {
       legends: { net: null, gpu: null, cpu: null },
       siteVars: siteVars,
       ingestedAt: Date.now(),
-      schemaVersion: 1
+      schemaVersion: 1,
+      // v1.14.426 — WHICH NORMALIZER BUILT THIS. Stamped from the actual outcome, not assumed:
+      // if the endpoint pass threw, this Master carries SITE-HOSTS components only and must be
+      // honest about that, so it stamps 1 and the boot migration will rebuild it on a later run.
+      // Claiming 2 after a failed pass would permanently suppress the retry.
+      normVersion: (_ep && _ep.ok) ? MASTER_NORM_VERSION : 1
     };
 
     _phantomMasterCache.set(hashHex, site);
@@ -54299,8 +54493,12 @@ compass_loadState();
 // v1.6.28: Master parser warm-store hydration. If a persisted Master
 // snapshot exists, decompress and stash on window._lastPhantomMaster
 // so Step 2's Site Reference surface (TBD) can read from a warm store
-// with no file-picker round trip. Step 1.5 scope: racksByCab only;
-// hosts/cables are not persisted (schemaVersion 1).
+// with no file-picker round trip.
+// ⚠ v1.14.426 — the line that used to sit here read "Step 1.5 scope: racksByCab only;
+// hosts/cables are not persisted (schemaVersion 1)". That has been FALSE for a long time and it
+// misdirects: save() persists racksByCab WHOLE, so every rack's hosts[] AND its cablesOut/cablesIn
+// go to storage with it. That is precisely why a stale derived inventory could survive a reload,
+// and equally why the migration below can rebuild components with no re-import.
 (function _phantom_master_bootRestore() {
   try {
     if (typeof PHANTOM_MASTER_STORE === 'undefined' || typeof LZString === 'undefined') return;
@@ -54308,6 +54506,17 @@ compass_loadState();
     if (!loaded) return;
     // v1.14.415 - adopt through the contract so caches stamp against the restored identity.
     PHANTOM_MASTER.adoptRestored(loaded);
+    // v1.14.426 — DERIVED CACHES ARE NOT PERMANENT TRUTH (owner ruling). If this payload was
+    // normalized by an older generation of the normalizer, rebuild its derived inventory with the
+    // current one and persist the upgrade atomically. Runs AFTER adoptRestored on purpose: a
+    // no-op for an up-to-date Master, and where it does act it routes through
+    // PHANTOM_MASTER.replace(), which needs the restored Master already active so that a
+    // persist failure DISCARDS the rebuild instead of trading away a known-good Master.
+    try {
+      if (typeof master_migrateStoredNormalization === 'function') {
+        window.__phantomNormMigration = master_migrateStoredNormalization(loaded);
+      }
+    } catch (_) {}
     // v1.14.417 (S0) — synthesise the root profile fields now that the Master is live, so a
     // device that already has a confirmed profile and a working Master carries a complete
     // ACTIVE_SITE_PROFILE before S2 ever gates on one. Runs AFTER adoptRestored deliberately:

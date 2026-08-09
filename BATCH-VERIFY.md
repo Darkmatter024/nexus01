@@ -124,20 +124,38 @@ screen. Verifying them by eye is not possible and not required; what they need i
 still opens and your data is still there, which items 12–14 cover. Only `.416` (a real tap
 behaviour) and `.422` (a new confirmation step in import) changed anything you can see.
 
-### ⛔ 0 · THE P0 — DO THIS FIRST, IT BLOCKS EVERYTHING (`.424`)
-- [ ] **0 · `s4:099` RESOLVES ITS REAL COMPONENTS.** Re-import
-      `MASTER-US-WEST-10A-US-SPK03-SPARKS.xlsx`, then open **`s4:099`** in Forge.
-      It must show **19 components**, not `0 COMPONENTS`:
-      **nine GPU-B300-01 nodes at RU 35·32·29·26·23·20·17·14·11**, an **SN2201 at RU46**,
-      **eight PS-1RU-06 power shelves** (42·41·40·39 and 9·8·7·6), and a **CDU-4RU-03 at RU2**.
+### ⛔ 0 · THE P0 — DO THIS FIRST, IT BLOCKS EVERYTHING (`.424` + `.426`)
+
+⛔ **THIS ITEM FAILED ON HARDWARE against `.425` and was REWRITTEN.** The phone showed
+`NO HOST DATA IN MASTER · 68 CABLES` and `RESTORED FROM CACHE`. The build was proven innocent —
+all three stamps read `.425` and the served bytes carried the normalization. **The stored DATA was
+built by the old normalizer**, and `.424` only ever derived components at IMPORT, so a restored
+Master kept the old inventory forever. `.426` migrates it at boot. ⚠ **The old wording for item 0
+told you to re-import. Do NOT. The entire point of `.426` is that no re-import is required** — and
+re-importing would mask exactly the thing this item now tests.
+
+- [ ] **0 · `s4:099` REBUILDS ITSELF, WITH NO RE-IMPORT.** Just open PHANTOM and go to **`s4:099`**
+      in Forge. Touch nothing else — no import, no storage clear. It must show **19 components**,
+      not `0 COMPONENTS`: **nine GPU-B300-01 at RU 35·32·29·26·23·20·17·14·11**, an
+      **SN2201 at RU46**, **eight PS-1RU-06** (42·41·40·39 and 9·8·7·6), a **CDU-4RU-03 at RU2** —
+      and it must **still hold its 68 cables**.
 - [ ] **0a · NOTHING REGRESSED ON THE SITE-HOSTS RACKS.** Open an **s1**, **s2** and **s3**
-      cabinet. They must look exactly as they always have — same devices, no extra rows.
-      *(`s1:002` is 19 components in the harness, all from SITE-HOSTS, zero endpoint padding.)*
-- [ ] **0b · IT PERSISTS.** Reload the app. `s4:099` must still show the same 19 components.
-- [ ] **0c · THE IMPORT SUMMARY IS HONEST.** On import you should see counts that reconcile —
-      the normalized total equals SITE-HOSTS plus CUTSHEET-derived, never one number hiding the
-      other. ⚠ The Master's **own** totals are 511 racks · 7,574 components (4,143 + 3,431) ·
-      28,264 cables. If the summary says anything materially different, stop and tell me.
+      cabinet. They must look exactly as they always have — same devices, **no extra rows**. The
+      migration applies the same rule as import: where SITE-HOSTS already owns a U, the endpoint is
+      dropped. Extra rows here means suppression did not fire.
+- [ ] **0b · IT PERSISTS, AND IT DOES NOT RE-APPLY.** Fully reload. `s4:099` must show the **same
+      19** — not 19 again from scratch, and **not 38**. The rebuild is written to storage once and
+      stamped; a second boot must find it already current.
+- [ ] **0c · YOUR MASTER KEPT ITS IDENTITY.** After the rebuild, the app must still know which file
+      this is — same site, same source filename, same cable counts. ⚠ This is the leg that catches
+      the round-trip bug: re-saving a restored Master used to write `null` over the source hash and
+      the cable count. *(`0c` used to be the import-summary check. That still matters and moves to
+      item 12 — it only happens at import, and you are not importing here.)*
+- [ ] **0d · ONE CONSOLE LINE, IF YOU HAVE ONE.** `window.__phantomNormMigration` should read
+      `status:"migrated"`, `from:1`, `to:2`, and a nonzero `added`. If it reads
+      `"no-cables-retained"` then your stored Master genuinely has no endpoints to rebuild from and
+      a re-import IS required — that is the one case where the answer is different, and the app
+      says so rather than pretending.
 
 *Why this is item 0: a cabinet present in CUTSHEET but absent from SITE-HOSTS rendered zero
 components for the entire life of the product — since v1.6.26, proven by git. 42% of this site's
