@@ -12865,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.416';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.417';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -26304,6 +26304,39 @@ var SITE_PROFILE_DEFAULTS = {
   buildLead:            '',
   operator:             '',    // v1.6.70: who is on THIS device — default source for signedOffBy (C6)
   confirmedAt:          null,  // v1.6.70: ms ts of first-run confirmation (null = never confirmed)
+  // ── v1.14.417 (S0 of the SITE PROFILE ROOT ruling) ─────────────────────────────────────
+  // ACTIVE_SITE_PROFILE is the root of the application, so the four facts that make a profile
+  // OPERABLE live here rather than being re-derived per surface. All four are additive and
+  // optional: siteProfile_load() merges over DEFAULTS, so a profile written before this ship
+  // restores untouched and simply reports them empty. Nothing gates on them yet — S0 records,
+  // S2 gates.
+  // IDENTITY IS TWO PEOPLE, NOT ONE (SHIP-TECH-FLOW v2 §2). siteLead is AUTHORITY — set at Site
+  // Setup, changed only in SITE/SYSTEM. currentOperator is the ACTOR — whoever is doing the work
+  // on this device right now. They are usually the same person and the model never assumes it,
+  // because the Event Log credits work to the actor and must never auto-credit the Site Lead.
+  //
+  // currentOperator is NOT a new field: `operator` above already means "who is on THIS device"
+  // (v1.6.70, its own comment says so) and is already the source for signedOffBy. Adding a second
+  // field for the same fact would be the duplicate state this whole ruling deletes, so `operator`
+  // IS currentOperator and PHANTOM_SITE.currentOperator() is the name that says so.
+  siteLead:             '',    // authority — the person accountable for the site
+  id:                   null,  // stable profile id; Event Log entries bind to it as siteProfileId
+  createdAt:            null,
+  activeMasterId:       null,  // exactly one — spec §2 name, not a local invention
+  masterFile:           null,  // its filename, for a human-readable "which Master is this"
+  masterBoundAt:        null,  // ms ts the binding was recorded
+  rootMigratedAt:       null,  // ms ts S0 synthesised the root fields from pre-existing state
+  // DELIBERATELY ABSENT: activeDeploymentId. The ruling lists deployment state as part of the
+  // profile, but copying that id here would create a SECOND writable source for "which
+  // deployment is active" — the exact split this whole ruling exists to remove. The deployment
+  // store stays canonical; the profile binds by masterId and reads the deployment through its
+  // own accessor.
+  //
+  // SCHEMA VERSION DELIBERATELY NOT BUMPED. These fields need no migration: siteProfile_load()
+  // merges DEFAULTS under the stored record, so an older profile reports them empty and a newer
+  // one keeps them, at any schemaVersion. Bumping to 3 would mean editing the two save paths
+  // that hard-code 2 (:26380, :28893) — and if either were missed the value would flip between
+  // 2 and 3 on alternate saves, which is worse than not bumping. Additive means additive.
   schemaVersion:        2,
   lastUpdated:          null
 };
@@ -32280,6 +32313,196 @@ var PHANTOM_MASTER = {
     }
   }
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// PHANTOM_SITE — ACTIVE_SITE_PROFILE, THE ROOT OF THE APPLICATION (owner ruling, 2026-08-08)
+//
+// STAGE 0 OF 4. This stage RECORDS and REPORTS. It gates nothing, switches no consumer, and
+// changes no surface. That is deliberate: the ruling's boot gate (S2) can lock an operator out
+// of a working device in an aisle, so the migration that feeds it ships first, alone, and gets
+// proven against real data before anything depends on it.
+//
+// THE MODEL. ACTIVE_SITE_PROFILE is a small ROOT RECORD, not a container for the Master's bytes.
+// The ruling says the profile "contains" normalized topology, hosts and cables; taken literally
+// that is one serialized blob, and the stress harness already measured a 4000-host Master
+// compressing to ~6.5MB against Safari's ~5MB origin quota — every profile write would rewrite
+// all of it and hit the cliff. Owner confirmed the reading: the profile OWNS AND BINDS, it does
+// not embed. So the root holds identity plus one binding (masterId), and the heavy data stays in
+// its own key, reached through that binding.
+//
+// IT IS THE SAME KEY, NOT A NEW ONE. This extends phantom_site_profile_v1 rather than adding a
+// second record. A "root profile" living beside the old profile would be precisely the duplicate
+// state this ruling exists to delete, and it would be one more thing to keep in sync.
+//
+// VALIDITY IS COMPUTED, NEVER TRUSTED FROM STORAGE. masterId records what the profile was set up
+// against; whether it still HOLDS is answered by comparing it to the live Master at the moment of
+// asking. A stored boolean would go stale the first time a Master was replaced, and a stale
+// stored "valid" is exactly how a gate locks out a good device — or admits a broken one.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+var PHANTOM_SITE = {
+  /** The root record. One door, and it is the existing profile loader — no second store. */
+  load: function() {
+    try { return siteProfile_load(); } catch (_) { return null; }
+  },
+
+  /**
+   * Why this profile is or is not operable, as a list of named reasons rather than a boolean.
+   * S2's gate needs to TELL the operator what is missing, and "invalid" is not a sentence a
+   * technician can act on in a cold aisle.
+   */
+  validity: function() {
+    var p = this.load();
+    var missing = [];
+    if (!p) return { ok: false, missing: ['profile'], profile: null };
+    if (!p.confirmedAt)                          missing.push('confirmation');
+    if (!String(p.facilityId || '').trim())      missing.push('site');
+    if (!String(p.siteLead || '').trim())        missing.push('site lead');
+    if (!String(p.operator || '').trim())        missing.push('current operator');
+    if (!p.activeMasterId)                       missing.push('master');
+    return { ok: missing.length === 0, missing: missing, profile: p };
+  },
+
+  isValid: function() { return this.validity().ok; },
+
+  /**
+   * THE ACTOR. Every Event Log entry records this, never the Site Lead — spec §2 is explicit
+   * that work is never auto-credited to authority. Falls back to siteLead only because they are
+   * usually the same person and a device that has never switched operator has nothing else to
+   * say; it is a default, not an assumption, and switching writes an OPERATOR_CHANGE event.
+   */
+  currentOperator: function() {
+    var p = this.load() || {};
+    return String(p.operator || '').trim() || String(p.siteLead || '').trim() || '';
+  },
+
+  /** THE AUTHORITY. Changed only in SITE/SYSTEM (spec §2). */
+  siteLead: function() {
+    var p = this.load() || {};
+    return String(p.siteLead || '').trim() || '';
+  },
+
+  /**
+   * Does the recorded binding still describe the Master that is actually live?
+   * 'no-master' and 'no-binding' are reported separately from 'mismatch' because they mean
+   * different things: the first two are an incomplete setup, the third is a profile pointing at
+   * a Master that is no longer the one in play — the §10 identity check.
+   */
+  masterBinding: function() {
+    var p = this.load();
+    var liveId = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.id() : null;
+    if (!p) return { state: 'no-profile', recorded: null, live: liveId };
+    if (!liveId) return { state: 'no-master', recorded: p.activeMasterId || null, live: null };
+    if (!p.activeMasterId) return { state: 'no-binding', recorded: null, live: liveId };
+    return {
+      state: (String(p.activeMasterId) === String(liveId)) ? 'match' : 'mismatch',
+      recorded: p.activeMasterId, live: liveId
+    };
+  },
+
+  /**
+   * Record the identity of the Master this profile operates against.
+   * READ-MODIFY-WRITE, always. A save path that rebuilds a persisted object as a fresh literal
+   * silently wipes every field it has no input for — that bug shipped once already and cost a
+   * live `operator` value (v1.14.347). Returns false rather than throwing so no caller has to
+   * guard, and writes NOTHING when the binding is already correct.
+   */
+  bindMaster: function(master) {
+    try {
+      var id = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.idOf(master) : null;
+      if (!id) return false;
+      var p = siteProfile_load();
+      if (String(p.activeMasterId || '') === String(id)) return true;   // already bound; no write
+      p.activeMasterId = String(id);
+      p.masterFile     = (master && (master.sourceFile || master.sourceFileName)) || p.masterFile || null;
+      p.masterBoundAt  = Date.now();
+      return siteProfile_save(p) !== false;
+    } catch (e) {
+      try { console.warn('PHANTOM_SITE.bindMaster failed:', e); } catch (_) {}
+      return false;
+    }
+  },
+
+  /**
+   * S0 MIGRATION — synthesise the root fields from state this device already has.
+   *
+   * THIS IS THE PART THAT PROTECTS THE OPERATOR. Without it, S2's gate would send every existing
+   * device — including one with a confirmed profile, a loaded Master and live deployments —
+   * straight into SITE SETUP, because no root record existed yet. Nothing here overwrites a value
+   * a human set: every field is filled only when empty. Idempotent, so booting twice is a no-op.
+   *
+   * SITE LEAD IS SEEDED FROM THE OPERATOR, NOT INVENTED. On an already-confirmed device the one
+   * name on record was entered by the person who set the site up — under the old single-identity
+   * model that person WAS the Site Lead. So siteLead takes that value and `operator` keeps it as
+   * the current actor: the same human, now correctly occupying both slots, which is exactly the
+   * state spec §2 describes as the common case. An unconfirmed profile gets nothing — it belongs
+   * in Site Setup, where a human states both.
+   */
+  migrate: function() {
+    try {
+      var p = siteProfile_load();
+      if (!p) return { migrated: false, reason: 'no profile' };
+      var sig = function(x) { return JSON.stringify({ l: x.siteLead, m: x.activeMasterId, f: x.masterFile, i: x.id }); };
+      var before = sig(p);
+      var filled = [];
+
+      // EVERY FILL BELOW IS GATED ON confirmedAt. Migration exists to complete a device that has
+      // ALREADY been set up; a device that never finished setup must come out of here untouched,
+      // because S3 is where a human states these facts and inventing them here would put a
+      // half-built profile in front of the Site Setup flow that is supposed to build it.
+      if (!p.confirmedAt) return { migrated: false, reason: 'unconfirmed — belongs in Site Setup', filled: [] };
+
+      if (!p.id) {
+        // Stable profile id — the Event Log binds every entry to it as siteProfileId, so it has
+        // to exist before any event can be written. Derived from the site + creation time rather
+        // than a random value, so two devices at the same site are still distinguishable.
+        p.id = 'sp_' + String(p.facilityId || 'unset').toLowerCase().replace(/[^a-z0-9]+/g, '') + '_' + Date.now();
+        p.createdAt = p.createdAt || p.confirmedAt || Date.now();
+        filled.push('id');
+      }
+
+      if (!String(p.siteLead || '').trim() && String(p.operator || '').trim()) {
+        p.siteLead = String(p.operator).trim();
+        filled.push('siteLead');
+      }
+
+      if (!p.activeMasterId) {
+        var live = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.active() : null;
+        var id = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.idOf(live) : null;
+        if (id) {
+          p.activeMasterId = String(id);
+          p.masterFile = (live && live.sourceFile) || null;
+          p.masterBoundAt = Date.now();
+          filled.push('activeMasterId');
+        }
+      }
+
+      if (sig(p) === before) {
+        return { migrated: false, reason: 'nothing to fill', filled: [] };
+      }
+      p.rootMigratedAt = p.rootMigratedAt || Date.now();
+      var ok = siteProfile_save(p) !== false;
+      try { console.info('[PHANTOM_SITE] root migration filled: ' + filled.join(', ')); } catch (_) {}
+      return { migrated: ok, filled: filled };
+    } catch (e) {
+      try { console.warn('PHANTOM_SITE.migrate failed:', e); } catch (_) {}
+      return { migrated: false, reason: String(e && e.message) };
+    }
+  },
+
+  /** One read-only snapshot for diagnostics and for S2 to render. Writes nothing. */
+  describe: function() {
+    var v = this.validity(), b = this.masterBinding(), p = v.profile || {};
+    return {
+      valid: v.ok, missing: v.missing, id: p.id || null,
+      site: p.facilityId || null, siteName: p.facilityName || null,
+      siteLead: p.siteLead || null,                 // authority
+      currentOperator: this.currentOperator() || null, // actor — what the Event Log credits
+      confirmedAt: p.confirmedAt || null, rootMigratedAt: p.rootMigratedAt || null,
+      master: { binding: b.state, recorded: b.recorded, live: b.live, file: p.masterFile || null }
+    };
+  }
+};
+window.PHANTOM_SITE = PHANTOM_SITE;
 
 // Hidden console helper for John's test workflow. Not wired to any UI.
 window.phantom_clearMaster = function() { return PHANTOM_MASTER.clear(); };
@@ -53441,6 +53664,12 @@ compass_loadState();
     if (!loaded) return;
     // v1.14.415 - adopt through the contract so caches stamp against the restored identity.
     PHANTOM_MASTER.adoptRestored(loaded);
+    // v1.14.417 (S0) — synthesise the root profile fields now that the Master is live, so a
+    // device that already has a confirmed profile and a working Master carries a complete
+    // ACTIVE_SITE_PROFILE before S2 ever gates on one. Runs AFTER adoptRestored deliberately:
+    // masterId is read from the live Master, so ordering is the whole point. Additive, idempotent,
+    // and it overwrites nothing a human set. Gates nothing at this stage.
+    try { if (typeof PHANTOM_SITE !== 'undefined') PHANTOM_SITE.migrate(); } catch (_) {}
     try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
     try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (_) {}
     console.log('PHANTOM: Master restored from localStorage',
