@@ -5,7 +5,7 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-09, after `v1.14.424` (P0).**
+**Last updated: 2026-08-09, after `v1.14.425` (Command Deck reaches the phone).**
 
 ---
 
@@ -13,10 +13,10 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.424`** |
-| Commits | `.416` through `.423` shipped 2026-08-08/09 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.424` |
-| Verified | Served bytes confirmed on Pages through `.417`; `.418`-`.423` pushed, Pages NOT re-polled |
+| **Version** | **`phantom-v1.14.425`** (`62d4c1b`) |
+| Commits | `.416` through `.425` shipped 2026-08-08/09 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.425` |
+| Verified | **`.425` confirmed in the SERVED bytes 2026-08-09** — app stamp, `sw.js` CACHE_VERSION, both opened gates, the phone block, the desktop-only chrome sub-gate and the `#cs-lower` reset. `.418`–`.423` were pushed but never re-polled |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 
@@ -55,6 +55,27 @@ That is **superseded** by the frozen spec's §2 and by this ruling. Owner confir
 conflict was raised rather than resolved silently: **the split holds.** Reverting it would
 re-break who gets credited for work, which is the one thing the Event Log exists to get right.
 ⛔ **Do not "restore" §8's single-identity wording from the reset document.** It is the older text.
+
+⭐ **OWNER OVERRIDE 2026-08-09 — COMMAND DECK LAYOUT (`.425`).** The approved Command Deck mock
+was ported into the real app's Command page **ahead of NAV-LOCK**, an explicit override of the
+sequencing rule that barred visual redesign before that workstream completes. ⛔ **The override is
+scoped to the Command Deck layout and nothing else** — it did not authorise changes to the baked
+percentage artwork ruling, data-honesty behaviour, navigation architecture, state logic, gates,
+metadata, the 44px floor, or any other screen. Do not cite it to justify a second redesign.
+**Two follow-on rulings in the same exchange:** the deck composes **single-column at tablet (834)**
+as well as phone — laptop and desktop are unchanged two-column; and the port was authorised for
+push after the phone screenshot was reviewed. `?cshell=0` remains the rip cord back to the older
+phone Command page.
+
+📌 **`.425` did not build a new layout.** `#cmd-shell` already carried the whole deck, gated
+`@media (min-width:1024px)` since `.412` because no phone composition had ever been authored. The
+ship opened that gate and added one `max-width:1023px` adaptation block. ⚠ **The trap it exposed,
+worth remembering:** opening a desktop gate downward also imports that composition's *chrome
+contract*. The desktop block stands `.app-header` and `#rd-botnav` down because `#cs-side`/`#cs-top`
+replace them — organs that only exist at ≥1024 — so the phone briefly had **no navigation and no
+version/SW/network pills**. Those rules are now sub-gated at their own source. Hiding chrome and
+reclaiming the gutter it reserved are also two separate edits: the first alone left `.page` inset
+246px and read as a broken layout, not as missing chrome.
 
 ## 2 · Milestone
 

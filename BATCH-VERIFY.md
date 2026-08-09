@@ -111,9 +111,10 @@ precisely the two things only your phone can answer — they are items 1 and 2 b
 
 ---
 
-## THE PASS — 19 checks. Clear the SW cache first. ⛔ START AT ITEM 0.
+## THE PASS — 20 checks. Clear the SW cache first. ⛔ START AT ITEM 0.
 *(Was 16, then 11 after the `.376`–`.384` release dropped five whole. Now 14: `.416`–`.422` added
-three, and only three, because **six of those seven ships have no visible surface at all.**)*
+three, and only three, because **six of those seven ships have no visible surface at all.**
+`.425` adds one — item 15 — and it is the opposite case: a ship that is nothing BUT visible surface.)*
 
 ⭐ **`.416`–`.422` — WHAT LANDED 2026-08-08/09 AND WHAT IT COSTS YOU TO CHECK.**
 Seven ships: `.416` tap window · `.417` site-profile root · `.418` one operator identity ·
@@ -171,6 +172,26 @@ racks are in that class. Everything below is meaningless if this is wrong.*
 ### D · Surfaces that need eyes, not assertions
 - [ ] **9 · Design-system screens** — the five phone screens that took the `.410` lock still read
       as one system; the `.411` loadout picker opens and picks. *Releases `.409`, `.410`, `.411`.*
+- [ ] **15 · THE COMMAND DECK ON THE PHONE (`.425`, owner override).** Open **Command**. One column,
+      top to bottom: **hero card with rack art** (NO ACTIVE DEPLOYMENT / your deployment, the
+      RACKS · BLOCKERS · COMPLETE row, START A DEPLOYMENT) → **PHANTOM INTELLIGENCE** →
+      **LOCAL SYSTEM STATE** → **BUILD PROGRESS** → **FIELD OPERATIONS** → **FIELD TOOLS** →
+      **SHIFT READINESS**.
+- [ ] **15a · ⚠ THE CHROME IS STILL THERE — CHECK THIS ONE FIRST.** The **PHANTOM header with the
+      version badge** is at the top and the **bottom nav is on screen and still routes**. This is
+      the regression the port caused and it was caught in the harness, not by eye: the desktop
+      block hands navigation to the side rail, and carrying that to a phone left no nav and no
+      version/SW/network pills. If either is missing, **stop and tell me** — do not keep going.
+- [ ] **15b · NO SIDEWAYS SCROLL, anywhere in that stack** — including across the FIELD TOOLS tile
+      grid and the FIELD OPERATIONS art. Measured `docW=390` at 390px, but the harness cannot see
+      a real iOS rubber-band.
+- [ ] **15c · THE CARDS LINE UP.** All seven share one left edge. There must be **no step inward**
+      where FIELD OPERATIONS begins — that was a 17px inset from a container inheriting card
+      padding, fixed in this ship, and it is the thing most likely to look "almost right".
+      ⚠ **Rip cord if it is wrong in the aisle: `?cshell=0`** returns the old phone Command page
+      without clearing storage or losing anything.
+      *iPad: single column at 834 is an OWNER RULING this ship, not a defect — see item 10 for the
+      landscape/desktop leg, which is unchanged.*
 
 ### E · iPad (the ship nobody knows shipped — see D2)
 - [ ] **10 · iPad LANDSCAPE gets the desktop shell automatically** (left rail + right column), and
