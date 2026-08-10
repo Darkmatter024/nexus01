@@ -212,7 +212,7 @@ progressive degradation. **Releases `.390`–`.396` (the eight-ship blank-rack a
 RackEngine lifecycle).** This is the check the 2026-08-06 pass could not make: that pass proved the
 rack renders ONCE; this proves the attachment is released and re-acquired ten times without leaking.
 
-- [ ] **4 · Open Aisle draws and holds; close returns to Build with the rack still there.** Repeat
+- [x] **4 · Open Aisle draws and holds; close returns to Build with the rack still there.** Repeat
       ×10. *Releases `.403`, `.404`, `.405` — confirmed once on `.405`, re-confirm under `.415`.*
       ⚠ **This is the TRANSFER path, and item 3 does not cover it.** Item 3 proved Build can release
       and re-acquire its own context. This proves the context can **move to another surface and come
@@ -228,9 +228,16 @@ rack renders ONCE; this proves the attachment is released and re-acquired ten ti
         attachment at all — that is `.405`'s defect returning, and it was confirmed fixed once on
         `.405` but has never been re-confirmed under `.415`'s SINGLE-MASTER changes.
 
-⛔ **ITEM 4 FAILS — CONFIRMED ON HARDWARE 2026-08-09.** Owner: *"rack is gone from build after
-close."* This is the FIRST signature above, the worst of the three: the transfer is **one-way**.
-**Item 4 stays OPEN and `.403`/`.404`/`.405` stay unreleased.**
+✅ **ITEM 4 PASSES UNDER `v1.14.427` — CONFIRMED ON HARDWARE 2026-08-10.** Owner: *"rack stays in
+build after close, all 10."* **Releases `.403`, `.404`, `.405`.** The history below is kept because
+it is the whole reason the fix exists, and because the way it hid is worth more than the fix.
+
+⛔ **IT FAILED FIRST, AT `.426`.** Owner: *"rack is gone from build after close"* — the FIRST
+signature above, the worst of the three: the transfer was **one-way**. Fixed in `v1.14.427` by
+making the aisle record its LENDER: `forge3d_open` captures the attachment it is about to displace
+(before `releaseOthers` destroys it) and `forge3d_close` hands the context back to THAT surface
+instead of to one hardcoded address. Measured ×10 before and after — `closedLive` 0 → 1, flat every
+round, with still exactly one live context.
 
 **Found by harness first, then confirmed on device.** Automating the ×10 round trip measured, at
 2.5s and again at 11s after close — well past Build's ~5s re-arm — `#bw-mount` visible at a real

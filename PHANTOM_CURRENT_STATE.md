@@ -13,9 +13,9 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.426`** (`a4d818d`) |
-| Commits | `.416` through `.426` shipped 2026-08-08/09 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.426` |
+| **Version** | **`phantom-v1.14.427`** (`2fc1c3d`) |
+| Commits | `.416` through `.427` shipped 2026-08-08/10 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.427` |
 | Verified | **`.426` confirmed in the SERVED bytes 2026-08-09** — both stamps plus `MASTER_NORM_VERSION`, `master_migrateStoredNormalization` and `master_normalizeEndpoints`. `.425` was confirmed the same way. `.418`–`.423` were pushed but never re-polled |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
@@ -77,6 +77,23 @@ components now"* · *"19 after reload"* · *"0a and 0c pass"*. All four behaviou
 item 0 are green: the rebuild happens with no re-import, it is stamped so it does not re-apply
 (19 and not 38), SITE-HOSTS racks are not padded, and the Master keeps its identity through the
 re-save. **The P0 that blocked the entire verify list is done.**
+
+⭐ **`.427` — THE AISLE GIVES THE CONTEXT BACK TO WHOEVER LENT IT.** Verify item 4 failed on
+hardware at `.426` (*"rack is gone from build after close"*) and passes at `.427` (*"rack stays in
+build after close, all 10"*). **Releases `.403`, `.404`, `.405`.** `forge3d_close` used to restore
+ONE hardcoded surface (rack-detail, via a call that no-ops elsewhere by its own admission), so an
+aisle opened from Build never gave the context back. Now `forge3d_open` captures the attachment it
+is about to displace — **before** `releaseOthers` destroys it — and close hands it back to that
+lender. The `reacquire` callback is generic because `rackElevation_render3D` is the one renderer
+behind every rack surface.
+
+⛔ **THE DURABLE LESSON IS NOT THE FIX — IT IS HOW IT HID.** The test covering this asserted
+`attachments.length <= 1` after close, and the defect value is **0**. **A bound that PERMITS the
+defect reads as coverage**, and the spec header claimed "the aisle round trip leaves Build intact"
+while no assertion ever checked it. Months of green suites, on the operational centre. ⭐ **When an
+assertion is a bound (`<=`, `>=`, `toBeTruthy`, `not.toBeNull`), ask what the FAILURE value is and
+whether the bound admits it.** Prefer naming the expected thing (`toBe('rack:bw-mount')`) over
+bounding it.
 
 ⚠ **HARNESS NOTE 2026-08-09 — 18 FAILURES IN THE `.426` FULL RUN WERE ENVIRONMENTAL, NOT CODE.**
 The full phone-webkit suite (199 tests) reported 172 passed · 9 skipped · **18 failed**, all in
