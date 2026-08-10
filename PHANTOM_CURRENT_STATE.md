@@ -78,6 +78,13 @@ item 0 are green: the rebuild happens with no re-import, it is stamped so it doe
 (19 and not 38), SITE-HOSTS racks are not padded, and the Master keeps its identity through the
 re-save. **The P0 that blocked the entire verify list is done.**
 
+✅ **SECTION B — THE RENDERER TRIO IS CLOSED, 2026-08-10.** Verify items **3, 4 and 5** all pass on
+hardware: *"rack holds all 10, no slowdown"* · *"rack stays in build after close, all 10"* ·
+*"legacy rack renders flat, no errors, no heat."* **Releases `.390`–`.396`, `.401`, `.403`, `.404`,
+`.405` and the `.402` legacy half.** This is the HIGH-risk section the CALL 0 cap exists for, and it
+is the arc that cost eight ships to stabilise. ⚠ Item 4 only passed because `.427` fixed a defect
+that section had been carrying unseen since the aisle shipped — see below.
+
 ⭐ **`.427` — THE AISLE GIVES THE CONTEXT BACK TO WHOEVER LENT IT.** Verify item 4 failed on
 hardware at `.426` (*"rack is gone from build after close"*) and passes at `.427` (*"rack stays in
 build after close, all 10"*). **Releases `.403`, `.404`, `.405`.** `forge3d_close` used to restore

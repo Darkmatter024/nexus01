@@ -260,7 +260,7 @@ mechanism is sound. What is missing is only the hand-back.
 ⚠ **Why it was never caught:** the pre-existing round-trip test asserts `attachments.length <= 1`
 after close, and **0 satisfies that**. The spec header claimed *"the aisle round trip leaves Build
 intact"* and no assertion ever checked it. A tolerant bound reads as coverage.
-- [ ] **5 · `?legacy=1` — the rack still renders and the app does not crash.** The `.402`
+- [x] **5 · `?legacy=1` — the rack still renders and the app does not crash.** The `.402`
       observer is redesign-only but the single-context guard applies in BOTH houses; the legacy
       half has never been checked. *Releases the `.402` legacy half.*
       **Open `?legacy=1`, reach a rack detail the legacy way, and check four things:**
@@ -285,6 +285,20 @@ intact"* and no assertion ever checked it. A tolerant bound reads as coverage.
       `body.rd .hdr-agg-act { display:flex }`, and the redesign Build shell. Neither exists under
       legacy, so the new code cannot execute there. The `reacquire` property it adds to attachments
       is never read in that house.
+
+✅ **ITEM 5 PASSES — CONFIRMED ON HARDWARE 2026-08-10.** Owner: *"legacy rack renders flat, no
+errors, no heat."* **Releases the `.402` legacy half. SECTION B — THE RENDERER TRIO (3, 4, 5) IS
+NOW FULLY CLOSED.**
+
+📌 **One observation worth keeping, and one question it leaves open.** Flat is the CORRECT legacy
+presentation, not a degraded one: the rules that swap flat→3D are redesign-scoped
+(`body.rd .rack-hybrid-canvas.is-3d .reh-flat-wrap { display:none }`, :11056), so the flat elevation
+stays visible in that house regardless. **No heat is the interesting half** — the `.402` comment
+states the shared renderer "also draws under `?legacy=1`", and if a 3D loop were running behind a
+visible flat elevation that is an invisible drain and exactly what heat would reveal. It did not.
+⚠ **Observed, not proven:** the likeliest reading is that the legacy rack detail never calls
+`reh3d_activate3D`, so no loop is ever started there. **If a future ship needs to rely on that, prove
+it rather than citing this line** — the device result rules out the SYMPTOM, not the mechanism.
 
 ### C · The Master, with YOUR file (fixtures cannot prove this)
 - [ ] **6 · Load your real Master → cab count is what it has always been.** *Releases `.414`, `.415`.*
