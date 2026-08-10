@@ -5,7 +5,7 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-10, after `v1.14.432` — WORKSTREAM 2 COMPLETE.**
+**Last updated: 2026-08-10, after `v1.14.434` — M2-b stage 2 device-verified.**
 
 ---
 
@@ -13,10 +13,10 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.432`** (`3512c47`) |
-| Commits | `.416` through `.432` shipped 2026-08-08/10 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.432` |
-| Verified | **`.432` confirmed in the SERVED bytes 2026-08-10** — the fold present (`fr-siteLead`, `firstRun_loadMaster`) and the reverted duplicate gone (0 `siteSetup` refs). `.425`–`.431` each confirmed the same way |
+| **Version** | **`phantom-v1.14.434`** (`3ca3dd7`) |
+| Commits | `.416` through `.434` shipped 2026-08-08/10 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.434` |
+| Verified | **`.434` confirmed in the SERVED bytes 2026-08-10** — and not merely present: the ORDERING was asserted in production, `rackElevation_render3D` release@1013 acquire@7629 and `forge3d_render` release@845 acquire@1548. Before `.434` both were reversed. `.425`–`.433` each confirmed the same way |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 
@@ -220,7 +220,27 @@ re-implementing it, normalises every `type` through `Vocabulary`, and makes R-06
 `empty` (Master holds the cab, no devices) and `unassigned` (Master never heard of it) are now
 different answers. Three call sites routed, including the `master_renderHit` reshape. Spec 22.
 
-⛔ **STAGE 2 IS THE RECLAIM BARRIER (I6), AND IT IS OWED WITH A FINDING ALREADY IN HAND.**
+✅ **M2-b STAGE 2 LANDED AND IS DEVICE-VERIFIED (`.434`) — the reclaim barrier (§6, I6).**
+Owner on hardware 2026-08-10: *"rack holds, aisle opens same speed."* Verify items 3 and 4 still
+hold under the restructure, and — the half the runner could not answer — **the two-frame barrier is
+imperceptible on the device.** The spec claimed ~33ms would be; that is now measured by the only
+instrument that counts.
+
+**What shipped:** `releaseOthers` reports how many it released; both renderers release at the TOP,
+before any renderer is constructed; the barrier arms ONLY on a real release (a cold first render is
+not delayed for a reclaim that never happened); one pending acquisition, collapsing to the last
+request; a timer fallback so a hidden tab cannot strand it. Verified in the SERVED bytes —
+`rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548.
+Before `.434` both were the other way round.
+
+⚠ **The claim discipline stands and is in the code:** the ordering was certain; a field failure
+caused by it was never proven, and this must not be cited as the explanation for the historical
+blank-rack arcs. A stated invariant simply was not being held, and now is.
+
+⛔ **STAGE 3 IS WHAT REMAINS OF M2-b.** `attach` (BACKABLE SUBSET ONLY — see below), modes, and the
+§8 deletions LAST. §8 ends by deleting `forge3d_render` as a separate renderer, which is the single
+largest blast radius left in the file and wants its own ship with a device pass.
+📌 **HISTORY — the finding that produced `.434`, kept because the reasoning is the durable part.**
 **I1 does not hold at the INSTANT of acquisition.** Read from the ordering inside
 `rackElevation_render3D`, not measured:
 
