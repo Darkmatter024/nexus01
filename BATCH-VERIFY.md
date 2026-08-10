@@ -301,7 +301,7 @@ visible flat elevation that is an invisible drain and exactly what heat would re
 it rather than citing this line** — the device result rules out the SYMPTOM, not the mechanism.
 
 ### C · The Master, with YOUR file (fixtures cannot prove this)
-- [ ] **6 · Load your real Master → cab count is what it has always been.** *Releases `.414`, `.415`.*
+- [x] **6 · Load your real Master → cab count is what it has always been.** *Releases `.414`, `.415`.*
       ⚠ **THE CAB COUNT IS THE ASSERTION. THE COMPONENT COUNT IS NOT — IT IS SUPPOSED TO HAVE
       CHANGED.** Read this before you look at the numbers, because a correct result looks like a
       regression here:
@@ -319,8 +319,36 @@ it rather than citing this line** — the device result rules out the SYMPTOM, n
       drifted apart and I want to know immediately.
       ⚠ Re-importing is safe now and no longer masks anything: the P0 it would have hidden is
       closed, and `.422` stages the import behind ACTIVATE SITE, so Cancel leaves everything as is.
+✅ **ITEM 6 PASSES — CONFIRMED ON HARDWARE 2026-08-10.** Owner: *"511 racks 7574 components,
+s4:099 19."* **Releases `.414`, `.415`.** Cab count unchanged, and the component count is the
+post-`.424` number, exactly `4,143 + 3,431`.
+
+⭐ **AND THE CROSS-CHECK PASSED, WHICH IS THE BIGGER RESULT.** Three independent derivations of the
+owner's real Master now agree exactly — **511 racks · 7,574 components · `s4:099` = 19**:
+1. the **PARSER**, on this fresh import;
+2. the **MIGRATION**, which rebuilt the same Master at boot from stored cable endpoints (`.426`);
+3. the **HARNESS**, measured on real workbook rows in specs 15 and 16.
+That is `.426`'s central claim — *a rebuilt Master equals a re-imported one* — proven on the real
+file rather than a fixture. It is also what makes the no-re-upload rule trustworthy going forward:
+the migration is not an approximation of the parser, it IS the parser, and the two cannot drift
+because they are one engine (`master_normalizeEndpoints`).
+
 - [ ] **7 · Load the SAME Master a second time — nothing changes, nothing is lost.** That is the
       `.415` replace path end to end. *Releases `.415`.*
+      **Import the SAME file again, activate it, and check three things:**
+      · **The counts are IDENTICAL** — 511 · 7,574 · 28,264 again. A parse that is not idempotent
+        shows up here as drift on the second pass, and the endpoint normalizer is the new surface
+        that could cause it: a dedupe key that missed would inflate the component count the second
+        time through.
+      · **NOTHING HAND-ENTERED IS LOST** (Law 11 — merge, never overwrite). Anything you have typed
+        — notes, serials, phase state, blockers — must survive the replace exactly. This is the
+        half that costs a shift if it is wrong, so it matters more than the counts.
+      · **⭐ THEN FULLY RELOAD, and check `window.__phantomNormMigration` if you have a console.**
+        It must read **`status:"current"`, `from:2`** — NOT `"migrated"`. A freshly imported Master
+        is written by the current normalizer, so there is nothing to migrate. If it says
+        `"migrated"` after a fresh import, the parser is not stamping `normVersion` and every boot
+        would rebuild forever. *(No console? The cheap equivalent: `s4:099` still reads 19 and not
+        38 after that reload — the same idempotence tell as leg 0b.)*
 - [ ] **8 · Forge: a populated rack resolves its devices; an unprovisioned S4 cab reads
       `NO HOST DATA IN MASTER` in CYAN, not red.** *Releases `.413`.*
 
