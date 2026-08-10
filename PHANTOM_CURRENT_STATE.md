@@ -5,7 +5,7 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-10, after `v1.14.428` — BATCH `.385`–`.428` RELEASED, CALL 0 cap reset.**
+**Last updated: 2026-08-10, after `v1.14.432` — WORKSTREAM 2 COMPLETE.**
 
 ---
 
@@ -13,10 +13,10 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.428`** (`92cc388`) |
-| Commits | `.416` through `.428` shipped 2026-08-08/10 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.428` |
-| Verified | **`.428` confirmed in the SERVED bytes 2026-08-10** — both stamps plus `--alert: #ff3b3b` declared. `.425`/`.426`/`.427` were each confirmed the same way. `.418`–`.423` were pushed but never re-polled |
+| **Version** | **`phantom-v1.14.432`** (`3512c47`) |
+| Commits | `.416` through `.432` shipped 2026-08-08/10 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.432` |
+| Verified | **`.432` confirmed in the SERVED bytes 2026-08-10** — the fold present (`fr-siteLead`, `firstRun_loadMaster`) and the reverted duplicate gone (0 `siteSetup` refs). `.425`–`.431` each confirmed the same way |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 
@@ -93,6 +93,29 @@ would have surfaced from another device pass. ⛔ **And the mistake that had bee
 device: "the harness SKIPS this" was being read as "this needs hardware."** They are not the same —
 `05-offline` skips on `phone-webkit` because that browser never installs a service worker, and the
 same suite runs 13/15 on `desktop-chromium`. **Check another project before spending a device pass.**
+
+✅ **WORKSTREAM 2 — SITE-PROFILE IS COMPLETE (2026-08-10, `.432`).** `.415` atomic swap · `.417`
+root record + migration · `.418` identity split · `.422` staging + ACTIVATE SITE · `.423` restore
+re-enters boot · **`.432` the first-run gate finally has a destination worth arriving at.**
+⛔ **THE HELD "BOOT GATE" NEEDED NO NEW CODE, AND THE HOLD WAS DESCRIBING A RISK THAT WAS NEVER IN
+THE SPEC.** It has been wired into `launch()` since `v1.6.70` (`!siteProfile_isConfirmed()` →
+`firstRun_show()`). Two things were recorded wrongly and both are worth correcting here:
+· The hold read *"invalid profile → SITE SETUP only"*. The spec §3 says **"no `ACTIVE_SITE_PROFILE`"**
+  — ABSENCE, not invalidity. `validity()` fails on SIX conditions including a blank `operator`
+  (which `.418` deliberately made possible) and a missing `activeMasterId`, so gating on
+  `isValid()` would route a device carrying a working 4,143-host Master into setup. **That is the
+  cold-aisle lockout the hold existed to prevent, and it came from the summary, not the spec.**
+· What the gate actually lacked was a **Site Lead field** (it predates the identity split) and a
+  **Master step** (it could pre-fill FROM a Master but never load one). Both folded in at `.432`.
+
+⛔ **AND THE MISTAKE THAT COST A SHIP: `.431` BUILT A SECOND DOOR.** Asked for the gate, I searched
+for the SPEC'S NAME (`siteSetup`, `SITE SETUP`) rather than the CONCEPT, found nothing, and reported
+a whole feature missing. The feature is called `firstRun_*` and is built against an approved mock
+with a legacy branch. `.431` shipped a parallel flow — a Contract A2 violation — and `.432` reverted
+it (−225 lines net) and folded the two genuinely-missing pieces into the canonical door. ⭐ **Before
+building any flow, read the function that runs at the moment that flow would start.** `launch()`
+answered it in one line and was never opened. A name-based grep is evidence about NAMING, never
+about EXISTENCE, and specs routinely rename what the code already has.
 
 ✅ **SECTION B — THE RENDERER TRIO IS CLOSED, 2026-08-10.** Verify items **3, 4 and 5** all pass on
 hardware: *"rack holds all 10, no slowdown"* · *"rack stays in build after close, all 10"* ·
