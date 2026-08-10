@@ -185,6 +185,33 @@ racks are in that class. Everything below is meaningless if this is wrong.*
       to a usable shell and says it is offline. Save something, return to network, confirm it
       survived. ⚠ Nine harness tests skip here — the SW never installs in that browser.
       *Releases `.399`, `.400`, and the offline half of the batch.*
+      ⛔ **DO THIS IN ORDER — STEP 1 IS THE ONE PEOPLE SKIP, AND SKIPPING IT TESTS THE WRONG BUILD.**
+      1. **ONLINE FIRST. Confirm the header version badge reads `v1.14.427`.** `.427` bumped
+         `CACHE_VERSION`, which means a BRAND-NEW cache that has to install and precache **57
+         assets** before it can serve any of them. Go to airplane mode too early and you are
+         testing either a stale SW or a half-filled cache, and a failure would be an artifact.
+         If the badge still shows an older version, the new SW has not taken over — fully close
+         and reopen the PWA (see the SW note in `feedback_tooling_traps`).
+      2. **Airplane mode. Relaunch from the HOME-SCREEN ICON**, not a Safari tab — the installed
+         PWA is the real path and it holds its own SW state.
+      3. **It must boot to a USABLE SHELL and SAY it is offline.** Not a blank, not a spinner, not a
+         silent degraded mode. Saying so is the requirement, not just working.
+      4. **Save something while offline** — a note, a blocker, a phase change. Then back on network,
+         relaunch, and **confirm it survived**. That is `.399`/`.400` end to end: `.399` guarded
+         every write path, `.400` was the read side.
+      5. ⭐ **NEW SURFACE THIS PASS — the `.426` boot migration runs at boot, including offline.**
+         It touches only localStorage, so it should be indifferent to the network. Your Master is
+         already at `normVersion 2`, so the correct behaviour is that it does **nothing**:
+         `window.__phantomNormMigration` reads `status:"current"`. ⚠ **If an offline boot reports
+         `"migrated"` or `"persist-refused"`, that is a finding** — it would mean the stamp is not
+         sticking, and an offline device would rebuild its Master on every launch.
+      ⚠ **What the harness genuinely cannot tell you here:** the four STATIC checks do pass on the
+      runner — the precache list covers every runtime script, no script loads from a third-party
+      origin, all 57 `PRECACHE_URLS` actually serve, and the three cache stamps agree. **Everything
+      requiring an INSTALLED service worker skips**, because the SW never installs in that browser:
+      precaching the manifest, serving the shell with the network cut, an offline reload booting,
+      and an offline boot raising no uncaught exception. That is the nine, and it is why this item
+      cannot be automated away.
 
 ### B · The renderer, on real iOS WebKit (HIGH-risk — this is why the cap exists)
 - [x] **3 · The rack draws and HOLDS in Build** — open Build, confirm the rack draws, then
