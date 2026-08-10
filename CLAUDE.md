@@ -8,7 +8,9 @@ Ships site-agnostic — the loaded Master supplies every site-specific fact (Law
 queue, or open defects in this file — five documents once claimed five different live versions and
 none was correct. Start a session with `PHANTOM_SESSION_BOOTSTRAP.md`.
 
-⭐ **The governing programme is `SHIP-TECH-FLOW-V2-FROZEN.md`** (owner ruling 2026-08-08). It sets
+⭐ **The governing programme is `nexus01/SHIP-TECH-FLOW-V2-FROZEN.md`** (owner ruling 2026-08-08;
+**added to the repo 2026-08-10** — it had lived only in `Downloads`, outside version control and
+unreachable from a session that could not see that folder). It sets
 the delivery ORDER; the contracts below and the blueprint rulings remain the law it delivers
 against. It is FROZEN — a genuine contradiction gets **reported, never silently resolved**, and
 every ambiguity resolution is logged in `PHANTOM_CURRENT_STATE.md` §1a.

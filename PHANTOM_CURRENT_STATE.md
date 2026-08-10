@@ -24,6 +24,16 @@ Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.js
 
 ## 1a · GOVERNING PROGRAMME — owner rulings 2026-08-08
 
+📌 **THE SPEC IS IN THE REPO AS OF 2026-08-10.** It had lived only in `Downloads` — the document
+`CLAUDE.md` names as the programme of record was outside version control, could not be diffed, and
+was unreachable from any session that could not see that folder. Copied in **verbatim**:
+**20,362 bytes · `sha256 50dad65a643a20bd…`**, byte-identical to the source at the time of import.
+⚠ **It is FROZEN — a genuine contradiction gets REPORTED, never silently resolved, and never edited
+into the file.** The hash is recorded so a future session can prove the repo copy is the one that
+was frozen; if it ever fails to match, someone edited a frozen document and that is the finding.
+*(Git stores it LF and checks it out CRLF under this repo's `autocrlf`, so compare the git blob, not
+the working tree, if you re-verify.)*
+
 ⭐ **`SHIP-TECH-FLOW-V2-FROZEN.md` GOVERNS.** Owner ruled 2026-08-08: the frozen spec is the
 programme of record. Its seven workstreams — PHASE-ENGINE → SITE-PROFILE → CONTEXT-CHIP →
 NAV-LOCK → CONTEXTUAL-SCAN → HONEST-HANDOFF → FINISH-PASS — supersede the blueprint's M0→M6
