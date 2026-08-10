@@ -10831,6 +10831,37 @@ body.rd .rack-canvas-u-marker { height: var(--u-h, 44px); }
 .rack-canvas-block[data-type="cooling"] { background: var(--green); }
 .rack-canvas-block[data-type="server"]  { background: var(--slate-readable); color: var(--white); }
 .rack-canvas-block[data-type="network"] { background: var(--violet-bright); }
+
+/* ══ v1.14.429 — THE BAY MUST NEVER CONTRADICT THE ELEVATION (owner ruling: 3D BAY WINS) ══════
+   Since .429 the flat elevation writes DISPLAY keys via Vocabulary.typeOf (redesign house only),
+   so these selectors finally match on a Master rack — 9 of 11 device codes used to hit no rule at
+   all and painted grey. Coverage goes 2/11 -> 8/11.
+
+   VALUES ARE LIFTED FROM TYPE_COLOR (:19747), THE 3D TRAY'S OWN TABLE — not re-typed, not
+   re-picked. §E of the INSPECT-3D port is explicit that "the bay must never contradict the
+   elevation", and three types genuinely disagreed: pdu was gold in 3D and GREEN in flat, storage
+   pink in 3D and GOLD in flat, server light-blue in 3D and SLATE in flat. The owner ruled the bay
+   canonical on 2026-08-10, so the bay's value is the one written here.
+
+   ⛔ patch / media / unknown STAY GREY — standing owner ruling 2026-08-06, unchanged by the above.
+   The bay paints patch teal and unknown magenta; the flat elevation deliberately does not, so
+   those three are stated explicitly rather than left to fall through to a base rule.
+
+   ⛔ body.rd SCOPED ON PURPOSE. The base rules directly above are NOT house-scoped and paint under
+   ?legacy=1, where the raw code is still emitted (see rackElevation_buildHtml). Gate the
+   PRESENTATION, never the invariant.
+
+   TEXT COLOUR IS PART OF THE RULING, not decoration: four of these backgrounds are light, and the
+   base `server` rule sets `color: var(--white)`, which on #7fd0ff would be unreadable. Dark ink on
+   the light channels, white on violet. */
+body.rd .rack-canvas-block[data-type="gpu"]     { background: #28e0ff; color: #04060a; }
+body.rd .rack-canvas-block[data-type="switch"]  { background: #8a4bff; color: var(--white); }
+body.rd .rack-canvas-block[data-type="pdu"]     { background: #ffcb45; color: #04060a; }
+body.rd .rack-canvas-block[data-type="storage"] { background: #ff7bd0; color: #04060a; }
+body.rd .rack-canvas-block[data-type="server"]  { background: #7fd0ff; color: #04060a; }
+body.rd .rack-canvas-block[data-type="patch"],
+body.rd .rack-canvas-block[data-type="media"],
+body.rd .rack-canvas-block[data-type="unknown"] { background: #7d93a4; color: #04060a; }
 /* v1.14.229 — FLAT block appearance (redesign-only): racked slots read as a DARK tray
    body + a thin type-colour LEFT accent + readable text. The .228 ghost-fix over-filled
    to a solid slab that drowned the label; this dark base overrides the legacy full-fill
@@ -12876,7 +12907,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.428';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.429';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -19752,6 +19783,58 @@ var TLABEL = { gpu: 'GPU', switch: 'SWITCH', pdu: 'PDU', patch: 'PATCH', server:
 // falls to 'unknown'). .246 — 'other' → 'unknown' NOT 'blank' (it once called 459 real SPARKS
 // devices blanking panels). .251 — 'media' bridges master_hostType's new 'media' return.
 var _TMAP = { gpu: 'gpu', sw: 'switch', pwr: 'pdu', patch: 'patch', stor: 'storage', cpu: 'server', server: 'server', cdu: 'pdu', fw: 'switch', media: 'media', other: 'unknown' };
+
+// ══ ONE COLOUR VOCABULARY — A DOOR, NOT A NEW TABLE (v1.14.429, spec §7 / I9) ═════════════════
+// The spec asks for Vocabulary.typeOf() and reads as though it must be DESIGNED. It must not: the
+// map already exists one line up. `_TMAP` was hoisted to module scope in `.255` for exactly this
+// reason — "one map, two readers" — so this is a NAMED DOOR over tables that are already here and
+// duplicates nothing. A second copy is the drift the `.251`→`.253` media saga is a written record
+// of, and it would guarantee a repeat the next time a colour is ruled.
+//
+// WHY A DOOR AT ALL, when _TMAP is right there: THE FLAT ELEVATION DOES NOT USE IT.
+// rackElevation_buildHtml writes the RAW master_hostType code straight into `data-type`, while the
+// flat CSS is keyed on the EDP vocabulary. MEASURED: master_hostType emits 11 codes and the flat
+// CSS colours 2 of them (`gpu`, `server`) — the other NINE render grey on every Master rack. The
+// `.255` comment above has called this "a PRE-EXISTING elevation bug, NOT introduced here; owed
+// its own ship" ever since. This is that ship. ⚠ That comment says only `gpu`; it predates `.245`
+// adding a 'server' return, so the honest count is 2 of 11, not 1 of 10 — measured, not inherited.
+var Vocabulary = {
+  // RAW master_hostType code → canonical DISPLAY key.
+  //
+  // IDEMPOTENT BY CONSTRUCTION, and that is load-bearing: typeOf(typeOf('sw')) must be 'switch',
+  // not 'unknown'. A naive `_TMAP[k] || 'unknown'` returns 'unknown' the second time through, so
+  // any path that normalised twice would silently ERASE a real device class. Safe because no
+  // _TMAP key is also a different key's value — the four codes appearing on both sides
+  // (gpu/patch/server/media) each map to themselves — so checking RAW first is unambiguous.
+  //
+  // An unmapped code resolves to 'unknown' — REAL GEAR WE COULD NOT CLASSIFY (`.246`) — and never
+  // to 'blank', which is a POSITIVE claim that the U is empty. That exact `|| 'blank'` once
+  // rendered 459 real SPARKS devices as blanking panels.
+  typeOf: function (raw) {
+    var k = String(raw == null ? '' : raw).trim().toLowerCase();
+    if (!k) return 'unknown';
+    if (Object.prototype.hasOwnProperty.call(_TMAP, k)) return _TMAP[k];   // RAW → DISPLAY
+    if (Vocabulary.isDisplayKey(k)) return k;                              // already normalised
+    return 'unknown';
+  },
+
+  // DERIVED from _TMAP, never hand-listed. The `.397`→`.398` lesson: a hand-listed registry was
+  // measured against live storage and found incomplete. A list that can drift from its source will.
+  isDisplayKey: function (k) {
+    if (k === 'blank') return true;   // never produced by typeOf; a positive "nothing installed"
+    for (var r in _TMAP) {
+      if (Object.prototype.hasOwnProperty.call(_TMAP, r) && _TMAP[r] === k) return true;
+    }
+    return false;
+  },
+
+  // DISPLAY key → canonical paint / label. Thin on purpose: these read the SAME TYPE_COLOR and
+  // TLABEL the 3D tray reads, so a renderer reaches the vocabulary through this door instead of
+  // past it into the raw tables — which is the whole point of I9.
+  colorOf: function (key) { return TYPE_COLOR[Vocabulary.typeOf(key)] || TYPE_COLOR.unknown; },
+  labelOf: function (key) { return TLABEL[Vocabulary.typeOf(key)]    || TLABEL.unknown; }
+};
+try { window.Vocabulary = Vocabulary; } catch (_) {}
 // ──────────────────────────────────────────────────────────────────────────────
 
 function forge3d_render(mount) {
@@ -38768,7 +38851,20 @@ function rackElevation_buildHtml(rack) {
     var modelClean = (!modelStr || /^(blank|none|n\/a|unknown|tbd|-)$/i.test(modelStr)) ? '' : modelStr;
     var typeClean = type ? type.toUpperCase() : '';
 
-    html += '<div class="rack-canvas-block' + (blockHeight === U_HEIGHT ? ' is-1u' : '') + (_overlap ? ' is-overlap' : '') + '" data-idx="' + idx + '" data-type="' + escHtml(type) + '" ';
+    // v1.14.429 — ROUTE THE FLAT ELEVATION THROUGH THE ONE VOCABULARY, REDESIGN HOUSE ONLY.
+    // `type` is the RAW master_hostType code (gpu/sw/pwr/patch/stor/cpu/cdu/fw/media/other) and the
+    // flat CSS is keyed on DISPLAY keys, so 9 of 11 codes matched no rule and painted grey.
+    // Normalising here is what takes colour coverage from 2/11 to 8/11.
+    //
+    // ⛔ GATED ON `_fit` (redesign_isOn) BECAUSE THE BASE `.rack-canvas-block[data-type=...]` RULES
+    // ARE NOT HOUSE-SCOPED (:10828) AND PAINT UNDER ?legacy=1 TOO. Changing the ATTRIBUTE VALUE
+    // changes what legacy matches: raw `stor` matches nothing and renders grey today, while
+    // normalised `storage` would hit the base rule and turn gold. That is a Rule 17 break — a
+    // legacy behaviour change — arrived at without touching a single legacy rule. Under legacy the
+    // raw code is emitted exactly as it always was, so that house stays byte-identical.
+    var typeAttr = _fit && (typeof Vocabulary === 'object' && Vocabulary) ? Vocabulary.typeOf(type) : type;
+
+    html += '<div class="rack-canvas-block' + (blockHeight === U_HEIGHT ? ' is-1u' : '') + (_overlap ? ' is-overlap' : '') + '" data-idx="' + idx + '" data-type="' + escHtml(typeAttr) + '" ';
     html += 'data-ustart="' + uStart + '" data-uend="' + uEnd + '" ';
     html += 'style="top:' + uH(totalU - uEnd) + ';height:' + uH(uEnd - uStart + 1, 2) + '">';
     html += '<div class="rack-canvas-block-u">' + uLabel + '</div>';
