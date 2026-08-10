@@ -370,6 +370,26 @@ because they are one engine (`master_normalizeEndpoints`).
       itself information: it would mean `.424` resolved every cabinet in this Master, and the empty
       state has no live example on this site.
 
+🟡 **ITEM 8 — POPULATED HALF PASSES, EMPTY HALF IS UNVERIFIABLE ON THIS MASTER. `.413` NOT
+RELEASED.** Owner, 2026-08-10: *"every cab has components now."* Populated racks resolve their
+devices, confirmed. The empty-state half **has no live example left on this site** — `.424` resolved
+every cabinet — so the CYAN-not-red check has nothing to run against. **Deliberately NOT ticked:** a
+check that cannot be performed is not a check that passed.
+· **The logic IS covered in the harness** — `09-master-binding` fixture cabs `101` (cabling-only)
+  and `103` (mentioned-only) assert `NO HOST DATA IN MASTER` appears when and only when a rack is
+  genuinely empty, and that passes.
+· **What is uncovered is the on-device COLOUR of a state this site no longer produces.** Low risk,
+  and it stays open honestly rather than being ticked on a technicality.
+· **How it closes later:** a Master containing a genuinely empty cabinet, or a deliberate synthetic
+  one. Not worth a ship on its own.
+
+⭐ **THIS INVERTED A STANDING RULE — the memory has been corrected.** *"`0/0` + a real location ⇒
+suspect DATA, not code"* was right while ~42% of cabs were cable-endpoint-only. **Those cabs now
+resolve.** On this Master an empty cab is no longer expected; it is unusual, and a `0/0` report
+should now be treated as a **possible real defect**. The old advice would hide the exact class of
+bug it was written to prevent. ⚠ The per-row counts in `RACKENGINE-SPEC §7.1a` (s4/s5 "100%
+host-less, 196 cabinets that render as nothing") are **STALE** — they describe the pre-`.424` world.
+
 ### D · Surfaces that need eyes, not assertions
 - [ ] **9 · Design-system screens** — the five phone screens that took the `.410` lock still read
       as one system; the `.411` loadout picker opens and picks. *Releases `.409`, `.410`, `.411`.*
