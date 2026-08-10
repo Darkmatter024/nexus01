@@ -302,6 +302,23 @@ it rather than citing this line** — the device result rules out the SYMPTOM, n
 
 ### C · The Master, with YOUR file (fixtures cannot prove this)
 - [ ] **6 · Load your real Master → cab count is what it has always been.** *Releases `.414`, `.415`.*
+      ⚠ **THE CAB COUNT IS THE ASSERTION. THE COMPONENT COUNT IS NOT — IT IS SUPPOSED TO HAVE
+      CHANGED.** Read this before you look at the numbers, because a correct result looks like a
+      regression here:
+      · **511 racks — UNCHANGED.** This is what item 6 actually tests. `.424` only ever ADDS
+        components to racks that already exist (`if (!rk2) continue`), so it cannot invent or lose
+        a cabinet. **If the cab count moved at all, stop and tell me.**
+      · **7,574 components — NOT 4,143.** The old number was SITE-HOSTS only. 4,143 + 3,431
+        CUTSHEET-derived is the `.424` fix working. **Seeing 4,143 now would be the defect.**
+      · **28,264 cables — unchanged.**
+      ⭐ **AND THE FREE CROSS-CHECK, WORTH MORE THAN THE ITEM.** Your device is currently running a
+      Master that `.426` REBUILT from stored data. This import re-derives the same Master through
+      the PARSER instead. **They must agree** — same 511 racks, same 7,574 components, and `s4:099`
+      still 19. That is the `.426` claim — *a rebuilt Master equals a re-imported one* — tested on
+      your real file rather than a fixture. If the two disagree, the migration and the parser have
+      drifted apart and I want to know immediately.
+      ⚠ Re-importing is safe now and no longer masks anything: the P0 it would have hidden is
+      closed, and `.422` stages the import behind ACTIVATE SITE, so Cancel leaves everything as is.
 - [ ] **7 · Load the SAME Master a second time — nothing changes, nothing is lost.** That is the
       `.415` replace path end to end. *Releases `.415`.*
 - [ ] **8 · Forge: a populated rack resolves its devices; an unprovisioned S4 cab reads
