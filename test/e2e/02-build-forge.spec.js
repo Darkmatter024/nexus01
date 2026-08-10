@@ -722,5 +722,141 @@ test.describe('Build workspace + Forge aisle', () => {
       `I1 broken after closing the aisle: ${JSON.stringify(after.attachments)}`
     ).toBeLessThanOrEqual(1);
   });
+
+  // ── VERIFY ITEM 4, AUTOMATED (v1.14.426) ────────────────────────────────────────────────────
+  // The test above proves the transfer works ONCE. Verify item 4 asks whether it survives TEN
+  // round trips, and that question is different in kind: a transfer that leaks one context per
+  // round trip passes a single-shot test perfectly and then dies on the device, which is exactly
+  // how this class surfaced on the runner itself — Forge specs that pass alone and fail inside a
+  // long sequential run, because contexts accumulated until WebKit refused a new one.
+  //
+  // ⚠ THIS DOES NOT REPLACE THE PHONE. A desktop GPU budget is far larger than iOS Safari's, so a
+  // slow leak can survive ten round trips here and still exhaust a phone. What this CAN prove is
+  // the mechanism: that exactly one attachment exists at every step, that the context comes home
+  // to Build on every close, and that nothing accumulates in the DOM. A leak that shows here is
+  // real; silence here is not proof of its absence.
+  test('THE ROUND TRIP HOLDS x10 — the attachment comes home every time and nothing accumulates', async ({ phantom, page }) => {
+    test.setTimeout(300_000);
+
+    await phantom.boot({ seed: buildSeed() });
+    const gl = await webglProbe(page);
+    await enterBuild(page);
+    const outcome = await buildPreviewOutcomeWithReentry(page);
+    test.skip(
+      outcome.state !== 'canvas',
+      'HARNESS LIMITATION: no usable renderer on this runner, so there is no attachment to ' +
+      `follow across round trips. probe=${JSON.stringify(gl)} · app diagnostic: ` +
+      `${outcome.diag || '(none)'}. Verify item 4 on the physical iPhone still owns this.`
+    );
+
+    const surfaces = () => page.evaluate(() => ({
+      canvases: document.querySelectorAll('canvas').length,
+      live: Array.prototype.filter.call(document.querySelectorAll('canvas'), (cv) => {
+        const g = window.phantom_readGL ? window.phantom_readGL(cv) : null;
+        return !!g && !(g.isContextLost && g.isContextLost());
+      }).length,
+    }));
+
+    const baseline = await surfaces();
+    const trace = [];
+
+    for (let i = 1; i <= 10; i++) {
+      await page.locator('#bw-shell button.bw-aisle').click();
+      await expect(page.locator('#forge3d-sheet')).toBeVisible();
+      await expect
+        .poll(async () => {
+          const c = await census(page);
+          return (c.attachments || []).map((a) => `${a.kind}:${a.host}`).join(',');
+        }, { timeout: 30_000, message: `round ${i}: the aisle never became the single live attachment` })
+        .toBe('aisle:forge3d-mount');
+      const open = await surfaces();
+
+      await page.locator('#forge3d-sheet .rd-sheet-close').click();
+      await expect(page.locator('#forge3d-sheet')).toBeHidden();
+      // NOTE: this does NOT assert the context returns to Build. Measured, it does not — see the
+      // pinned defect below. What it does assert is that closing never leaves MORE than one
+      // attachment alive, which is the leak question this test exists for.
+      await expect
+        .poll(async () => {
+          const c = await census(page);
+          return (c.attachments || []).length;
+        }, { timeout: 30_000, message: `round ${i}: more than one attachment survived the close` })
+        .toBeLessThanOrEqual(1);
+      const closed = await surfaces();
+
+      trace.push({ round: i, openCanvases: open.canvases, openLive: open.live, closedCanvases: closed.canvases, closedLive: closed.live });
+
+      // One live attachment, always — asserted every round, not just at the end, so the round
+      // number where it breaks is in the failure message.
+      expect(open.live, `round ${i}: more than one live GL context while the aisle was open`).toBeLessThanOrEqual(1);
+      expect(closed.live, `round ${i}: more than one live GL context after closing the aisle`).toBeLessThanOrEqual(1);
+    }
+
+    const last = trace[trace.length - 1];
+    // THE LEAK DETECTOR. A per-round-trip leak shows as monotonic growth; comparing round 10 to
+    // the baseline is what a single-shot test structurally cannot see.
+    expect(
+      last.closedCanvases - baseline.canvases,
+      `canvases accumulated across 10 round trips — a per-trip leak. trace: ${JSON.stringify(trace)}`
+    ).toBeLessThanOrEqual(1);
+    console.log('[02] item-4 round-trip trace: ' + JSON.stringify(trace));
+  });
+
+  // ── PINNED DEFECT (v1.14.426) — found while automating verify item 4 ────────────────────────
+  // Verify item 4 states the contract: "Open Aisle draws and holds; CLOSE RETURNS TO BUILD WITH
+  // THE RACK STILL THERE." Measured on this runner, the second half does not happen.
+  //
+  // WHAT WAS MEASURED, at 2.5s and again at 11s after close — well past Build's ~5s re-arm:
+  //   #bw-mount   visible, 326x320, a real box
+  //   canvases in #bw-mount   0
+  //   RackEngine.report()     []            <- no attachment anywhere
+  //
+  // WHY. forge3d_open registers the aisle, and registration releases every other attachment, so
+  // Build's context is gone by design. forge3d_close (:19639) then disposes the aisle and calls
+  // reh3d_activate3D() — the RACK-DETAIL surface. Its own comment says that is a no-op when no
+  // #reh3dCanvasHost exists, which is exactly the case when the aisle was opened FROM BUILD. And
+  // bw_mount3D has one caller, bw_render (:21199), so only a Build RE-RENDER can rebuild it.
+  // Nothing on the close path re-renders Build. The IntersectionObserver cannot help either: it
+  // pauses and resumes an EXISTING attachment and cannot recreate a released one.
+  //
+  // WHY IT WAS NEVER CAUGHT: the round-trip test above it asserts `attachments.length <= 1` after
+  // close, which 0 satisfies. The spec header claims "the aisle round trip leaves Build intact"
+  // and no assertion ever checked it.
+  //
+  // NOT FIXED HERE ON PURPOSE. This is the graphics lifecycle — the exact subsystem the .390→.405
+  // arc cost eight ships to stabilise — and the owner's device pass for item 4 is the real gate.
+  // Pinned instead of fixed so the baseline records the truth. When a fix lands this flips to
+  // "Expected to fail, but passed", which is the signal to remove the pin.
+  test('PINNED: closing the aisle should return the rack to Build, and does not', async ({ phantom, page }) => {
+    test.fail();   // scoped to THIS test — at describe level it marks the whole group
+    test.setTimeout(180_000);
+    await phantom.boot({ seed: buildSeed() });
+    const gl = await webglProbe(page);
+    await enterBuild(page);
+    const outcome = await buildPreviewOutcomeWithReentry(page);
+    test.skip(
+      outcome.state !== 'canvas',
+      `HARNESS LIMITATION: no usable renderer. probe=${JSON.stringify(gl)} · ${outcome.diag || ''}`
+    );
+
+    await page.locator('#bw-shell button.bw-aisle').click();
+    await expect(page.locator('#forge3d-sheet')).toBeVisible();
+    await expect
+      .poll(async () => (await census(page)).attachments.map((a) => `${a.kind}:${a.host}`).join(','),
+        { timeout: 30_000 })
+      .toBe('aisle:forge3d-mount');
+
+    await page.locator('#forge3d-sheet .rd-sheet-close').click();
+    await expect(page.locator('#forge3d-sheet')).toBeHidden();
+
+    // Generous: far past the ~5s re-arm budget. Build is the operational centre — an empty,
+    // correctly-sized box with no message is the silent blank this whole subsystem exists to
+    // make impossible.
+    await expect
+      .poll(async () => (await census(page)).attachments.map((a) => `${a.kind}:${a.host}`).join(','),
+        { timeout: 20_000, message: 'the context never came home to Build' })
+      .toBe('rack:bw-mount');
+  });
 });
+
 

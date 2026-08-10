@@ -227,6 +227,32 @@ rack renders ONCE; this proves the attachment is released and re-acquired ten ti
       · **Aisle blank on the FIRST open** while Build still draws = the aisle never receives the
         attachment at all — that is `.405`'s defect returning, and it was confirmed fixed once on
         `.405` but has never been re-confirmed under `.415`'s SINGLE-MASTER changes.
+
+⛔ **ITEM 4 FAILS — CONFIRMED ON HARDWARE 2026-08-09.** Owner: *"rack is gone from build after
+close."* This is the FIRST signature above, the worst of the three: the transfer is **one-way**.
+**Item 4 stays OPEN and `.403`/`.404`/`.405` stay unreleased.**
+
+**Found by harness first, then confirmed on device.** Automating the ×10 round trip measured, at
+2.5s and again at 11s after close — well past Build's ~5s re-arm — `#bw-mount` visible at a real
+326×320, **zero canvases, zero attachments**. Pinned as `test.fail()` in `02-build-forge.spec.js`
+("PINNED: closing the aisle should return the rack to Build, and does not"). When a fix lands it
+flips to *"Expected to fail, but passed"* — that is the signal to remove the pin.
+
+**Cause, read from the code:** `forge3d_open` releases Build's attachment by design; `forge3d_close`
+(:19639) then disposes the aisle and calls `reh3d_activate3D()` — the **rack-detail** surface —
+which its own comment says no-ops when there is no `#reh3dCanvasHost`, exactly the case when the
+aisle was opened FROM BUILD. `bw_mount3D` has one caller, `bw_render` (:21199), so only a Build
+re-render rebuilds it, and nothing on the close path re-renders Build. The IntersectionObserver
+cannot cover it: it pauses and resumes an EXISTING attachment and cannot recreate a released one.
+
+✅ **What the ×10 DID clear, and it is the expensive half: THERE IS NO LEAK.** Ten round trips,
+exactly one live context whenever the aisle was open, and round 10 byte-identical to round 1 —
+`openCanvases 5 · openLive 1 · closedCanvases 4 · closedLive 0`, flat throughout. The transfer
+mechanism is sound. What is missing is only the hand-back.
+
+⚠ **Why it was never caught:** the pre-existing round-trip test asserts `attachments.length <= 1`
+after close, and **0 satisfies that**. The spec header claimed *"the aisle round trip leaves Build
+intact"* and no assertion ever checked it. A tolerant bound reads as coverage.
 - [ ] **5 · `?legacy=1` — the rack still renders and the app does not crash.** The `.402`
       observer is redesign-only but the single-context guard applies in BOTH houses; the legacy
       half has never been checked. *Releases the `.402` legacy half.*
