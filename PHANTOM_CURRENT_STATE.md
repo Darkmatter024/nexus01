@@ -76,6 +76,17 @@ not answer that — it says whether a payload can be READ, never which normalize
 the phone's own persisted cable endpoints with no re-import. ⚠ Verify leg **0b (reload → 19, not
 38)** is still unreported: a migration that re-applies every boot also shows 19 the first time.
 
+⚠ **HARNESS NOTE 2026-08-09 — 18 FAILURES IN THE `.426` FULL RUN WERE ENVIRONMENTAL, NOT CODE.**
+The full phone-webkit suite (199 tests) reported 172 passed · 9 skipped · **18 failed**, all in
+`02-build-forge` and `08-forge-layout`, and the run took **1.0h against 22.1min** for the same suite
+earlier the same day. Cause: WebGL context exhaustion on a loaded box. **Proven three ways, not
+assumed** — `08` re-ran alone on the identical bytes 17/17 green; `02` re-ran alone 12/12 green;
+and `09-master-binding`, which had failed 5 in isolation earlier, PASSED inside this run. The set
+of failures moves between runs, which is resource exhaustion, not a deterministic fault. Earlier
+the same day a stash-and-rerun proved `09`'s failures reproduce identically on unmodified `.425`.
+⭐ **Before treating a Forge/WebGL failure as a regression, re-run that spec ALONE.** A red full
+run on this machine is not evidence by itself.
+
 ⚠ **Round-trip trap fixed in the same ship, and it generalises:** `PHANTOM_MASTER_STORE.save()` read
 `sourceFileHash`/`totalCables` from `.stats`, which **only a fresh parse has** — a restored payload
 carries them at top level. Re-saving a restored Master wrote `null` over both. Any code that feeds

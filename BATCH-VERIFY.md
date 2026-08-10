@@ -143,7 +143,7 @@ re-importing would mask exactly the thing this item now tests.
       cabinet. They must look exactly as they always have — same devices, **no extra rows**. The
       migration applies the same rule as import: where SITE-HOSTS already owns a U, the endpoint is
       dropped. Extra rows here means suppression did not fire.
-- [ ] **0b · IT PERSISTS, AND IT DOES NOT RE-APPLY.** Fully reload. `s4:099` must show the **same
+- [x] **0b · IT PERSISTS, AND IT DOES NOT RE-APPLY.** Fully reload. `s4:099` must show the **same
       19** — not 19 again from scratch, and **not 38**. The rebuild is written to storage once and
       stamped; a second boot must find it already current.
 - [ ] **0c · YOUR MASTER KEPT ITS IDENTITY.** After the rebuild, the app must still know which file
