@@ -72,9 +72,11 @@ already held a Master restored the old normalizer's output forever. Correct code
 built by code that no longer exists. **The general shape: when a fix is proven present but absent
 in behaviour, ask which generation of code built the DATA in front of it.** `schemaVersion` could
 not answer that — it says whether a payload can be READ, never which normalizer BUILT it.
-✅ **Confirmed on hardware the same day** — owner: *"s4:099 shows 19 components now"*, rebuilt from
-the phone's own persisted cable endpoints with no re-import. ⚠ Verify leg **0b (reload → 19, not
-38)** is still unreported: a migration that re-applies every boot also shows 19 the first time.
+✅ **CLOSED ON HARDWARE THE SAME DAY — `.424` AND `.426` ARE RELEASED.** Owner: *"s4:099 shows 19
+components now"* · *"19 after reload"* · *"0a and 0c pass"*. All four behavioural legs of verify
+item 0 are green: the rebuild happens with no re-import, it is stamped so it does not re-apply
+(19 and not 38), SITE-HOSTS racks are not padded, and the Master keeps its identity through the
+re-save. **The P0 that blocked the entire verify list is done.**
 
 ⚠ **HARNESS NOTE 2026-08-09 — 18 FAILURES IN THE `.426` FULL RUN WERE ENVIRONMENTAL, NOT CODE.**
 The full phone-webkit suite (199 tests) reported 172 passed · 9 skipped · **18 failed**, all in

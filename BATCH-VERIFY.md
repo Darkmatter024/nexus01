@@ -139,14 +139,14 @@ re-importing would mask exactly the thing this item now tests.
       not `0 COMPONENTS`: **nine GPU-B300-01 at RU 35·32·29·26·23·20·17·14·11**, an
       **SN2201 at RU46**, **eight PS-1RU-06** (42·41·40·39 and 9·8·7·6), a **CDU-4RU-03 at RU2** —
       and it must **still hold its 68 cables**.
-- [ ] **0a · NOTHING REGRESSED ON THE SITE-HOSTS RACKS.** Open an **s1**, **s2** and **s3**
+- [x] **0a · NOTHING REGRESSED ON THE SITE-HOSTS RACKS.** Open an **s1**, **s2** and **s3**
       cabinet. They must look exactly as they always have — same devices, **no extra rows**. The
       migration applies the same rule as import: where SITE-HOSTS already owns a U, the endpoint is
       dropped. Extra rows here means suppression did not fire.
 - [x] **0b · IT PERSISTS, AND IT DOES NOT RE-APPLY.** Fully reload. `s4:099` must show the **same
       19** — not 19 again from scratch, and **not 38**. The rebuild is written to storage once and
       stamped; a second boot must find it already current.
-- [ ] **0c · YOUR MASTER KEPT ITS IDENTITY.** After the rebuild, the app must still know which file
+- [x] **0c · YOUR MASTER KEPT ITS IDENTITY.** After the rebuild, the app must still know which file
       this is — same site, same source filename, same cable counts. ⚠ This is the leg that catches
       the round-trip bug: re-saving a restored Master used to write `null` over the source hash and
       the cable count. *(`0c` used to be the import-summary check. That still matters and moves to
@@ -158,7 +158,15 @@ That closes the `.424` P0 in code AND the `.426` rule that fixed its delivery.
 on every boot also shows 19 the first time. Only a reload separates "migrated once and stamped"
 from "migrating forever" — and the failure signature is **38**, not an error.
 
-- [ ] **0d · ONE CONSOLE LINE, IF YOU HAVE ONE.** `window.__phantomNormMigration` should read
+✅ **ITEM 0 IS CLOSED — `.424` AND `.426` RELEASED, 2026-08-09.** Owner on hardware: *"s4:099 shows
+19 components now"* · *"19 after reload"* · *"0a and 0c pass"*. All four behavioural legs green. The
+P0 that blocked this whole list is done: a cabinet that rendered zero components for the entire life
+of the product resolves its 19 real ones, **rebuilt from the device's own stored data with no
+re-import**. `0d` is the console read-out and is **NOT required** — it exists to distinguish failure
+modes, and there was no failure to distinguish.
+
+- [ ] **0d · ONE CONSOLE LINE, IF YOU HAVE ONE** *(optional — only if a later device disagrees).*
+      `window.__phantomNormMigration` should read
       `status:"migrated"`, `from:1`, `to:2`, and a nonzero `added`. If it reads
       `"no-cables-retained"` then your stored Master genuinely has no endpoints to rebuild from and
       a re-import IS required — that is the one case where the answer is different, and the app
