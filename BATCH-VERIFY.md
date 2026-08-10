@@ -263,6 +263,28 @@ intact"* and no assertion ever checked it. A tolerant bound reads as coverage.
 - [ ] **5 · `?legacy=1` — the rack still renders and the app does not crash.** The `.402`
       observer is redesign-only but the single-context guard applies in BOTH houses; the legacy
       half has never been checked. *Releases the `.402` legacy half.*
+      **Open `?legacy=1`, reach a rack detail the legacy way, and check four things:**
+      · **The rack RENDERS** — 3D or the flat elevation, either is correct. What is NOT correct is
+        an **empty box**. Flat is the ruled no-WebGL fallback, not a failure.
+      · **No `JS ERROR` banner**, at any point in the walk.
+      · **Leave the rack detail and come back** — it must still render. This is the ungated half:
+        `releaseOthers` (I1) is deliberately NOT house-scoped, because two live contexts is the iOS
+        crash class, so a legacy render CAN dispose another legacy render. That is the mechanism to
+        watch, and nothing has ever exercised it.
+      · **Background the app and return.** ⚠ Under legacy the `.402` observer is a deliberate no-op,
+        so `att.paused` stays false forever and each renderer's own `document.hidden` path is the
+        ONLY thing that can stop the loop. The tell here is not a blank — it is **heat or battery
+        drain**, a rack that keeps rendering while you are elsewhere. If the phone gets warm on a
+        legacy rack, that is the finding.
+      ✅ **Pre-cleared in the harness at `.427`:** `?legacy=1` boots the legacy house (no `body.rd`,
+      no redesign nav) and survives a reload without the query string — `01-nav` + `06-composition`,
+      26 passed. What the harness cannot do is the iOS WebKit render, which is this item.
+      ✅ **`v1.14.427` is provably INERT in the legacy house**, checked before this pass rather than
+      assumed: its only behavioural change is inside `forge3d_close`, and the aisle has exactly two
+      doors — the header FORGE 3D button, which is `.hdr-agg-act { display:none }` with
+      `body.rd .hdr-agg-act { display:flex }`, and the redesign Build shell. Neither exists under
+      legacy, so the new code cannot execute there. The `reacquire` property it adds to attachments
+      is never read in that house.
 
 ### C · The Master, with YOUR file (fixtures cannot prove this)
 - [ ] **6 · Load your real Master → cab count is what it has always been.** *Releases `.414`, `.415`.*
