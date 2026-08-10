@@ -9120,30 +9120,6 @@ body.rd #rf-hw.plat-detail-open > :not(#rf-plat-detail) { display:none !importan
 body.rd #hdr-agg-profile-row { display: flex; }
 #rd-profile-sheet { position: fixed; top: 0; left: 0; right: 0; bottom: calc(72px + var(--safe-bottom, 0px)); z-index: 60; display: none; flex-direction: column; background: linear-gradient(180deg, #06090f, #0a0e16); }
 body.rd #rd-profile-sheet.open { display: flex; }
-/* v1.14.431 — SITE SETUP shares the profile sheet's geometry, with two differences that are
-   deliberate: it covers the bottom nav (inset 0, not `bottom: 72px`) because first-run setup is
-   not somewhere to navigate away from mid-flow, and it sits one layer higher so it is never
-   painted under another sheet. Same body.rd + .open gate, so ?legacy=1 stays byte-identical. */
-#rd-setup-sheet { position: fixed; inset: 0; z-index: 61; display: none; flex-direction: column; background: linear-gradient(180deg, #06090f, #0a0e16); }
-body.rd #rd-setup-sheet.open { display: flex; }
-#rd-setup-body { padding: 18px 16px calc(24px + var(--safe-bottom, 0px)); overflow-y: auto; }
-.setup-h { font-family: var(--ff-display); font-size: var(--fs-head); font-weight: 800; color: var(--white); letter-spacing: .06em; margin: 0 0 8px; }
-.setup-p { font-size: var(--fs-body); color: var(--slate); line-height: 1.5; margin: 0 0 18px; }
-.setup-lbl { font-size: var(--fs-micro); letter-spacing: .18em; text-transform: uppercase; color: var(--slate); margin: 0 0 6px; }
-.setup-note { font-size: var(--fs-caption); color: var(--slate); line-height: 1.45; margin: -6px 0 16px; }
-.setup-nav { display: flex; gap: 10px; margin-top: 22px; }
-/* Cold Aisle Filter: both controls clear the 44px floor as their OWN height, never sized by a
-   sibling — the .407 lesson. */
-.setup-btn { min-height: var(--tap-s); flex: 1 1 auto; border-radius: var(--r-ctl); cursor: pointer;
-  font-family: var(--ff-display); font-size: var(--fs-caption); font-weight: 700; letter-spacing: var(--hud-track-button); text-transform: uppercase;
-  background: linear-gradient(180deg, rgba(92,242,255,0.14), rgba(92,242,255,0.04)); color: var(--cyan);
-  border: 1px solid rgba(92,242,255,0.45); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 0 18px rgba(92,242,255,0.15); }
-.setup-btn:active { filter: brightness(1.08); }
-.setup-btn[disabled] { opacity: .45; }
-.setup-btn.ghost { flex: 0 0 auto; padding: 0 18px; background: rgba(16,22,34,0.55); color: var(--slate); border-color: rgba(120,150,200,0.18); box-shadow: none; }
-.setup-dots { display: flex; gap: 6px; justify-content: center; margin-top: 18px; }
-.setup-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(120,150,200,0.28); }
-.setup-dots i.on { background: var(--cyan); box-shadow: 0 0 7px var(--cyan); }
 /* v1.14.221 — SYS -> ERRORS diagnostics row + sheet (redesign-only; mirrors the profile gating above) */
 #hdr-agg-errors-row { display: none; }
 body.rd #hdr-agg-errors-row { display: flex; }
@@ -12927,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.431';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.432';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13426,12 +13402,6 @@ if (typeof window !== 'undefined') {
                  Reachable from anywhere; hwMatrix_open() is unchanged. -->
             <button onclick="hwMatrix_open();document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open')" class="hdr-menu-item" style="color:var(--cyan)" aria-label="Open hardware reference"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg> &nbsp;HW REF</button>
             <button onclick="if(redesign_isOn()){rd_openProfile();document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open');return;}showPage('master');setTimeout(function(){master_showSection('profile');},10);document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open')" class="hdr-menu-item" style="color:var(--violet-bright,#b58cff)" aria-label="Open site profile editor"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b58cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> &nbsp;SITE PROFILE</button>
-            <!-- v1.14.431 — THE DOOR INTO SITE SETUP. A feature with no entry point is a
-                 Contract-14 violation, and the boot gate that will route first runs here is a
-                 SEPARATE ship. This is also the PERMANENT system route afterwards: the flow
-                 pre-fills and never blanks a set value, so it doubles as "set this device up
-                 again" without a second implementation. Redesign-only, like its neighbour. -->
-            <button onclick="if(typeof siteSetup_open==='function'){siteSetup_open();}document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open')" class="hdr-menu-item hdr-agg-act" style="color:var(--cyan)" aria-label="Run site setup"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg> &nbsp;SITE SETUP</button>
               <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0"></div>
               <!-- v1.14.380: the way back out of the ?legacy=1 rip-cord. Legacy-only by construction - #hdr-overflow-wrap is display:none !important under body.rd. -->
               <button onclick="legacy_returnToNewUI()" class="hdr-menu-item" style="color:var(--teal)" aria-label="Return to the new UI"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg> &nbsp;RETURN TO NEW UI</button>
@@ -13523,23 +13493,6 @@ if (typeof window !== 'undefined') {
       <div class="phs-body" id="ph-sheet-body"></div>
     </div>
   </div>
-
-  <!-- v1.14.431 — SITE SETUP (spec §4.1). The guided first-run flow:
-       Welcome -> Site -> Site Lead -> Operator (defaults to Site Lead, editable) -> Master.
-       Reuses #rd-profile-sheet's own primitive (.rd-sheet-hdr / .rd-sheet-close / .sop-input) so
-       this is one more sheet in an existing family, not a new visual language — the spec's step 7
-       is where polish lands, and "no visual redesign before step 4 completes".
-       ⛔ The MASTER step does not import anything itself: it calls master_loadFromPicker, the one
-       door, because §4.2 says there is "no second write path to Master state anywhere in the
-       file". -->
-  <div id="rd-setup-sheet" role="dialog" aria-modal="true" aria-label="Site Setup">
-    <div class="rd-sheet-hdr">
-      <div class="rd-sheet-titles"><div class="t">SITE SETUP</div><div class="s" id="setup-step-label">WELCOME</div></div>
-      <button class="rd-sheet-close" onclick="siteSetup_close()" aria-label="Close site setup">&#10005;</button>
-    </div>
-    <div id="rd-setup-body" class="ops-content"></div>
-  </div>
-
 
   <div id="rd-profile-sheet" role="dialog" aria-modal="true" aria-label="Site Profile">
     <div class="rd-sheet-hdr">
@@ -19525,206 +19478,6 @@ function rd_closeProfile() {
   var sheet = document.getElementById('rd-profile-sheet');
   if (sheet) sheet.classList.remove('open');
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════════════════════
-// SITE SETUP — the guided first-run flow (v1.14.431, spec §4.1)
-//
-// Welcome → Site → Site Lead → Operator (defaults to Site Lead, editable) → Master.
-//
-// WHY THIS EXISTS BEFORE THE BOOT GATE. §3 routes a first run to "Site Setup (§4)" — and until
-// now that destination did not exist. `rd_openProfile` is a profile EDITOR: text fields, no Master
-// step. Shipping the gate against it would have routed a fresh device into a form that never
-// mentions a Master, which is worse than landing on Home where the importer is reachable. The gate
-// is the last 10% of this feature; this is the other 90%.
-//
-// ⛔ THE MASTER STEP IMPORTS NOTHING ITSELF. It calls master_loadFromPicker — the ONE door, which
-// already parses, stages, validates, shows the counts summary and activates on a tap (`.422`).
-// §4.2 is explicit: "no second write path to Master state anywhere in the file." Re-implementing
-// any of that here would be a second writer, and the whole SINGLE-MASTER arc exists because of
-// what a second writer costs.
-//
-// ⛔ IT NEVER BLANKS A VALUE A HUMAN SET (Law 11). Every field pre-fills from the existing profile
-// and an empty input is skipped on save rather than written as ''. This surface is reachable from
-// SYSTEM as well as first run, so "opened it, changed my mind, closed it" must cost nothing.
-var _setupState = null;
-
-function siteSetup_open(opts) {
-  var sheet = document.getElementById('rd-setup-sheet');
-  if (!sheet) return;
-  var p = (typeof siteProfile_load === 'function') ? (siteProfile_load() || {}) : {};
-  _setupState = {
-    step: 0,
-    site: String(p.facilityId || '').trim(),
-    lead: String(p.siteLead || '').trim(),
-    operator: String(p.operator || '').trim(),
-    // Remembered so the Master step can tell ACTIVATION from CANCELLATION. master_loadFromPicker
-    // resolves with the parse result either way — deliberately, since the caller asked for a parse
-    // — so the honest signal is whether the ACTIVE Master identity actually changed.
-    masterIdAtStart: (function () { try { return PHANTOM_MASTER.id(); } catch (_) { return null; } })(),
-    resumed: !!(opts && opts.resumed)
-  };
-  sheet.classList.add('open');
-  siteSetup_render();
-}
-
-function siteSetup_close() {
-  var sheet = document.getElementById('rd-setup-sheet');
-  if (sheet) sheet.classList.remove('open');
-  _setupState = null;
-}
-
-var _SETUP_STEPS = ['WELCOME', 'SITE', 'SITE LEAD', 'OPERATOR', 'MASTER'];
-
-function siteSetup_go(delta) {
-  if (!_setupState) return;
-  var next = _setupState.step + delta;
-  if (next < 0) return;
-  if (next >= _SETUP_STEPS.length) return;
-  _setupState.step = next;
-  siteSetup_render();
-}
-
-/** Read the visible input (if any) into state BEFORE moving — never lose typing on a Back tap. */
-function siteSetup_capture() {
-  if (!_setupState) return;
-  var el = document.getElementById('setup-input');
-  if (!el) return;
-  var v = String(el.value || '').trim();
-  if (_setupState.step === 1) _setupState.site = v;
-  else if (_setupState.step === 2) {
-    _setupState.lead = v;
-    // Spec §4.1: "Operator defaults to Site Lead, editable". A DEFAULT is a value written once,
-    // not a fallback computed on every read — `.418` is explicit about that distinction, because
-    // a read-time coalesce silently grants lead-only RBAC to an empty actor.
-    if (!_setupState.operator) _setupState.operator = v;
-  }
-  else if (_setupState.step === 3) _setupState.operator = v;
-}
-
-function siteSetup_next() { siteSetup_capture(); siteSetup_go(1); }
-function siteSetup_back() { siteSetup_capture(); siteSetup_go(-1); }
-
-function siteSetup_render() {
-  if (!_setupState) return;
-  var body = document.getElementById('rd-setup-body');
-  var label = document.getElementById('setup-step-label');
-  if (!body) return;
-  var s = _setupState, st = s.step, h = '';
-  if (label) label.textContent = _SETUP_STEPS[st];
-
-  var esc = (typeof escHtml === 'function') ? escHtml : function (x) { return String(x == null ? '' : x); };
-
-  if (st === 0) {
-    h += '<div class="setup-h">Set up this site</div>'
-      + '<p class="setup-p">Four quick steps: the site, who is leading it, who is working on this '
-      + 'device, and the Master file. Everything after that runs offline.</p>'
-      + '<div class="setup-nav"><button class="setup-btn" onclick="siteSetup_next()">START</button></div>';
-  } else if (st === 1) {
-    h += '<div class="setup-h">Which site?</div>'
-      + '<p class="setup-lbl">SITE</p>'
-      + '<input id="setup-input" type="text" class="sop-input" value="' + esc(s.site) + '" placeholder="e.g. DFW-01" autocapitalize="characters" autocomplete="off">'
-      + '<p class="setup-note">The Master file names the site too. If they differ, the Master wins — it is the source of truth.</p>';
-  } else if (st === 2) {
-    h += '<div class="setup-h">Who is the Site Lead?</div>'
-      + '<p class="setup-lbl">SITE LEAD &middot; AUTHORITY</p>'
-      + '<input id="setup-input" type="text" class="sop-input" value="' + esc(s.lead) + '" placeholder="Full name" autocapitalize="words" autocomplete="off">'
-      + '<p class="setup-note">Authority for this site. Changed later only in SYSTEM.</p>';
-  } else if (st === 3) {
-    h += '<div class="setup-h">Who is working on this device?</div>'
-      + '<p class="setup-lbl">CURRENT OPERATOR &middot; ACTOR</p>'
-      + '<input id="setup-input" type="text" class="sop-input" value="' + esc(s.operator || s.lead) + '" placeholder="Full name" autocapitalize="words" autocomplete="off">'
-      + '<p class="setup-note">Defaults to the Site Lead. Every entry in the Event Log is credited to whoever is set here — never to the Site Lead automatically.</p>';
-  } else {
-    var ready = !!(s.site && s.lead && s.operator);
-    h += '<div class="setup-h">Load the Master file</div>'
-      + '<p class="setup-p">Pick the site workbook. You will see its counts and confirm before anything becomes active.</p>'
-      + '<p class="setup-lbl">SITE</p><p class="setup-note">' + esc(s.site || '—') + ' &middot; ' + esc(s.lead || '—') + '</p>'
-      + '<div class="setup-nav">'
-      + '<button class="setup-btn ghost" onclick="siteSetup_back()">BACK</button>'
-      + '<button class="setup-btn" id="setup-master-btn" onclick="siteSetup_chooseMaster()"' + (ready ? '' : ' disabled') + '>CHOOSE MASTER FILE</button>'
-      + '</div>';
-    if (!ready) h += '<p class="setup-note" style="margin-top:12px">Fill in the site, lead and operator first.</p>';
-  }
-
-  if (st > 0 && st < 4) {
-    h += '<div class="setup-nav">'
-      + '<button class="setup-btn ghost" onclick="siteSetup_back()">BACK</button>'
-      + '<button class="setup-btn" onclick="siteSetup_next()">NEXT</button>'
-      + '</div>';
-  }
-
-  h += '<div class="setup-dots">';
-  for (var i = 0; i < _SETUP_STEPS.length; i++) h += '<i class="' + (i === st ? 'on' : '') + '"></i>';
-  h += '</div>';
-
-  body.innerHTML = h;
-  try { body.scrollTop = 0; } catch (_) {}
-}
-
-/**
- * The Master step. Writes the IDENTITY first, then hands off to the one import door.
- *
- * ORDER IS DELIBERATE: identity is saved BEFORE the picker so a mid-import abort still leaves the
- * operator's typing on the device — the same persist-first discipline the SINGLE-MASTER LAW uses,
- * applied to the cheaper half. `confirmedAt` is NOT written here: the profile only counts as
- * confirmed once a Master is actually active, so an abandoned setup can never present itself as a
- * finished one.
- */
-async function siteSetup_chooseMaster() {
-  if (!_setupState) return;
-  var s = _setupState;
-  siteSetup_writeIdentity();
-
-  if (typeof master_loadFromPicker !== 'function') {
-    try { if (typeof phantomToast === 'function') phantomToast('Master loader unavailable', 'error'); } catch (_) {}
-    return;
-  }
-
-  var before = s.masterIdAtStart;
-  try { await master_loadFromPicker({}); } catch (_) { /* picker cancelled or parse failed — it says so itself */ }
-
-  var after = null;
-  try { after = PHANTOM_MASTER.id(); } catch (_) { after = null; }
-  var activated = !!after && after !== before;
-
-  if (!activated) {
-    // Not an error: the operator cancelled, or the candidate was refused. The import door has
-    // already said which. Setup stays open on this step so they can try another file.
-    siteSetup_render();
-    return;
-  }
-
-  // A Master is live. NOW the profile is confirmed, and migrate() binds masterId to it.
-  try {
-    var p = siteProfile_load() || {};
-    p.confirmedAt = p.confirmedAt || Date.now();
-    delete p.setupInProgress;      // the flow completed — this is a real confirmation now
-    siteProfile_save(p);
-  } catch (_) {}
-  try { if (typeof PHANTOM_SITE !== 'undefined') PHANTOM_SITE.migrate(); } catch (_) {}
-
-  try { if (typeof phantomToast === 'function') phantomToast('Site ready — ' + (s.site || 'site') + ' is set up'); } catch (_) {}
-  try { if (typeof haptic === 'function') haptic([18, 24, 18]); } catch (_) {}
-  siteSetup_close();
-  try { if (typeof showMode === 'function') showMode('command'); } catch (_) {}
-}
-
-/** MERGE, NEVER OVERWRITE (Law 11): an empty field is skipped, never written as ''. */
-function siteSetup_writeIdentity() {
-  if (!_setupState || typeof siteProfile_load !== 'function') return;
-  var s = _setupState;
-  try {
-    var p = siteProfile_load() || {};
-    if (s.site)     p.facilityId = s.site;
-    if (s.lead)     p.siteLead   = s.lead;
-    if (s.operator) p.operator   = s.operator;
-    // Marks this as an IN-FLIGHT save, not a confirmation — see the backfill exception in
-    // siteProfile_load. Cleared only when a Master actually goes active.
-    if (!p.confirmedAt) p.setupInProgress = true;
-    siteProfile_save(p);
-  } catch (_) {}
-}
-try { window.siteSetup_open = siteSetup_open; window.siteSetup_close = siteSetup_close; } catch (_) {}
 // v1.14.221 — ERRORS diagnostics sheet (SYS -> ERRORS). Renders the phantom_crash_log ring
 // newest-first with COPY ALL + CLEAR, reusing the .rd-sheet primitive + phantomViewCrashLog's
 // clipboard builder. Read-only diagnostics: never mutates app/deploy data.
@@ -26909,15 +26662,12 @@ function siteProfile_load() {
   // v1.6.70: backfill confirmedAt for profiles saved before the first-run gate
   // existed. A stored profile with lastUpdated means a human already saved it
   // via the editor → treat as confirmed so existing users are never re-prompted.
-  // ⚠ v1.14.431 — THE BACKFILL NOW HAS AN EXCEPTION, because it gained a second writer.
-  // Its premise is "saved via the editor ⇒ a human confirmed it", and that held while the EDITOR
-  // was the only thing calling siteProfile_save. Site Setup saves the operator's typing MID-FLOW
-  // so an aborted import does not cost them the fields they entered — a save that is explicitly
-  // NOT a confirmation. Without this exception, `save()` stamping lastUpdated made every such
-  // profile read back as confirmed on the very next load, so a device that typed a site and quit
-  // would satisfy a confirmedAt-based boot gate with NO MASTER behind it — precisely the state the
-  // gate exists to catch. Existing devices carry no marker and are completely unaffected.
-  if (!stored.confirmedAt && stored.lastUpdated && !stored.setupInProgress) stored.confirmedAt = stored.lastUpdated;
+  // ⚠ v1.14.432 — the `setupInProgress` exception added in .431 is REVERTED with the parallel
+  // flow that needed it. That flow saved identity MID-SETUP, which made this backfill treat an
+  // abandoned setup as confirmed; firstRun_confirm writes ONCE, at the end, with confirmedAt in
+  // the same save, so there is no mid-flow write for the backfill to misread. A guard whose
+  // hazard no longer exists is a guard that misleads the next reader.
+  if (!stored.confirmedAt && stored.lastUpdated) stored.confirmedAt = stored.lastUpdated;
   // Merge so any new default fields appear gracefully
   return Object.assign({}, SITE_PROFILE_DEFAULTS, stored);
 }
@@ -27067,6 +26817,47 @@ function site_prefillProfileFromMaster() {
 // so it never fires again. Floor fields (rack naming, PDU) are optional here:
 // blank is safe (getContextBlock skips blanks), and forcing a value just
 // invites garbage that would poison AI context.
+/**
+ * One honest line about the Master, for the first-run gate (v1.14.432).
+ * States what is loaded or that nothing is — never a guess, never a placeholder count.
+ */
+function firstRun_masterLine() {
+  try {
+    var m = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.active() : null;
+    if (!m || !m.racksByCab) return 'No Master loaded on this device yet.';
+    var racks = Object.keys(m.racksByCab).length;
+    var hosts = (typeof PHANTOM_MASTER_STORE !== 'undefined') ? PHANTOM_MASTER_STORE.hostCount(m) : 0;
+    return 'Loaded &middot; ' + racks + ' RACKS &middot; ' + hosts + ' COMPONENTS'
+      + (m.sourceFile ? ' &middot; ' + escHtml(m.sourceFile) : '');
+  } catch (_) { return 'No Master loaded on this device yet.'; }
+}
+
+/**
+ * The Master step of the first-run gate. Delegates to the ONE import door, which already parses,
+ * stages, validates, shows the counts summary and activates on a tap (`.422`). This function's
+ * only job afterwards is to re-state what is now loaded — it never writes Master state itself.
+ */
+async function firstRun_loadMaster() {
+  if (typeof master_loadFromPicker !== 'function') {
+    try { if (typeof phantomToast === 'function') phantomToast('Master loader unavailable', 'error'); } catch (_) {}
+    return;
+  }
+  try { await master_loadFromPicker({}); } catch (_) { /* cancelled or refused — the door says so */ }
+  var el = document.getElementById('fr-master-state');
+  if (el) el.innerHTML = firstRun_masterLine();
+  // A Master carries the site's own identity. If the operator has not typed a site yet, offer
+  // what the Master knows rather than leaving them to retype it — editable, never forced.
+  try {
+    var _mv2 = (typeof master_siteVars === 'function') ? master_siteVars() : null;
+    if (_mv2) {
+      var fid = document.getElementById('fr-facilityId');
+      var fnm = document.getElementById('fr-facilityName');
+      if (fid && !String(fid.value || '').trim()) fid.value = _mv2.locode || _mv2.site || '';
+      if (fnm && !String(fnm.value || '').trim()) fnm.value = _mv2['site-name'] || _mv2.facility || '';
+    }
+  } catch (_) {}
+}
+
 function firstRun_show() {
   var inner = document.getElementById('fr-inner');
   var ov    = document.getElementById('fr-overlay');
@@ -27107,7 +26898,23 @@ function firstRun_show() {
       + frMach('fr-facilityId', 'Site code (e.g. DFW-07)', 'autocapitalize="characters" spellcheck="false"', _fid)
       + frMach('fr-facilityName', 'Facility name (e.g. CoreWeave Dallas)', 'autocapitalize="words" spellcheck="false"', p.facilityName)
       + (_mv ? '<p class="fr-hint">Pre-filled from the loaded Master — check it, correct anything wrong.</p>' : '')
-      + '<p class="fr-hint">Hardware — switches, GPUs, optics — fills in from the Master you load. PHANTOM doesn\'t assume your gear.</p>'
+      // v1.14.432 — SITE LEAD (spec §2 / §4.1). This gate predates the .417/.418 identity split
+      // and collected an operator only, so the AUTHORITY half of the model had no first-run home
+      // and every new device started with siteLead empty. Defaults to the name above — a value
+      // WRITTEN once and then editable, never a read-time coalesce: .418 removed exactly that
+      // fallback because it silently granted lead-only RBAC to whoever held a device with an
+      // empty field.
+      + '<div class="fr-sec">SITE LEAD</div>'
+      + frMach('fr-siteLead', 'Full name', 'autocapitalize="words" spellcheck="false"', p.siteLead)
+      + '<p class="fr-hint">Authority for this site. Leave blank to use your name. Work is always credited to whoever is working — never to the Site Lead automatically.</p>'
+      // v1.14.432 — THE MASTER STEP (spec §4.1). The gate could pre-fill FROM a Master but never
+      // load one, so a genuinely new device had to confirm, land on Home, and go find the importer.
+      // ⛔ It imports nothing itself — master_loadFromPicker is the ONE door (§4.2: "no second
+      // write path to Master state anywhere in the file").
+      + '<div class="fr-sec">MASTER FILE</div>'
+      + '<div id="fr-master-state" class="fr-hint">' + firstRun_masterLine() + '</div>'
+      + '<button id="fr-master" class="fr-go fr-go-alt" style="--angle:0deg" onclick="firstRun_loadMaster()"><b>LOAD MASTER FILE</b></button>'
+      + '<p class="fr-hint">You will see its counts and confirm before anything becomes active. You can also do this later from SYSTEM.</p>'
       + '<div class="fr-sec fr-sec-opt">FLOOR DETAILS <span>— optional, fill when you are on the floor</span></div>'
       + frMach('fr-rackNaming', 'Rack naming convention', 'autocapitalize="characters" spellcheck="false"', _pf('rackNamingConvention', 'rack-naming'))
       + frMach('fr-pdu', 'PDU type', 'autocapitalize="characters" spellcheck="false"', _pf('pduType', 'pdu-type'))
@@ -27176,6 +26983,16 @@ function firstRun_confirm() {
   var p = siteProfile_load();
   p.operator   = name;
   p.facilityId = site;
+  // v1.14.432 — SITE LEAD. ⚠ GUARDED ON THE ELEMENT EXISTING, not on the house: this function is
+  // SHARED by both branches of firstRun_show and the legacy branch has no such field. A bare read
+  // would throw there; writing a default would change legacy behaviour. Absent element ⇒ this
+  // block does nothing and legacy stays byte-identical (Rule 17).
+  var leadEl = document.getElementById('fr-siteLead');
+  if (leadEl) {
+    var lead = leadEl.value.trim();
+    // Spec §4.1: the two default to each other, written once. Never a read-time coalesce (.418).
+    p.siteLead = lead || name;
+  }
   if (facNameEl) p.facilityName = facNameEl.value.trim();
   if (rackEl && rackEl.value.trim()) p.rackNamingConvention = rackEl.value.trim();
   if (pduEl  && pduEl.value.trim())  p.pduType              = pduEl.value.trim();
