@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.432';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.433';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -22779,9 +22779,9 @@ function cmd_resolveFirstRackElev() {
   var keys = Object.keys(m.racksByCab);
   if (!keys.length) return null;
   if (_cmdHeroRack && m.racksByCab[_cmdHeroRack]) {
-    try { return master_rackToElevation(m.racksByCab[_cmdHeroRack], _cmdHeroRack); } catch (_) { return null; }
+    try { return RackEngine._resolve(_cmdHeroRack).elevation; } catch (_) { return null; }
   }
-  try { return master_rackToElevation(m.racksByCab[keys[0]], keys[0]); } catch (_) { return null; }
+  try { return RackEngine._resolve(keys[0]).elevation; } catch (_) { return null; }
 }
 // FLAT fallback (capability-only, not a battery choice): the existing HTML elevation.
 function cmd_rackHeroFlat(mount, elev) {
@@ -35154,7 +35154,7 @@ function master_findRack(query) {
 function master_renderHit(mHit, container) {
   var hasHosts = mHit.hosts && mHit.hosts.length > 0;
   if (hasHosts) {
-    var ev = master_rackToElevation({ hosts: mHit.hosts }, mHit.id);
+    var ev = RackEngine._resolve(mHit.id).elevation;
     container.innerHTML = '';
     renderElevation(ev, container);
     if (typeof _rmRenderHeaderInArea === 'function') _rmRenderHeaderInArea(ev, container);
@@ -37368,6 +37368,68 @@ var RackEngine = {
       }, { threshold: 0 });
       att.io.observe(att.mount);
     } catch (_) { att.io = null; }
+  },
+
+  // ══ §7 — THE DATA CONTRACT (I8 + I9). M2-b stage 1. ═══════════════════════════════════════
+  //
+  // CALLERS PASS A rackId. THE ENGINE RESOLVES. Today six call sites each do their own
+  // `racksByCab[id]` lookup and hand a rack OBJECT to master_rackToElevation — and one of them,
+  // master_renderHit, hands a RESHAPED `{ hosts: … }` instead of the record. That is the reshape
+  // divergence §7 exists to end: two shapes for one concept, and nothing forcing them to agree.
+  //
+  // ⛔ THIS WRAPS master_rackToElevation, IT DOES NOT REPLACE IT. That function is the canonical
+  // shaper — U extraction, height-unknown stamping, the totalU floor — and re-implementing any of
+  // it here would be the second-door mistake `.431` already cost a ship to. What _resolve ADDS is
+  // exactly the three things §7 asks for and the shaper cannot know:
+  //   · the LOOKUP, so callers pass an id and never a rack object (I8)
+  //   · type NORMALISATION through Vocabulary, before any renderer sees it (I9)
+  //   · SOURCE and DATASTATE, so an empty rack says which kind of empty it is (R-06 / §7.1)
+  //
+  // ⭐ NORMALISING HERE IS SAFE PRECISELY BECAUSE Vocabulary.typeOf IS IDEMPOTENT. The flat writer
+  // already normalises at `.429`; a value passing through both is unchanged, which spec 20 pins to
+  // three levels for all eleven codes. Without that guarantee this would double-map and silently
+  // downgrade real gear to 'unknown'.
+  //
+  // R-06: a zero-component rack is a VALID rack state, not a missing-rack state. `dataState`
+  // reports which — 'unassigned' when the Master has no record of the cab at all, 'empty' when it
+  // has the cab but no devices (~42% of this site was that until `.424`), 'populated' otherwise.
+  _resolve: function (rackId) {
+    var id = String(rackId == null ? '' : rackId).trim();
+    // ⛔ `elevation` is ALWAYS an object, on every path. Callers consume `_resolve(id).elevation`
+    // directly, and handing one of them `undefined` would be a silent failure in a renderer —
+    // exactly the class Contract 14 forbids. An unknown cab resolves to an EMPTY rack, which is
+    // also the honest answer under R-06: a rack with no contents is a real rack state.
+    var out = { id: id, label: id, units: 0, devices: [], source: 'standalone', dataState: 'unassigned',
+                elevation: { id: id, totalU: 0, slots: [], unplaced: [] } };
+    if (!id) return out;
+    var m = null;
+    try { m = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.active() : null; } catch (_) { m = null; }
+    var rack = (m && m.racksByCab) ? m.racksByCab[id] : null;
+    if (!rack) return out;                    // the Master does not know this cab — say so
+
+    out.source = 'master';
+    var elev = null;
+    try { elev = master_rackToElevation(rack, id); } catch (_) { elev = null; }
+    if (!elev) return out;
+
+    out.units = elev.totalU || 0;
+    out.label = elev.label || id;
+    var slots = (elev && Array.isArray(elev.slots)) ? elev.slots : [];
+    out.devices = slots.map(function (s) {
+      return {
+        u: s.uStart, height: (s.uEnd - s.uStart + 1),
+        // I9 — no mode can render a RAW code, because none ever receives one.
+        type: (typeof Vocabulary === 'object' && Vocabulary) ? Vocabulary.typeOf(s.type) : s.type,
+        label: s.name, hostname: s.dns || '', status: s.status || '',
+        model: s.model || '', serial: s.serial || '', hgtUnknown: !!s.hgtUnknown,
+        uStart: s.uStart, uEnd: s.uEnd, name: s.name
+      };
+    });
+    out.dataState = out.devices.length ? 'populated' : 'empty';
+    // The shaped elevation is carried through UNMODIFIED for callers that already consume it, so
+    // adopting this contract is additive rather than a rewrite of six renderers in one ship.
+    out.elevation = elev;
+    return out;
   },
 
   active: function () { return RackEngine._live.length ? RackEngine._live[RackEngine._live.length - 1] : null; },
