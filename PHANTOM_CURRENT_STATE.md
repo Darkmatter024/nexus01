@@ -5,7 +5,7 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-09, after `v1.14.425` (Command Deck reaches the phone).**
+**Last updated: 2026-08-10, after `v1.14.428` — BATCH `.385`–`.428` RELEASED, CALL 0 cap reset.**
 
 ---
 
@@ -16,7 +16,7 @@ doc is stale — fix the doc, do not fork the fact.
 | **Version** | **`phantom-v1.14.428`** (`92cc388`) |
 | Commits | `.416` through `.428` shipped 2026-08-08/10 |
 | Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.428` |
-| Verified | **`.426` confirmed in the SERVED bytes 2026-08-09** — both stamps plus `MASTER_NORM_VERSION`, `master_migrateStoredNormalization` and `master_normalizeEndpoints`. `.425` was confirmed the same way. `.418`–`.423` were pushed but never re-polled |
+| Verified | **`.428` confirmed in the SERVED bytes 2026-08-10** — both stamps plus `--alert: #ff3b3b` declared. `.425`/`.426`/`.427` were each confirmed the same way. `.418`–`.423` were pushed but never re-polled |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 
