@@ -13,9 +13,9 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.427`** (`2fc1c3d`) |
-| Commits | `.416` through `.427` shipped 2026-08-08/10 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.427` |
+| **Version** | **`phantom-v1.14.428`** (`92cc388`) |
+| Commits | `.416` through `.428` shipped 2026-08-08/10 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.428` |
 | Verified | **`.426` confirmed in the SERVED bytes 2026-08-09** — both stamps plus `MASTER_NORM_VERSION`, `master_migrateStoredNormalization` and `master_normalizeEndpoints`. `.425` was confirmed the same way. `.418`–`.423` were pushed but never re-polled |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
@@ -77,6 +77,22 @@ components now"* · *"19 after reload"* · *"0a and 0c pass"*. All four behaviou
 item 0 are green: the rebuild happens with no re-import, it is stamped so it does not re-apply
 (19 and not 38), SITE-HOSTS racks are not padded, and the Master keeps its identity through the
 re-save. **The P0 that blocked the entire verify list is done.**
+
+✅✅ **THE BATCH IS RELEASED — `.385`–`.428` CLEARED 2026-08-10. CALL 0 CAP RESET TO 1 OF 6.**
+Final hardware pass, owner: *"offline pass good, no notch issues"* — closing items 1 and 2, the last
+legs that genuinely required real iOS. **The verify debt that stood at 30+ open ships is cleared.**
+🟡 **One stated exception: `.413` is NOT released.** Item 8's empty half has no live example —
+`.424` resolved every cabinet in this Master — so the CYAN-not-red check has nothing to run against.
+Left open rather than ticked: a check that cannot be performed is not a check that passed.
+
+⭐ **THE LESSON OF THE LAST STRETCH, worth more than the ships.** Two real defects were found by
+AUTOMATING work that had been delegated to the owner, and both had lived inside green suites for
+months: the **one-way aisle transfer** (`.427`) behind an assertion whose bound *permitted* the
+defect, and the **dead `--alert` token** (`.428`) behind a failure class no gate could see. Neither
+would have surfaced from another device pass. ⛔ **And the mistake that had been sending them to the
+device: "the harness SKIPS this" was being read as "this needs hardware."** They are not the same —
+`05-offline` skips on `phone-webkit` because that browser never installs a service worker, and the
+same suite runs 13/15 on `desktop-chromium`. **Check another project before spending a device pass.**
 
 ✅ **SECTION B — THE RENDERER TRIO IS CLOSED, 2026-08-10.** Verify items **3, 4 and 5** all pass on
 hardware: *"rack holds all 10, no slowdown"* · *"rack stays in build after close, all 10"* ·

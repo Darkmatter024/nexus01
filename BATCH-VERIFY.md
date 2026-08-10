@@ -87,6 +87,43 @@ checklists*; the release means no checklist will ever be written for them. **D2 
 survives: `.412` is not a missing block, it is a missing STAMP** — its desktop-shell work is live
 inside `.413` and still needs verifying. That is item **10** below.
 
+# ✅✅ BATCH RELEASED — `.385`–`.428` CLEARED 2026-08-10. CALL 0 CAP RESET TO 1 OF 6.
+
+**Owner, final hardware pass: *"offline pass good, no notch issues."*** That closes items **1** and
+**2**, the last two legs that genuinely required real iOS. **Every item on this list is now closed
+or automated, with ONE stated exception (item 8's empty half — see below).**
+
+**The debt that stood at 30+ open ships is cleared.** Released across this pass:
+`.385`–`.396` · `.399`–`.415` · `.416`–`.423` · `.424`–`.428`.
+
+| Item | Closes | How |
+|---|---|---|
+| 0 | `.424` `.426` | hardware — `s4:099` rebuilt to 19 with no re-import, 19 after reload |
+| 1 | `.407` `.408` `.412`-work | **hardware** — safe area, no notch issues |
+| 2 | `.399` `.400` | automated (13/15 on Chromium) **+ hardware** — installed-PWA airplane launch |
+| 3 | `.390`–`.396` `.401` | hardware — rack holds ×10, no slowdown |
+| 4 | `.403` `.404` `.405` | hardware, **after `.427` fixed the one-way transfer this item exposed** |
+| 5 | `.402` legacy half | hardware — legacy rack renders flat, no errors, no heat |
+| 6 · 7 | `.414` `.415` | hardware (6) + automated (7, spec 17) |
+| 9 | `.409` `.410` `.411` | automated — spec 19, **which found the dead `--alert` token → `.428`** |
+| 10 | `.412`-work | automated — `06-composition` sweeps 1180 and proves live viewport response |
+| 11 · 12 · 13 · 13a · 14 | `.416`–`.423` `.406` | automated — specs 18, 14, 10–13 |
+| 15 | `.425` | hardware — Command Deck on the phone |
+
+🟡 **THE ONE EXCEPTION, LEFT OPEN HONESTLY: `.413` is NOT released.** Item 8's populated half
+passes; its empty half has no live example — `.424` resolved every cabinet in this Master, so the
+CYAN-not-red check has nothing to run against. The logic is covered in `09-master-binding`; the
+on-device colour of a state this site no longer produces is not. **A check that cannot be performed
+is not a check that passed.**
+
+⭐ **TWO REAL DEFECTS CAME OUT OF AUTOMATING WORK THAT HAD BEEN DELEGATED TO THE OWNER**, and both
+had been sitting inside green suites for months: the **one-way aisle transfer** (`.427`), hidden
+behind an assertion whose bound *permitted* the defect (`attachments.length <= 1`, and the defect
+value was `0`), and the **dead `--alert` token** (`.428`), hidden behind a failure class nothing in
+the project could see. Neither would have been found by another device pass.
+
+---
+
 ## ⛔ THE OWNER IS NOT THE TEST HARNESS — RULING 2026-08-10, AND WHAT IT CHANGED HERE
 
 **Claude owns automated verification.** Physical iPhone time is reserved for behaviour that
@@ -213,11 +250,11 @@ components for the entire life of the product — since v1.6.26, proven by git. 
 racks are in that class. Everything below is meaningless if this is wrong.*
 
 ### A · The two the harness structurally cannot do
-- [ ] **1 · SAFE AREA, on the phone.** Header `API OFFLINE` pill sits **below the notch** and is
+- [x] **1 · SAFE AREA, on the phone.** Header `API OFFLINE` pill sits **below the notch** and is
       comfortably tappable; the bottom strip clears the **home indicator**. ⚠ `env(safe-area-inset-top)`
       is **0** in the harness — it was once 8px INTO the notch and no screenshot could show it.
       *Releases `.412`-work, `.407`, `.408`.*
-- [ ] **2 · OFFLINE — ONE HARDWARE LEG LEFT.** Airplane mode → relaunch from the home-screen icon → app boots
+- [x] **2 · OFFLINE — automated + the hardware leg CONFIRMED.** Airplane mode → relaunch from the home-screen icon → app boots
       to a usable shell and says it is offline. Save something, return to network, confirm it
       survived. ⚠ Nine harness tests skip here — the SW never installs in that browser.
       *Releases `.399`, `.400`, and the offline half of the batch.*
