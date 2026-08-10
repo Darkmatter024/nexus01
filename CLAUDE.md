@@ -95,6 +95,21 @@ behavioral-rule test. Changing one requires an owner ruling.
    *"Agents barred, equivalents run inline"* three times. Do not block a ship waiting for them.
 4. **Device verify is a HARD STOP.** Critical iPhone/WebGL behaviour is verified on physical
    hardware or it is not verified. After push, hand John the checklist and PARK.
+   ⛔ **THE OWNER IS NOT THE TEST HARNESS** (owner ruling 2026-08-10). **You own automated
+   verification.** Before requesting ANY physical-device test, exhaust what can be proven locally:
+   unit/integration tests, parser fixtures, Playwright flows, responsive screenshots, DOM/state
+   assertions, console and page-error checks, storage/cache tests, service-worker simulation,
+   reload/restart behaviour, regression tests, known-good fixture comparisons. **Never ask the
+   owner to manually verify what automation can prove.**
+   **Physical iPhone verification is reserved for behaviour that materially depends on real iOS
+   hardware/runtime:** installed Home-Screen PWA service-worker behaviour · real iOS safe-area ·
+   iOS WebGL/GPU lifecycle · camera/scanner hardware · OS-level Share/AirDrop · other *proven*
+   hardware-specific conditions. "The harness skips it" is NOT the same as "it needs hardware" —
+   check whether another project (e.g. Chromium, which installs service workers) can run it first.
+   **When hardware truly is required:** finish all automation first, then ask for **ONE concise
+   test** — exactly what to do, exactly what PASS and FAIL look like. **Do not ask him to read
+   consoles or engineering internals** unless genuinely unavoidable.
+   **He approves product behaviour; he does not perform routine QA.**
 5. **No new features during the current stabilization / UI-finish phase.** The queue is empty by
    design. New scope needs an owner ruling.
 

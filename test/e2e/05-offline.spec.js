@@ -662,6 +662,48 @@ test.describe('offline contract', () => {
     await page.context().setOffline(false);
   });
 
+  // v1.14.427 — THE SAME QUESTION, ASKED IN A WAY THIS HARNESS CAN ANSWER.
+  //
+  // The test above skips because Chromium does not carry navigator.onLine across a navigation, so
+  // a cold-booted document reads `true` while the network is genuinely cut. That is a limitation of
+  // the EMULATOR, and the note correctly refused to judge the app on it — but it left the app's
+  // actual contract untested and pushed it onto the owner as a device pass.
+  //
+  // The app's contract is narrow and testable: launch() (:18412) calls
+  // phantomUpdateNetPill(navigator.onLine), so the requirement is "when the platform says offline
+  // at first paint, the app says offline at first paint". Forcing that one platform signal BEFORE
+  // any app script runs tests exactly that, and tests the APP rather than the emulator. The network
+  // is cut as well, so the shell still has to come from the service worker — this does not become a
+  // pure-mock test.
+  //
+  // What it deliberately does NOT claim: that real iOS reports onLine correctly in an installed
+  // Home-Screen PWA. That is genuinely hardware (owner ruling 2026-08-10) and stays on the device.
+  test('the app REPORTS offline at first paint when the platform says so — signal forced, network still cut', async ({ phantom, page }) => {
+    test.setTimeout(90_000);
+    await phantom.boot();
+    const reg = await installSW(page);
+    test.skip(!reg.ok, `service worker could not be installed in this browser: ${reg.reason || 'unknown'}`);
+
+    // Before any app script of the NEXT navigation. This is the one value launch() reads.
+    await page.addInitScript(() => {
+      try { Object.defineProperty(navigator, 'onLine', { get: function () { return false; }, configurable: true }); } catch (_) {}
+    });
+
+    await page.context().setOffline(true);
+    await assertNetworkIsCut(page);
+    await swServesOfflineOrSkip(page);
+    await bootOfflineOrSkip(phantom, page);
+    await assertNetworkIsCut(page);          // the shell came from the SW, not the network
+
+    const st = await offlineState(page);
+    expect(st.onLine, 'the forced platform signal did not survive into the booted document').toBe(false);
+    expect(st.bodyNet, 'the platform said offline at first paint and the app did not tag body[data-net="offline"]').toBe('offline');
+    expect(st.bannerDisplay, 'the platform said offline at first paint and #offline-banner never came up').toBe('block');
+    await expect(page.locator('#offline-banner')).toBeVisible();
+
+    await page.context().setOffline(false);
+  });
+
   // ── 5. WORK WRITTEN OFFLINE SURVIVES ───────────────────────────────────────
   test('work saved while offline survives an offline reload and the return to network', async ({ phantom, page }) => {
     test.setTimeout(120_000);
