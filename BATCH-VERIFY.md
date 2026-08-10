@@ -349,8 +349,26 @@ because they are one engine (`master_normalizeEndpoints`).
         `"migrated"` after a fresh import, the parser is not stamping `normVersion` and every boot
         would rebuild forever. *(No console? The cheap equivalent: `s4:099` still reads 19 and not
         38 after that reload — the same idempotence tell as leg 0b.)*
-- [ ] **8 · Forge: a populated rack resolves its devices; an unprovisioned S4 cab reads
+- [ ] **8 · Forge: a populated rack resolves its devices; a genuinely empty cab reads
       `NO HOST DATA IN MASTER` in CYAN, not red.** *Releases `.413`.*
+      ⛔ **THE EXAMPLE IN THIS ITEM WENT STALE AND WAS CORRECTED 2026-08-10.** It used to say
+      *"an unprovisioned **S4** cab"*. **S4 cabs are no longer the empty case.** `.424` made
+      CUTSHEET endpoints Master data, and s4 is exactly the row that lives only as cable endpoints —
+      `s4:099` now resolves 19 components. Going looking for an empty s4 cab will either find one
+      full of devices, which reads as a defect and is not, or tick this item against the wrong
+      surface. **The `.413` behaviour is unchanged; only the example was wrong.**
+      **What to check instead:**
+      · **A POPULATED rack resolves its devices** — any s1/s2/s3 cab, or `s4:099` now.
+      · **A GENUINELY EMPTY cab still says so, in CYAN.** Find one by looking for a cab reading
+        **0 components** — after `.424` that means no SITE-HOSTS row AND no cable endpoint carrying
+        a DNS and model, which is a real and honest state of the floor.
+      · ⭐ **CYAN, NOT RED, IS THE WHOLE POINT.** An empty cabinet is a legitimate state — cabled
+        but not yet provisioned — not a fault, and `.413` exists because painting it red made
+        honest data look like an error. This is the same class as the zero-state toast that opened
+        with a RED ERROR BAR. **If it reads red, that is the finding.**
+      ⚠ **If you cannot find a 0-component cab at all**, say so rather than ticking it — that is
+      itself information: it would mean `.424` resolved every cabinet in this Master, and the empty
+      state has no live example on this site.
 
 ### D · Surfaces that need eyes, not assertions
 - [ ] **9 · Design-system screens** — the five phone screens that took the `.410` lock still read
