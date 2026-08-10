@@ -454,7 +454,7 @@ bug it was written to prevent. ⚠ The per-row counts in `RACKENGINE-SPEC §7.1a
 host-less, 196 cabinets that render as nothing") are **STALE** — they describe the pre-`.424` world.
 
 ### D · Surfaces that need eyes, not assertions
-- [ ] **9 · Design-system screens** — the five phone screens that took the `.410` lock still read
+- [x] **9 · Design-system screens** — the five phone screens that took the `.410` lock still read
       as one system; the `.411` loadout picker opens and picks. *Releases `.409`, `.410`, `.411`.*
 - [x] **15 · THE COMMAND DECK ON THE PHONE (`.425`, owner override).** Open **Command**. One column,
       top to bottom: **hero card with rack art** (NO ACTIVE DEPLOYMENT / your deployment, the
@@ -484,7 +484,7 @@ scroll) was not called out separately** — it is the only leg of the four that 
 than a look, so if a rubber-band shows up later it is unproven, not disproven.
 
 ### E · iPad (the ship nobody knows shipped — see D2)
-- [ ] **10 · iPad LANDSCAPE gets the desktop shell automatically** (left rail + right column), and
+- [x] **10 · iPad LANDSCAPE gets the desktop shell automatically** (left rail + right column), and
       rotating to portrait stays phone until reload — **expected, not a bug.** *Releases `.412`-work.*
       ⚠ The laptop leg of this went with the `.382`–`.384` release; the iPad leg did not, because
       `.412`-work shipped under `.413` and is outside the released batch.
