@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.433';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.434';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -19837,6 +19837,19 @@ function forge3d_render(mount) {
   // single GL context: dispose any prior Forge scene first
   try { if (_forge3dActive && _forge3dActive.dispose) _forge3dActive.dispose(); }
   catch (e) { phantom_logErr('forge3d_render:priorDispose', e); }
+
+  // ── I6, THE RECLAIM BARRIER (v1.14.434) — the OTHER half, and the one that matters most ────
+  // This is the receiving end of the Build → Aisle handoff: the rack's context is live when the
+  // aisle opens, and this renderer used to take its own context first and only release the rack's
+  // later, inside register(). Same ordering fault as rackElevation_render3D, on the exact path the
+  // fault was described against.
+  // Deferral re-enters with the same mount; on re-entry there is nothing left to release.
+  try {
+    if (typeof RackEngine === 'object' && RackEngine) {
+      if (RackEngine.releaseOthers(mount) > 0) RackEngine._armBarrier();
+      if (!RackEngine.acquireOrDefer(function () { forge3d_render(mount); })) return;
+    }
+  } catch (e) { try { phantom_logErr('forge3d_render:barrier', e); } catch (_) {} }
 
   mount.innerHTML = '';
   var _cleanup = [];
@@ -37309,12 +37322,89 @@ var RackEngine = {
   },
 
   // I1 — at most one live context. Enforced where the renderer is created, not one level up.
+  // v1.14.434 — RETURNS THE NUMBER RELEASED. The caller needs to know whether a release actually
+  // happened, because the reclaim barrier below must arm ONLY then: arming it unconditionally
+  // would put two frames in front of every first render on a cold device, where nothing was
+  // released and there is nothing to wait for.
   releaseOthers: function (keepMount) {
     var others = RackEngine._live.filter(function (a) { return a.mount !== keepMount; });
     for (var i = 0; i < others.length; i++) {
-      try { others[i].dispose(); } catch (_) {}
+      try { others[i].dispose(); } catch (_) {}       // dispose() ends in forceContextLoss()
       RackEngine.unregister(others[i].mount);
     }
+    return others.length;
+  },
+
+  // ══ §6 — THE RECLAIM BARRIER (I6). M2-b stage 2. ══════════════════════════════════════════
+  //
+  // "No context is acquired in the same task as a release." NOT a retry and NOT a timeout — an
+  // ordering guarantee.
+  //
+  // ⛔ WHAT WAS ACTUALLY WRONG, read from the ordering rather than measured. Both renderers
+  // ACQUIRE before they RELEASE: rackElevation_render3D constructs its WebGLRenderer ~1200 lines
+  // before it calls register(), and register() is what runs releaseOthers(). So on a cross-host
+  // handoff — Build → Aisle is exactly that shape — the new context was taken while the other
+  // host's was still live. I1 held AFTER register ran, never at the instant of acquisition.
+  // ⚠ The ordering is certain; a field failure caused by it is NOT proven, and this must not be
+  // asserted as the explanation for the historical blank-rack arcs.
+  //
+  // WHY DOUBLE rAF. On iOS WebKit the GPU-side reclaim from forceContextLoss() is asynchronous,
+  // and a single rAF can still land in the same compositor frame. Two frames is ~33ms —
+  // imperceptible to a human, and a guarantee rather than a hope.
+  _barrier: false,
+  _pending: null,
+  _barrierStats: { armed: 0, deferred: 0, collapsed: 0 },
+
+  /** Called by whoever released a context, immediately after the release. */
+  _armBarrier: function () {
+    RackEngine._barrier = true;
+    RackEngine._barrierStats.armed++;
+    var run = function () {
+      RackEngine._barrier = false;
+      var p = RackEngine._pending;
+      RackEngine._pending = null;
+      if (p) { try { p(); } catch (e) { try { phantom_logErr('RackEngine:barrier', e); } catch (_) {} } }
+    };
+    // No rAF (a hidden tab never fires one) → fall back to a timer rather than stranding the
+    // pending acquisition forever. A barrier that can deadlock is worse than no barrier.
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(function () { requestAnimationFrame(run); });
+    } else {
+      setTimeout(run, 33);
+    }
+  },
+
+  /**
+   * Gate an acquisition. Returns TRUE if the caller may create its context now, FALSE if the
+   * acquisition was deferred behind the barrier and will be re-run for it.
+   *
+   * ⛔ ONLY ONE PENDING ACQUISITION IS HELD. Rapid navigation collapses to the LAST request rather
+   * than queueing N allocations — queueing them is how you turn one refusal into a pile-up.
+   */
+  acquireOrDefer: function (fn) {
+    if (!RackEngine._barrier) return true;
+    if (RackEngine._pending) RackEngine._barrierStats.collapsed++;
+    RackEngine._pending = fn;
+    RackEngine._barrierStats.deferred++;
+    return false;
+  },
+
+  /**
+   * The barrier half of the census. §6 says a refusal is recorded rather than retried.
+   * ⛔ Deliberately NOT folded into report(): that returns the attachment ARRAY which several
+   * specs and callers already consume, and widening its shape to carry unrelated state would
+   * break them for no gain. One reader, one shape.
+   */
+  barrierReport: function () {
+    return {
+      armed: RackEngine._barrier,
+      pending: !!RackEngine._pending,
+      counts: {
+        armed: RackEngine._barrierStats.armed,
+        deferred: RackEngine._barrierStats.deferred,
+        collapsed: RackEngine._barrierStats.collapsed
+      }
+    };
   },
 
   unregister: function (mount) {
@@ -37630,6 +37720,25 @@ function rackElevation_render3D(rack, mountEl) {
   if (!mountEl || !THREE) return;
   // one live context: dispose any prior (this mount OR a stale one from a past open)
   if (mountEl._rm3dDispose) { try { mountEl._rm3dDispose(); } catch (e) {} }
+
+  // ── I6, THE RECLAIM BARRIER (v1.14.434) ────────────────────────────────────────────────────
+  // RELEASE MOVED UP HERE, ~1200 lines ahead of where it used to happen. It ran inside
+  // register(), which is called at the BOTTOM of this function — i.e. after the WebGLRenderer
+  // below had already taken a context. Releasing first, and putting two frames between the two
+  // operations, is the whole invariant: no context is acquired in the same task as a release.
+  //
+  // The barrier arms ONLY when something was actually released, so a first render on a cold
+  // device is not delayed by two frames waiting for a reclaim that never happened.
+  //
+  // Deferral re-enters this same function with the same arguments. On re-entry releaseOthers
+  // finds nothing left to release, the barrier is down, and it proceeds — so the deferred path
+  // is the normal path, not a second implementation of it.
+  try {
+    if (typeof RackEngine === 'object' && RackEngine) {
+      if (RackEngine.releaseOthers(mountEl) > 0) RackEngine._armBarrier();
+      if (!RackEngine.acquireOrDefer(function () { rackElevation_render3D(rack, mountEl); })) return;
+    }
+  } catch (e) { try { phantom_logErr('rackElevation_render3D:barrier', e); } catch (_) {} }
   // v1.14.401 (M2-a): the single-context guard now lives in RackEngine, which releases EVERY
   // other live attachment regardless of which module owns it. The two hand-written guards this
   // replaces were asymmetric — the rack disposed the aisle, the aisle did not dispose the rack
