@@ -188,11 +188,12 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — 40 ships, OPEN · ⛔ P0 ITEM 0 BLOCKS THE REST
+## 3 · Verify debt — ✅ CLEARED 2026-08-10 (one exception)
 
-**`.385`–`.424`** (minus the never-stamped `.412`) = **40 ships**. **Run the consolidated section at
-the top of `BATCH-VERIFY.md` — 19 surface-grouped checks — not the per-ship blocks.** The EIGHT
-ships of 2026-08-08/09 added only FOUR checks, because six of them render nothing at all.
+✅ **`.385`–`.428` RELEASED 2026-08-10.** The consolidated pass in `BATCH-VERIFY.md` is complete:
+every item closed or automated. **CALL 0 cap reset to 1 of 6.** 🟡 One exception, open on purpose:
+**`.413`** — item 8's empty half has no live example, because `.424` resolved every cabinet in this
+Master. A check that cannot be performed is not a check that passed.
 
 ✅ **`.376`–`.384` RELEASED** by owner ruling 2026-08-08 (`.377`–`.384` superseded by the
 `.385`→`.396` arc; `.376` closed by ruling because no checklist for it ever existed).
