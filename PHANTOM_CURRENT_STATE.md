@@ -204,6 +204,37 @@ waits until after a physical device pass.
 Authorised directly by the owner before the spec arrived, and it is inert scaffolding rather than
 UI — but the spec says each step gates the next, so it is recorded rather than argued away.
 
+✅ **M2-b STAGE 1 LANDED (`.433`) — the data contract (§7, I8 + I9).** `RackEngine._resolve(rackId)`
+returns `{id, label, units, devices, source, dataState}`, wraps `master_rackToElevation` rather than
+re-implementing it, normalises every `type` through `Vocabulary`, and makes R-06 representable —
+`empty` (Master holds the cab, no devices) and `unassigned` (Master never heard of it) are now
+different answers. Three call sites routed, including the `master_renderHit` reshape. Spec 22.
+
+⛔ **STAGE 2 IS THE RECLAIM BARRIER (I6), AND IT IS OWED WITH A FINDING ALREADY IN HAND.**
+**I1 does not hold at the INSTANT of acquisition.** Read from the ordering inside
+`rackElevation_render3D`, not measured:
+
+    :37719   new THREE.WebGLRenderer(...)          ← the new context is ACQUIRED
+      …      (~1200 lines later, same function, SAME TASK)
+    :38926   RackEngine.register(mountEl, …)  →  releaseOthers()   ← the old one is RELEASED
+
+So on a cross-host handoff — Build → Aisle is exactly that shape — the new context is taken while
+the other host's is still live. I1 holds *after* `register` runs, never at acquisition. That is
+precisely what §6 exists to close: *"no context is acquired in the same task as a release."*
+⚠ **Claim discipline: the ordering is certain; a field failure caused by it is NOT proven.** Desktop
+tolerates two live contexts. Do not assert this explains the historical blank-rack arcs.
+
+**Shape of the fix:** release → **double `rAF`** → acquire. §6 is explicit that a single `rAF` can
+still land in the same compositor frame on iOS, and that two frames (~33ms) is a guarantee rather
+than a hope. ⛔ **This inverts the order of the most fragile function in the file** and needs its own
+ship plus a device pass on the ×10 Build and aisle round trips (verify items 3 and 4).
+
+⛔ **WHAT `attach` CANNOT HONESTLY SHIP YET, so nobody re-scopes it by accident.** §5's `demote`
+keeps an attachment's data and re-renders it **flat**, and no attachment has a flat render path
+today. So `update`, `setView` and `promote`/`demote` cannot be backed — shipping them as stubs
+would be dead controls (Contract 14). The backable subset is `attach` + `detach` / `suspend` /
+`resume` / `state` / `setMode`, plus `RackEngine.interactive`.
+
 **Carried from the blueprint (architecture, still law):** M2-b is owed — `RackEngine.attach`, the
 reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a ✅ (`.401`).
 

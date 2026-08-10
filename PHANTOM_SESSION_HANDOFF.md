@@ -5,56 +5,72 @@ Durable facts belong in `PHANTOM_CURRENT_STATE.md`; durable lessons belong in me
 
 ---
 
-## Last session — 2026-08-08
+## Last session — 2026-08-09/10
 
-**Ended:** clean. Nothing in flight, no uncommitted app code.
+**Ended:** clean. Nothing in flight, no uncommitted code, `main` in sync with origin.
+**Live: `v1.14.433`** — confirmed in the served bytes.
 
-### What shipped
+### ⭐ START HERE — the one task that was explicitly deferred
 
-**`v1.14.415` — SINGLE-MASTER LAW** (`08430a0` contract + `aad8181` stamps). Live and verified in
-the served bytes. Owner ruling: exactly one authoritative Master. Six reachable split-brain paths
-closed; the mechanism is an inversion — `PHANTOM_MASTER.replace()` persists first and goes live
-second, so a candidate that cannot be persisted never becomes active.
+**M2-b STAGE 2: THE RECLAIM BARRIER (I6).** Owner: *"do the barrier next session."*
+The finding is already in hand and is written up in `PHANTOM_CURRENT_STATE.md` §2 — **read it there
+before opening any code.** In one line: `rackElevation_render3D` ACQUIRES the new WebGL context
+(`:37719`) roughly 1200 lines before `register()` RELEASES the old one (`:38926`), in the same
+function and the same task, so I1 does not hold at the instant of acquisition. The fix is
+release → double `rAF` → acquire.
 
-The ship exists because **`.414`'s own overwrite guard created the forbidden state**: `save()`
-refused, and the caller assigned the candidate live anyway. It was described in `.414`'s notes as
-"costs nothing in-session". It cost the invariant.
+⛔ It inverts the order of the most fragile function in the file. Its own ship, its own device pass
+(verify items 3 and 4, the ×10 Build and aisle round trips). ⛔ And `attach`'s `update` / `setView` /
+`promote` / `demote` still cannot be honestly implemented — see the state file for why.
 
-### What was cleaned up
+### What shipped (10 ships, `.425`–`.433`)
 
-- **Verify debt reconciled.** The running tally was wrong — 39 ships, not 29, found by enumerating
-  every stamp against git history. `.376`–`.384` **RELEASED** by owner ruling. **30 remain
-  (`.385`–`.415`), consolidated into 11 surface-grouped checks** at the top of `BATCH-VERIFY.md`.
-- **`.412` was never stamped** — its desktop-shell work shipped inside `.413`. A live ship is filed
-  under another ship's title. Still needs verifying; it is pass item 10.
-- **Instruction-surface compaction** (this session): archive created, hooks installed, CLAUDE.md
-  rewritten, memory consolidated. See `PHANTOM_CURRENT_STATE.md` §10.
+`.425` Command Deck reaches the phone · `.426` stored Masters migrate themselves (derived caches are
+not permanent truth) · `.427` the aisle returns the context to its lender · `.428` `--alert`
+declared, three dead declarations revived · `.429`/`.430` one colour vocabulary, 2/11 → 8/11, colour
+in the accent not the fill · `.431`/`.432` fold-and-revert of a duplicate first-run gate ·
+`.433` M2-b stage 1, the data contract.
 
-### Owner rulings given this session
+### Verify debt
 
-1. Fold the parser save into commit 1; one stamp `.415`.
-2. `.377`–`.384` superseded by the `.385`→`.396` arc — **released**.
-3. `.376` — **released** (no checklist for it ever existed; a ruling was the only instrument).
-4. **SHIFT stays a pillar** — now Contract A8. The nav does not yet reflect it.
-5. Use hooks instead of the blocking-agent gate; apply the compaction.
+✅ **`.385`–`.428` RELEASED**, CALL 0 cap reset to 1 of 6. One stated exception: **`.413` is NOT
+released** — item 8's empty half has no live example, because `.424` resolved every cabinet in this
+Master. A check that cannot be performed is not a check that passed.
 
-### Open, needing an owner ruling
+### Seven new specs
 
-- ✅ **SHIFT — CLOSED as an open question, 2026-08-08.** It was already scoped: **R-02** (blueprint
-  §3.4) specifies Command · Build · Scan · Tools · Shift with no EXIT, delivered at **M4**, and
-  **R-02a** (new, this session) rules that hold-to-freeze **moves into Shift** rather than dying
-  with the slot. Gated behind M3 — 3 of Shift's 9 questions have zero data sources today.
-  ⛔ Do not restore the nav slot early; it would be a dead door. Detail in `PHANTOM_CURRENT_STATE.md` D-1.
-- **M2-b step 1b** — blocked on a channel-colour ruling (`TYPE_COLOR` and the flat CSS disagree on
-  pdu / storage / server). Step 1 is built and HELD unpushed on branch `m2b-step1-hold`.
-- `.391`'s two remaining disclosures: the rack-preview control rail wraps 4-then-1 and carries
-  REAR + EXPLODE, which the approved reference does not show; and the Build metrics layout has
-  never been seen against a populated rack.
+16 normalization-migration · 17 re-import idempotence · 18 tap window + crash banner ·
+19 design tokens + picker · 20 vocabulary · 21 first-run gate · 22 data contract.
 
-### Next action
+### ⚠ Three mistakes worth not repeating — all the same shape
 
-**Nothing autonomous.** The device pass is owed and is John's — 11 checks, `BATCH-VERIFY.md`,
-top section. No feature work is authorised until it clears (Contract, ship discipline 5).
+Every one was **acting on the absence of evidence rather than on evidence**, and each correction was
+smaller than the mistake, which is the tell that each was avoidable by reading first.
 
-If asked to continue: the highest-value non-blocked work is **verifying the `.412` desktop-shell
-ship** (item 10) since it is live and nobody knows it shipped.
+1. **Six verify items were sent to the owner that a harness could do.** *"The harness SKIPS this"*
+   was read as *"this needs hardware."* `05-offline` skips on `phone-webkit` because that browser
+   never installs a service worker; the same suite runs 13/15 on `desktop-chromium`.
+   ⭐ Owner ruling now in `CLAUDE.md`: **Claude owns automated verification.**
+2. **`.429` put colour in `background`** without reading the `.229` rule four lines away that says
+   these blocks are a dark tray with a colour ACCENT. It painted solid slabs. Fixed in `.430`.
+3. **`.431` built a duplicate first-run gate** because a grep for the SPEC'S NAME (`siteSetup`)
+   found nothing. The feature is `firstRun_*` and `launch()` names it in one line.
+   ⭐ **Before building any flow, read the function that runs at the moment that flow would start.**
+
+### Open, in the order recommended
+
+1. **The reclaim barrier** (above) — deferred to this session by the owner.
+2. **M2-b remainder** — `attach` (backable subset only), modes, then the §8 deletions LAST.
+3. **Workstream 3 — CONTEXT-CHIP.**
+4. **Owner's own:** the PHASE-ENGINE step text. Placeholder by design; inventing thirty
+   authoritative-looking commissioning steps would be fabricated telemetry wearing a checklist.
+5. **One-commit question, still unanswered:** `SHIP-TECH-FLOW-V2-FROZEN.md` — the document
+   `CLAUDE.md` names as the programme of record — lives ONLY in `Downloads`. Outside version
+   control, undiffable, and unreachable from a session that cannot see that folder.
+
+### Machine note
+
+The dev box could not produce a trustworthy full-suite run in one pass: 18 failures across a 1.0h
+run that ALL passed on isolated re-runs (`08` 17/17, `02` 12/12), and the failing set moves between
+runs — WebGL context exhaustion, not code. ⭐ **Re-run a Forge/WebGL spec ALONE before treating a red
+full run as a regression.** A reboot is the cheap first try.
