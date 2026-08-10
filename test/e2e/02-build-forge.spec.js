@@ -773,15 +773,15 @@ test.describe('Build workspace + Forge aisle', () => {
 
       await page.locator('#forge3d-sheet .rd-sheet-close').click();
       await expect(page.locator('#forge3d-sheet')).toBeHidden();
-      // NOTE: this does NOT assert the context returns to Build. Measured, it does not — see the
-      // pinned defect below. What it does assert is that closing never leaves MORE than one
-      // attachment alive, which is the leak question this test exists for.
+      // THE ASSERTION ITEM 4 IS ACTUALLY ABOUT (restored at v1.14.427): the context must come
+      // HOME. Until .427 this read `<= 1`, which 0 satisfies — and 0 was exactly the defect,
+      // measured and owner-confirmed. A tolerant bound is not coverage.
       await expect
         .poll(async () => {
           const c = await census(page);
-          return (c.attachments || []).length;
-        }, { timeout: 30_000, message: `round ${i}: more than one attachment survived the close` })
-        .toBeLessThanOrEqual(1);
+          return (c.attachments || []).map((a) => `${a.kind}:${a.host}`).join(',');
+        }, { timeout: 30_000, message: `round ${i}: the context never returned to Build after close` })
+        .toBe('rack:bw-mount');
       const closed = await surfaces();
 
       trace.push({ round: i, openCanvases: open.canvases, openLive: open.live, closedCanvases: closed.canvases, closedLive: closed.live });
@@ -802,33 +802,33 @@ test.describe('Build workspace + Forge aisle', () => {
     console.log('[02] item-4 round-trip trace: ' + JSON.stringify(trace));
   });
 
-  // ── PINNED DEFECT (v1.14.426) — found while automating verify item 4 ────────────────────────
+  // ── THE HAND-BACK — a PINNED DEFECT at v1.14.426, FIXED at v1.14.427 ────────────────────────
   // Verify item 4 states the contract: "Open Aisle draws and holds; CLOSE RETURNS TO BUILD WITH
-  // THE RACK STILL THERE." Measured on this runner, the second half does not happen.
+  // THE RACK STILL THERE." Until .427 the second half did not happen.
   //
-  // WHAT WAS MEASURED, at 2.5s and again at 11s after close — well past Build's ~5s re-arm:
+  // WHAT WAS MEASURED AT .426, at 2.5s and again at 11s after close — past Build's ~5s re-arm:
   //   #bw-mount   visible, 326x320, a real box
   //   canvases in #bw-mount   0
   //   RackEngine.report()     []            <- no attachment anywhere
+  // Owner confirmed the same on hardware: "rack is gone from build after close."
   //
   // WHY. forge3d_open registers the aisle, and registration releases every other attachment, so
-  // Build's context is gone by design. forge3d_close (:19639) then disposes the aisle and calls
+  // Build's context is gone by design. forge3d_close then disposed the aisle and called
   // reh3d_activate3D() — the RACK-DETAIL surface. Its own comment says that is a no-op when no
   // #reh3dCanvasHost exists, which is exactly the case when the aisle was opened FROM BUILD. And
-  // bw_mount3D has one caller, bw_render (:21199), so only a Build RE-RENDER can rebuild it.
-  // Nothing on the close path re-renders Build. The IntersectionObserver cannot help either: it
-  // pauses and resumes an EXISTING attachment and cannot recreate a released one.
+  // bw_mount3D has one caller, bw_render, so only a Build RE-RENDER could rebuild it. Nothing on
+  // the close path re-rendered Build. The IntersectionObserver cannot help either: it pauses and
+  // resumes an EXISTING attachment and cannot recreate a released one.
   //
-  // WHY IT WAS NEVER CAUGHT: the round-trip test above it asserts `attachments.length <= 1` after
-  // close, which 0 satisfies. The spec header claims "the aisle round trip leaves Build intact"
-  // and no assertion ever checked it.
+  // WHY IT WAS NEVER CAUGHT: the round-trip test above asserted `attachments.length <= 1` after
+  // close, which 0 satisfies. The spec header claimed "the aisle round trip leaves Build intact"
+  // and no assertion ever checked it. A tolerant bound reads as coverage.
   //
-  // NOT FIXED HERE ON PURPOSE. This is the graphics lifecycle — the exact subsystem the .390→.405
-  // arc cost eight ships to stabilise — and the owner's device pass for item 4 is the real gate.
-  // Pinned instead of fixed so the baseline records the truth. When a fix lands this flips to
-  // "Expected to fail, but passed", which is the signal to remove the pin.
-  test('PINNED: closing the aisle should return the rack to Build, and does not', async ({ phantom, page }) => {
-    test.fail();   // scoped to THIS test — at describe level it marks the whole group
+  // THE FIX (.427): forge3d_open captures the attachment it is about to displace, and
+  // forge3d_close hands the context back to THAT surface rather than to one hardcoded address.
+  // This test carried test.fail() at .426 and flipped to "Expected to fail, but passed" the moment
+  // the fix landed — that flip is why the pin was removed rather than edited to match.
+  test('closing the aisle RETURNS the rack to Build — the context goes back to its lender', async ({ phantom, page }) => {
     test.setTimeout(180_000);
     await phantom.boot({ seed: buildSeed() });
     const gl = await webglProbe(page);

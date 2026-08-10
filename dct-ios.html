@@ -12865,7 +12865,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.426';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.427';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -19617,9 +19617,21 @@ function aisle_watchSheet() {
   } catch (_) {}
 }
 
+// v1.14.427 — WHO THE AISLE TOOK THE CONTEXT FROM, so close can give it back to THAT surface.
+// Declared above both users on purpose: forge3d_open writes it, forge3d_close reads and clears it.
+var _forge3d_prevOwner = null;
+
 function forge3d_open() {
   var sheet = document.getElementById('forge3d-sheet');
   if (!sheet) return;
+  // CAPTURE FIRST — before the reh3d dispose below and before forge3d_ensure3D registers the
+  // aisle, because registration calls releaseOthers() and the previous owner is gone after that.
+  // This is the whole fix: the aisle is a borrower, and a borrower has to remember the lender.
+  try {
+    var _prev = RackEngine.active();
+    _forge3d_prevOwner = (_prev && _prev.kind !== 'aisle' && typeof _prev.reacquire === 'function')
+      ? { mount: _prev.mount, reacquire: _prev.reacquire } : null;
+  } catch (_) { _forge3d_prevOwner = null; }
   try { aisle_watchSheet(); aisle_trace('OPEN_AISLE_CLICK', aisle_state()); } catch (_) {}
   sheet.classList.add('open');
   try { aisle_trace('AISLE_OPEN_REQUESTED', aisle_state()); } catch (_) {}
@@ -19649,10 +19661,33 @@ function forge3d_close() {
   if (mount && mount._forge3dDispose) {
     try { mount._forge3dDispose(); } catch (e) { phantom_logErr('forge3d_close:dispose', e); }
   }
-  // v1.14.353 — return to the rack-detail 3D view, the only defined state now (forge3d_open
-  // disposed the live reh3d context; reh3d_activate3D re-mounts it, or shows the flat fallback
-  // if WebGL is unavailable). No-op when no #reh3dCanvasHost exists (opened from elsewhere).
-  if (typeof reh3d_activate3D === 'function') { try { reh3d_activate3D(); } catch (e) { phantom_logErr('forge3d_close:reactivate3D', e); } }
+  // v1.14.427 — GIVE THE CONTEXT BACK TO WHOEVER LENT IT.
+  //
+  // What this replaces: an unconditional reh3d_activate3D(), which restores the RACK-DETAIL
+  // surface and, by its own admission, is a "no-op when no #reh3dCanvasHost exists (opened from
+  // elsewhere)". Opened from BUILD that no-op was the entire close path — bw_mount3D has one
+  // caller (bw_render), nothing here re-renders Build, and the IntersectionObserver can only
+  // resume an EXISTING attachment, never rebuild a released one. Measured on device and in the
+  // harness: #bw-mount left visible at a real 326x320 with zero canvases and zero attachments,
+  // still empty 11s later. Owner confirmed on hardware: "rack is gone from build after close."
+  // Build is the operational centre, so that is a silent blank on the surface the shift runs from.
+  //
+  // The lender is captured in forge3d_open BEFORE registration releases it, so this hands the
+  // context back to whichever surface actually had it instead of to one hardcoded address.
+  // Ordering is deliberate: the aisle is disposed ABOVE, so nothing is live when the previous
+  // owner re-registers — this cannot reproduce the `.405` class where a re-arm stole a LIVE
+  // context out from under the aisle.
+  var _owner = _forge3d_prevOwner;
+  _forge3d_prevOwner = null;                      // cleared before the call, so a throw cannot strand it
+  if (_owner && _owner.mount && document.body.contains(_owner.mount)) {
+    // Still connected: the surface is intact and simply lost its renderer. If it is NOT connected
+    // its surface re-rendered while the aisle was open and has already re-mounted itself.
+    try { _owner.reacquire(); } catch (e) { phantom_logErr('forge3d_close:reacquire', e); }
+  } else if (typeof reh3d_activate3D === 'function') {
+    // No captured lender — the aisle was opened from a path that held no attachment. Preserve the
+    // pre-.427 behaviour exactly rather than changing what those paths do.
+    try { reh3d_activate3D(); } catch (e) { phantom_logErr('forge3d_close:reactivate3D', e); }
+  }
 }
 
 function forge3d_fail(mount) {
@@ -37099,6 +37134,11 @@ var RackEngine = {
       dispose: (api && api.dispose) || function () {},
       pause:   (api && api.pause)   || function () {},
       resume:  (api && api.resume)  || function () {},
+      // v1.14.427 — HOW TO GIVE THIS CONTEXT BACK. Optional, and null for anything that has no
+      // meaningful "rebuild me" (the aisle is opened by a door and is never auto-restored).
+      // pause/resume operate on a LIVE attachment; reacquire is the only thing that can rebuild
+      // one that was RELEASED, which is the gap that left Build blank after an aisle round trip.
+      reacquire: (api && api.reacquire) || null,
       io: null, paused: false
     };
     RackEngine._live.push(att);
@@ -38653,7 +38693,16 @@ function rackElevation_render3D(rack, mountEl) {
   // on screen (I4). _reh3dActive is retained above only as a read-only compatibility shim.
   // v1.14.402: I1 applies in BOTH houses; the I4 observer is redesign-only (owner ruling). This
   // renderer draws under ?legacy=1 too, and there it must behave exactly as it did on .400.
-  _rmAtt = RackEngine.register(mountEl, { dispose: teardown, pause: _rmPause, resume: _rmResume }, 'rack');
+  // v1.14.427 — reacquire is "call the thing that built me, with the arguments that built me".
+  // This one renderer is behind BOTH Build's #bw-mount and the rack-detail host, so a single
+  // generic reacquire covers every rack surface and no caller needs a special case — which is the
+  // point: forge3d_close used to hand the context back to ONE hardcoded surface, and every other
+  // surface silently got nothing. Safe by construction: an attachment only exists here because
+  // this render SUCCEEDED, so re-running it cannot land on the no-WebGL fallback path.
+  _rmAtt = RackEngine.register(mountEl, {
+    dispose: teardown, pause: _rmPause, resume: _rmResume,
+    reacquire: function () { rackElevation_render3D(rack, mountEl); }
+  }, 'rack');
 }
 
 function rackElevation_buildHtml(rack) {
