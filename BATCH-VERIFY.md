@@ -87,6 +87,42 @@ checklists*; the release means no checklist will ever be written for them. **D2 
 survives: `.412` is not a missing block, it is a missing STAMP** — its desktop-shell work is live
 inside `.413` and still needs verifying. That is item **10** below.
 
+## ⛔ THE OWNER IS NOT THE TEST HARNESS — RULING 2026-08-10, AND WHAT IT CHANGED HERE
+
+**Claude owns automated verification.** Physical iPhone time is reserved for behaviour that
+materially depends on real iOS hardware/runtime. Six items on this list were being asked of the
+owner and should never have been.
+
+**⚠ THE MISTAKE THAT CAUSED IT, named so it is not repeated: "the harness SKIPS this" was being
+read as "this needs hardware."** They are not the same. `05-offline` skips on `phone-webkit`
+because that browser never installs a service worker — a BROWSER limitation. The same suite on
+`desktop-chromium` runs **13 of 15**. Before sending anything to the device, check whether another
+project can run it.
+
+| Item | Was | Now |
+|---|---|---|
+| **2** offline | full manual pass | **automated except the installed-PWA launch** — `05-offline` on `desktop-chromium`: SW registers + precaches, shell served with the network cut, offline reload boots usable, no uncaught exception, **work saved offline survives a reload and the return to network**, offline PDF import from precached bytes. Plus a NEW test for the first-paint offline report (see below). |
+| **7** re-import | manual | **`17-reimport-idempotence`, 3/3** — parse idempotent over the same bytes · hand-entered data survives a Master replace (Law 11) · a fresh import stamps `normVersion` so the boot migration finds nothing to do |
+| **11** tap window | manual | **`18-tap-window-and-crash-banner`, hit-tested** via `elementFromPoint` for all three overlays, plus a geometry-independent case. **A human cannot reliably tap inside a 340ms window — which is exactly why the defect reached the field.** |
+| **12** import asks | manual | **already covered** by `14-master-staging` — counts from the candidate · staging does not activate · discarding leaves the site completely unchanged · `activateStaged` is the only door and it binds the profile |
+| **13** nothing moved | manual console reads | **already covered** by `10-site-profile-root` (identity + `describe()` + divergence), `11-event-log` (chain verifies — the `deploy_verifyAuditChain` read), `12-blockers` (pre-existing blocker adopted, note intact), `13-phase-model` |
+| **13a** restore reloads | manual | **already covered** by `14-master-staging` — "restore hands control back to the boot state machine instead of asking the operator to" + "a boot after a restored snapshot ends with memory and storage AGREEING" |
+| **14** no JS ERROR | manual | **`18-…`** — a full session walk (Build → aisle → Tools → back) asserts the crash banner never rises, plus the `?legacy=1` half |
+
+⭐ **A skip that was hiding a real contract, now closed.** `05-offline`'s cold-boot test skipped
+because Chromium does not carry `navigator.onLine` across a navigation, so a cold-booted document
+reads online while the network is genuinely cut. That correctly refused to judge the app on an
+emulator artifact — but it left the contract untested and pushed it onto the device. The app's
+contract is narrow (`launch()` :18412 reads `navigator.onLine`), so forcing that ONE signal before
+any app script runs tests the APP, not the emulator, with the network still cut so the shell must
+still come from the service worker. **It passes.**
+
+⚠ **Environment noise is PARTITIONED AND REPORTED, never allowlisted.** The cross-origin AI-proxy
+probe surfaces as a `pageerror` on this runner; spec 18 filters it by name and PRINTS the count.
+Nothing was added to the shared `BENIGN_CONSOLE` list — every entry there weakens every spec.
+
+---
+
 ## WHAT AUTOMATION NOW PROVES — subtracted from your list, not assumed away
 
 `test/e2e`, 9 specs. **phone-webkit: 119 passed / 9 skipped / 0 failed** against `.415`.
@@ -181,7 +217,7 @@ racks are in that class. Everything below is meaningless if this is wrong.*
       comfortably tappable; the bottom strip clears the **home indicator**. ⚠ `env(safe-area-inset-top)`
       is **0** in the harness — it was once 8px INTO the notch and no screenshot could show it.
       *Releases `.412`-work, `.407`, `.408`.*
-- [ ] **2 · OFFLINE, on the phone.** Airplane mode → relaunch from the home-screen icon → app boots
+- [ ] **2 · OFFLINE — ONE HARDWARE LEG LEFT.** Airplane mode → relaunch from the home-screen icon → app boots
       to a usable shell and says it is offline. Save something, return to network, confirm it
       survived. ⚠ Nine harness tests skip here — the SW never installs in that browser.
       *Releases `.399`, `.400`, and the offline half of the batch.*
@@ -360,7 +396,7 @@ file rather than a fixture. It is also what makes the no-re-upload rule trustwor
 the migration is not an approximation of the parser, it IS the parser, and the two cannot drift
 because they are one engine (`master_normalizeEndpoints`).
 
-- [ ] **7 · Load the SAME Master a second time — nothing changes, nothing is lost.** That is the
+- [x] **7 · Load the SAME Master a second time — nothing changes, nothing is lost.** That is the
       `.415` replace path end to end. *Releases `.415`.*
       **Import the SAME file again, activate it, and check three things:**
       · **The counts are IDENTICAL** — 511 · 7,574 · 28,264 again. A parse that is not idempotent
@@ -454,17 +490,17 @@ than a look, so if a rubber-band shows up later it is unproven, not disproven.
       `.412`-work shipped under `.413` and is outside the released batch.
 
 ### G · The 2026-08-08/09 batch (`.416`–`.422`) — four checks for eight ships (items 11, 12, 13, 13a)
-- [ ] **11 · THE TAP WINDOW (`.416`).** Open the Forge aisle, tap a rack to open the detail panel,
+- [x] **11 · THE TAP WINDOW (`.416`).** Open the Forge aisle, tap a rack to open the detail panel,
       and **while it is sliding up** try to tap the grid or search button under the header.
       Nothing should happen until the panel is closed — and both buttons must work normally the
       moment it is. *This is the only one of the seven with a behaviour you can feel.*
-- [ ] **12 · IMPORT NOW ASKS (`.422`).** Import a Master. You should see a summary — site, RACKS,
+- [x] **12 · IMPORT NOW ASKS (`.422`).** Import a Master. You should see a summary — site, RACKS,
       HOSTS, CABLES — and an **ACTIVATE SITE** button, instead of the file silently becoming your
       site. **Tap Cancel once** and confirm your existing Master is exactly what it was. Then
       import again, activate, and confirm the counts you saw are the counts you got.
       ⚠ If your Master is the host-less one, this is where it will say so **at import** — that is
       the guard working, and the number it shows is the answer to the open column-D question.
-- [ ] **13a · RESTORE RELOADS ITSELF (`.423`).** ⚠ **Do this LAST, and on a device you can afford
+- [x] **13a · RESTORE RELOADS ITSELF (`.423`).** ⚠ **Do this LAST, and on a device you can afford
       to disturb — it reloads the app.** Export a full backup, then restore it. PHANTOM should
       **reload on its own** and come back with your data. **You must NOT be told to reload.**
       Afterwards confirm the version still reads `v1.14.423` and that your site, Master and
@@ -472,7 +508,7 @@ than a look, so if a rubber-band shows up later it is unproven, not disproven.
       *Why it matters: before this, a restore left memory holding the OLD Master while storage
       held the restored one, and the app asked you to fix that by hand. If the old sentence
       "Reload the app to see restored data" appears, the defect is back.*
-- [ ] **13 · NOTHING ELSE MOVED (`.417`, `.418`, `.419`, `.420`, `.421`).** Open the app and
+- [x] **13 · NOTHING ELSE MOVED (`.417`, `.418`, `.419`, `.420`, `.421`).** Open the app and
       confirm: same site, same Master, same deployments, and **any blockers you already had are
       still listed with the notes you wrote.** Nothing should ask you to set anything up.
       In the console, three lines confirm the invisible half:
@@ -483,7 +519,7 @@ than a look, so if a rubber-band shows up later it is unproven, not disproven.
       logs a **divergence warning** naming both. That is the guard, not a fault.
 
 ### F · The honest one
-- [ ] **14 · Nothing says "JS ERROR" during normal use.** Open the aisle, walk it, leave, come back.
+- [x] **14 · Nothing says "JS ERROR" during normal use.** Open the aisle, walk it, leave, come back.
       A healthy session must raise no crash banner. *Releases `.406`.* (Also covers the `?legacy=1`
       leg of item 5 — pull the rip-cord and confirm the same silence in the other house.)
 
