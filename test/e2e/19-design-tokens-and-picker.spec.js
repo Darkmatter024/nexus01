@@ -107,26 +107,19 @@ test.describe('the design-system substrate and the loadout picker', () => {
 
     // An undefined var() invalidates its whole declaration in silence. This is the ONLY gate in
     // the project that can see that — brace balance passes, and node --check never reads CSS.
-    // ⛔ KNOWN-DEAD, PINNED — found by this gate on its first run, reported to the owner, NOT
-    // silently fixed because colour is under the design-system lock.
-    //
-    //   --alert is declared NOWHERE. Three declarations are therefore silently dead:
-    //     :3838  .bd-pri-btn.active[data-pri="P1"]  color: var(--alert)
-    //     :3840  .bd-pri-tag.P1                     color: var(--alert)
-    //     :3844  .bd-sla.overdue                    color: var(--alert)
-    //   So a P1 priority tag and an OVERDUE SLA inherit whatever colour surrounds them instead of
-    //   alert red — the attention channel is simply absent on those three. Two other uses,
-    //   #storage-warn (:13586) and #offline-banner (:13590), write `var(--alert,#ff3b3b)` and are
-    //   fine: the fallback is also the proof of the intended value.
-    //
-    // Asserted as an EXACT list rather than skipped, so this still fails on any NEW dead token and
-    // ALSO fails the moment --alert is declared — which is the prompt to delete this pin.
+    // This gate found --alert dead on its first run: referenced bare by three declarations
+    // (.bd-pri-btn.active[data-pri="P1"], .bd-pri-tag.P1, .bd-sla.overdue) and declared nowhere, so
+    // a P1 tag and an OVERDUE SLA inherited the surrounding colour instead of alert red. It was
+    // PINNED here as an exact list, reported, and the owner authorised the fix — `--alert: #ff3b3b`
+    // now sits on :root at v1.14.428, taking the value from the fallback the author had already
+    // written twice. The pin is gone rather than edited, and the assertion is back to EMPTY:
+    // any dead token is now a failure, which is the state this gate is supposed to hold.
     expect(
-      dead.map((d) => d.name).sort(),
+      dead,
       'design tokens referenced with NO fallback, declared in no stylesheet, set on no element and ' +
       'never written by setProperty — every declaration using one is silently dead: ' +
       `${JSON.stringify(dead, null, 1)}`
-    ).toEqual(['--alert']);
+    ).toEqual([]);
   });
 
   test('the FORGE token block specifically survives parsing — the .237 swallowed-rule guard', async ({ phantom, page }) => {

@@ -61,6 +61,17 @@
   --gold:  #ffd60a;
   --teal:  #1fffd0;  /* v1.14.311: channel 'complete'; was UNDEFINED on :root (lived only in #boot/#forge3d-sheet) so var(--teal) in #pg-cmd .tile.hot-teal + the SHARED card was invalid -> glass housing collapsed once a scan ran. Design-Law-5 value. */
   --red:   #ff453a;  /* unified: matches --hud-red */
+  --alert: #ff3b3b;  /* v1.14.428: SAME CLASS AS --teal ABOVE — referenced but never declared, so three
+                        declarations were silently invalid and painted nothing: .bd-pri-btn.active[data-pri="P1"]
+                        (:3838), .bd-pri-tag.P1 (:3840) and .bd-sla.overdue (:3844) all set `color: var(--alert)`
+                        BARE. A P1 tag and an OVERDUE SLA therefore inherited the surrounding colour — the
+                        attention channel was absent on exactly the two states that must shout. Found by the
+                        19-design-tokens gate, not by eye, because an undefined var() fails silently.
+                        VALUE IS NOT A NEW DESIGN DECISION: #ff3b3b is the fallback the author already wrote
+                        twice, at #storage-warn (:13586) and #offline-banner (:13590), which is why those two
+                        always rendered correctly. Declaring it here leaves them byte-identical and revives the
+                        three dead ones. Deliberately NOT folded into --red (#ff453a) — that is a different red
+                        and unifying them would be a design ruling, not a defect fix. */
 
   --cyan2:      #00bcd4;
   --cyan-glow:  rgba(92,242,255,0.35);
@@ -12865,7 +12876,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.427';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.428';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
