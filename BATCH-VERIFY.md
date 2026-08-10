@@ -187,8 +187,26 @@ racks are in that class. Everything below is meaningless if this is wrong.*
       *Releases `.399`, `.400`, and the offline half of the batch.*
 
 ### B · The renderer, on real iOS WebKit (HIGH-risk — this is why the cap exists)
-- [ ] **3 · The rack draws and HOLDS in Build** — leave to Tools and come back, ×10. No blank, no
-      slowdown. *Releases `.390`–`.396`, `.401`.*
+- [ ] **3 · The rack draws and HOLDS in Build** — open Build, confirm the rack draws, then
+      **leave to Tools and come back, ×10**. *Releases `.390`–`.396`, `.401`.*
+      ⚠ **What the 2026-08-06 "rack draws" pass did NOT establish.** It proved the rack RENDERS
+      once, under `.401`. It never established the attachment LIFECYCLE: that leaving Build
+      releases the context and returning re-acquires it, ten times, without leaking one. That is
+      what this item is actually for, and it has never been run.
+      **Three distinct failure signatures — they mean different things, so report WHICH:**
+      · **Blank on a later entry** (draws for the first few, then nothing) = contexts are leaking
+        until iOS refuses a new one. **Report the entry number it first goes blank on** — that
+        number IS the budget, and it is the single most useful thing you can bring back.
+      · **Progressive slowdown** with the rack still drawing = old attachments are alive and still
+        rendering; the release side is not firing.
+      · **Blank immediately on the FIRST return from Tools** = not a leak at all, it is the
+        re-acquire path, a different defect with a different fix.
+      **What the harness already proves at `.426`, so you are not re-checking it:** `02-build-forge`
+      green in isolation — the Build mount holds exactly ONE live WebGL canvas, and opening the
+      aisle TRANSFERS that single attachment without Build stealing it back. The invariant holds
+      ONCE, in a desktop browser with a large GPU budget. **iOS Safari's budget is far smaller and
+      the harness cannot model it** — ten real entries on the phone is the only thing that can show
+      a leak, which is exactly how this same class surfaced on the test machine at scale.
 - [ ] **4 · Open Aisle draws and holds; close returns to Build with the rack still there.** Repeat
       ×10. *Releases `.403`, `.404`, `.405` — confirmed once on `.405`, re-confirm under `.415`.*
 - [ ] **5 · `?legacy=1` — the rack still renders and the app does not crash.** The `.402`
