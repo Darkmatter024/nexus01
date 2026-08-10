@@ -187,7 +187,7 @@ racks are in that class. Everything below is meaningless if this is wrong.*
       *Releases `.399`, `.400`, and the offline half of the batch.*
 
 ### B · The renderer, on real iOS WebKit (HIGH-risk — this is why the cap exists)
-- [ ] **3 · The rack draws and HOLDS in Build** — open Build, confirm the rack draws, then
+- [x] **3 · The rack draws and HOLDS in Build** — open Build, confirm the rack draws, then
       **leave to Tools and come back, ×10**. *Releases `.390`–`.396`, `.401`.*
       ⚠ **What the 2026-08-06 "rack draws" pass did NOT establish.** It proved the rack RENDERS
       once, under `.401`. It never established the attachment LIFECYCLE: that leaving Build
@@ -207,8 +207,26 @@ racks are in that class. Everything below is meaningless if this is wrong.*
       ONCE, in a desktop browser with a large GPU budget. **iOS Safari's budget is far smaller and
       the harness cannot model it** — ten real entries on the phone is the only thing that can show
       a leak, which is exactly how this same class surfaced on the test machine at scale.
+✅ **3 CONFIRMED ON HARDWARE 2026-08-09** — owner: *"rack holds all 10, no slowdown."* No leak, no
+progressive degradation. **Releases `.390`–`.396` (the eight-ship blank-rack arc) and `.401` (the
+RackEngine lifecycle).** This is the check the 2026-08-06 pass could not make: that pass proved the
+rack renders ONCE; this proves the attachment is released and re-acquired ten times without leaking.
+
 - [ ] **4 · Open Aisle draws and holds; close returns to Build with the rack still there.** Repeat
       ×10. *Releases `.403`, `.404`, `.405` — confirmed once on `.405`, re-confirm under `.415`.*
+      ⚠ **This is the TRANSFER path, and item 3 does not cover it.** Item 3 proved Build can release
+      and re-acquire its own context. This proves the context can **move to another surface and come
+      back**, which is a different mechanism: on Open Aisle the single attachment transfers to the
+      aisle, and on close it must return to Build.
+      **Signatures, again distinct — report WHICH:**
+      · **Aisle draws, but closing leaves BUILD blank** = the transfer is one-way; the attachment
+        went to the aisle and never came home. Build is the operational centre, so this is the worst
+        of the three.
+      · **Aisle blank on a LATER open** (early ones fine) = the transfer leaks a context per round
+        trip. **Report the round-trip number**, same as item 3.
+      · **Aisle blank on the FIRST open** while Build still draws = the aisle never receives the
+        attachment at all — that is `.405`'s defect returning, and it was confirmed fixed once on
+        `.405` but has never been re-confirmed under `.415`'s SINGLE-MASTER changes.
 - [ ] **5 · `?legacy=1` — the rack still renders and the app does not crash.** The `.402`
       observer is redesign-only but the single-context guard applies in BOTH houses; the legacy
       half has never been checked. *Releases the `.402` legacy half.*
