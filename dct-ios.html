@@ -10832,36 +10832,6 @@ body.rd .rack-canvas-u-marker { height: var(--u-h, 44px); }
 .rack-canvas-block[data-type="server"]  { background: var(--slate-readable); color: var(--white); }
 .rack-canvas-block[data-type="network"] { background: var(--violet-bright); }
 
-/* ══ v1.14.429 — THE BAY MUST NEVER CONTRADICT THE ELEVATION (owner ruling: 3D BAY WINS) ══════
-   Since .429 the flat elevation writes DISPLAY keys via Vocabulary.typeOf (redesign house only),
-   so these selectors finally match on a Master rack — 9 of 11 device codes used to hit no rule at
-   all and painted grey. Coverage goes 2/11 -> 8/11.
-
-   VALUES ARE LIFTED FROM TYPE_COLOR (:19747), THE 3D TRAY'S OWN TABLE — not re-typed, not
-   re-picked. §E of the INSPECT-3D port is explicit that "the bay must never contradict the
-   elevation", and three types genuinely disagreed: pdu was gold in 3D and GREEN in flat, storage
-   pink in 3D and GOLD in flat, server light-blue in 3D and SLATE in flat. The owner ruled the bay
-   canonical on 2026-08-10, so the bay's value is the one written here.
-
-   ⛔ patch / media / unknown STAY GREY — standing owner ruling 2026-08-06, unchanged by the above.
-   The bay paints patch teal and unknown magenta; the flat elevation deliberately does not, so
-   those three are stated explicitly rather than left to fall through to a base rule.
-
-   ⛔ body.rd SCOPED ON PURPOSE. The base rules directly above are NOT house-scoped and paint under
-   ?legacy=1, where the raw code is still emitted (see rackElevation_buildHtml). Gate the
-   PRESENTATION, never the invariant.
-
-   TEXT COLOUR IS PART OF THE RULING, not decoration: four of these backgrounds are light, and the
-   base `server` rule sets `color: var(--white)`, which on #7fd0ff would be unreadable. Dark ink on
-   the light channels, white on violet. */
-body.rd .rack-canvas-block[data-type="gpu"]     { background: #28e0ff; color: #04060a; }
-body.rd .rack-canvas-block[data-type="switch"]  { background: #8a4bff; color: var(--white); }
-body.rd .rack-canvas-block[data-type="pdu"]     { background: #ffcb45; color: #04060a; }
-body.rd .rack-canvas-block[data-type="storage"] { background: #ff7bd0; color: #04060a; }
-body.rd .rack-canvas-block[data-type="server"]  { background: #7fd0ff; color: #04060a; }
-body.rd .rack-canvas-block[data-type="patch"],
-body.rd .rack-canvas-block[data-type="media"],
-body.rd .rack-canvas-block[data-type="unknown"] { background: #7d93a4; color: #04060a; }
 /* v1.14.229 — FLAT block appearance (redesign-only): racked slots read as a DARK tray
    body + a thin type-colour LEFT accent + readable text. The .228 ghost-fix over-filled
    to a solid slab that drowned the label; this dark base overrides the legacy full-fill
@@ -10872,24 +10842,50 @@ body.rd .rack-canvas-block {
   color: var(--white);
   border-left: 3px solid rgba(180,194,208,0.35);
 }
+/* ══ v1.14.430 — THE BAY WINS, IN THE ACCENT (owner ruling 2026-08-10) ═══════════════════════
+   Since .429 the flat elevation writes DISPLAY keys through Vocabulary.typeOf in the redesign
+   house, so these selectors finally MATCH on a Master rack — 9 of 11 device codes previously hit
+   no rule and fell to the default grey accent. Coverage goes 2/11 -> 8/11.
+
+   ⛔ THE COLOUR GOES IN THE ACCENT, NOT THE FILL, AND .429 GOT THAT WRONG.
+   `.429` added `body.rd ... { background: <bay colour> }` rules. They outrank the dark tray base
+   directly above (three classes + an attribute vs two classes), so they painted SOLID SATURATED
+   SLABS in the redesign house — exactly the `.228` defect the `.229` comment above records: "the
+   .228 ghost-fix over-filled to a solid slab that drowned the label." The redesign house's design
+   for these blocks is a DARK tray body plus a thin type-colour LEFT accent, and that is a ruling,
+   not a default. Those background rules are removed; the colours move here, where they belong.
+
+   VALUES ARE LIFTED FROM TYPE_COLOR (:19747), THE 3D TRAY'S OWN TABLE — not re-picked. §E of the
+   INSPECT-3D port is explicit that "the bay must never contradict the elevation", and three types
+   genuinely disagreed: pdu gold in 3D / GREEN in flat, storage pink in 3D / GOLD in flat, server
+   light-blue in 3D / SLATE in flat. The owner ruled the bay canonical, so:
+     · pdu is pulled OUT of the cooling group and takes the bay's gold (cdu maps to pdu in _TMAP)
+     · storage moves gold -> the bay's pink · server moves slate -> the bay's light blue
+     · gpu and switch take the bay's exact hex rather than the near-miss --cyan / --violet
+   cooling/fan/crah/crac keep green — they are a different channel and were never in dispute.
+   ⛔ patch / media / unknown STAY GREY (standing ruling 2026-08-06), stated explicitly rather than
+   left to fall through to the default accent by accident. */
 body.rd .rack-canvas-block[data-type="gpu"],
 body.rd .rack-canvas-block[data-type="compute"],
-body.rd .rack-canvas-block[data-type="accelerator"] { border-left-color: var(--cyan); }
+body.rd .rack-canvas-block[data-type="accelerator"] { border-left-color: #28e0ff; }
 body.rd .rack-canvas-block[data-type="switch"],
 body.rd .rack-canvas-block[data-type="leaf"],
-body.rd .rack-canvas-block[data-type="spine"] { border-left-color: var(--violet); }
+body.rd .rack-canvas-block[data-type="spine"] { border-left-color: #8a4bff; }
 body.rd .rack-canvas-block[data-type="storage"],
 body.rd .rack-canvas-block[data-type="disk"],
-body.rd .rack-canvas-block[data-type="nvme"] { border-left-color: var(--gold); }
+body.rd .rack-canvas-block[data-type="nvme"] { border-left-color: #ff7bd0; }
 body.rd .rack-canvas-block[data-type="server"],
 body.rd .rack-canvas-block[data-type="host"],
-body.rd .rack-canvas-block[data-type="node"] { border-left-color: var(--slate-readable); }
+body.rd .rack-canvas-block[data-type="node"] { border-left-color: #7fd0ff; }
+body.rd .rack-canvas-block[data-type="pdu"] { border-left-color: #ffcb45; }
+body.rd .rack-canvas-block[data-type="patch"],
+body.rd .rack-canvas-block[data-type="media"],
+body.rd .rack-canvas-block[data-type="unknown"] { border-left-color: #7d93a4; }
 body.rd .rack-canvas-block[data-type="network"],
 body.rd .rack-canvas-block[data-type="router"],
 body.rd .rack-canvas-block[data-type="firewall"],
 body.rd .rack-canvas-block[data-type="nic"] { border-left-color: var(--violet-bright); }
 body.rd .rack-canvas-block[data-type="cooling"],
-body.rd .rack-canvas-block[data-type="pdu"],
 body.rd .rack-canvas-block[data-type="fan"],
 body.rd .rack-canvas-block[data-type="crah"],
 body.rd .rack-canvas-block[data-type="crac"] { border-left-color: var(--green); }
@@ -12907,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.429';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.430';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,

@@ -72,7 +72,8 @@ test.describe('the one colour vocabulary', () => {
         el.className = 'rack-canvas-block';
         el.setAttribute('data-type', key);
         host.appendChild(el);
-        out[raw] = { key, bg: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color };
+        const cs = getComputedStyle(el);
+        out[raw] = { key, accent: cs.borderLeftColor, bg: cs.backgroundColor };
       });
       // And what the 3D tray would paint for the same key — the two must not contradict.
       out.__bay = {};
@@ -81,22 +82,31 @@ test.describe('the one colour vocabulary', () => {
       return out;
     }, CODES);
 
-    const GREY_RGB = 'rgb(125, 147, 164)';   // #7d93a4
+    const GREY_RGB = 'rgb(125, 147, 164)';        // #7d93a4
+    const DEFAULT_ACCENT = 'rgba(180, 194, 208, 0.35)';
+    const DARK_TRAY = 'rgba(9, 13, 20, 0.9)';
     let coloured = 0;
     for (const [raw, key] of CODES) {
       const p = paints[raw];
       expect(p.key, `${raw} normalised wrong`).toBe(key);
+
+      // ⛔ THE GUARD .429 NEEDED AND DID NOT HAVE. The redesign house paints these as a DARK tray
+      // body with a thin type-colour LEFT accent — a ruling (.229), after .228 "over-filled to a
+      // solid slab that drowned the label". .429 put the bay colours in `background`, which
+      // outranks the dark base, and re-created that slab. The colour belongs in the ACCENT.
+      expect(p.bg, `${raw} (${key}) has a filled body — the .228 slab is back, colour belongs in the accent`).toBe(DARK_TRAY);
+
       if (GREY.indexOf(key) >= 0) {
-        expect(p.bg, `${raw} (${key}) must stay GREY per the 2026-08-06 ruling`).toBe(GREY_RGB);
+        expect(p.accent, `${raw} (${key}) must stay GREY per the 2026-08-06 ruling`).toBe(GREY_RGB);
       } else {
-        expect(p.bg, `${raw} (${key}) still paints nothing — it fell through every rule`).not.toBe('rgba(0, 0, 0, 0)');
-        expect(p.bg, `${raw} (${key}) is grey, so the routing did not reach it`).not.toBe(GREY_RGB);
+        expect(p.accent, `${raw} (${key}) still has the DEFAULT accent — the routing did not reach it`).not.toBe(DEFAULT_ACCENT);
+        expect(p.accent, `${raw} (${key}) is grey, so the routing did not reach it`).not.toBe(GREY_RGB);
         coloured++;
       }
     }
     // 2/11 before this ship, 8/11 after — the number the ruling was made against.
     expect(coloured, 'colour coverage is not 8 of 11 raw codes').toBe(8);
-    console.log('[20] coloured ' + coloured + '/11 · bay values: ' + JSON.stringify(paints.__bay));
+    console.log('[20] accent-coloured ' + coloured + '/11 · bay values: ' + JSON.stringify(paints.__bay));
   });
 
   test('⛔ RULE 17 — ?legacy=1 still emits the RAW code, so that house is unchanged', async ({ phantom, page }) => {
