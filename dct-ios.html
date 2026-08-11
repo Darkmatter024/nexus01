@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.437';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.438';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -21369,6 +21369,40 @@ function bw_render() {
     ['Scan', function() { try { showWorkTab('scan'); } catch (e) { phantom_logErr('bw:scan', e); } }, ''],
     ['Log blocker', function() { try { blocker_quick(c.dep && c.dep.id); } catch (e) { phantom_logErr('bw:blocker', e); } }, ' warn']
   ];
+
+  // ── v1.14.438 — THE RACK DETAIL'S THREE CAPABILITIES COME HOME ────────────────────────────────
+  // Measured at .437: the rack-detail surface is a SECOND Build workspace. Both carry the current
+  // rack, the next action, OPEN AISLE, a rack elevation and phase state. The only things that
+  // existed ONLY there were ASSIGN, QR and LOG NOTE — three capabilities a technician could reach
+  // solely by leaving the operational centre for a parallel screen that does the same job.
+  // Contract A7: Build IS the operational centre. So they come here.
+  //
+  // ⛔ ADDITIVE. The rack detail keeps working and keeps its buttons — nothing is deleted in this
+  // ship. Retiring that surface is the LAST step of the merge, after the phase dock moves, because
+  // the back-nav restore path lands there and `.437` only just made that landing coherent.
+  //
+  // Same doors, not copies: deploy_assignRack / deploy_generateRackQR / stripeRack_logNote each
+  // take (deployId, rackId) and are the canonical implementations. Build already knows both ids,
+  // which is the whole reason the detour existed and the whole reason it no longer needs to.
+  //
+  // Contract 14 — a control that cannot act must not be offered. These are appended ONLY when a
+  // deployment AND a rack are resolved; with no rack there is nothing to assign, label or annotate,
+  // so the buttons are absent rather than present-and-dead.
+  if (c.dep && c.dep.id && c.rack && c.rack.id) {
+    var _d = c.dep.id, _r = c.rack.id;
+    [['Assign', 'deploy_assignRack'], ['QR', 'deploy_generateRackQR'], ['Log note', 'stripeRack_logNote']]
+      .forEach(function (t) {
+        A.push([t[0], function () {
+          try {
+            if (typeof window[t[1]] !== 'function') throw new Error(t[1] + ' unavailable');
+            window[t[1]](_d, _r);
+          } catch (e) {
+            phantom_logErr('bw:' + t[1], e);
+            if (typeof phantomToast === 'function') phantomToast('Could not open ' + t[0] + ' - see SYS > ERRORS', 'error');
+          }
+        }, '']);
+      });
+  }
   A.forEach(function(a) {
     var b = E('button', 'bw-act' + a[2], a[0]); b.type = 'button'; b.onclick = a[1]; acts.appendChild(b);
   });
