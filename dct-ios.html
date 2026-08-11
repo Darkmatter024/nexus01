@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.441';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.442';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -21309,7 +21309,10 @@ function bw_render() {
   nb.appendChild(orb); nb.appendChild(nbb); nb.appendChild(E('span', 'bw-na-ar', '\u203a'));
   nb.onclick = function() { try { deploy_showRackDetail(c.dep.id, rack.id); } catch (e) { phantom_logErr('bw:next', e); } };
   na.appendChild(nb);
-  host.appendChild(na);
+  // v1.14.442 (R1-D): NEXT ACTION is BUILT here and APPENDED below the rack preview. It is one
+  // card of derived text; the rack is the thing the technician came to look at, and measured on a
+  // 390x844 phone this card's 87px was the difference between seeing the rack and scrolling for
+  // it. Nothing about the card changes — only where it lands in the column.
 
   // ── RACK PREVIEW: the EXISTING 3D implementation, controls and all ──
   var pv = E('div', 'bw-card bw-prev');
@@ -21335,6 +21338,10 @@ function bw_render() {
   // has, so it would bail silently for this mount. Same lazy-load the Command hero does,
   // with the same never-blank discipline - any failure states itself, never nothing.
   bw_mount3D(rack, mount);
+
+  // NEXT ACTION lands here, under the rack it describes. Appended AFTER bw_mount3D so the mount
+  // is measured and drawn while it is the last child — nothing below it can change its box.
+  host.appendChild(na);
 
   // ── real metrics ──
   var m = bw_metrics(rack, ru);
@@ -57032,8 +57039,37 @@ body.rd .bw-pct { font-size: var(--fs-subhead); }
    token (--bw-cta 56px, already above the 44px floor). */
 body.rd .bw-cta { min-height: var(--bw-cta); margin-top: var(--sp-4); border-radius: var(--r-ctl); font-size: var(--fs-caption); }
 
-/* ── rack preview: controls ABOVE the render area, never over it ── */
-body.rd .bw-prev { padding: var(--bw-cpad); }
+/* v1.14.442 (R1-D) — HERO RHYTHM ON THE PHONE ONLY. Measured: 249px of content carrying 77px of
+   internal margin. Nothing is removed and no type size moves — the rack ID, platform chips, phase,
+   progress and CONTINUE all stay exactly as they are, at the same sizes. Only the air between them
+   tightens, and only below 1024 where the fold is the constraint. The desktop grid composition
+   (body.rd.cshell, >=1024) is deliberately untouched: it has no fold problem and its own rules
+   would fight this one. 44px tap floors are unaffected — --bw-cta is a min-height, not a margin. */
+@media (max-width: 1023px) {
+  body.rd .bw-plat { margin-top: 8px; }
+  body.rd .bw-rule { margin: 10px 0 9px; }
+  body.rd .bw-bar  { margin-top: 9px; }
+  body.rd .bw-cta  { margin-top: 12px; }
+}
+
+/* ── rack preview: controls never OVER the render area ──
+   v1.14.442 (R1-D): they used to sit ABOVE it, and measurement showed what that cost. On a
+   390x844 phone the card header (46) + the cable strip (58) + the view rail (109) put 237px of
+   controls between the card top and the rack, and the mount started at y=857 against a bottom
+   nav at y=733 — the rack was 100% below the fold, ZERO pixels of it on screen.
+   ⛔ NOTHING IS DELETED. Every control the rail carries (FRONT/ISO/TOP/REAR/CABLES/EXPLODE)
+   still ships; they move BELOW the rack, which is where a caption belongs anyway — you look at
+   the rack, then you change how you are looking at it. Contract 49 (do not remove a real
+   capability) is intact, and the rack-detail panel's own copies are untouched because every
+   rule here is scoped inside .bw-prev.
+   Flex `order` rather than a DOM move on purpose: rackElevation_render3D finds the
+   .reh-3d-toggle strip with a querySelector and appends its rail to that strip's PARENT, so
+   re-parenting in JS would fight the renderer. Ordering leaves the renderer's assumptions alone. */
+body.rd .bw-prev { padding: var(--bw-cpad); display: flex; flex-direction: column; }
+body.rd .bw-prev > .bw-prev-h { order: 0; }
+body.rd .bw-prev > .bw-mount   { order: 1; }
+body.rd .bw-prev > .bw-strip   { order: 2; margin: 12px 0 0; }
+body.rd .bw-prev > .reh-3d-rail { order: 3; }
 body.rd .bw-prev-h { margin-bottom: 12px; }
 /* v1.14.392 — DETERMINISTIC RACK STAGE. A fixed height still measures zero when an
    ancestor collapses, which is what the device log proved. min-height plus aspect-ratio
