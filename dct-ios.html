@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.443';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.444';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -38314,13 +38314,35 @@ function rackElevation_render3D(rack, mountEl) {
   var portMat    = new THREE.MeshStandardMaterial({ color: 0x050a10, metalness: 0.4, roughness: 0.5, envMapIntensity: 0.25 });
   var psuMat     = new THREE.MeshStandardMaterial({ color: 0x121820, metalness: 0.6, roughness: 0.4, emissive: 0xf59e0b, emissiveIntensity: 0.015, envMapIntensity: 0.25 });
   var fanMat     = new THREE.MeshStandardMaterial({ color: 0x060c12, metalness: 0.5, roughness: 0.6, side: THREE.DoubleSide, envMapIntensity: 0.25 });
-  // LEDs — MeshBasic (self-lit); SHARED per colour, GROUP-blinked in bayTick (see ledMats). psu = static green.
-  var greenLedMat  = new THREE.MeshBasicMaterial({ color: 0x10b981 });   // drive + compute status (blink)
-  var violetLedMat = new THREE.MeshBasicMaterial({ color: 0xa855f7 });   // switch ports + switch status (blink)
-  var psuLedMat    = new THREE.MeshBasicMaterial({ color: 0x10b981 });   // PSU status (static, mock blink:false)
-  var ledMats = [ { mat: greenLedMat, r: 0.063, g: 0.725, b: 0.506, off: 0 },
-                  { mat: violetLedMat, r: 0.659, g: 0.200, b: 0.969, off: 1.7 } ];
-  var tealLedMat = new THREE.MeshBasicMaterial({ color: 0x1fffd0 });     // patch port LEDs (static)
+  // ── LEDs — v1.14.444 (R3, DATA HONESTY) ──────────────────────────────────────────────────────
+  // ⛔ WHAT WAS WRONG, and it is Contract 10, not taste. These LEDs were GREEN and they BLINKED.
+  // Green is PHANTOM's success colour (§34: "success only when actual state is success; not general
+  // decoration if it implies state"), and a blink is the universal signal for live activity. One
+  // green blinking LED per drive bay, per storage blade and per media brick is a per-device health
+  // claim — and PHANTOM receives no drive, blade or PSU telemetry at all. §5 is explicit: a green
+  // LED is permissible as decorative chassis styling ONLY IF it cannot be read as operational
+  // health, otherwise "prefer neutral dim white/blue equipment lights when status truth is
+  // unavailable." Eight blinking green LEDs across a drive bay cannot be read any other way.
+  //
+  // ⭐ THE RULE APPLIED, so the next family does not have to re-litigate it:
+  //    STATE colours (green / amber / red) may NOT be used decoratively — they mean something.
+  //    ACCENT colours (cyan / violet / teal) MAY carry family identity — they claim nothing.
+  //    And NOTHING BLINKS, whatever its colour, because blinking is an activity claim on its own.
+  // So compute/storage/media/PSU lights become neutral cool white — the chassis still reads as
+  // manufactured hardware, it just stops asserting a state. Switch violet and patch teal stay:
+  // they are §13's "restrained violet/cyan secondary distinction", which is identity, not status.
+  //
+  // If real per-device status ever arrives, THIS is the seam to light up — a sourced status can
+  // legitimately drive green here, and the neutral default is what it would be overriding.
+  var neutralLedMat = new THREE.MeshBasicMaterial({ color: 0xa9c6da });  // dim cool white — presence, not health
+  var greenLedMat  = neutralLedMat;                                      // drive + compute status (was 0x10b981, blinking)
+  var psuLedMat    = neutralLedMat;                                      // PSU status (was 0x10b981)
+  var violetLedMat = new THREE.MeshBasicMaterial({ color: 0xa855f7 });   // switch — ACCENT, identity not status
+  var tealLedMat = new THREE.MeshBasicMaterial({ color: 0x1fffd0 });     // patch port LEDs — ACCENT, static
+  // ⛔ EMPTY ON PURPOSE — the per-frame blink is gone. bayTick still iterates this and now no-ops,
+  // which also removes per-frame colour writes from the render loop (§36: the animation loop should
+  // update camera and render, not mutate materials every frame).
+  var ledMats = [];
   // v1.14.257 TRAY FIDELITY — chassis palette is DARK gunmetal per KIND (mock C{}); TYPE colour
   // is demoted to the front bezel strip (EDIT A). Restores the mock look; kills the .256 slabs.
   var KIND_C = { compute: 0x1a2332, switch: 0x1e293b, power: 0x1a2028, blank: 0x0f141c,
@@ -38433,9 +38455,22 @@ function rackElevation_render3D(rack, mountEl) {
       });
 
     } else if (kind === 'switch') {
+      // ⛔ v1.14.444 (R3) — THE WORST DATA-HONESTY DEFECT IN THE RENDERER, now removed.
+      // This read `if (Math.random() > 0.4)` and lit roughly 60% of the ports. That is fabricated
+      // telemetry twice over: PHANTOM knows nothing about which ports are populated or live, AND
+      // the pattern was NON-DETERMINISTIC — it reshuffled on every single re-render, so the same
+      // switch showed a different "link" pattern each time the rack was drawn. A technician reading
+      // lit ports as connected ports would be reading dice. Contract 10, Real data only.
+      // Replaced by a DETERMINISTIC, representative every-3rd-port pattern — the same treatment the
+      // patch panel already ships under John's ruling that representative geometry is not a count
+      // claim. It states "this is a switch", never "these ports are up".
+      // Also cheaper: the old code minted up to ~48 individual sphere meshes per switch. These are
+      // 32 instances of one geometry, so a dense switch costs ONE draw call instead of dozens (§23).
       var portRows = 4, portCols = 10, portGeo = new THREE.BoxGeometry(0.04, 0.025, 0.012);
       var portInst = new THREE.InstancedMesh(portGeo, portMat, 2 * portRows * portCols);
-      var pi = 0;
+      var ledPerRow = Math.ceil(portCols / 3);                              // pc = 0,3,6,9
+      var swLedInst = new THREE.InstancedMesh(new THREE.SphereGeometry(0.008, 6, 6), violetLedMat, 2 * portRows * ledPerRow);
+      var pi = 0, li = 0;
       [-1, 1].forEach(function (sx) {
         var swBlock = new THREE.Mesh(new THREE.BoxGeometry(cw * 0.42, hT * 0.7, 0.015), swBlockMat);
         swBlock.position.set(sx * cw * 0.23, 0, cd/2 + 0.03); grp.add(swBlock);
@@ -38444,13 +38479,13 @@ function rackElevation_render3D(rack, mountEl) {
             var px = sx * cw * 0.23 - (cw*0.38)/2 + 0.03 + pc * ((cw*0.38)/portCols);
             var py = hT*0.25 - pr * 0.06;
             _mtx.makeTranslation(px, py, cd/2 + 0.04); portInst.setMatrixAt(pi++, _mtx);
-            if (Math.random() > 0.4) {
-              var pLed = new THREE.Mesh(new THREE.SphereGeometry(0.008, 6, 6), violetLedMat);
-              pLed.position.set(px + 0.015, py - 0.018, cd/2 + 0.048); grp.add(pLed);
+            if (pc % 3 === 0) {
+              _mtx.makeTranslation(px + 0.015, py - 0.018, cd/2 + 0.048); swLedInst.setMatrixAt(li++, _mtx);
             }
           }
         }
       });
+      swLedInst.count = li; swLedInst.instanceMatrix.needsUpdate = true; grp.add(swLedInst);
       portInst.instanceMatrix.needsUpdate = true; grp.add(portInst);
       var swStat = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), violetLedMat);
       swStat.position.set(0, hT/2 - 0.06, cd/2 + 0.035); grp.add(swStat);
