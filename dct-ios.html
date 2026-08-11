@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.440';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.441';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -21674,6 +21674,34 @@ function bw_mount3D(rack, mount) {
       var _aisle = document.getElementById('forge3d-sheet');
       if (_aisle && _aisle.classList.contains('open')) {
         console.warn('[PHANTOM] bw_mount3D: aisle owns the screen — Build re-acquisition aborted (would dispose the live aisle)');
+        return;
+      }
+      // ══ v1.14.441 — THE RACK DETAIL IS THE SECOND SURFACE WITH THIS EXACT PROPERTY ═══════════
+      // .405 fixed the aisle and stopped there, but the reasoning it wrote down covers both: a
+      // retry loop that outlives a navigation to another WebGL surface is a STALE CALLBACK. The
+      // rack detail qualifies — it renders into #wk-deploy INSIDE #pg-work, so opening it never
+      // removes #bw-mount from the DOM and this loop keeps firing for up to 5 seconds after.
+      //
+      // MEASURED, not theorised. With a detail open, every retry runs releaseOthers and disposes
+      // the detail's #reh3dMount, while the detail's own render does the same back to Build:
+      //   releaseOthers(bw-mount) -> 0   acquireOrDefer -> true     Build holds it
+      //   releaseOthers(reh3dMount) -> 1 acquireOrDefer -> false    detail takes it, defers
+      //   releaseOthers(bw-mount) -> 1   acquireOrDefer -> false    Build takes it back
+      // In a clean harness run Build WINS every exchange and logs 'webglcontextlost - re-arming'
+      // three times, and #reh3dMount ends at canvas=NONE — the rack detail never draws at all.
+      // Winning is not free: on iOS the GPU-side reclaim is asynchronous and contexts are scarce,
+      // which is the .390-.405 blank-rack shape, and there BOTH surfaces can end with nothing.
+      // That is the reported defect: the Build rack preview blank on device while the same code
+      // renders 652x640 LIVE in the harness at every step.
+      //
+      // body.ops-detail is set by deploy_showRackDetail and cleared by showMode, so it answers
+      // "is the rack detail the surface the technician is looking at" precisely. Bare return, not
+      // a re-arm, matching the aisle branch above: returning to Build re-renders it (nav_back →
+      // showMode → bw_render), so the mount comes back on its own with nothing left to fight.
+      // NOT a silent failure — Build is not on screen, so a toast here would fire over the detail
+      // and name a surface the technician is not looking at. Deferring IS the correct outcome.
+      if (document.body.classList.contains('ops-detail')) {
+        console.warn('[PHANTOM] bw_mount3D: the rack detail owns the screen — Build re-acquisition deferred');
         return;
       }
     } catch (_) {}
