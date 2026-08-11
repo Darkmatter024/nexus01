@@ -155,3 +155,48 @@ Stop there and re-read this plan before 3c, because 3c is the first stage an ope
 If the appetite is smaller: **3a alone is still worth shipping.** A flat render path is the missing
 capability behind demote-is-not-disposal, `hero`, `map` and `review` — four spec'd behaviours that
 are currently unrepresentable, and none of it deletes a line.
+
+---
+
+# ADDENDUM — 2026-08-11 · THE RACK DETAIL IS A SECOND BUILD WORKSPACE
+
+Found while walking the technician flow at `v1.14.437`. **Not renderer work** — recorded here
+because it is the same class of problem one layer up: two surfaces for one job.
+
+## Measured
+
+| | Build workspace (`#bw-shell`) | Rack detail (`ops-detail`) |
+|---|---|---|
+| Current rack | ✓ | ✓ (`l1:001`) |
+| Next action | ✓ | ✓ (`Complete NETWORK — work is in progress`) |
+| Open aisle | ✓ | ✓ (`OPEN AISLE ›`) |
+| Rack elevation | ✓ | ✓ |
+| Phase state | `Complete NETWORK` | the `MECH·PWR·NET·COMP·VAL` dock + `2/5 PHASES` |
+| **Only here** | Scan · Log blocker · Port map · BOM · Manifest · Rack map · FRONT/ISO/TOP/REAR/EXPLODE | **ASSIGN · QR · LOG NOTE** |
+
+**Same rack, same job, two workspaces.** Contract A7 says Build is the operational centre; the
+canonical technician flow says BUILD carries current rack, current phase, completed work, blockers,
+next action, contextual tools, contextual scan and OPEN AISLE. The rack detail is a parallel
+implementation of most of that, plus three capabilities that exist nowhere else.
+
+## The decision
+
+⭐ **BUILD wins. The rack detail stops being a second workspace.** Its three unique capabilities —
+**ASSIGN, QR, LOG NOTE** — move into Build, and the `MECH/PWR/NET/COMP/VAL` dock becomes Build's
+phase control rather than a separate screen's. Nothing is deleted until its replacement is proven.
+
+## Why this is a PLAN, not an edit
+
+It is a surface merge with three capabilities to re-home and a fixed dock to relocate, in the area
+that produced both of today's workflow defects. The same discipline that applies to §8 applies here:
+**stage it, prove each step, delete last.** Suggested order —
+
+1. **Inventory ASSIGN / QR / LOG NOTE** properly (what each writes, who calls it) — the step that
+   `.431` skipped and paid for.
+2. **Re-home them into Build** additively; the rack detail keeps working.
+3. **Make the phase dock Build's**, so phase navigation lives with the phase work.
+4. **Then** retire the rack detail as a destination — keeping `deploy_showRackDetail` only if a
+   deep-link still needs it, and pointing it at Build if not.
+
+⚠ **Do not start at step 4.** The dock and the detail are what the back-nav restore path lands on
+(`:19053`), and `v1.14.437` only just made that landing coherent.
