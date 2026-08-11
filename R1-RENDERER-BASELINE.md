@@ -192,14 +192,26 @@ materials and camera in `rackElevation_render3D`.
 | Floor contact | `.rack-shadow` — a blurred radial **shadow**, blur(5px) |
 | Rim | `0 0 28px rgba(89,233,255,.07)` — very restrained |
 
-### ⭐ B1 — the floor treatment does NOT collide with the lock
+### ⭐ B1 — the floor needs NO change at all (corrected at R2)
 
 `PHANTOM_CURRENT_STATE.md` §5 says the floor is UNLIT BY RULING and any sheen/gloss ask is a P0
-revert. **The mockup does not ask for sheen.** It uses a blurred contact *shadow* under the
-cabinet and a matte grid floor — no reflection, no gloss. §26's "extremely subtle reflection" is
-the directive's wording, but the approved visual it points at achieves the effect with a shadow.
-**So the floor can be done inside the existing ruling**, and §26 does not need to be overridden.
-That removes the sharpest edge of the lock conflict.
+revert. **The mockup does not ask for sheen** — it uses a blurred contact *shadow* and a matte
+grid floor.
+
+⚠ **CORRECTED WHILE IMPLEMENTING R2.** My first reading was that PHANTOM should therefore adopt a
+contact shadow. Reading the code says otherwise, and it matters: `dct-ios.html:38870` carries an
+explicit ruling and the defect history behind it —
+
+> *"The §A rig is JOHN-LOCKED, so the fix is here: MeshBasic = unlit. The floor now takes NO
+> direct light, NO env, NO shadow… Owner's law, literally: 'the floor only ever REFLECTS.'
+> receiveShadow dropped (was the P1 source)."*
+
+The floor is a `MeshBasicMaterial` on purpose, and `receiveShadow` was **removed to fix a defect**
+— a specular pool that swept as you orbited, tinted mint by `rimL`, with the rack's own shadow
+cutting a dark wedge out of it. **Adding a contact shadow would revert that fix.** PHANTOM already
+answers §7's "believable cabinet floor contact" a different, ruled way: the wet reflection clone
+with contact-sharp falloff, where brightness at the point the rack meets the floor IS the contact
+cue. ⛔ **The floor is done. It needs nothing from R2–R8, and §26 must not be actioned.**
 
 ### ⭐ B2 — the rack is PORTRAIT and our mount is LANDSCAPE
 
