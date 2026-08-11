@@ -104,4 +104,71 @@ test.describe('the rack capabilities live in Build', () => {
     expect(src).toContain('phantom_logErr');
     expect(src).toContain('phantomToast');
   });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // v1.14.439 — A DOOR THAT COMES HOME MUST ALSO COME BACK HOME.
+  // `.438` moved ASSIGN into Build but deploy_assignRack's own tail still called
+  // deploy_showRackDetail, so the save landed the technician on the surface the merge exists to
+  // retire. Same wrong-landing shape as `.436`, one ship after `.436` fixed it.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  // Count where a door's refresh lands. The stubs replace the GLOBAL bindings, which is what the
+  // dispatcher's unqualified calls resolve to. `mode` selects the call under test — no eval, the
+  // page's CSP would refuse it and a string call site is unreadable anyway.
+  const landing = (page, mode) => page.evaluate(async (i) => {
+    window.phantomPromptAsk = async () => 'A. Tech';
+    const hits = { detail: 0, build: 0 };
+    const realDetail = window.deploy_showRackDetail, realBuild = window.bw_render;
+    window.deploy_showRackDetail = function () { hits.detail++; return realDetail.apply(this, arguments); };
+    window.bw_render = function () { hits.build++; return realBuild.apply(this, arguments); };
+    try {
+      if (i.mode === 'build') await window.deploy_assignRack(i.d, i.r, 'build');
+      else if (i.mode === 'default') await window.deploy_assignRack(i.d, i.r);
+      else if (i.mode === 'baseline') window.deploy_showRackDetail(i.d, i.r);
+      else window.phase_refreshSurface('nowhere', i.d, i.r);
+    } finally {
+      window.deploy_showRackDetail = realDetail; window.bw_render = realBuild;
+    }
+    return hits;
+  }, { d: DEP, r: RACK, mode });
+
+  test('⛔ ASSIGN from Build lands back on BUILD, not on the rack detail', async ({ phantom, page }) => {
+    test.setTimeout(180_000);
+    await phantom.boot({ seed: seed() });
+    await page.evaluate(() => showMode('work'));
+    await page.waitForTimeout(1500);
+    const hits = await landing(page, 'build');
+    // Exact, not a bound: the defect value for `detail` is 1 and a `<= 1` would have admitted it.
+    expect(hits.build, 'Build never re-rendered — the assignment is invisible where it was made').toBeGreaterThan(0);
+    expect(hits.detail, '.438 shipped this: ASSIGN from Build threw the technician onto the rack detail').toBe(0);
+  });
+
+  test('the rack detail keeps its own landing — the default surface is unchanged', async ({ phantom, page }) => {
+    test.setTimeout(180_000);
+    // ⚠ MEASURED, NOT ASSUMED — and measured from TWO COLD BOOTS, which is the part that bit.
+    // A plain deploy_showRackDetail also re-renders Build on FIRST entry (its own nav path does
+    // that, and did at .438); on a second call into an already-open detail it does not. So the two
+    // measurements only compare if each starts from the same state. Sharing one page made the
+    // baseline contaminate the reading and produced a red test against correct code.
+    // The invariant is not "the default caller never touches Build" — it is "the default caller
+    // does exactly what a direct detail render does, and nothing more."
+    await phantom.boot({ seed: seed() });
+    const base = await landing(page, 'baseline');
+
+    // No third argument: exactly how the rack detail's own ASSIGN button calls it.
+    await phantom.boot({ seed: seed() });
+    const hits = await landing(page, 'default');
+    expect(hits.detail, 'the pre-.439 caller stopped refreshing the detail — this was meant to be byte-identical').toBeGreaterThan(0);
+    expect(hits.build, 'a caller that named no surface reached Build beyond what a detail render already does').toBe(base.build);
+  });
+
+  test('Contract 14 — an unknown surface says so and still lands somewhere', async ({ phantom, page }) => {
+    test.setTimeout(180_000);
+    await phantom.boot({ seed: seed() });
+    const warned = [];
+    page.on('console', (m) => { if (m.type() === 'warning') warned.push(m.text()); });
+    const hits = await landing(page, 'unknown');
+    expect(hits.detail, 'an unknown surface refreshed NOTHING — a silent dead end').toBeGreaterThan(0);
+    expect(warned.join(' '), 'an unknown surface was swallowed silently').toContain('unknown surface');
+  });
 });

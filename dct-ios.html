@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.438';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.439';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -21390,12 +21390,15 @@ function bw_render() {
   // so the buttons are absent rather than present-and-dead.
   if (c.dep && c.dep.id && c.rack && c.rack.id) {
     var _d = c.dep.id, _r = c.rack.id;
-    [['Assign', 'deploy_assignRack'], ['QR', 'deploy_generateRackQR'], ['Log note', 'stripeRack_logNote']]
+    // v1.14.439 — the third element is the SURFACE the door refreshes when it finishes. Only
+    // ASSIGN has a refresh tail; QR and LOG NOTE end without re-rendering anything, so they are
+    // called at their declared arity rather than handed an argument they never read.
+    [['Assign', 'deploy_assignRack', 'build'], ['QR', 'deploy_generateRackQR', null], ['Log note', 'stripeRack_logNote', null]]
       .forEach(function (t) {
         A.push([t[0], function () {
           try {
             if (typeof window[t[1]] !== 'function') throw new Error(t[1] + ' unavailable');
-            window[t[1]](_d, _r);
+            if (t[2]) window[t[1]](_d, _r, t[2]); else window[t[1]](_d, _r);
           } catch (e) {
             phantom_logErr('bw:' + t[1], e);
             if (typeof phantomToast === 'function') phantomToast('Could not open ' + t[0] + ' - see SYS > ERRORS', 'error');
@@ -26412,7 +26415,9 @@ function brief_show() {
 }
 
 // ━━━ FEATURE: RACK ASSIGNMENT ━━━
-async function deploy_assignRack(deployId, rackId) {
+// v1.14.439: `surface` names WHERE this door was opened from, so the refresh lands back there.
+// Omitted → 'detail', which is every pre-.439 caller and is byte-identical to what shipped.
+async function deploy_assignRack(deployId, rackId, surface) {
   // Completed deployment lock
   var _dep = deploy_getById(deployId);
   if (_dep && _dep.status === 'complete') { phantomToast('Deployment is complete — assignments are locked', 'warn'); return; }
@@ -26449,7 +26454,7 @@ async function deploy_assignRack(deployId, rackId) {
   deploy_logAudit(deployId, 'RACK_ASSIGNED', 'rack', rackId, name.trim() ? 'Assigned to: ' + name.trim() : 'Unassigned');
   haptic([8]);
   phantomToast(name.trim() ? 'Assigned to ' + name.trim() : 'Assignment cleared', 'ok');
-  deploy_showRackDetail(deployId, rackId);
+  phase_refreshSurface(surface, deployId, rackId);
 }
 
 // ━━━ FEATURE: SOP AUTO-SELECTION ━━━
@@ -39751,6 +39756,36 @@ function phdock_scrollToPhase(type) {
   // sheetUp animation cancels out between the two rects.
   var delta = card.getBoundingClientRect().top - inner.getBoundingClientRect().top;
   inner.scrollTop += delta - 52;   // clear the sticky header
+}
+
+// ── PHASE REFRESH DISPATCHER (v1.14.439) ─────────────────────────────────────────────────────
+// Every phase action re-renders the surface it was tapped on. Until now that surface was
+// HARDCODED to the rack detail in thirteen places — which is invisible while the detail is the
+// only door to phase work, and a wrong-landing the moment a second surface carries the same
+// control. `.438` proved it in the field: it moved ASSIGN into Build, and deploy_assignRack's
+// own tail navigated the technician back out of Build onto the detail after the save. Same
+// shape as `.436`, one ship after `.436` fixed it.
+//
+// ⭐ THE KEY IS A STRING, NOT A CALLBACK, ON PURPOSE. Four of the thirteen sites resume after a
+// modal (ge_captureSkip / ge_captureSave / ge_onCompleteTap's fallback / ta_resolveUnblock) and
+// five more are emitted INSIDE the card markup (checklist_* and the stale-badge re-verify), so
+// the builder's scope is long gone by the time the refresh runs. A string survives an onclick
+// attribute and a stored context object; a closure survives neither.
+//
+// 'detail' is the default for every caller that does not name a surface — that is what keeps
+// the existing doors byte-identical. Contract 14: an unknown key SAYS SO and still refreshes
+// something, rather than silently landing the tech nowhere.
+function phase_refreshSurface(surface, deployId, rackId) {
+  if (surface === 'build') {
+    if (typeof bw_render === 'function') { bw_render(); return; }
+    console.warn('[phase-refresh] bw_render unavailable — falling back to the rack detail');
+    if (typeof phantomToast === 'function') phantomToast('Build could not refresh — opened the rack instead', 'warn');
+  } else if (surface && surface !== 'detail') {
+    console.warn('[phase-refresh] unknown surface "' + surface + '" — refreshing the rack detail');
+  }
+  if (typeof deploy_showRackDetail === 'function') { deploy_showRackDetail(deployId, rackId); return; }
+  console.warn('[phase-refresh] no surface could be refreshed for', deployId, rackId);
+  if (typeof phantomToast === 'function') phantomToast('Could not refresh the rack view — see SYS > ERRORS', 'error');
 }
 
 // ── Screen 4: Rack Detail ──
