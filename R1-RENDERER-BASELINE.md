@@ -155,6 +155,105 @@ the racks, which §27/§28/§45 would address.
    reference** and §43's *"looks like a real premium datacenter rack"* is unfalsifiable.
 4. ⚠ **R1-D (below-the-fold preview) wants a decision** — see §3.
 
+---
+
+# ADDENDUM — the reference mockup, received 2026-08-11
+
+`PHANTOM_RACK_RENDERER_SELF_CONTAINED_MOCKUP.html`, 15,978 bytes. The directive text shipped with
+it is **byte-identical** to the first copy; only the mockup is new.
+
+## A · It is a CSS mockup, not a three.js scene
+
+There is no WebGL, no three.js, no geometry and no camera in the file. The cabinet is a `<div>`
+with layered gradients, each device is an absolutely-positioned `<div>`, the floor and ceiling are
+`transform: perspective(620px) rotateX(62deg)`, and ISO is a flat `rotateY(-17deg)` on the wrapper.
+
+⭐ **This is consistent with §59 and it settles what the file is for: it pins the LOOK, and it says
+nothing about architecture.** §2's "do not copy its standalone architecture" is easy to honour —
+there is no architecture in it to copy. Every value below has to be re-expressed as real geometry,
+materials and camera in `rackElevation_render3D`.
+
+## B · What it actually specifies (extracted, not interpreted)
+
+| Element | Mockup value |
+|---|---|
+| Rack aspect | `--rackW:230px` × `--rackH:560px` → **0.41 (portrait)**; 210×535 below 380px |
+| Stage | 610px tall, 585px below 380px |
+| ISO yaw | `rotateY(-17deg)` — inside the directive's own 12–20° band (§28) |
+| Front | dead straight, no tilt (§27 "engineered, not cinematic") |
+| Frame posts | `linear-gradient(90deg, …)` — narrow bright posts at ~7% and ~93% |
+| Rails | 8px strips at `left:14px`/`right:14px`, `repeating-linear-gradient(180deg, rgba(118,155,170,.55) 0 1px, transparent 1px 12px)` = **mounting-hole pitch** |
+| RU labels | left gutter, every 2U, 7px mono, `#496372` — quiet, exactly as §8 asks |
+| Device base | dark `rgba(35,44,51)→rgba(10,14,18)`, 1px `rgba(135,185,205,.16)`, 5px/6px vent striping, top highlight + inner bottom shadow (recession) |
+| GPU | cyan border, **3px cyan edge bar with glow**, fine cyan vent stripe |
+| Switch | violet border, port pattern on the right half (3px/5px repeat) |
+| Power | amber border, **amber LEDs** |
+| CDU | green border, darker teal body, small display rect with one green dot |
+| Floor contact | `.rack-shadow` — a blurred radial **shadow**, blur(5px) |
+| Rim | `0 0 28px rgba(89,233,255,.07)` — very restrained |
+
+### ⭐ B1 — the floor treatment does NOT collide with the lock
+
+`PHANTOM_CURRENT_STATE.md` §5 says the floor is UNLIT BY RULING and any sheen/gloss ask is a P0
+revert. **The mockup does not ask for sheen.** It uses a blurred contact *shadow* under the
+cabinet and a matte grid floor — no reflection, no gloss. §26's "extremely subtle reflection" is
+the directive's wording, but the approved visual it points at achieves the effect with a shadow.
+**So the floor can be done inside the existing ruling**, and §26 does not need to be overridden.
+That removes the sharpest edge of the lock conflict.
+
+### ⭐ B2 — the rack is PORTRAIT and our mount is LANDSCAPE
+
+This is the framing finding, and it is arithmetic, not taste:
+
+```
+mockup rack aspect   230 / 560  = 0.41   (tall, narrow)
+PHANTOM .bw-mount    362 x 320  = 1.13   (wide)
+a 0.41 rack fitted by height into 362x320  ->  131px wide
+                                            = 36% of the box, 64% empty air
+```
+
+That is precisely what the `_r1/D-after-R1D-390.png` capture shows — a small cabinet adrift in a
+wide box. **The rack is not small because the renderer draws it small; it is small because the
+stage is the wrong shape for a rack.**
+
+## C · What the mockup says about R1-D, which is the useful part
+
+The mockup faces the same fold and solves it by **spending almost nothing above the rack**:
+
+```
+mockup:   eyebrow 10px + H1 24px + context 11px + a small status pill   ~=  70px
+          then hero-head (RACK PREVIEW + OPEN AISLE)                    ~=  50px
+          then the stage                                                 =  610px
+
+PHANTOM:  bw-hd 46 + bw-state 42 + bw-hero 266 + prev header 76 + gaps  ~= 475px
+          then the rack                                                  =  320px (176 visible)
+```
+
+⛔ **The approved visual has no 285px hero card, no phase block and no CONTINUE above the rack.**
+Rack identity lives in a ~70px topbar. That is the same conclusion `§3`/R1-D reached from
+measurement, now backed by the owner's own approved target rather than by my arithmetic alone:
+**the way to 270–320px of visible rack is to compact the identity block, not to shrink anything
+about the renderer.**
+
+📌 It is still a product decision — PHANTOM's hero carries CONTINUE and the phase block, and the
+mockup carries neither, so adopting the mockup's composition means deciding where those two go.
+Reported, not taken.
+
+## D · What is now unblocked, and what still is not
+
+✅ **Unblocked by the mockup:** R2 (cabinet, rails, RU pitch, frame posts, contact shadow),
+R3 (the four device families are fully specified above), R4 (materials), R5 (lighting, restrained
+rim), R7 (ISO at ~17°, straight Front), R8 (LED and label restraint). §43's acceptance list now has
+an artifact to check against.
+
+⛔ **Still blocked, unchanged by the mockup:**
+1. **The RACK SCENE LOCK ruling for R2–R8.** The R1-D override was explicitly scoped to R1-D —
+   *"overrides the rack-scene lock only for this specific fix… do not make unrelated
+   materials/lighting/geometry changes."* R2 onward needs its own ruling. **B1 above narrows what
+   that ruling has to cover: the floor can stay as ruled.**
+2. **§31 Forge parity** still requires restarting the STOPPED renderer consolidation (R1-A). The
+   mockup does not touch this — it renders one rack and has no aisle.
+
 ## 7 · What R1 did NOT do
 
 No visual change. No material, light, geometry, camera or layout edit. No renderer touched. The
