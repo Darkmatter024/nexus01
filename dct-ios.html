@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.436';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.437';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -36120,6 +36120,30 @@ async function _deploy_create_postIntake(_results, name, lead, raw, precomputedH
 function deploy_ensureDeployPanelVisible() {
   if (typeof redesign_isOn !== 'function' || !redesign_isOn()) return;
   var pr = document.getElementById('pg-work');
+  // ⛔ v1.14.437 — ENSURE THE PAGE, NOT JUST THE PANEL.
+  //
+  // This arranged the INSIDE of #pg-work — drop wk-grid, show the wk-deploy stab — and assumed the
+  // app was already in mode 'work'. Called from anywhere else it dutifully arranged a page nobody
+  // could see. MEASURED from Home: deploy_showRackDetail left body carrying `ops-detail
+  // ph-dock-on`, the only visible page still `pg-cmd`, the Build workspace down, and NO back
+  // affordance — while #ph-dock, which is position:fixed, rendered MECH/PWR/NET/COMP/VAL and
+  // "2/5 PHASES" straight over Home. A technician gets a phase strip for a rack they cannot see,
+  // on a screen that has nothing to do with it, and no way back.
+  //
+  // This is the "silent success into a hidden node" class inverted: the renderer succeeded into a
+  // hidden page, and a FIXED child of that work leaked onto the visible one — so it presents as a
+  // stray control rather than as nothing, which is why it reads as "old UI" rather than as a bug.
+  //
+  // It is reachable in production, not just from a probe: the back-nav / deep-link restore
+  // (:19053) calls deploy_showRackDetail with a `rack:` state from WHEREVER the operator currently
+  // is. Ensuring the page here fixes every caller at once instead of auditing each one.
+  if (pr && typeof showMode === 'function') {
+    var _showing = false;
+    try { _showing = getComputedStyle(pr).display !== 'none' && pr.getBoundingClientRect().height > 0; } catch (_) {}
+    // Only when NOT already there — re-entering the mode would re-render Build and re-add wk-grid,
+    // which this function then has to undo, for no gain.
+    if (!_showing) { try { showMode('work'); } catch (e) { try { phantom_logErr('deploy_ensureDeployPanelVisible', e); } catch (_) {} } }
+  }
   if (pr) pr.classList.remove('wk-grid');
   var btn = document.querySelector('#pg-work .subtab-strip .stab[data-wk="wk-deploy"]');
   if (btn && typeof showStab === 'function') showStab(btn, 'work-sub', 'wk-deploy');
