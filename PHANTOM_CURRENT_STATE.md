@@ -16,7 +16,7 @@ doc is stale — fix the doc, do not fork the fact.
 | **Version** | **`phantom-v1.14.438`** (`170c34b`) |
 | Commits | `.416` through `.438` shipped 2026-08-08/11 |
 | Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.438` |
-| Verified | **`.434` confirmed in the SERVED bytes 2026-08-10** — and not merely present: the ORDERING was asserted in production, `rackElevation_render3D` release@1013 acquire@7629 and `forge3d_render` release@845 acquire@1548. Before `.434` both were reversed. `.425`–`.433` each confirmed the same way |
+| Verified | **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 
