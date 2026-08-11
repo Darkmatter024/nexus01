@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.434';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.435';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -37299,8 +37299,18 @@ function rackHybrid_initSync(rack) {
 var RackEngine = {
   _live: [],   // { mount, dispose, pause, resume, kind, io }
 
+  /** Find the attachment on a host, or null. */
+  _find: function (mount) {
+    for (var i = 0; i < RackEngine._live.length; i++) {
+      if (RackEngine._live[i].mount === mount) return RackEngine._live[i];
+    }
+    return null;
+  },
+
   // Register a live GL attachment. Releases every other one first (I1).
-  register: function (mount, api, kind) {
+  // v1.14.435 — `rackId` is additive and optional: the flat path and `attach` need to know WHICH
+  // rack a host is showing, and nothing recorded it before. Callers that omit it keep working.
+  register: function (mount, api, kind, rackId) {
     if (!mount) return null;
     RackEngine.releaseOthers(mount);
     RackEngine.unregister(mount);
@@ -37314,6 +37324,13 @@ var RackEngine = {
       // pause/resume operate on a LIVE attachment; reacquire is the only thing that can rebuild
       // one that was RELEASED, which is the gap that left Build blank after an aisle round trip.
       reacquire: (api && api.reacquire) || null,
+      // v1.14.435 — WHICH rack, and whether this attachment holds a GL context.
+      // I7: a non-interactive attachment holds no WebGL context, ever. `interactive` is the axis
+      // that says so, kept separate from `mode` exactly as §4 requires — "a bay that cannot get a
+      // context is still a bay, rendered flat, not an error screen".
+      rackId: (rackId != null) ? String(rackId) : ((api && api.rackId) ? String(api.rackId) : ''),
+      mode: (api && api.mode) || (kind === 'aisle' ? 'aisle' : 'bay'),
+      interactive: true,
       io: null, paused: false
     };
     RackEngine._live.push(att);
@@ -37387,6 +37404,148 @@ var RackEngine = {
     RackEngine._pending = fn;
     RackEngine._barrierStats.deferred++;
     return false;
+  },
+
+  // ══ §4 / §5 — THE FLAT PATH, DEMOTION, AND THE DOOR. M2-b stage 3a + 3b. ═══════════════════
+  //
+  // §4: `mode` chooses the rig and which controls render; `interactive` chooses WebGL versus flat.
+  // TWO AXES, deliberately — "a bay that cannot get a context is still a bay, rendered flat, not an
+  // error screen". Until now the engine had no flat path at all, which is why `map`, `review` and
+  // `hero` (all `interactive:false` by spec) were unrepresentable and why §5's demote could not be
+  // implemented: there was nowhere to demote TO.
+  //
+  // ⛔ WHAT IS AND IS NOT BACKED HERE, stated so nobody reads more into it than it does.
+  //   BACKED: flat rendering with NO GL context · demote (dispose the context, keep the surface
+  //           rendering flat, keep the attachment in the census) · promote (re-acquire through the
+  //           barrier, using the `reacquire` callback `.427` already added) · `attach` idempotency
+  //           for a matching host+rackId · `update` for FLAT attachments, allocating nothing (I2).
+  //   NOT BACKED, and deliberately not faked:
+  //     · **View-state preservation across demote.** §5 says a demoted attachment keeps its camera,
+  //       explode and cable state and restores them on promote. The camera lives INSIDE the scene
+  //       that dispose() tears down, and capturing it needs renderer cooperation — that is 3d.
+  //       Promote today re-acquires with a fresh camera. Recorded rather than claimed.
+  //     · **`update` on an INTERACTIVE attachment.** Neither renderer can mutate in place (both
+  //       build wholesale), so a data change there still means a rebuild. `update` returns false
+  //       and says so rather than silently rebuilding, which would break I2 while appearing to
+  //       honour it.
+  //     · **Interactive creation through `attach`.** The engine cannot BUILD a GL scene yet; the
+  //       renderers still own that. attach() creates FLAT attachments and adopts existing ones.
+
+  /** Render a rack flat into a host, with no GL context. Absorbs the cmd_rackHeroFlat pattern. */
+  renderFlat: function (mount, rackId) {
+    if (!mount || typeof rackElevation_buildHtml !== 'function') return false;
+    try {
+      var r = RackEngine._resolve(rackId);
+      mount.innerHTML = rackElevation_buildHtml(r.elevation);
+      mount._rm3dRackId = r.id;
+      return true;
+    } catch (e) {
+      try { phantom_logErr('RackEngine:renderFlat', e); } catch (_) {}
+      return false;
+    }
+  },
+
+  /** Push a FLAT attachment. ⛔ Never calls releaseOthers — I7: it holds no context to conflict. */
+  _pushFlat: function (mount, rackId, mode, reacquire) {
+    RackEngine.unregister(mount);
+    var att = {
+      mount: mount, kind: (mode === 'aisle') ? 'aisle' : 'rack', mode: mode || 'bay',
+      rackId: String(rackId || ''), interactive: false,
+      dispose: function () { try { mount.innerHTML = ''; } catch (_) {} },
+      pause: function () {}, resume: function () {},
+      reacquire: reacquire || null, io: null, paused: false
+    };
+    RackEngine._live.push(att);
+    RackEngine._observe(att);
+    return att;
+  },
+
+  /**
+   * §5 — DEMOTION IS NOT DISPOSAL. The context goes; the surface does not. The attachment stays in
+   * the census as a flat one, so `report()` never loses a rack that is still on screen.
+   */
+  demote: function (mount) {
+    var att = RackEngine._find(mount);
+    if (!att) return false;
+    if (att.interactive === false) return RackEngine.renderFlat(mount, att.rackId);
+    var rackId = att.rackId, mode = att.mode, reacq = att.reacquire;
+    try { att.dispose(); } catch (_) {}     // ends in forceContextLoss AND unregisters itself
+    RackEngine._armBarrier();               // I6 — a release always arms the barrier
+    RackEngine.renderFlat(mount, rackId);
+    RackEngine._pushFlat(mount, rackId, mode, reacq);
+    return true;
+  },
+
+  /** §5 — request the interactive slot back. Goes through the barrier (I6), never around it. */
+  promote: function (mount) {
+    var att = RackEngine._find(mount);
+    if (!att) return false;
+    if (att.interactive !== false) return true;          // already ours
+    if (typeof att.reacquire !== 'function') {
+      // No rebuild callback: say so rather than pretending. §9 — degrade visibly, never silently.
+      try { console.warn('[PHANTOM] RackEngine.promote: no reacquire for ' + (att.rackId || '(unknown rack)') + ' — staying flat'); } catch (_) {}
+      return false;
+    }
+    var fn = att.reacquire;
+    RackEngine.acquireOrDefer(function () { fn(); });
+    return true;
+  },
+
+  /**
+   * §2 — THE DOOR. Callers pass a rackId; the engine resolves and attaches.
+   *
+   * IDEMPOTENT PER HOST (I2): attaching to a host that already carries an attachment for the SAME
+   * rackId returns the existing handle and applies changed params. It does NOT rebuild — which is
+   * what makes a repeated render call cheap instead of an allocation.
+   */
+  attach: function (opts) {
+    opts = opts || {};
+    var host = opts.host, rackId = String(opts.rackId == null ? '' : opts.rackId).trim();
+    if (!host || !rackId) {
+      try { console.warn('[PHANTOM] RackEngine.attach: host and rackId are both required'); } catch (_) {}
+      return null;
+    }
+    var existing = RackEngine._find(host);
+    if (existing && existing.rackId === rackId) {
+      if (opts.mode) existing.mode = opts.mode;           // changed params applied, no rebuild
+      return RackEngine._handle(existing);
+    }
+    var wantInteractive = (opts.interactive != null)
+      ? !!opts.interactive
+      : (opts.mode !== 'map' && opts.mode !== 'review' && opts.mode !== 'hero');
+    if (wantInteractive) {
+      // The engine cannot BUILD a GL scene yet — the renderers own that until 3d. Refuse loudly
+      // rather than return a handle to a surface nobody rendered.
+      try { console.warn('[PHANTOM] RackEngine.attach: interactive creation is not available yet (M2-b 3d) — use the renderer, or pass interactive:false'); } catch (_) {}
+      return null;
+    }
+    RackEngine.renderFlat(host, rackId);
+    return RackEngine._handle(RackEngine._pushFlat(host, rackId, opts.mode || 'map', opts.reacquire));
+  },
+
+  /** The handle §2 describes, over one attachment. Only the operations that are real. */
+  _handle: function (att) {
+    if (!att) return null;
+    return {
+      get state() {
+        return { rackId: att.rackId, mode: att.mode, interactive: att.interactive,
+                 paused: att.paused, connected: !!(att.mount && document.body.contains(att.mount)) };
+      },
+      /** I2 — a data change never allocates. True for flat; interactive says no rather than lying. */
+      update: function () {
+        if (att.interactive) {
+          try { console.warn('[PHANTOM] handle.update: an interactive attachment cannot mutate in place yet (M2-b 3d) — nothing changed'); } catch (_) {}
+          return false;
+        }
+        return RackEngine.renderFlat(att.mount, att.rackId);
+      },
+      setMode: function (m) { if (m) att.mode = m; return att.mode; },
+      promote: function () { return RackEngine.promote(att.mount); },
+      demote:  function () { return RackEngine.demote(att.mount); },
+      suspend: function () { att.paused = true; try { att.pause(); } catch (_) {} return true; },
+      resume:  function () { att.paused = false; try { att.resume(); } catch (_) {} return true; },
+      detach:  function () { try { att.dispose(); } catch (_) {} RackEngine.unregister(att.mount); return true; }
+    };
   },
 
   /**
@@ -37526,8 +37685,12 @@ var RackEngine = {
 
   report: function () {
     return RackEngine._live.map(function (a) {
+      // v1.14.435 — rackId/mode/interactive added. ADDITIVE: every existing reader takes
+      // host/kind/paused/connected and is unaffected. §10's census is supposed to be able to say
+      // WHICH rack a surface is showing and whether it holds a context; it could say neither.
       return { host: a.mount && (a.mount.id || '(unnamed)'), kind: a.kind, paused: a.paused,
-               connected: !!(a.mount && document.body.contains(a.mount)) };
+               connected: !!(a.mount && document.body.contains(a.mount)),
+               rackId: a.rackId || '', mode: a.mode || '', interactive: a.interactive !== false };
     });
   }
 };
