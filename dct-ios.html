@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.435';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.436';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13699,7 +13699,7 @@ if (typeof window !== 'undefined') {
             <div class="cs-kpi" id="cs-kpi-block-cell"><div class="cs-kpi-n" id="cs-kpi-block">0</div><div class="cs-kpi-k">Blockers</div></div>
             <div class="cs-kpi"><div class="cs-kpi-n" id="cs-kpi-pct">0%</div><div class="cs-kpi-k">Complete</div></div>
           </div>
-          <button class="cs-hero-cta" id="cs-hero-cta" type="button" onclick="cmd_route('work','deploy')">Continue deployment</button>
+          <button class="cs-hero-cta" id="cs-hero-cta" type="button" onclick="cmd_continueWork()">Continue deployment</button>
         </div>
         <!-- §9.9 PHANTOM Intelligence. Renders the SAME cmd_nba() recommendation the
              phone NBA uses - one brain, two faces. The orb is the approved assistant
@@ -22427,7 +22427,7 @@ function cmd_render() {
   // ── ops signal queue (action rows that route) ──
   var sig = [];
   if (handoffDraft) sig.push(['Handoff waiting for summary', 'Draft open — finish before shift end', 'DRAFT', function() { cmd_route('work', 'handoff'); }]);
-  if (activeDep && activePct < 100) sig.push(['Pod ' + (activeDep.name || 'deploy') + ' ' + activePct + '%', 'Continue seeding racks', 'RESUME', function() { cmd_route('work', 'deploy'); }]);
+  if (activeDep && activePct < 100) sig.push(['Pod ' + (activeDep.name || 'deploy') + ' ' + activePct + '%', 'Continue seeding racks', 'RESUME', function() { cmd_continueWork(); }]);
   var sw = E('cc-sig');
   if (sig.length) {
     sw.innerHTML = sig.map(function(r, i) { return '<div class="sigrow" data-i="' + i + '"><div class="st">' + escHtml(r[0]) + '<small>' + escHtml(r[1]) + '</small></div><div class="sgo">' + r[2] + '</div></div>'; }).join('');
@@ -22725,7 +22725,7 @@ function cmd_nba(rung, st) {
   if (rung === 'B' && !st.masterLoaded) return { h: 'Load your Master to start the shift.', p: 'PHANTOM reads cabinets and host assignments from your Master file. Load it to begin scoping and scanning.', label: 'LOAD MASTER', act: function() { cmd_loadMaster(); } };
   if (st.blockerCount >= 1) return { h: 'Resolve ' + st.blockerCount + ' open blocker' + (st.blockerCount !== 1 ? 's' : '') + '.', p: 'A blocker bites the next shift first. Capture the proof note and route it into a handoff.', label: 'GO TO HANDOFF', act: function() { cmd_route('work', 'handoff'); } };
   if (st.handoffDraft) return { h: 'Finish your shift handoff.', p: 'A handoff draft is open. Complete the summary before your shift ends.', label: 'GO TO HANDOFF', act: function() { cmd_route('work', 'handoff'); } };
-  if (st.activeDep && st.activePct < 100) return { h: 'Continue ' + (st.activeDep.name || 'your deployment') + ' — ' + st.activePct + '% deployed.', p: 'Pick up where the build left off.', label: 'GO TO DEPLOY', act: function() { cmd_route('work', 'deploy'); } };
+  if (st.activeDep && st.activePct < 100) return { h: 'Continue ' + (st.activeDep.name || 'your deployment') + ' — ' + st.activePct + '% deployed.', p: 'Pick up where the build left off.', label: 'GO TO DEPLOY', act: function() { cmd_continueWork(); } };
   if (st.rackCount === 0) return { h: 'Capture your first rack.', p: 'Start a rack trace so deploys, blockers and handoffs have something to build on.', label: 'GO TO SCAN', act: function() { cmd_route('work', 'scan'); } };
   return { h: 'Start a rack trace before deploy.', p: 'Keep the build moving — scan the next rack.', label: 'GO TO SCAN', act: function() { cmd_route('work', 'scan'); } };
 }
@@ -23094,6 +23094,35 @@ function cmd_pulseNextU() {
 // Route from a Command Center control. Step 3: 'work' deep-links the Workspace
 // subtab (Deploy/Scan/Handoff) via showWorkTab(); Scan is re-homed, Deploy/Handoff
 // land on a launcher panel for their existing overlay flow.
+/**
+ * CONTINUE WORK — v1.14.436. The technician destination, and a DIFFERENT thing from the deploy list.
+ *
+ * ⛔ THE DEFECT THIS FIXES. Home's primary CTA ("Continue deployment") called
+ * cmd_route('work','deploy') → showWorkTab('deploy'), which does showMode('work') and then DRILLS
+ * PAST the Build workspace into the deploy Command Center. The BUILD tab calls showMode('work') and
+ * stops. Measured: nav BUILD → #bw-shell alone; Home CTA → #bw-shell PLUS #wk-deploy. One mode, two
+ * different Builds depending on which door you came through — and the door a technician uses to
+ * START A SHIFT was the one that landed somewhere else.
+ *
+ * WHY THE OLD ROUTE WAS RIGHT WHEN IT WAS WRITTEN. The `.121` chokepoint exists so every deploy
+ * entry skips the bare "Open Deploy" launcher stub and lands on the Command Center list instead.
+ * That was the best available destination — until `.385` built an actual Build workspace that shows
+ * the current rack, the current phase, the next action, blockers and contextual tools. "Pick up
+ * where the build left off" now has a real answer, and a deployment LIST is not it.
+ *
+ * ⛔ ONLY THE CONTINUE-WORK CTAs MOVE. The Deploy tile, the desktop sidebar's Deploy item and the
+ * in-Build deploy button all mean "manage deployments", and the list is the correct destination for
+ * those — they are untouched. Intent decides the door, not the word "deploy" appearing in a label.
+ */
+function cmd_continueWork() {
+  try {
+    if (typeof showMode === 'function') return showMode('work');
+  } catch (e) {
+    if (typeof phantom_logErr === 'function') phantom_logErr('cmd_continueWork', e);
+    if (typeof phantomToast === 'function') phantomToast('Could not open Build - see SYS > ERRORS', 'error');
+  }
+}
+
 function cmd_route(mode, target) {
   try {
     if (mode === 'profile') { if (typeof firstRun_openProfile === 'function') return firstRun_openProfile(); return showPage('master'); }
