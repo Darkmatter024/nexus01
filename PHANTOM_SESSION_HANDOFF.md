@@ -84,7 +84,23 @@ item 8's empty half has no live example since `.424` resolved every cabinet in t
 
 1. **3b** (above), then **3c** (dock into Build), then **3d/step 4** (retire the detail as a
    destination — LAST, the back-nav restore path lands there).
-2. **SHIFT and SITE/SYSTEM** — the two legs of the canonical technician flow never walked.
+2. ⭐ **WALK SHIFT AND SITE/SYSTEM** — owner-queued 2026-08-11, same session as 3b. The two legs of
+   the canonical technician flow that have **never been walked**. Walk them the way HOME/BUILD/
+   FORGE/TOOLS were walked: seed a real shift state, inventory each surface, and ask the owner's
+   questions — why am I here, what is the primary action, is there another door doing this, is this
+   exposing machinery, is a legacy surface leaking, does the tech have to understand PHANTOM to use
+   PHANTOM. **Make the product decisions; only escalate what genuinely changes product behaviour.**
+   ⚠ **Expect SHIFT to be findings-heavy and light on fixable code.** It is *undoored, not unbuilt* —
+   12 `shift_*` functions, a sheet, a hero and a report generator already exist, and it renders today
+   as ONE PILL on Command. But **3 of its 9 questions have no data source** (the Store write journal,
+   the derived readiness gate list, `PhantomIntelligence.queue` — all 0 references, two are M3
+   deliverables). ⛔ So do NOT give it a nav pillar (D-1) and do NOT invent the missing three — that
+   is fabricated telemetry. Report what it can and cannot answer.
+   📌 **SITE/SYSTEM is the likelier source of real fixes:** the canonical flow says it is
+   *administrative/recovery functions only*. Anything operational found in there is in the wrong
+   place, and that is exactly the class the last three ships were.
+   *(The walk harness pattern that worked: seed state, `showMode`, then inventory visible headings /
+   actions / nav / legacy per surface. It found `.436`, `.437` and `.438`.)*
 3. **Renderer stages 3c–3e** — STOPPED by owner directive; plan written in
    `M2B-CONSOLIDATION-PLAN.md`. §8 ends by deleting `forge3d_render`; largest blast radius left.
 4. **Owner's own:** the PHASE-ENGINE step text, and the **M3 data sources**. ⛔ Note the chain:
