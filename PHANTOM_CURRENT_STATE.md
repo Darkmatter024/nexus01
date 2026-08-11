@@ -5,7 +5,7 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-11, after `v1.14.438` — technician-workflow pass; renderer work stopped by owner directive.**
+**Last updated: 2026-08-11, after `v1.14.439` — the refresh-surface dispatcher; renderer work stopped by owner directive.**
 
 ---
 
@@ -13,9 +13,9 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.438`** (`170c34b`) |
-| Commits | `.416` through `.438` shipped 2026-08-08/11 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.438` |
+| **Version** | **`phantom-v1.14.439`** (`7a7473c`) |
+| Commits | `.416` through `.439` shipped 2026-08-08/11 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.439` |
 | Verified | **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
@@ -236,6 +236,33 @@ Before `.434` both were the other way round.
 ⚠ **The claim discipline stands and is in the code:** the ordering was certain; a field failure
 caused by it was never proven, and this must not be cited as the explanation for the historical
 blank-rack arcs. A stated invariant simply was not being held, and now is.
+
+⭐ **`.439` — THE REFRESH SURFACE IS NOW A PARAMETER, AND STEP 3a's INVENTORY WAS SHORT BY NINE.**
+Found while scoping merge step 3b, and it corrects a number the plan is built on. The question
+"what does the phase-card block contain" returns 4 refresh sites; the question **"which code
+assumes the surface it refreshes is the rack detail"** returns **13**. The other nine are outside
+the block 3b was scoped to lift: four resume **after a modal** (`ge_captureSkip`, `ge_captureSave`,
+`ge_onCompleteTap`'s rack-missing fallback, `ta_resolveUnblock`) and five are emitted **inside the
+card markup** (`checklist_addItem` / `_removeItem` / `_renameItem` / `_toggleEdit`,
+`deploy_flagPhaseReverify`).
+⛔ **So `onRefresh` as a CALLBACK cannot work** — nine of the thirteen run after the builder's scope
+is gone. `phase_refreshSurface(surface, deployId, rackId)` takes a **string** key, which survives an
+onclick attribute and a stored context object. `'detail'` is the default, so every pre-`.439` caller
+is byte-identical.
+
+📌 **It was a LIVE defect, not a hypothetical.** `.438` moved ASSIGN into Build; `deploy_assignRack`
+still ended with `deploy_showRackDetail`, so Assign-from-Build saved and then threw the technician
+onto the detail — `.436`'s wrong-landing, one ship after `.436` fixed it, introduced by the ship
+that moved the control. QR and LOG NOTE have no refresh tail and were clean. ⭐ **A hardcoded
+destination is invisible for exactly as long as there is only one destination** — every remaining
+merge step adds a second one, so the other twelve sites are now the known work, not a surprise.
+
+⚠ **And a test that failed against correct code, worth not repeating.** `deploy_showRackDetail`
+**also re-renders Build on FIRST entry** via its own nav path — true at `.438` — and does not on a
+second call into an already-open detail. Baseline and measurement therefore only compare from
+**two cold boots**; sharing one page let the baseline contaminate the reading. The invariant is not
+*"the default caller never touches Build"* but *"it does what a direct detail render does and
+nothing more."*
 
 ⛔ **STAGE 3 IS WHAT REMAINS OF M2-b.** `attach` (BACKABLE SUBSET ONLY — see below), modes, and the
 §8 deletions LAST. §8 ends by deleting `forge3d_render` as a separate renderer, which is the single

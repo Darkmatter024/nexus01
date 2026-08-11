@@ -14,21 +14,41 @@ Durable facts belong in `PHANTOM_CURRENT_STATE.md`; durable lessons belong in me
 
 ## ⭐ START HERE — the task the owner deferred
 
-**RACK-DETAIL MERGE, STEP 3b: extract the phase-card builder with a refresh hook.**
-Owner: *"do 3b next session."* It is **fully specified** in `M2B-CONSOLIDATION-PLAN.md` (step 3a
-section) — read that before opening code. Signature:
+**RACK-DETAIL MERGE, STEP 3b: extract the phase-card builder.** Owner: *"do 3b next session."*
+
+⭐ **READ THIS BEFORE THE PLAN — `.439` CHANGED 3b's SHAPE AND ITS SIZE.** The plan's step 3a
+section says the coupling is 4 `onclick` strings and prescribes an `onRefresh` **callback**. Both
+are wrong, measured 2026-08-11:
+
+- **It is 13 sites, not 4.** Nine sit outside the IIFE — four resume after a modal
+  (`ge_captureSkip:30238`, `ge_captureSave:30255`, `ge_onCompleteTap`'s fallback `:30285`,
+  `ta_resolveUnblock:30471`) and five are emitted inside the card markup (`checklist_addItem:29037`,
+  `_removeItem:29048`, `_renameItem:29060`, `_toggleEdit:29065`, `deploy_flagPhaseReverify:29621`).
+- **A callback cannot reach nine of them** — the builder's scope is gone by the time they run.
+  `.439` shipped the mechanism instead: **`phase_refreshSurface(surface, deployId, rackId)`**, a
+  string key that survives an onclick attribute and a stored context object. `'detail'` is the
+  default, so untouched callers stay byte-identical.
+
+**So 3b is now: thread `surface` through the 12 remaining sites, then lift the IIFE to**
 
 ```js
-deploy_buildPhaseCards(deployId, rackId, rackPhases, rack, onRefresh)
+deploy_buildPhaseCards(deployId, rackId, rackPhases, rack, surface, opts)
 ```
 
-- Lift the IIFE at **`:40019`–`:40094`**, currently inside `deploy_showRackDetail`.
-- Detail passes `onRefresh = () => deploy_showRackDetail(deployId, rackId)`.
-  ⭐ **Byte-identical behaviour on the existing surface is the acceptance bar.**
-- Build passes `onRefresh = () => bw_render()`.
-- ⛔ **The four `deploy_showRackDetail(...)` references are inside `onclick` STRINGS**, not JS
-  references — they cannot be swapped by renaming. The builder must EMIT the caller's hook. That is
-  the whole reason 3b is a migration rather than a move.
+- Lift the IIFE at **`:40019`–`:40095`** (the plan says `:40094`; the closing `})();` is `:40095`).
+  ⚠ Line numbers shifted +29 at `.439` — re-anchor on the verbatim strings, not these.
+- The block also reads **`dep`** and **`rackAudit`**, which the plan's signature omits. Pass them
+  (`opts = {dep, rackAudit}`) rather than re-deriving: the detail already has both, and re-loading
+  the audit on a hot render path is a cost for nothing.
+- Detail passes `'detail'` → ⭐ **byte-identical behaviour on the existing surface is the bar.**
+- Build passes `'build'`.
+- `ge_openCaptureModal` / `ge_onCompleteTap` / `ta_open` each need the key threaded into
+  `_geCaptureState` and `_ta_ctx` so the post-modal refresh lands on the right surface. Default
+  every added parameter to `'detail'`.
+
+⚠ **Two-cold-boot rule for any refresh test.** `deploy_showRackDetail` re-renders Build on FIRST
+entry and not on the second; a baseline taken on the same page contaminates the reading. `.439`'s
+spec 27 has the working pattern.
 
 **Why it was deferred, not skipped:** it rewrites the path controlling START / COMPLETE / OVERRIDE —
 `phdock_render`'s own comment calls the sheet *"the ONLY door to the phase cards"*. A half-finished

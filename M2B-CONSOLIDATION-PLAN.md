@@ -266,3 +266,33 @@ then "jumped" — the same shape as `.436`'s wrong-landing, reintroduced by the 
 ⚠ **The four are inside onclick STRINGS**, not JS references, so they cannot be swapped by renaming
 a variable — the builder has to emit the caller's refresh hook. That is exactly why 3b is a
 migration and not a move, and why re-parenting the dock first (3c before 3b) would strand the cards.
+
+### ⛔ 3a's COUNT WAS SHORT BY NINE — corrected at `v1.14.439`, 2026-08-11
+
+The table above answers *"what does the phase-card block contain."* The question that decides 3b is
+**"which code assumes the surface it refreshes is the rack detail,"** and that answer is **13**:
+
+| Where | Sites | Lines (at `.438`) |
+|---|---|---|
+| `onclick` strings in the card loop — the four above | 4 | `40067` `40069` `40073` `40076` |
+| Resume **after a modal** | 4 | `30238` `30255` `30285` `30471` |
+| Emitted **inside** the card markup by its own helpers | 5 | `29037` `29048` `29060` `29065` `29621` |
+
+⛔ **This kills the `onRefresh` CALLBACK.** Nine of the thirteen run after the builder's scope is
+gone — `ge_captureSkip`/`ge_captureSave` resume when the quirk modal closes, `ta_resolveUnblock`
+when Troubleshoot resolves, and the five `checklist_*`/re-verify sites are emitted into onclick
+attributes. A closure survives none of them.
+
+⭐ **`.439` shipped the mechanism 3b needs:** `phase_refreshSurface(surface, deployId, rackId)` —
+a **string** key, `'build'` → `bw_render`, anything else → `deploy_showRackDetail`. `'detail'` is
+the default so untouched callers are byte-identical, and an unknown key warns and still lands
+somewhere rather than nowhere (Contract 14).
+
+📌 **It was already live, which is why it shipped ahead of 3b.** `.438` moved ASSIGN into Build
+while `deploy_assignRack` still ended with `deploy_showRackDetail`, so Assign-from-Build threw the
+technician onto the detail. **Every remaining merge step adds a second destination**, so the other
+twelve are now known work rather than a surprise found mid-ship.
+
+⚠ **The IIFE also reads `dep` and `rackAudit`**, which the proposed signature omits. Pass them in;
+the detail already holds both and re-deriving `deploy_loadAuditFor` on a hot render path buys
+nothing.
