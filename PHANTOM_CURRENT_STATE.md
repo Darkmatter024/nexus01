@@ -5,7 +5,7 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-10, after `v1.14.434` — M2-b stage 2 device-verified.**
+**Last updated: 2026-08-11, after `v1.14.438` — technician-workflow pass; renderer work stopped by owner directive.**
 
 ---
 
@@ -13,9 +13,9 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.434`** (`3ca3dd7`) |
-| Commits | `.416` through `.434` shipped 2026-08-08/10 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.434` |
+| **Version** | **`phantom-v1.14.438`** (`170c34b`) |
+| Commits | `.416` through `.438` shipped 2026-08-08/11 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.438` |
 | Verified | **`.434` confirmed in the SERVED bytes 2026-08-10** — and not merely present: the ORDERING was asserted in production, `rackElevation_render3D` release@1013 acquire@7629 and `forge3d_render` release@845 acquire@1548. Before `.434` both were reversed. `.425`–`.433` each confirmed the same way |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
