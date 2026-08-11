@@ -232,3 +232,37 @@ detour it replaces.
 ⚠ **The estimate that mattered:** step 2 was one array append plus a guard. Step 3 is a content
 migration with a live safety rule attached to it. They are not the same size, and the plan
 previously implied they were.
+
+### 3a — DONE (inventory, 2026-08-11). The coupling is the refresh, not the markup.
+
+`_phCardsHtml` is built by an IIFE **inside `deploy_showRackDetail`** (`:40019`–`:40094`) and handed
+to `phdock_render` at `:40166`. Under `?legacy=1` the same string is appended inline instead
+(`:40100`), so the builder already serves two presentations — which is the good news.
+
+**What the cards depend on:**
+
+| Dependency | Refs | Note |
+|---|---|---|
+| **`deploy_showRackDetail(…)`** | **4** | ⛔ the cards' own actions RE-ENTER the detail to refresh |
+| `deploy_advancePhase(…)` | 3 | START / COMPLETE |
+| `deploy_isPhaseGated(…)` | 1 | per-phase gating |
+| `deploy_overrideGate(…)` | 1 | OVERRIDE |
+| `deploy_renderPhaseStaleBadge(…)` | 1 | staleness |
+
+⭐ **THE COUPLING IS THE REFRESH.** Four of the ten call sites re-enter `deploy_showRackDetail`, so
+these cards do not merely *live* on the detail — their actions are wired to re-render **that
+surface**. Move the markup alone and every START/COMPLETE/OVERRIDE tap in Build would navigate the
+technician back to the screen this merge exists to retire. It would look like the buttons worked and
+then "jumped" — the same shape as `.436`'s wrong-landing, reintroduced by the fix for it.
+
+**So 3b is a REFRESH-CALLBACK extraction, not a copy-paste:**
+
+1. Lift the IIFE to a named builder — `deploy_buildPhaseCards(deployId, rackId, rackPhases, rack, onRefresh)`.
+2. `deploy_showRackDetail` calls it with `onRefresh = () => deploy_showRackDetail(deployId, rackId)`
+   — **byte-identical behaviour on the existing surface, which is the acceptance bar for 3b.**
+3. Build calls it with `onRefresh = () => bw_render()`.
+4. The four hardcoded `deploy_showRackDetail(...)` strings in the card markup become that callback.
+
+⚠ **The four are inside onclick STRINGS**, not JS references, so they cannot be swapped by renaming
+a variable — the builder has to emit the caller's refresh hook. That is exactly why 3b is a
+migration and not a move, and why re-parenting the dock first (3c before 3b) would strand the cards.
