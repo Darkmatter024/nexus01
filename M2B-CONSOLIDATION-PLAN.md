@@ -200,3 +200,35 @@ that produced both of today's workflow defects. The same discipline that applies
 
 ⚠ **Do not start at step 4.** The dock and the detail are what the back-nav restore path lands on
 (`:19053`), and `v1.14.437` only just made that landing coherent.
+
+## Step 3 is bigger than this plan assumed — measured 2026-08-11
+
+**The dock is not standalone.** Its renderer is:
+
+```js
+phdock_render(deployId, rackId, rackPhases, cardsHtml, rack)
+```
+
+`cardsHtml` is the **phase-card markup the rack detail builds** — START / COMPLETE / OVERRIDE per
+phase. So "move the dock into Build" is really **two** jobs:
+
+1. Build must produce the phase-card content the detail currently produces, and
+2. only then can the dock be re-parented to Build's surface.
+
+⛔ **Do not re-parent the dock first.** `phdock_render` fails loudly and correctly when its nodes are
+missing (*"under body.rd the sheet is the ONLY door to the phase cards… if either node is missing
+the tech loses START/COMPLETE/OVERRIDE with no symptom"*) — but a dock rendered with someone else's
+`cardsHtml`, or with none, is a phase control that cannot complete a phase. That is worse than the
+detour it replaces.
+
+**Revised step 3, in order:**
+
+- **3a.** Inventory what builds `cardsHtml` today and what it depends on (rack, phases, gating).
+  Same discipline as step 1 — inventory before moving.
+- **3b.** Give Build the phase cards, ADDITIVELY, with the detail still rendering its own.
+- **3c.** Re-parent the dock to Build and prove START / COMPLETE / OVERRIDE work from there.
+- **3d.** Only then step 4 (retire the detail as a destination).
+
+⚠ **The estimate that mattered:** step 2 was one array append plus a guard. Step 3 is a content
+migration with a live safety rule attached to it. They are not the same size, and the plan
+previously implied they were.
