@@ -12913,7 +12913,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.449';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.450';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -38704,22 +38704,53 @@ function rackElevation_render3D(rack, mountEl) {
     }
   });
 
-  // ── REAR ASSEMBLY (mock L680-757, VERBATIM + env .25) — replaces .255's two hint cylinders.
-  //    §2 asked for chrome-black here; ported verbatim (copper bus bars) per THE RULE — see flag above. ──
-  var cartridge = new THREE.Mesh(new THREE.BoxGeometry(RW * 0.35, RH * 0.55, 0.08), cartridgeMat);
-  cartridge.position.set(0, RH * 0.05, -RD/2 + 0.25); rackGrp.add(cartridge);
+  // ── REAR ASSEMBLY — SPLIT INTO STRUCTURE AND CLAIM (v1.14.450, owner ruling 2026-08-12) ───────
+  // ⛔ THE DEFECT. This block was ported verbatim from the mock and drawn on EVERY rack: a CDU
+  // cartridge, two coolant manifolds and three vertical coolant pipes. Manifolds and coolant pipes
+  // are LIQUID-COOLING hardware. Drawing them on an air-cooled cabinet asserts that the rack is
+  // plumbed for liquid — a fact the Master never stated — and it is not a small claim on this
+  // fleet: AUS-01 is H100/H200 with no Blackwell on the floor, so the plumbing was fiction on every
+  // rack there. Contract 10 and §5 ("never fabricate ... CDU"). It was visible too: through the
+  // empty U slots of a sparse rack the cartridge read as a green band down the middle of the FRONT
+  // elevation.
+  //
+  // ⭐ THE TEST IS THE ONE THE RAILS ALREADY PASS. "Rails are the rack — the Master states totalU,
+  // so drawing them declares NOTHING the Master didn't." Structure every cabinet physically has is
+  // honest; hardware only SOME cabinets have is a claim and needs a source.
+  //   STRUCTURE, unconditional: bus bars (copper, power distribution — every rack is powered),
+  //   cable-management arms, rear door.
+  //   CLAIM, gated: the CDU cartridge, both manifolds, the vertical coolant pipes.
+  //
+  // THE SOURCE IS THE MASTER'S OWN INVENTORY, not an inference. A rack is drawn as liquid-cooled
+  // exactly when the Master places a CDU in it — read through Vocabulary.typeOf so it uses the same
+  // door the trays and the flat elevation use, and so `cdu` resolving to its own display key
+  // (v1.14.448) is what makes this expressible at all. Platform names are deliberately NOT
+  // consulted: "this looks like a GB300 so it must be liquid" is inference, and the ruling says
+  // unless the Master DECLARES it. A rack fed by a row-level CDU outside the cabinet correctly
+  // shows no in-rack plumbing, because the Master did not put one in this rack.
+  var _liquidCooled = false;
+  try {
+    _liquidCooled = slots.some(function (s) {
+      return s && (typeof Vocabulary === 'object' ? Vocabulary.typeOf(s.type) : String(s.type || '').toLowerCase()) === 'cdu';
+    });
+  } catch (e) { _liquidCooled = false; }   // unreadable inventory → claim nothing
+
   [-1, 1].forEach(function (s) {
     var busBar = new THREE.Mesh(new THREE.BoxGeometry(0.06, RH * 0.6, 0.04), busBarMat);
     busBar.position.set(s * (RW/2 - 0.25), 0, -RD/2 + 0.15); rackGrp.add(busBar);
   });
-  var topManifold = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, RW * 0.7, 12), manifoldMat);
-  topManifold.rotation.z = Math.PI/2; topManifold.position.set(0, RH/2 - 0.3, -RD/2 + 0.08); rackGrp.add(topManifold);
-  var botManifold = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, RW * 0.7, 12), manifoldMat);
-  botManifold.rotation.z = Math.PI/2; botManifold.position.set(0, -RH/2 + 0.3, -RD/2 + 0.08); rackGrp.add(botManifold);
-  [-1, 0, 1].forEach(function (s) {
-    var vPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, RH * 0.5, 8), manifoldMat);
-    vPipe.position.set(s * RW * 0.25, 0, -RD/2 + 0.08); rackGrp.add(vPipe);
-  });
+  if (_liquidCooled) {
+    var cartridge = new THREE.Mesh(new THREE.BoxGeometry(RW * 0.35, RH * 0.55, 0.08), cartridgeMat);
+    cartridge.position.set(0, RH * 0.05, -RD/2 + 0.25); rackGrp.add(cartridge);
+    var topManifold = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, RW * 0.7, 12), manifoldMat);
+    topManifold.rotation.z = Math.PI/2; topManifold.position.set(0, RH/2 - 0.3, -RD/2 + 0.08); rackGrp.add(topManifold);
+    var botManifold = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, RW * 0.7, 12), manifoldMat);
+    botManifold.rotation.z = Math.PI/2; botManifold.position.set(0, -RH/2 + 0.3, -RD/2 + 0.08); rackGrp.add(botManifold);
+    [-1, 0, 1].forEach(function (s) {
+      var vPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, RH * 0.5, 8), manifoldMat);
+      vPipe.position.set(s * RW * 0.25, 0, -RD/2 + 0.08); rackGrp.add(vPipe);
+    });
+  }
   for (var ca = 0; ca < 6; ca++) {
     var caY = -RH/3 + ca * (RH/3.5);
     var cableArm = new THREE.Mesh(new THREE.BoxGeometry(RW * 0.6, 0.04, 0.06), cableArmMat);
