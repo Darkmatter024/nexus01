@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.444';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.445';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -38217,9 +38217,27 @@ function rackElevation_render3D(rack, mountEl) {
 
   // ── RACK STRUCTURE (chrome black §B: 0x0c0f14 metal .92 rough .16 env .25) ──
   var rackGrp = new THREE.Group();
-  var CHROME = { color: 0x04060a, metalness: 1.0, roughness: 0.05, envMapIntensity: 0.25 };   // v1.14.265 MIRROR FINISH (CLEAR-PORT S2; structure only, trays keep type colour per .256 lock)
+  // v1.14.445 (R4 §18 — POWDER COAT, replacing the .265 MIRROR FINISH). §18 is explicit: "mostly
+  // rough black powder coat, low-to-medium metalness, restrained specular response, edge highlights
+  // visible under side light" and, in as many words, "no mirror-chrome racks". The approved mockup
+  // agrees — its cabinet is linear-gradient(#10171e,#05080d) with a 1px light edge, matte steel with
+  // a lit rim, not a black mirror. At metalness 1.0 / roughness 0.05 the frame and side panels were
+  // acting as mirrors for the studio env cubemap, which is what made the cabinet read as a glass
+  // case rather than painted metal.
+  // Colour is UNCHANGED (0x04060a) — only the finish moves. Rails deliberately keep metalness 0.88 /
+  // roughness 0.34, which now satisfies §18's "rail: slightly brighter metal response than cabinet
+  // body" as a consequence rather than needing its own edit.
+  var CHROME = { color: 0x04060a, metalness: 0.62, roughness: 0.42, envMapIntensity: 0.25 };   // R4: powder coat (was 1.0/0.05 mirror, .265)
   var steelMat = new THREE.MeshStandardMaterial(CHROME);
-  var edgeMat = new THREE.LineBasicMaterial({ color: 0x1e3a4a, transparent: true, opacity: 0.15 });
+  // v1.14.445 (R4 §18) — THE EDGE PAYS FOR THE MIRROR. Dropping the frame to a powder coat removed
+  // the specular that had been doing the cabinet's edge definition, and the first render of that
+  // change read as a flat black void: correct per "no mirror-chrome racks", but §18 asks in the same
+  // breath for "edge highlights visible under side light". The mockup resolves it the same way and
+  // is worth copying literally — a matte body (linear-gradient #10171e→#05080d) with an explicit
+  // 1px rgba(155,210,230,.22) light edge. So the edge line takes over the job the reflection was
+  // doing: a colder, brighter steel tone at 0.15 → 0.34 opacity. Still a LINE, not geometry —
+  // §7's "a few correct bevels beat decorative geometry", at zero triangles.
+  var edgeMat = new THREE.LineBasicMaterial({ color: 0x9bd2e6, transparent: true, opacity: 0.34 });
   function frame(g, x, y, z) {
     var m = new THREE.Mesh(g, steelMat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; rackGrp.add(m);
     var e = new THREE.LineSegments(new THREE.EdgesGeometry(g), edgeMat); e.position.set(x, y, z); rackGrp.add(e);
@@ -38351,13 +38369,40 @@ function rackElevation_render3D(rack, mountEl) {
   var _stripCache = {};                                                 // bezel strip mats cached by hex (§5 — ~9 distinct colours)
   function _stripMat(hx) { return _stripCache[hx] || (_stripCache[hx] = new THREE.MeshBasicMaterial({ color: hx, transparent: true, opacity: 0.9 })); }
 
+  // ── v1.14.445 (R4 — MATERIAL REUSE, §17) ─────────────────────────────────────────────────────
+  // The bezel strips above have been cached by colour since .257. The CHASSIS was not: it minted a
+  // fresh MeshStandardMaterial per tray, so a 42-device rack carried 42 chassis materials whose
+  // parameters come from KIND_C — a map with EIGHT entries. Same for the blank-edge and
+  // height-unknown hatch line materials, both created inside the tray loop.
+  // §17: "Do not instantiate dozens of unique materials per device. Material reuse matters on
+  // mobile." Each unique material is its own shader program lookup and uniform upload; identical
+  // ones cost that repeatedly for nothing.
+  // ⭐ ZERO VISUAL CHANGE BY CONSTRUCTION. The parameters are copied verbatim from the per-tray
+  // literal — same colour, same emissive, same emissiveIntensity, metalness, roughness, opacity and
+  // envMapIntensity. Only the number of objects holding them changes.
+  // ⚠️ KEYED BY KIND, WHICH IS LOAD-BEARING. The `blank` branch MUTATES its chassis material
+  // (colour, metalness, roughness, opacity) after construction. That is safe here only because the
+  // cache is per-kind, so the mutation can never reach a compute or power tray — and because it
+  // writes the same values every time, so a second blank tray re-applying them is a no-op. Do NOT
+  // collapse this cache to a single shared material.
+  var _chassisCache = {};
+  function _chassisMat(kind) {
+    var c = KIND_C[kind] || 0x121a24;
+    return _chassisCache[kind] || (_chassisCache[kind] = new THREE.MeshStandardMaterial({
+      color: c, emissive: c, emissiveIntensity: 0.06, metalness: 0.55, roughness: 0.4,
+      transparent: false, envMapIntensity: 0.25
+    }));
+  }
+  var blankEdgeMat = new THREE.LineBasicMaterial({ color: 0x1e293b, transparent: true, opacity: 0.2 });
+  var hgtHatchMat  = new THREE.LineBasicMaterial({ color: 0xffcb45, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
+
   // ── §1 rack side panels + feet (mock L408-424, verbatim + env .25) — omitted in .255 ──
-  var sidePanelMat = new THREE.MeshStandardMaterial({ color: 0x04060a, metalness: 1.0, roughness: 0.05, emissive: 0x000000, emissiveIntensity: 0, envMapIntensity: 0.25 });   // v1.14.265 MIRROR FINISH
+  var sidePanelMat = new THREE.MeshStandardMaterial({ color: 0x04060a, metalness: 0.62, roughness: 0.42, emissive: 0x000000, emissiveIntensity: 0, envMapIntensity: 0.25 });   // v1.14.445 (R4 §18): powder coat, was 1.0/0.05 mirror (.265). The side panel is the largest flat face on the cabinet, so it was the biggest mirror.
   [-1, 1].forEach(function (s) {
     var sp = new THREE.Mesh(new THREE.BoxGeometry(0.05, RH - 0.35, RD - 0.35), sidePanelMat);
     sp.position.set(s * (RW/2 + 0.025), 0, -0.2); sp.castShadow = true; rackGrp.add(sp);
   });
-  var footMat = new THREE.MeshStandardMaterial({ color: 0x04060a, metalness: 1.0, roughness: 0.05, envMapIntensity: 0.25 });   // v1.14.265 MIRROR FINISH
+  var footMat = new THREE.MeshStandardMaterial({ color: 0x04060a, metalness: 0.62, roughness: 0.42, envMapIntensity: 0.25 });   // v1.14.445 (R4 §18): powder coat, was 1.0/0.05 mirror (.265) — the feet sit in the floor reflection, so a mirror finish here doubled the specular at the one point the eye reads contact
   [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function (p) {
     var foot = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.12, 8), footMat);
     foot.position.set(p[0] * (RW/2 - 0.3), -RH/2 - 0.14, p[1] * (RD/2 - 0.3)); rackGrp.add(foot);
@@ -38403,7 +38448,7 @@ function rackElevation_render3D(rack, mountEl) {
     // chassis — DARK gunmetal per KIND (v1.14.257, mock palette). TYPE colour is DEMOTED to the
     // bezel strip below; it no longer paints the whole box (the .256 "coloured slabs" defect).
     // Raycast target + userData.dev unchanged (.255 tap contract).
-    var chMat = new THREE.MeshStandardMaterial({ color: KIND_C[kind] || 0x121a24, emissive: KIND_C[kind] || 0x121a24, emissiveIntensity: 0.06, metalness: 0.55, roughness: 0.4, transparent: false, envMapIntensity: 0.25 });   // v1.14.333 (HANDOFF-REH3D-GEOMETRY 2a) — was transparent:true/opacity:0.92; that 8% transparency put all ~42 chassis in Three's transparent queue → per-frame centroid re-sort → trays pop in front of each other during orbit. Opaque = stable sort, no pop. Type-colour (color/emissive) untouched (.256 lock).
+    var chMat = _chassisMat(kind);   // v1.14.445 (R4 §17): shared per KIND, was one material per tray. Parameters verbatim — v1.14.333 (HANDOFF-REH3D-GEOMETRY 2a) opaque queue (was transparent:true/opacity:0.92; that 8% transparency put all ~42 chassis in Three's transparent queue → per-frame centroid re-sort → trays pop during orbit) and the .256 type-colour lock both carried over unchanged.
     var chassis = new THREE.Mesh(new THREE.BoxGeometry(cw, hT, cd), chMat);
     chassis.castShadow = true; chassis.receiveShadow = true;
     chassis.userData.dev = dev;
@@ -38549,8 +38594,7 @@ function rackElevation_render3D(rack, mountEl) {
       // "blanks are hardware, rails are the rack" doctrine — no BLANK over a U the Master didn't state).
       chMat.color.setHex(0x0a0f14); chMat.emissive.setHex(0x0a0f14); chMat.emissiveIntensity = 0;
       chMat.metalness = 0.4; chMat.roughness = 0.85; chMat.transparent = true; chMat.opacity = 0.4;
-      var e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(cw, hT, cd)),
-        new THREE.LineBasicMaterial({ color: 0x1e293b, transparent: true, opacity: 0.2 }));
+      var e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(cw, hT, cd)), blankEdgeMat);   // v1.14.445 (R4 §17): shared, was minted per tray
       grp.add(e);
 
     }
@@ -38561,8 +38605,7 @@ function rackElevation_render3D(rack, mountEl) {
     // "DO NOT TRUST THIS GEOMETRY" — the 3D echo of the FLAT elevation's gold hatch. NOT the
     // same as an UNKNOWN *type* (that reads magenta via TYPE_COLOR.unknown). Both can co-occur.
     if (dev.hgtUnknown) {
-      var hz = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(cw + 0.02, hT + 0.02, cd + 0.02)),
-        new THREE.LineBasicMaterial({ color: 0xffcb45, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending }));
+      var hz = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(cw + 0.02, hT + 0.02, cd + 0.02)), hgtHatchMat);   // v1.14.445 (R4 §17): shared, was minted per tray
       grp.add(hz);
     }
   });
