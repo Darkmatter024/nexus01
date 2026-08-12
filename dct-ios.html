@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.446';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.447';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -38116,7 +38116,16 @@ function rackElevation_render3D(rack, mountEl) {
   var floorY = yBase - 0.05;
   var FOV = 28;                                                    // John-locked framing (mock uses 28; socket was 32)
   var fitDistH = (RH * 0.5) / Math.tan((FOV * Math.PI / 180) / 2);
-  var fitDist = Math.max(fitDistH, RD * 0.65) * 1.3;              // frames full rack height at FOV 28; loop() orbits on this
+  // v1.14.447 (R7 §27) — FRAME FILL 1.3 → 1.12. fitDistH is the distance at which the rack's height
+  // exactly spans the vertical FOV, so the trailing multiplier IS the breathing room: at 1.3 the
+  // rack occupied 1/1.3 = 77% of frame height, leaving 23% dead air in a preview that R1-D fought
+  // to get on screen at all. §27 asks for "rack vertically centered, full cabinet visible, minimal
+  // unused space, slight breathing room top/bottom" — 1.12 gives 89% fill and an 11% margin, which
+  // is breathing room rather than emptiness, and grows the rack ~16% linearly for free.
+  // ⚠️ PERSPECTIVE ONLY, checked: FRONT/REAR are ORTHOGRAPHIC and take their size from
+  // ORTHO_MARGIN (1.08 → 93% fill), not from this distance, so the elevation views do not move and
+  // the two now sit at a consistent fill instead of 77% against 93%. FOV stays 28.
+  var fitDist = Math.max(fitDistH, RD * 0.65) * 1.12;             // frames full rack height at FOV 28; loop() orbits on this
 
   var scene = new THREE.Scene();                                  // no solid bg — the env cubemap + backdrop carry depth
   scene.fog = new THREE.FogExp2(0x030508, 0.008);                 // v1.14.259 — mock's fog (FINAL L327), never ported in .255; its absence is why .258 read washed out vs the mock's deep-black
@@ -39198,7 +39207,17 @@ function rackElevation_render3D(rack, mountEl) {
   // ("camera open", 2026-07-16 / §47). That ruling is what authorises this rail.
   var VIEWS = {
     front: { theta: 0,           elev: 0,    ortho: true  },
-    iso:   { theta: 0.5,         elev: 0.18, ortho: false },   // the .255 LOCKED default — never retune
+    // v1.14.447 (R7 §28) — ISO YAW 0.5 rad (28.6°) → 0.30 rad (17.2°). The .255 value predates both
+    // the directive and the approved mockup, and BOTH land on the same number: §28 asks for
+    // "approximately 12–20 degrees of yaw" and says in as many words not to treat it as a locked
+    // constant, and the mockup's ISO is rotateY(-17deg). 17.2° is the middle of that band.
+    // ⭐ AND R2 IS WHY IT NOW MATTERS. Deepening the cabinet from RD 4.5 to 9.0 doubled how much
+    // side face a given yaw exposes. Projected width is RW·cosθ + RD·sinθ, so at 28.6° the front is
+    // 5.27 of 9.58 units — only 55%, with the black side panel taking the other 45% and burying the
+    // face where every device and every RU position lives. At 17.2° the front is 5.74 of 8.37 = 69%.
+    // §28's own bound is exactly this: "enough yaw to expose cabinet side/depth, not so much that RU
+    // positions become hard to read." Elevation is UNTOUCHED at 0.18 — §28 sets no target for it.
+    iso:   { theta: 0.30,        elev: 0.18, ortho: false },   // .255 default was 0.5; see R7 note above
     top:   { theta: 0.5,         elev: 1.6,  ortho: false },   // ~58° high-3/4: reads the top AND the face
     rear:  { theta: Math.PI,     elev: 0,    ortho: true  }
   };
