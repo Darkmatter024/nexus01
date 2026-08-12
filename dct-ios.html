@@ -10888,7 +10888,17 @@ body.rd .rack-canvas-block[data-type="nic"] { border-left-color: var(--violet-br
 body.rd .rack-canvas-block[data-type="cooling"],
 body.rd .rack-canvas-block[data-type="fan"],
 body.rd .rack-canvas-block[data-type="crah"],
+body.rd .rack-canvas-block[data-type="cdu"],
 body.rd .rack-canvas-block[data-type="crac"] { border-left-color: var(--green); }
+/* v1.14.448 — `cdu` joins the cooling accent group it always belonged to. The flat elevation
+   writes the RAW master_hostType code into data-type, and `cdu` was in no selector, so every CDU
+   rendered grey here while the 3D tray painted it gold via _TMAP's cdu→pdu bridge. Both houses now
+   agree it is cooling.
+   ⛔ REDESIGN ONLY, DELIBERATELY. The unscoped legacy rule at :10831 paints a solid background
+   rather than an accent and is NOT touched, so ?legacy=1 stays byte-identical. A CDU still reads
+   grey under legacy — that is the pre-existing "flat colours 2 of 11 codes" bug the .255 comment
+   has flagged for its own ship, and widening a legacy selector here would be exactly the leak
+   Rule 7 exists to prevent. */
 /* v1.14.230 — fitted (tiny --u-h) readability: at ~10-14px per U the base 8/6 padding + a 13px
    name line-box overflowed and clipped to a strikethrough band, and 1U rows merged. Tighten
    padding for all fitted blocks and force 1U rows to a single short line. .reh-fitted is set on
@@ -12903,7 +12913,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.447';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.448';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -19771,14 +19781,25 @@ function forge3d_ensure3D(mount) {
 // in writing (PHANTOM-OPEN-BOARD-2026-07-14), held apart from patch teal #1fffd0.
 // v1.14.252 — 'unknown' GOLD→MAGENTA #ff2bd6: killed the pdu/unknown collision; pdu keeps gold.
 // ⛔ The gold HAZARD paint (hgtUnknown hatch) is a DIFFERENT signal from type — see the render.
+// v1.14.448 (owner ruling 2026-08-12) — CDU IS COOLING, NOT POWER. `cdu` becomes its own display
+// key. ⭐ NO NEW COLOUR WAS PICKED: the flat elevation has carried a ruled cooling channel all
+// along — "cooling/fan/crah/crac keep GREEN — they are a different channel and were never in
+// dispute" (:10865) — and the same ruling is what pulled pdu OUT of that group and gave it gold.
+// _TMAP was the one place that never got the memo: it mapped raw `cdu` onto the `pdu` display key,
+// so every CDU in every Master rendered, labelled and tallied as POWER. S4:099 RU02 is the live
+// example. This aligns the bridge with the ruling rather than inventing a vocabulary.
+// The green is --green #30d158, lifted from the cooling channel, not re-picked.
 var TYPE_COLOR = { gpu: '#28e0ff', switch: '#8a4bff', pdu: '#ffcb45', patch: '#1fffd0',
-                   server: '#7fd0ff', storage: '#ff7bd0', media: '#7d93a4',
+                   server: '#7fd0ff', storage: '#ff7bd0', media: '#7d93a4', cdu: '#30d158',
                    unknown: '#ff2bd6', blank: '#22303e' };
-var TLABEL = { gpu: 'GPU', switch: 'SWITCH', pdu: 'PDU', patch: 'PATCH', server: 'SERVER', storage: 'STORAGE', media: 'MEDIA CONV', unknown: 'UNKNOWN', blank: 'BLANK' };
+var TLABEL = { gpu: 'GPU', switch: 'SWITCH', pdu: 'PDU', patch: 'PATCH', server: 'SERVER', storage: 'STORAGE', media: 'MEDIA CONV', cdu: 'CDU', unknown: 'UNKNOWN', blank: 'BLANK' };
 // v1.14.245 — 'server' bridges master_hostType's vocabulary to the display one (else a 'server'
 // falls to 'unknown'). .246 — 'other' → 'unknown' NOT 'blank' (it once called 459 real SPARKS
 // devices blanking panels). .251 — 'media' bridges master_hostType's new 'media' return.
-var _TMAP = { gpu: 'gpu', sw: 'switch', pwr: 'pdu', patch: 'patch', stor: 'storage', cpu: 'server', server: 'server', cdu: 'pdu', fw: 'switch', media: 'media', other: 'unknown' };
+// v1.14.448 — `cdu` was 'pdu' here; see the TYPE_COLOR note above. Vocabulary.typeOf stays
+// idempotent by construction (typeOf('cdu') → 'cdu' → 'cdu'), and isDisplayKey is DERIVED from
+// this map rather than hand-listed, so the new key registers itself with no second edit.
+var _TMAP = { gpu: 'gpu', sw: 'switch', pwr: 'pdu', patch: 'patch', stor: 'storage', cpu: 'server', server: 'server', cdu: 'cdu', fw: 'switch', media: 'media', other: 'unknown' };
 
 // ══ ONE COLOUR VOCABULARY — A DOOR, NOT A NEW TABLE (v1.14.429, spec §7 / I9) ═════════════════
 // The spec asks for Vocabulary.typeOf() and reads as though it must be DESIGNED. It must not: the
@@ -38395,7 +38416,8 @@ function rackElevation_render3D(rack, mountEl) {
   // v1.14.257 TRAY FIDELITY — chassis palette is DARK gunmetal per KIND (mock C{}); TYPE colour
   // is demoted to the front bezel strip (EDIT A). Restores the mock look; kills the .256 slabs.
   var KIND_C = { compute: 0x1a2332, switch: 0x1e293b, power: 0x1a2028, blank: 0x0f141c,
-                 patch: 0x18222e, media: 0x161d26, storage: 0x141c26, generic: 0x121a24 };
+                 patch: 0x18222e, media: 0x161d26, storage: 0x141c26, generic: 0x121a24,
+                 cooling: 0x16232a };   // v1.14.448 — CDU's own dark body, a touch cooler than power's
   var magOutlineMat = new THREE.LineBasicMaterial({ color: 0xff2bd6, transparent: true, opacity: 0.85 }); // UNKNOWN chassis outline
   var _stripCache = {};                                                 // bezel strip mats cached by hex (§5 — ~9 distinct colours)
   function _stripMat(hx) { return _stripCache[hx] || (_stripCache[hx] = new THREE.MeshBasicMaterial({ color: hx, transparent: true, opacity: 0.9 })); }
@@ -38461,6 +38483,7 @@ function rackElevation_render3D(rack, mountEl) {
     if (disp === 'gpu' || disp === 'server') kind = 'compute';
     else if (disp === 'switch') kind = 'switch';
     else if (disp === 'pdu') kind = 'power';
+    else if (disp === 'cdu') kind = 'cooling';                        // v1.14.448 — was folded into 'power' via _TMAP
     else if (disp === 'patch') kind = 'patch';
     else if (disp === 'media') kind = 'media';
     else if (disp === 'storage') kind = 'storage';
@@ -38577,6 +38600,34 @@ function rackElevation_render3D(rack, mountEl) {
         var pLed2 = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), psuLedMat);
         pLed2.position.set(ppx, hT/2 - 0.06, cd/2 + 0.035); grp.add(pLed2);
       }
+
+    } else if (kind === 'cooling') {
+      // ── CDU / COOLING SIGNATURE (v1.14.448, §15) ────────────────────────────────────────────
+      // "CDU should feel like a specialized equipment block: heavier front housing, distinct
+      // ventilation/grille pattern, small neutral display area." It reads as a solid machine, not
+      // as another shelf of bays — which is the whole reason it must not keep borrowing the power
+      // family's six-PSU face.
+      // ⛔ THE DISPLAY IS DARK AND STAYS DARK. §15: "Do not add fake values to a CDU display. A
+      // dark inactive/abstract equipment screen is acceptable." PHANTOM receives no coolant
+      // temperature, no flow rate, no pump state — so the panel is an unlit sheet of glass, and
+      // there is no LED on this family at all. Its identity comes from FORM, never from a light
+      // pretending to be a reading.
+      // Materials are the shared ones (§17): psuMat for the housing, portMat for the grille slats,
+      // backMat for the dark screen. No new material is minted for this family.
+      var housing = new THREE.Mesh(new THREE.BoxGeometry(cw * 0.94, hT * 0.82, cd * 0.30), psuMat);
+      housing.position.set(0, 0, cd/2 - 0.30); housing.castShadow = true; grp.add(housing);
+      // Grille — horizontal slats as ONE InstancedMesh, count scaled to the unit height so a 4U
+      // CDU reads denser than a 1U one without ever becoming per-slat geometry.
+      var slatN = Math.max(4, Math.min(14, Math.round(hT / 0.09)));
+      var slatInst = new THREE.InstancedMesh(new THREE.BoxGeometry(cw * 0.60, 0.012, 0.014), portMat, slatN);
+      for (var sN = 0; sN < slatN; sN++) {
+        _mtx.makeTranslation(-cw * 0.14, (sN - (slatN - 1) / 2) * (hT * 0.72 / slatN), cd/2 + 0.03);
+        slatInst.setMatrixAt(sN, _mtx);
+      }
+      slatInst.instanceMatrix.needsUpdate = true; grp.add(slatInst);
+      // The inactive service screen — dark glass, no glow, no content.
+      var screen = new THREE.Mesh(new THREE.PlaneGeometry(cw * 0.20, Math.min(hT * 0.34, uH * 1.1)), backMat);
+      screen.position.set(cw * 0.30, hT * 0.10, cd/2 + 0.032); grp.add(screen);
 
     } else if (kind === 'patch') {
       // patch-panel signature — two full-width rows of port squares (representative, NOT a count
@@ -40181,7 +40232,10 @@ function deploy_showRackDetail(deployId, rackId) {
         else if (t === 'storage' || t === 'disk' || t === 'nvme') compTally.storage++;
         else if (t === 'server' || t === 'host' || t === 'node') compTally.server++;
         else if (t === 'router' || t === 'firewall' || t === 'nic') compTally.network++;
-        else if (t === 'pdu' || t === 'cooling' || t === 'fan' || t === 'crah' || t === 'crac') compTally.cooling++;
+        // v1.14.448: 'cdu' added. It matched NO branch here and fell through to `other`, so every
+        // CDU in every Master was already being tallied as an unclassified component — a
+        // pre-existing miscount, not one introduced by giving CDU its own display key.
+        else if (t === 'cdu' || t === 'pdu' || t === 'cooling' || t === 'fan' || t === 'crah' || t === 'crac') compTally.cooling++;
         else compTally.other++;
       });
       var compCats = [

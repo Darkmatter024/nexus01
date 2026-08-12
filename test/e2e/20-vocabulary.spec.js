@@ -15,9 +15,16 @@
 const { test, expect } = require('./fixtures');
 
 // Every raw code master_hostType can emit, with the display key _TMAP maps it to.
+// ⭐ `cdu` CHANGED FROM 'pdu' TO 'cdu' BY OWNER RULING 2026-08-12 (v1.14.448), and this table is
+// updated deliberately rather than to make a red test green. The .429 ruling this spec was written
+// against pulled pdu OUT of the cooling group and gave it gold, while explicitly leaving
+// "cooling/fan/crah/crac ... GREEN — a different channel, never in dispute". _TMAP was the one
+// place that never got the memo: it bridged raw `cdu` onto the `pdu` key, so every CDU rendered
+// gold, labelled itself PDU and drew the power family's face. S4:099 RU02 was the live example.
+// The owner ruled the CDU its own family; this row now matches the ruling it always should have.
 const CODES = [
   ['gpu', 'gpu'], ['sw', 'switch'], ['pwr', 'pdu'], ['patch', 'patch'], ['stor', 'storage'],
-  ['cpu', 'server'], ['server', 'server'], ['cdu', 'pdu'], ['fw', 'switch'], ['media', 'media'],
+  ['cpu', 'server'], ['server', 'server'], ['cdu', 'cdu'], ['fw', 'switch'], ['media', 'media'],
   ['other', 'unknown'],
 ];
 // Owner ruling 2026-08-10 (bay wins) + the standing 2026-08-06 ruling (these three stay grey).
