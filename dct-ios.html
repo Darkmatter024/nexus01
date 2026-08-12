@@ -12913,7 +12913,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.448';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.449';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -38319,6 +38319,18 @@ function rackElevation_render3D(rack, mountEl) {
     railTex.wrapS = THREE.RepeatWrapping; railTex.wrapT = THREE.RepeatWrapping;
     railTex.repeat.set(1, totalU);                                                           // ONE TILE PER U — load-bearing
     railTex.magFilter = THREE.LinearFilter;
+    // v1.14.449 (R8 §19/§35) — ANISOTROPY ON THE PERFORATION, following the aisle's own precedent
+    // ("gut-texture precedent — engraved type stays sharp at walk angles", :20351). This is the
+    // finest repeating detail on the whole cabinet — three EIA-310 square holes per U, tiled once
+    // per U across totalU on four rails — and it is read at a grazing angle in every ISO view. With
+    // only magFilter set, the mip chain averages that hole pattern into a grey smear exactly where
+    // §35 says detail "should not shimmer or blur", and §19 asks for perforation that survives
+    // iPhone rendering. Anisotropic sampling fixes it in the sampler rather than by adding a single
+    // triangle, which is the cheapest tool §19's priority list allows.
+    // Capped at 4 rather than taken at max: the floor texture already uses that cap on this same
+    // renderer, and 4 is where the visible return flattens while the bandwidth cost keeps climbing
+    // on mobile. Wrapped because getMaxAnisotropy is a capability probe, not a guarantee.
+    try { railTex.anisotropy = Math.min((renderer.capabilities.getMaxAnisotropy && renderer.capabilities.getMaxAnisotropy()) || 1, 4); } catch (e) {}
     _bayTex.push(railTex);                                                                   // dispose registry (CanvasTexture leaks GPU mem otherwise)
     railFaceMat = new THREE.MeshStandardMaterial({ map: railTex, color: 0xffffff, metalness: 0.88, roughness: 0.34, envMapIntensity: 0.25 });
   }
