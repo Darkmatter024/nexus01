@@ -5,133 +5,100 @@ Durable facts belong in `PHANTOM_CURRENT_STATE.md`; durable lessons belong in me
 
 ---
 
-## Last session — 2026-08-09/11
+## Last session — 2026-08-11/12
 
 **Ended:** clean. Nothing in flight, nothing half-done, `main` in sync with origin.
-**Live: `v1.14.438`** — confirmed in the served bytes.
+**Live: `v1.14.453`** — and ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** (owner: *"clear"*).
+**CALL 0 cap reset to 0 of 6.** No verify debt.
 
 ---
 
-## ⭐ START HERE — the task the owner deferred
+## ⭐ START HERE — there is no queued task
 
-**RACK-DETAIL MERGE, STEP 3b: extract the phase-card builder.** Owner: *"do 3b next session."*
+The renderer programme and Forge parity are both **complete and device-verified**. The queue is
+empty by design (ship discipline 5: no new features during stabilisation). Everything below needs an
+owner decision before it becomes work.
 
-⭐ **READ THIS BEFORE THE PLAN — `.439` CHANGED 3b's SHAPE AND ITS SIZE.** The plan's step 3a
-section says the coupling is 4 `onclick` strings and prescribes an `onRefresh` **callback**. Both
-are wrong, measured 2026-08-11:
-
-- **It is 13 sites, not 4.** Nine sit outside the IIFE — four resume after a modal
-  (`ge_captureSkip:30238`, `ge_captureSave:30255`, `ge_onCompleteTap`'s fallback `:30285`,
-  `ta_resolveUnblock:30471`) and five are emitted inside the card markup (`checklist_addItem:29037`,
-  `_removeItem:29048`, `_renameItem:29060`, `_toggleEdit:29065`, `deploy_flagPhaseReverify:29621`).
-- **A callback cannot reach nine of them** — the builder's scope is gone by the time they run.
-  `.439` shipped the mechanism instead: **`phase_refreshSurface(surface, deployId, rackId)`**, a
-  string key that survives an onclick attribute and a stored context object. `'detail'` is the
-  default, so untouched callers stay byte-identical.
-
-**So 3b is now: thread `surface` through the 12 remaining sites, then lift the IIFE to**
-
-```js
-deploy_buildPhaseCards(deployId, rackId, rackPhases, rack, surface, opts)
-```
-
-- Lift the IIFE at **`:40019`–`:40095`** (the plan says `:40094`; the closing `})();` is `:40095`).
-  ⚠ Line numbers shifted +29 at `.439` — re-anchor on the verbatim strings, not these.
-- The block also reads **`dep`** and **`rackAudit`**, which the plan's signature omits. Pass them
-  (`opts = {dep, rackAudit}`) rather than re-deriving: the detail already has both, and re-loading
-  the audit on a hot render path is a cost for nothing.
-- Detail passes `'detail'` → ⭐ **byte-identical behaviour on the existing surface is the bar.**
-- Build passes `'build'`.
-- `ge_openCaptureModal` / `ge_onCompleteTap` / `ta_open` each need the key threaded into
-  `_geCaptureState` and `_ta_ctx` so the post-modal refresh lands on the right surface. Default
-  every added parameter to `'detail'`.
-
-⚠ **Two-cold-boot rule for any refresh test.** `deploy_showRackDetail` re-renders Build on FIRST
-entry and not on the second; a baseline taken on the same page contaminates the reading. `.439`'s
-spec 27 has the working pattern.
-
-**Why it was deferred, not skipped:** it rewrites the path controlling START / COMPLETE / OVERRIDE —
-`phdock_render`'s own comment calls the sheet *"the ONLY door to the phase cards"*. A half-finished
-edit there means a technician who cannot complete a phase. It wants a full context window.
-
-⚠ **Do NOT do 3c (re-parent the dock) before 3b.** The dock takes `cardsHtml`; re-parenting first
-strands the cards and produces a phase control that cannot complete a phase.
+⛔ **Do not invent scope.** The four open items are listed in `PHANTOM_CURRENT_STATE.md` §9 and
+every one of them is the owner's call, not a gap to be filled.
 
 ---
 
-## What shipped (14 ships, `.425`–`.438`)
+## What shipped (16 ships, `.438`–`.453`)
 
-**Renderer / engine (M2-b) — STOPPED at owner directive after 3b:**
-`.425` Command Deck reaches the phone · `.426` stored Masters migrate themselves · `.427` the aisle
-returns the context to its lender · `.428` `--alert` declared · `.429`/`.430` one colour vocabulary,
-2/11 → 8/11, colour in the ACCENT not the fill · `.431`/`.432` fold-and-revert of a duplicate
-first-run gate · `.433` data contract (I8/I9) · `.434` reclaim barrier (I6) · `.435` flat path +
-`attach` (3a/3b).
+**Phase-card merge:** `.439` the refresh-surface dispatcher (and a LIVE defect: `.438`'s Assign
+button threw the tech off Build) · `.440` step 3b, the phase-card builder extracted.
 
-**Technician workflow — the current priority:**
-`.436` one mode, one Build (Home's CTA drilled past the workspace into the deploy list) ·
-`.437` a rack detail brings its own surface (the fixed phase dock floated over Home, no back) ·
-`.438` the rack detail's ASSIGN / QR / LOG NOTE come home to Build (merge step 2 of 4).
+**The context fix:** `.441` — the one WebGL context now follows the surface the technician is
+looking at. Build and the rack detail had been fighting over it, and the detail lost every exchange.
 
-**Verify debt:** `.385`–`.428` RELEASED, CALL 0 cap reset. One exception: **`.413` is NOT released** —
-item 8's empty half has no live example since `.424` resolved every cabinet in this Master.
+**Renderer programme (R1→R8), against the owner's directive now in `reference/`:**
+`.442` R1-D the rack came above the fold · `.443` R2 cabinet depth · `.444` R3 families stop
+inventing state · `.445` R4 material reuse + powder coat · `.446` R5 light rig onto the palette ·
+`.447` R7 camera framing · `.448` R6 verified + CDU is cooling · `.449` R8 polish · `.450` coolant
+plumbing gated on a declared CDU.
 
-**Specs added:** 16–27.
+**Forge parity (P1→P3):** `.451` geometry extracted to `rackGeometry_build` · `.452` focused aisle
+rack canonical · `.453` whole foreground window canonical, tiered.
 
 ---
 
 ## ⚠ THE PATTERN IN EVERY DEFECT THIS SESSION
 
-**Something proven present but absent in behaviour**, and never failing loudly:
+**The renderer was asserting things the Master never said**, and none of it failed loudly:
 
-- `.424`'s fix was in the served bytes but ran only at IMPORT — restored data kept the old inventory.
-- `.427`'s I1 invariant held one line too late (acquire before release).
-- `.429` put the colour in the right file and the WRONG CHANNEL (fill, not accent).
-- `.431` built a door that already existed under another name (`firstRun_*`, not `siteSetup_*`).
-- `.436`/`.437` were callers assuming a surface was already showing.
+- switch ports lit by `Math.random()`, reshuffled every render — a technician reading lit ports as
+  connected ports was reading dice;
+- green *blinking* LEDs claiming per-device health against telemetry PHANTOM does not receive;
+- a CDU rendered, labelled **and tallied** as a PDU, because `_TMAP` never got the memo that the
+  cooling channel was ruled a separate colour;
+- coolant manifolds and pipes drawn on **every** rack, including air-cooled ones.
 
-⭐ **Three rules that came out of it, all now in `CLAUDE.md` / memory:**
-1. **The owner is not the test harness.** "The harness SKIPS this" ≠ "this needs hardware" — check
-   another project first (`05-offline` runs 13/15 on `desktop-chromium`, skips on `phone-webkit`).
-2. **Before building any flow, read the function that runs when that flow starts.** `launch()`
-   answered "what happens at first boot" in one line and was never opened.
-3. **When an assertion is a BOUND, ask what the failure value is and whether the bound admits it.**
-   `attachments.length <= 1` permitted the defect value `0` for months.
+⭐ **The rule that came out of it, now in the source:** STATE colours (green/amber/red) may not be
+used decoratively; ACCENT colours (cyan/violet/teal) may carry family identity; nothing blinks.
+Randomness is a defect when it decides what the rack **depicts**, never when it places atmosphere.
+
+## ⚠ AND THE PATTERN IN MY OWN MISTAKES, which cost more time than the code
+
+Four times a **test** was wrong, not the app — and each was caught only by asking what the assertion
+would do against correct code:
+
+1. A spec grepped for `Math.random(` and went red because **the fix's own comment quoted the removed
+   line**. Strip comments before grepping source.
+2. "No randomness in the renderer" was the **wrong rule** — the scene scatters dust motes at random,
+   which claims nothing. Scope the assertion to what depicts data.
+3. A P1 outbound scan used a **hand-listed** set of names and missed `ledMats`; the `.397`/`.398`
+   lesson is that a hand-listed registry drifts. Derive it from the code.
+4. A leak check whose **own bookkeeping accumulated** reported 162→666 meshes and read as a leak.
+   Nothing had leaked; the instrument counted a disposed scene.
+
+⭐ **Before believing a red test, ask what it asserts against KNOWN-GOOD code.**
 
 ---
 
-## Open, in the order recommended
+## Open, in the order recommended — all owner decisions
 
-1. **3b** (above), then **3c** (dock into Build), then **3d/step 4** (retire the detail as a
-   destination — LAST, the back-nav restore path lands there).
-2. ⭐ **WALK SHIFT AND SITE/SYSTEM** — owner-queued 2026-08-11, same session as 3b. The two legs of
-   the canonical technician flow that have **never been walked**. Walk them the way HOME/BUILD/
-   FORGE/TOOLS were walked: seed a real shift state, inventory each surface, and ask the owner's
-   questions — why am I here, what is the primary action, is there another door doing this, is this
-   exposing machinery, is a legacy surface leaking, does the tech have to understand PHANTOM to use
-   PHANTOM. **Make the product decisions; only escalate what genuinely changes product behaviour.**
-   ⚠ **Expect SHIFT to be findings-heavy and light on fixable code.** It is *undoored, not unbuilt* —
-   12 `shift_*` functions, a sheet, a hero and a report generator already exist, and it renders today
-   as ONE PILL on Command. But **3 of its 9 questions have no data source** (the Store write journal,
-   the derived readiness gate list, `PhantomIntelligence.queue` — all 0 references, two are M3
-   deliverables). ⛔ So do NOT give it a nav pillar (D-1) and do NOT invent the missing three — that
-   is fabricated telemetry. Report what it can and cannot answer.
-   📌 **SITE/SYSTEM is the likelier source of real fixes:** the canonical flow says it is
-   *administrative/recovery functions only*. Anything operational found in there is in the wrong
-   place, and that is exactly the class the last three ships were.
-   *(The walk harness pattern that worked: seed state, `showMode`, then inventory visible headings /
-   actions / nav / legacy per surface. It found `.436`, `.437` and `.438`.)*
-3. **Renderer stages 3c–3e** — STOPPED by owner directive; plan written in
-   `M2B-CONSOLIDATION-PLAN.md`. §8 ends by deleting `forge3d_render`; largest blast radius left.
-4. **Owner's own:** the PHASE-ENGINE step text, and the **M3 data sources**. ⛔ Note the chain:
-   **M3 → Shift can answer its 9 questions → Shift becomes a nav pillar → hold-to-freeze re-homes
-   there → EXIT stops occupying a pillar slot.** The nav complaint is the LAST domino, not the first
-   (D-1). Do not "restore the nav slot" as a quick win.
+1. **The R1-D remainder.** The rack is at **176px** visible; §30 recommends 270–320. The arithmetic
+   is in `R1-RENDERER-BASELINE.md` §3 — 651px of column, 475 spent before the rack. The only block
+   big enough is the hero, whose phase sub-block is the same fact NEXT ACTION and the phase dock
+   already show. Removing a triplicated fact is a product call.
+2. ⭐ **WALK SHIFT AND SITE/SYSTEM** — owner-queued 2026-08-11, still never started. The two legs of
+   the canonical technician flow that have never been walked. ⚠ Expect SHIFT to be findings-heavy
+   and light on fixable code: it is *undoored, not unbuilt*, and 3 of its 9 questions have no data
+   source (two are M3 deliverables). ⛔ Do NOT give it a nav pillar (D-1) and do NOT invent the
+   missing three. 📌 SITE/SYSTEM is the likelier source of real fixes — the canonical flow says it
+   is administrative/recovery only, so anything operational found there is in the wrong place.
+3. **PHASE-ENGINE step text** and the **M3 data sources** — both the owner's. Note the chain:
+   M3 → Shift can answer its 9 questions → Shift becomes a nav pillar → EXIT stops occupying a slot.
+   The nav complaint is the LAST domino (D-1), not the first.
 
 ---
 
 ## Machine note
 
-The dev box cannot produce a trustworthy full-suite run in one pass — an overnight run took **17.5
-hours** and reported 2 failures that both passed on isolated re-runs. WebGL context exhaustion.
-⭐ **Re-run a Forge/WebGL spec ALONE before reading a red full run as a regression.**
+The dev box cannot produce a trustworthy multi-spec run. A six-spec run reported 1 failure and took
+**18.0 hours**; all six then passed **alone** against the same bytes in about three minutes. WebGL
+context exhaustion.
+⭐ **Run renderer/Forge specs ONE AT A TIME, and never read a red multi-spec run as a regression.**
+⚠ Also: `grep -E "[0-9]+ (passed|failed)" | tail -1` **hides the failure line**. Print every
+pass/fail line or you will report a red suite as green — I did, once.

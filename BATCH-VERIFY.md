@@ -4,7 +4,23 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
-# ⭐ CURRENT BATCH — `.438`–`.453` (16 of 6). RUN THIS BLOCK. NOTHING ELSE IN THIS FILE.
+# ✅ BATCH `.438`–`.453` — RELEASED ON HARDWARE 2026-08-12. CAP RESET TO 0 OF 6.
+
+**Owner: *"clear"*.** The six-check walk below was run on the phone against his real Master and
+passed. Sixteen ships released: the phase-card merge, the context fix, the renderer programme
+R1-D→R8 and Forge parity P1→P3. **No verify debt. Nothing is owed.**
+
+⭐ **What this pass uniquely established, because no suite could reach it:** real safe-area (the
+harness resolves `env(safe-area-inset-top)` to 0, so the fold was genuinely unverified), the
+**asynchronous iOS GPU reclaim** behind `.441` — the reason a rack could be live on one surface and
+blank on another — and sustained thermals across a ten-rack aisle walk. Everything else was proven
+by automation first.
+
+*The checklist is kept below as the record of what was actually run.*
+
+---
+
+# CURRENT BATCH — `.438`–`.453` (16 of 6) — RUN, PASSED, RELEASED
 
 **Live: `v1.14.453`.** Last hardware pass was `.438`-era; everything below is unverified on a phone.
 Sixteen ships: the phase-card merge (`.439`–`.440`), the context fix (`.441`), the renderer

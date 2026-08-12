@@ -5,7 +5,8 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-11, after `v1.14.439` — the refresh-surface dispatcher; renderer work stopped by owner directive.**
+**Last updated: 2026-08-12, after `v1.14.453` — ⭐ BATCH `.438`–`.453` CLEARED ON HARDWARE. The rack
+renderer programme (R1→R8) and Forge parity (P1→P3) are both complete and device-verified.**
 
 ---
 
@@ -13,10 +14,10 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.439`** (`7a7473c`) |
-| Commits | `.416` through `.439` shipped 2026-08-08/11 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.439` |
-| Verified | **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
+| **Version** | **`phantom-v1.14.453`** (`226a0a8`) |
+| Commits | `.416` through `.453` shipped 2026-08-08/12 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.453` |
+| Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 
@@ -188,6 +189,43 @@ version/SW/network pills**. Those rules are now sub-gated at their own source. H
 reclaiming the gutter it reserved are also two separate edits: the first alone left `.page` inset
 246px and read as a broken layout, not as missing chrome.
 
+## 1b · ⭐ RACK RENDERER PROGRAMME + FORGE PARITY — COMPLETE AND DEVICE-VERIFIED 2026-08-12
+
+Governed by `reference/PHANTOM_RACK_RENDERER_UPGRADE.md` (owner directive, imported to the repo
+with its mockup and both hashes recorded). Baseline, findings and the corrected reference analysis
+are in `R1-RENDERER-BASELINE.md`; the parity staging is in `FORGE-PARITY-PLAN.md`.
+
+**R1** baseline · **R1-D** `.442` the rack came above the fold (visible pixels 0 → 176) ·
+**R2** `.443` cabinet depth RD 4.5→9.0 · **R3** `.444` families stop inventing state ·
+**R4** `.445` material reuse + powder coat · **R5** `.446` light rig onto the palette ·
+**R7** `.447` camera framing · **R6** `.448` LOD verified + CDU is cooling · **R8** `.449` polish ·
+`.450` coolant plumbing gated · **P1** `.451` geometry extracted · **P2** `.452` focused aisle rack
+canonical · **P3** `.453` whole foreground window canonical.
+
+⭐ **MEASURED END TO END, like for like.** The pre-programme build (`.441`) was checked out and run
+against the IDENTICAL 19-device s4:099 seed: meshes 1610→1416, geometries 1547→1353, materials
+351→306, triangles 57,200→51,542, draw calls 484→417. **Every count went down** — the rack looks
+substantially better and costs ~14% fewer draw calls than before the programme started.
+
+⛔ **THE DURABLE FINDING, worth more than the visuals: the renderer had been asserting four things
+the Master never said.** Fabricated switch-port state drawn with `Math.random()` and reshuffled
+every render · green blinking LEDs claiming per-device health against telemetry PHANTOM does not
+receive · a CDU rendered, labelled and tallied as a PDU · coolant manifolds and pipes on every rack
+including air-cooled ones. All four are now gated on real data or removed, and each is pinned by a
+spec that was proven to catch it.
+
+⭐ **THE RULE THAT CAME OUT OF IT, now in the source:** STATE colours (green/amber/red) may NOT be
+used decoratively; ACCENT colours (cyan/violet/teal) MAY carry family identity; nothing blinks,
+whatever its colour. And randomness is a defect when it decides what the rack DEPICTS — never when
+it places atmosphere.
+
+📌 **What the programme did NOT do, deliberately.** §26's floor reflection was NOT actioned: the
+floor is a `MeshBasicMaterial` taking no light, no env and no shadow because `receiveShadow` was
+REMOVED to kill a sweeping specular pool, and the subtle reflection §26 asks for is the wet clone
+that already ships. Adding a contact shadow would revert a documented fix. The baked aisle face
+(`DEPLOY_FORGE_FACE_B64`) was NOT retired: it is still referenced by the thirteen background shells
+and empty pads, which §33 rules should stay cheap context.
+
 ## 2 · Milestone
 
 **Programme: `SHIP-TECH-FLOW-V2-FROZEN.md` (see §1a).**
@@ -299,7 +337,20 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — ✅ CLEARED 2026-08-10 (one exception)
+## 3 · Verify debt — ✅ CLEARED 2026-08-12 (one exception, unchanged)
+
+✅ **`.438`–`.453` RELEASED ON HARDWARE 2026-08-12.** Sixteen ships, ten past the cap: the
+phase-card merge (`.439`/`.440`), the context fix (`.441`), the renderer programme R1-D→R8
+(`.442`–`.450`) and Forge parity P1→P3 (`.451`–`.453`). **CALL 0 cap reset to 0 of 6.**
+
+⭐ **What that pass uniquely bought, because it is the part no suite could reach:** real safe-area
+(the harness resolves `env(safe-area-inset-top)` to 0, so the fold position was genuinely
+unverified), the **asynchronous iOS GPU reclaim** behind `.441` — the whole reason a rack could be
+live in one surface and blank in another — and sustained thermals across a ten-rack aisle walk.
+Everything else in the batch was proven by automation first, per the standing rule that the owner
+is not the test harness.
+
+### Historical — the previous clearance
 
 ✅ **`.385`–`.428` RELEASED 2026-08-10.** The consolidated pass in `BATCH-VERIFY.md` is complete:
 every item closed or automated. **CALL 0 cap reset to 1 of 6.** 🟡 One exception, open on purpose:
@@ -353,7 +404,7 @@ again have to discover that a working rack went empty.
 |---|---|---|
 | D-1 | **SHIFT is a pillar (Contract A8) but the nav does not carry it.** ✅ **SCOPED, NOT UNANSWERED — the resolution is owner ruling R-02 + R-02a, delivered at M4.** See below | **Scheduled (M4), not open** |
 | D-2 | **`.412` was never stamped.** Its desktop-shell work (auto-desktop at ≥1024, notch pill, type sizes) shipped inside `.413`, so a live ship is filed under another ship's title | Live, unverified — pass item 10 |
-| D-3 | M2-b step 1b blocked: `TYPE_COLOR` and the flat CSS disagree on **pdu** (gold/green), **storage** (pink/gold), **server** (light-blue/slate). Owner ruled patch/media/unknown stay GREY for now | Blocked on ruling |
+| D-3 | ✅ **RESOLVED — verify the entry, not the memory.** The pdu/storage/server disagreements were settled by the `.429` bay-canonical ruling (pdu gold, storage pink, server light-blue) and are pinned green by `20-vocabulary` at 8 of 11 codes. The **cooling** half was the last open piece and is closed by the 2026-08-12 CDU ruling: `cdu` is its own display key on the ruled cooling green. patch/media/unknown still GREY per the standing 2026-08-06 ruling | **Closed 2026-08-12** |
 | D-4 | Rack-preview control rail wraps 4-then-1 and carries REAR + EXPLODE, which the approved reference does not show | Disclosed `.391`, unruled |
 | D-5 | Build metrics layout has never been seen against a populated rack | Disclosed `.391`, unruled |
 | D-6 | `handoffDraft` truthiness bug at the `phantom_handoff_v1` read | Deferred to M4 with Shift |
@@ -410,14 +461,37 @@ githubstatus is all-green — a transient repo-side lock, **not code**. An empty
 
 ## 8 · Last physical-iPhone verification
 
-**2026-08-06**, against `v1.14.405` — owner confirmed *"aisle draws and holds"*, closing the
-`.390`→`.404` blank-aisle arc. That pass established the aisle renders **and nothing more.**
-Everything from `.385` onward remains unverified on hardware.
+✅ **2026-08-12, against `v1.14.453` — owner: *"clear"*.** The consolidated six-check walk in
+`BATCH-VERIFY.md` was run on the phone against his real Master and passed: the rack visible above
+the fold without scrolling, reading as matte steel with real depth; the rack drawing on BOTH Build
+and the rack detail across the round trip; a phase run end to end landing where it started; ASSIGN
+from Build staying on Build; and the aisle front row all real cabinets across a ten-rack walk with
+no slowdown and no heat spike.
+
+⭐ **This is the pass the whole `.439`→`.453` arc was waiting on, and it is the first hardware
+confirmation of the iOS-only behaviour nothing in the harness could reach** — real safe-area (the
+harness resolves `env(safe-area-inset-top)` to 0), the asynchronous GPU reclaim behind `.441`, and
+sustained thermals across a ten-rack aisle walk.
+
+*(Prior: 2026-08-06 against `v1.14.405`, which established only that the aisle renders.)*
 
 ## 9 · Next action
 
-**Nothing autonomous.** The 11-check device pass is owed and is John's. No feature work is
-authorised until it clears.
+**Nothing autonomous. The queue is empty by design and the batch is clear.**
+
+⭐ **CALL 0 cap RESET to 0 of 6.** `.438`–`.453` released on hardware 2026-08-12.
+
+Open items, none of them started, all needing an owner decision first:
+- **The R1-D remainder.** The rack sits at **176px** visible where the directive's §30 recommends
+  270–320. The arithmetic is in `R1-RENDERER-BASELINE.md` §3: 651px of column above the fold, 475
+  of it spent before the rack. The only block big enough is the hero, whose phase sub-block is the
+  same fact already shown by NEXT ACTION *and* by the phase dock. Removing a triplicated fact is a
+  product decision.
+- **PHASE-ENGINE step text** — still placeholder by design; real per-platform commissioning
+  procedure is site knowledge the code does not have. Owner's.
+- **M3 data sources**, which gate Shift → the nav pillar → D-1. The nav complaint is the LAST
+  domino, not the first.
+- **The SHIFT and SITE/SYSTEM walks** — owner-queued 2026-08-11, never started. See the handoff.
 
 ## 10 · Instruction-surface compaction — 2026-08-08
 
