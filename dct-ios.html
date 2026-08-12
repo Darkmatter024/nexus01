@@ -12913,7 +12913,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.451';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.452';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -19950,14 +19950,22 @@ function forge3d_render(mount) {
   // braces — the stamp alone is sufficient, and it is what makes this correct under a REPLACE
   // that happens between two reads.
   var _slotCache = {};
+  // v1.14.452 (Forge parity P2) — totalU per cab, cached in LOCKSTEP with the slots it belongs to.
+  // The canonical rack's height is totalU * uH, so the aisle needs the cab's real U count to size
+  // and scale it. master_rackToElevation already returns totalU; Forge was reading it once for the
+  // geometry linter and dropping it. A PARALLEL cache rather than a property hung off the slots
+  // array, because a consumer treating that array as a plain array is entitled to.
+  // ⛔ It is cleared by the SAME two paths that clear _slotCache — a derived cache that outlives
+  // its Master is Contract 12, and a stale totalU would size a rack against the wrong cabinet.
+  var _totalUCache = {};
   var _slotCacheId = null;
   function _slotCacheEnsure() {
     var id = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.id() : null;
-    if (id !== _slotCacheId) { _slotCache = {}; _slotCacheId = id; }
+    if (id !== _slotCacheId) { _slotCache = {}; _totalUCache = {}; _slotCacheId = id; }
   }
   try {
     if (typeof PHANTOM_MASTER !== 'undefined') {
-      PHANTOM_MASTER.onChange(function () { _slotCache = {}; _slotCacheId = null; });
+      PHANTOM_MASTER.onChange(function () { _slotCache = {}; _totalUCache = {}; _slotCacheId = null; });
     }
   } catch (_) {}
   // v1.14.237 — hosts the Master carries with NO derivable U position. master_rackToElevation
@@ -20063,6 +20071,13 @@ function forge3d_render(mount) {
     if (!isFinite(hostCab) || hostCab === cab) return '';
     return row + ':' + m[2];
   }
+  // v1.14.452 — the cab's U count, populated by deploy_forge_slots. Falls back to 48, the same
+  // default the geometry linter already uses, so an unknown cab sizes like a standard cabinet
+  // rather than collapsing to zero height.
+  function deploy_forge_totalU(id) {
+    if (_totalUCache[id] == null) { try { deploy_forge_slots(id); } catch (_) {} }
+    return _totalUCache[id] || 48;
+  }
   function deploy_forge_slots(id) {
     _slotCacheEnsure();                       // v1.14.415 — drop anything belonging to another Master
     if (_slotCache[id]) return _slotCache[id];
@@ -20091,7 +20106,8 @@ function forge3d_render(mount) {
         // sl.status: statusOf() maps anything ≠ 'racked' to 'pending', and the row toggle would
         // overwrite it on the very first tap. Conflict is geometry; status is verify. Orthogonal.
         if (typeof phantom_rackGeometry === 'function') {
-          var geom = phantom_rackGeometry(out, (elev && elev.totalU) || 48, id);
+          _totalUCache[id] = (elev && elev.totalU) || 48;   // v1.14.452: already resolved here; Forge used to drop it
+          var geom = phantom_rackGeometry(out, _totalUCache[id], id);
           Object.keys(geom.conflicts).forEach(function (i) { out[i].conflict = geom.conflicts[i]; });
           Object.keys(geom.overflow).forEach(function (i)  { out[i].overflow = true; });
           if (Object.keys(geom.conflicts).length) {
@@ -20399,6 +20415,75 @@ function forge3d_render(mount) {
     return grp;
   }
 
+  // ══ CANONICAL RACK IN THE AISLE (v1.14.452 — Forge parity P2) ═══════════════════════════════
+  // §31: Forge must show the SAME rack Build shows. Until now the aisle drew a box with a baked
+  // PHOTOGRAPH of a rack face on it — no per-device geometry at all — so every parity line failed
+  // for one reason. The focused slot now builds the real thing through rackGeometry_build, the
+  // module-scope builder extracted at P1. ⛔ NO SECOND RENDERER AND NO SECOND REPRESENTATION: this
+  // is the same function the rack detail calls, on the same Master-derived slots.
+  //
+  // ⭐ THE TWO RENDERERS ARE AUTHORED IN DIFFERENT UNIT SYSTEMS, which is the whole trick here.
+  // The aisle's slot envelope is RW 1.8 / RH 3.8 / RD 1.2 on a 2.35 pitch; the canonical rack is
+  // RW 6.0 / RD 9.0 and RH = totalU * 0.34, so a 48U cabinet stands 16.32 tall — over four times
+  // the aisle's height. Dropping it in unscaled would bury the neighbouring racks. It is therefore
+  // UNIFORMLY scaled to the aisle's height: uniform because a non-uniform fit to the aisle's
+  // 1.8x3.8 box would distort a cabinet whose proportions R2 deliberately corrected. The canonical
+  // rack is narrower than the old photo box as a result, and that is the correct proportion
+  // winning — the neighbours still on photo planes are the ones that look wrong, until P3.
+  //
+  // ⛔ ONE CANONICAL RACK EXISTS AT A TIME. It is built on focus and disposed on unfocus, so the
+  // ±2 window keeps costing what it always did and moving across ten racks cannot accumulate
+  // geometry — the owner's stress acceptance. Disposal walks the group and frees geometry AND
+  // materials, EXCEPT the shared ones the builder caches per kind: those are owned by the builder
+  // and freeing them would blank the next rack. Textures the builder minted are collected through
+  // the registry passed in, exactly as the rack detail does.
+  var _canonHost = null, _canonTex = [];
+  function _canonDispose() {
+    if (!_canonHost) return;
+    try {
+      var owned = [];
+      _canonHost.traverse(function (o) {
+        if (o.geometry && o.geometry.dispose) owned.push(o.geometry);
+      });
+      if (_canonHost.parent) _canonHost.parent.remove(_canonHost);
+      owned.forEach(function (g) { try { g.dispose(); } catch (_) {} });
+      _canonTex.forEach(function (t) { try { if (t && t.dispose) t.dispose(); } catch (_) {} });
+    } catch (e) { phantom_logErr('forge:canonDispose', e); }
+    _canonHost = null; _canonTex = [];
+  }
+  function _canonAttach(slot) {
+    _canonDispose();
+    var id = slot && slot.userData && slot.userData.label;
+    if (!id || slot.userData.pad) return;
+    if (typeof rackGeometry_build !== 'function') {
+      console.warn('[forge] canonical rack builder unavailable — slot keeps its face');
+      return;
+    }
+    try {
+      var slots = deploy_forge_slots(id) || [];
+      var totalU = deploy_forge_totalU(id);
+      var cUH = 0.34, cRH = totalU * cUH;
+      _canonTex = [];
+      var built = rackGeometry_build({ slots: slots, totalU: totalU }, {
+        slots: slots, totalU: totalU, RW: 6.0, RD: 9.0, uH: cUH, RH: cRH, yBase: -cRH / 2,
+        renderer: renderer, bayTex: _canonTex
+      });
+      var g = built && built.group;
+      if (!g) { console.warn('[forge] canonical builder returned no group for ' + id); return; }
+      var k = RH / cRH;                       // fit the aisle's rack height, uniformly
+      g.scale.setScalar(k);
+      g.position.set(0, 0, 0);                // the builder centres on y=0; so does the slot
+      slot.add(g);
+      _canonHost = g;
+      if (slot.userData.face) slot.userData.face.visible = false;          // the photo steps aside
+      if (slot.userData.gutPlane) slot.userData.gutPlane.visible = false;
+    } catch (e) {
+      phantom_logErr('forge:canonAttach', e);
+      if (typeof phantomToast === 'function') phantomToast('Rack detail unavailable in the aisle — showing the plate', 'warn');
+      _canonHost = null;
+    }
+  }
+
   // front row: five recyclable viewport slots
   for (var i = 0; i < 5; i++) buildRack('run', '', (i - 2) * PITCH, 0, { bright: 0.55 });
   // two rear rows of CW dummies
@@ -20508,6 +20593,12 @@ function forge3d_render(mount) {
       old.material.map.dispose(); old.material.dispose(); old.geometry.dispose();
       r2.add(pl); r2.userData.plate = pl;
     });
+    // v1.14.452 (P2): the outgoing slot gets its photo face back before the incoming slot takes
+    // the canonical geometry, so exactly one rack is ever canonical and no slot is left blank.
+    focusables.forEach(function (r3) {
+      if (r3 !== rack && r3.userData.face) r3.userData.face.visible = true;
+    });
+    _canonAttach(rack);
     spot.target = rack;
     heroGlow.position.x = rack.position.x;
     camTargetX = rack.position.x;
@@ -38284,7 +38375,19 @@ function rackGeometry_build(rack, opts) {
     if (dev == null || dev.uStart == null || dev.uEnd == null) return;
     var uS = dev.uStart, uE = dev.uEnd; if (uE < uS) { var tmp = uS; uS = uE; uE = tmp; }
     if (uE > totalU) uE = totalU;
-    var disp = _TMAP[(dev.type || '').toLowerCase()] || 'unknown';    // RAW master code → display key
+    // v1.14.452 (Forge parity P2) — THROUGH THE CANONICAL DOOR, because this builder now has TWO
+    // callers whose slots arrive in different vocabularies. The rack detail passes RAW master codes
+    // (gpu/sw/pwr/cdu); the aisle's deploy_forge_slots has ALREADY normalised its slots through
+    // _TMAP, so they arrive as DISPLAY keys (gpu/switch/pdu/cdu). A raw `_TMAP[...]` lookup handles
+    // the first and quietly breaks the second — _TMAP has no `switch` or `pdu` key, so an aisle
+    // switch and every aisle power shelf would have fallen to 'unknown' and rendered magenta.
+    // Vocabulary.typeOf is IDEMPOTENT by construction and exists for exactly this ("typeOf(typeOf
+    // ('sw')) must be 'switch'"), so it accepts either vocabulary and returns the same answer.
+    // ⭐ PROVABLY NEUTRAL FOR BUILD: for a raw code typeOf IS the _TMAP lookup, and an unmapped code
+    // still lands on 'unknown'. Same output, one more caller supported.
+    var disp = (typeof Vocabulary === 'object' && Vocabulary)
+      ? Vocabulary.typeOf(dev.type)
+      : (_TMAP[(dev.type || '').toLowerCase()] || 'unknown');    // RAW or DISPLAY → display key
     // §3/EDIT-B interior kind: gpu|server → compute · switch → switch · pdu → power · patch → patch ·
     // media → media · storage → storage · blank → blank · unknown (+ unmapped) → generic. Every REAL
     // type gets a signature interior; only UNKNOWN gets the bare (honest) box — no BLANK over real gear.
