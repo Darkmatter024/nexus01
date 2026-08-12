@@ -12903,7 +12903,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.445';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.446';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -38168,10 +38168,32 @@ function rackElevation_render3D(rack, mountEl) {
   keyL.shadow.camera.top = 12; keyL.shadow.camera.bottom = -12;
   keyL.shadow.bias = -0.0005;
   scene.add(keyL);
-  var fillL = new THREE.DirectionalLight(0x4a3a7a, 0.10); fillL.position.set(-5, 3, -4); scene.add(fillL);
-  var rimL  = new THREE.DirectionalLight(0x00d4aa, 0.42); rimL.position.set(-8, 4, -6); scene.add(rimL);
-  var glowL = new THREE.PointLight(0x00d4aa, 0.08, 35); glowL.position.set(0, 1, 10); scene.add(glowL);
-  var underL = new THREE.PointLight(0xa855f7, 0.14, 20); underL.position.set(0, yBase - 0.3, 2); scene.add(underL);
+  // ── v1.14.446 (R5 §20) — THE RIG COMES ONTO THE PALETTE ──────────────────────────────────────
+  // ⛔ COLOURS ONLY. Every position, the key light, the shadow camera, its map size and bias, and
+  // the tone-mapping exposure are UNTOUCHED. §20 says to improve the lighting carefully rather than
+  // replace it, and the key at 0xd4e5f7/0.78 from upper front-right is already exactly its "soft
+  // cool light from front/upper side" — so it is left alone. Three hues were not.
+  //
+  // rimL and glowL were 0x00d4aa, a mint that is on NO PHANTOM palette. This build already knew:
+  // the floor-fix comment further down names it "rimL (0x00d4aa = the off-palette mint)" as a
+  // contributing cause of the specular pool it had to kill. §20 asks for a "subtle CYAN PHANTOM
+  // edge light" and §34 makes cyan the primary system focus and the selected-rack colour. The
+  // token is --cyan #5cf2ff, so that is what the rim is now.
+  // fillL was 0x4a3a7a, a violet. §20 asks for a "very weak NEUTRAL/COOL fill" whose only job is to
+  // keep blacks off the floor of the histogram; a violet fill tints every shadowed face instead.
+  //
+  // ⭐ INTENSITIES ARE LUMINANCE-COMPENSATED, NOT LEFT ALONE. Rec-709 luminance of the old mint is
+  // 0.642 against cyan's 0.828 — cyan is ~1.29x brighter — so holding 0.42 would have made the rim
+  // ~29% hotter and walked straight into §20's "avoid overexposed cyan edges". 0.42/1.29 = 0.32,
+  // and the same correction takes the glow 0.08 -> 0.06. The rack should look the same brightness
+  // and a different colour, which is the whole point of the change.
+  // underL keeps §20's "extremely restrained violet" at the same energy; only its hue moves onto
+  // the --vio token. That one is cosmetic coherence rather than a §20 requirement — it is the first
+  // line to revert if the secondary reads wrong.
+  var fillL = new THREE.DirectionalLight(0x4a5a72, 0.09); fillL.position.set(-5, 3, -4); scene.add(fillL);   // was 0x4a3a7a violet
+  var rimL  = new THREE.DirectionalLight(0x5cf2ff, 0.32); rimL.position.set(-8, 4, -6); scene.add(rimL);     // was 0x00d4aa mint @0.42
+  var glowL = new THREE.PointLight(0x5cf2ff, 0.06, 35); glowL.position.set(0, 1, 10); scene.add(glowL);      // was 0x00d4aa mint @0.08
+  var underL = new THREE.PointLight(0x8a4bff, 0.14, 20); underL.position.set(0, yBase - 0.3, 2); scene.add(underL);   // was 0xa855f7; --vio token
 
   // ── §B ENV CUBEMAP (procedural dark-studio, 128px faces, envMapIntensity 0.25 everywhere) ──
   function _envCube() {
