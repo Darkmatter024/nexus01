@@ -63,7 +63,7 @@ test.describe('coolant plumbing needs a source', () => {
     test.setTimeout(240_000);
     await phantom.boot({ seed: seed() });
     const gated = await page.evaluate(() => {
-      const src = String(window.rackElevation_render3D);
+      const src = String(window.rackGeometry_build);   // v1.14.451: the rear assembly lives here now
       return { hasGate: src.includes('_liquidCooled'), usesVocabulary: src.includes("=== 'cdu'") };
     });
     expect(gated.hasGate, 'the coolant plumbing is drawn unconditionally again').toBe(true);
@@ -85,7 +85,7 @@ test.describe('coolant plumbing needs a source', () => {
     // The other half of the ruling. Deleting the rear assembly outright would satisfy an
     // absence-only check and would be its own fabrication — a liquid-cooled rack drawn as if it
     // were not plumbed.
-    const src = await page.evaluate(() => String(window.rackElevation_render3D));
+    const src = await page.evaluate(() => String(window.rackGeometry_build));
     const gate = src.indexOf('if (_liquidCooled)');
     expect(gate, 'the gated branch is gone — a declared CDU would now render no plumbing').toBeGreaterThan(-1);
     const branch = src.slice(gate, gate + 1400);
@@ -95,7 +95,7 @@ test.describe('coolant plumbing needs a source', () => {
 
   test('structure stays unconditional — bus bars, cable arms and the rear door', async ({ phantom, page }) => {
     await phantom.boot({ seed: seed() });
-    const src = await page.evaluate(() => String(window.rackElevation_render3D));
+    const src = await page.evaluate(() => String(window.rackGeometry_build));
     const gate = src.indexOf('if (_liquidCooled)');
     const beforeGate = src.slice(0, gate);
     // Every rack is powered, cabled and has a door. Sweeping those into the gate would be the

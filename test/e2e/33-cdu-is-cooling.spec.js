@@ -84,7 +84,7 @@ test.describe('a CDU is cooling, not power', () => {
 
   test('the CDU carries NO status light — its identity is form, not telemetry', async ({ phantom, page }) => {
     await phantom.boot({ seed: seed() });
-    const src = await page.evaluate(() => String(window.rackElevation_render3D));
+    const src = await page.evaluate(() => String(window.rackGeometry_build));   // v1.14.451: families live here now
     const start = src.indexOf("kind === 'cooling'");
     const end = src.indexOf("kind === 'patch'");
     expect(start, 'the cooling family branch is missing').toBeGreaterThan(-1);

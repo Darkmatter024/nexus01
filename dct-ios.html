@@ -12913,7 +12913,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.450';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.451';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -38040,234 +38040,34 @@ function reh3d_fail(mountEl) {
 
 // The scene. Mirrors MOCKUP-rack-threejs.html but bounded to mountEl and driven by
 // real rack.slots (uStart/uEnd/type). Colors from TYPE_COLORS (same map as FLAT).
-function rackElevation_render3D(rack, mountEl) {
-  var THREE = window.THREE;
-  if (!mountEl || !THREE) return;
-  // one live context: dispose any prior (this mount OR a stale one from a past open)
-  if (mountEl._rm3dDispose) { try { mountEl._rm3dDispose(); } catch (e) {} }
+// ══ CANONICAL RACK GEOMETRY (v1.14.451 — Forge parity P1) ═══════════════════════════════════
+// EXTRACTED VERBATIM from rackElevation_render3D. Not one line of geometry changed: this is a
+// pure move so a SECOND renderer can build the SAME rack, which is the whole of §31 parity and
+// the reason FORGE-PARITY-PLAN.md makes it stage one. The aisle currently draws a box with a
+// baked photograph of a rack face on it; parity means it draws THIS instead.
+//
+// ⭐ ACCEPTANCE FOR THIS STAGE IS AN EQUALITY, NOT A JUDGEMENT. The scene census must be
+// identical before and after — 404 meshes in the rack group, 1,413 in the scene. Build looks
+// byte-identical because it is running the same code from a new address.
+//
+// WHAT CROSSES THE BOUNDARY, measured rather than assumed. Inbound: slots, totalU, the
+// RW/RD/uH/RH/yBase dimension set, the renderer (for an anisotropy capability probe) and the
+// CanvasTexture dispose registry. Outbound, and this was the number that made the extraction
+// tractable: only FOUR names are used by the caller afterwards — the group itself, trayMeshes
+// (raycast targets, the .255 tap contract), trayGroups (what EXPLODE lerps) and yFor (the ONE
+// RU→Y mapping, which §9 requires Build and Forge to share). No material escapes.
+//
+// ⛔ WHAT DELIBERATELY DID NOT MOVE: the cables overlay and the CABLES/VIEW-RAIL/EXPLODE DOM
+// wiring. Those are presentation bound to the rack-detail panel's own control strip, not the
+// rack representation, and none of them appear in the parity list. Forge has its own.
+function rackGeometry_build(rack, opts) {
+  opts = opts || {};
+  var slots  = opts.slots  || ((rack && Array.isArray(rack.slots)) ? rack.slots : []);
+  var totalU = opts.totalU || ((rack && rack.totalU) ? rack.totalU : 48);
+  var RW = opts.RW, RD = opts.RD, uH = opts.uH, RH = opts.RH, yBase = opts.yBase;
+  var renderer = opts.renderer;
+  var _bayTex = opts.bayTex || [];
 
-  // ── I6, THE RECLAIM BARRIER (v1.14.434) ────────────────────────────────────────────────────
-  // RELEASE MOVED UP HERE, ~1200 lines ahead of where it used to happen. It ran inside
-  // register(), which is called at the BOTTOM of this function — i.e. after the WebGLRenderer
-  // below had already taken a context. Releasing first, and putting two frames between the two
-  // operations, is the whole invariant: no context is acquired in the same task as a release.
-  //
-  // The barrier arms ONLY when something was actually released, so a first render on a cold
-  // device is not delayed by two frames waiting for a reclaim that never happened.
-  //
-  // Deferral re-enters this same function with the same arguments. On re-entry releaseOthers
-  // finds nothing left to release, the barrier is down, and it proceeds — so the deferred path
-  // is the normal path, not a second implementation of it.
-  try {
-    if (typeof RackEngine === 'object' && RackEngine) {
-      if (RackEngine.releaseOthers(mountEl) > 0) RackEngine._armBarrier();
-      if (!RackEngine.acquireOrDefer(function () { rackElevation_render3D(rack, mountEl); })) return;
-    }
-  } catch (e) { try { phantom_logErr('rackElevation_render3D:barrier', e); } catch (_) {} }
-  // v1.14.401 (M2-a): the single-context guard now lives in RackEngine, which releases EVERY
-  // other live attachment regardless of which module owns it. The two hand-written guards this
-  // replaces were asymmetric — the rack disposed the aisle, the aisle did not dispose the rack
-  // (its guard sat one level up in forge3d_open, so any other caller left both live).
-  RackEngine.releaseOthers(mountEl);
-  mountEl.innerHTML = '';
-  var w = mountEl.clientWidth, h = mountEl.clientHeight;
-  if (w && h) { mountEl._rm3dSizeTries = 0; }
-  if (!w || !h) {
-    // Panel not laid out yet — retry ONLY while it's still the visible 3D mount.
-    // If it's hidden (toggled to FLAT) or detached (navigated away), abort loudly —
-    // never re-arm an uncancellable per-frame spin on a dead mount.
-    // v1.14.391 — this bail/retry decision used to read #reh3dCanvasHost unconditionally.
-    // That is the rack-detail PANEL's host, so when this shared renderer is handed the
-    // Command hero's mount or the Build workspace's mount the decision was driven by an
-    // unrelated (and possibly hidden-but-present) node: either a bare console.warn bail, or
-    // an UNCAPPED rAF spin against a mount the user had already left. The panel keeps its
-    // original condition; every other consumer is judged on its OWN mount, and the retry is
-    // now bounded so no caller can spin forever.
-    var _isPanel = (mountEl.id === 'reh3dMount');
-    var host0 = document.getElementById('reh3dCanvasHost');
-    var _alive = (mountEl.offsetParent !== null) && document.body.contains(mountEl);
-    var _mayRetry = _isPanel ? (!!host0 && host0.classList.contains('is-3d') && _alive) : _alive;
-    mountEl._rm3dSizeTries = (mountEl._rm3dSizeTries || 0) + 1;
-    if (_mayRetry && mountEl._rm3dSizeTries <= 60) {
-      requestAnimationFrame(function () { rackElevation_render3D(rack, mountEl); });
-    } else {
-      console.warn('[PHANTOM] 3D rack view: mount hidden/detached before layout — aborting render');
-    }
-    return;
-  }
-
-  var slots  = (rack && Array.isArray(rack.slots)) ? rack.slots : [];
-  var totalU = (rack && rack.totalU) ? rack.totalU : 48;
-
-  // ══════════ v1.14.255 — THE INSPECTION BAY ═══════════════════════════════════
-  // Ports MOCKUP-INSPECT3D-BAY-LOCKED.html (John-locked 2026-07-14) into the reh3d
-  // socket, replacing the .218 shelf scene. The rack is the star: every bay element is
-  // additive, low-opacity, dimmer than the rack's own lights (§ THE DESIGN LAW).
-  // Trays are Master-driven and coloured from the SHARED module map (§E). The camera,
-  // orbit, raycast, scrub wiring and teardown BELOW this block are unchanged — this
-  // block only builds scene/renderer/camera + the bay, and exposes bayTick()/bayDispose().
-  //
-  // ⚠️ DELIBERATE DEVIATION FROM THE MOCK (flagged, John's call): the locked mock's
-  // chrome-black finish repaints EVERY tray piano-black (0x0c0f14), which would erase the
-  // type colours John ruled across .251–.253 (magenta UNKNOWN, slate MEDIA CONV). §E
-  // requires the bay to show type colour and "never contradict the elevation." So chrome
-  // black is applied to the RACK STRUCTURE only; TRAYS keep their type colour (information,
-  // not finish). v1.14.256 — JOHN RULED (device, 2026-07-14): "keep trays type-colored, magenta
-  // unknown looks right." That call is CORRECT and LOCKED; piano-black trays are ruled AGAINST.
-  // Do not revert the chrome-structure / type-colour-tray split in any future session.
-  var _bayTex = [];   // CanvasTexture/CubeTexture handles — material.dispose() won't free these
-  function _tex(t) { _bayTex.push(t); return t; }
-
-  // v1.14.443 (R2 — CABINET PROPORTIONS). RD was 4.5 against RW 6.0, i.e. a cabinet three quarters
-  // as deep as it is wide. A real 600mm rack is 1000–1200mm deep — HALF AGAIN TO TWICE its width —
-  // so the old box read as a shallow display case from any angle that showed its side, which is the
-  // §7 complaint ("dark rectangles") at its root. 9.0 is 1.5x width: clearly physical, deliberately
-  // short of the literal 1.78x so the first pass cannot overshoot on a phone-sized preview. Tunable.
-  // ⭐ ONE CONSTANT MOVES THE WHOLE CABINET. RD is fully parametric — corner posts, top/bottom
-  // cross-members, front AND rear rails, back wall, side panels, feet, the CDU cartridge, bus bars,
-  // manifolds, pipes, cable arm and rear door all derive from it, and chassis depth is RD - 0.42.
-  // So the trays deepen WITH the cabinet, which is exactly §10 ("chassis extends backward; servers
-  // live inside the rack") and is not a device-family change: no face, colour, material or family
-  // treatment is touched here — that is R3.
-  // ⚠️ CAMERA IS UNAFFECTED, checked not assumed: fitDist = max(fitDistH, RD * 0.65) * 1.3, and for
-  // 48U fitDistH is (16.32/2)/tan(14°) = 32.7 against RD*0.65 = 5.85. The height term still wins by
-  // 5x, so the JOHN-LOCKED FOV-28 ISO framing does not move. It only becomes the driver on a very
-  // short rack, which is the correct behaviour for a deep low cabinet.
-  var RW = 6.0, RD = 9.0, uH = 0.34, RH = totalU * uH, yBase = -RH / 2;
-  var floorY = yBase - 0.05;
-  var FOV = 28;                                                    // John-locked framing (mock uses 28; socket was 32)
-  var fitDistH = (RH * 0.5) / Math.tan((FOV * Math.PI / 180) / 2);
-  // v1.14.447 (R7 §27) — FRAME FILL 1.3 → 1.12. fitDistH is the distance at which the rack's height
-  // exactly spans the vertical FOV, so the trailing multiplier IS the breathing room: at 1.3 the
-  // rack occupied 1/1.3 = 77% of frame height, leaving 23% dead air in a preview that R1-D fought
-  // to get on screen at all. §27 asks for "rack vertically centered, full cabinet visible, minimal
-  // unused space, slight breathing room top/bottom" — 1.12 gives 89% fill and an 11% margin, which
-  // is breathing room rather than emptiness, and grows the rack ~16% linearly for free.
-  // ⚠️ PERSPECTIVE ONLY, checked: FRONT/REAR are ORTHOGRAPHIC and take their size from
-  // ORTHO_MARGIN (1.08 → 93% fill), not from this distance, so the elevation views do not move and
-  // the two now sit at a consistent fill instead of 77% against 93%. FOV stays 28.
-  var fitDist = Math.max(fitDistH, RD * 0.65) * 1.12;             // frames full rack height at FOV 28; loop() orbits on this
-
-  var scene = new THREE.Scene();                                  // no solid bg — the env cubemap + backdrop carry depth
-  scene.fog = new THREE.FogExp2(0x030508, 0.008);                 // v1.14.259 — mock's fog (FINAL L327), never ported in .255; its absence is why .258 read washed out vs the mock's deep-black
-  // ── v1.14.271 (RULING R1) — TWO CAMERAS, held for the life of the scene, switched BY REFERENCE.
-  // Never construct one per switch. The owner's ruling: "the rack is scenery; the camera is an
-  // instrument" — the SCENE stays locked (materials/lights/fog/tone-mapping/tray geometry/type
-  // colours/floor), only the eye moves. His authorizing words: "It's gotta be leveled — like you're
-  // looking straight at the rack."
-  //   ISO  = camP, the JOHN-LOCKED .255 perspective at FOV 28. Default AND landing view. Nothing
-  //          about ISO moves — do not retune FOV, fitDist, or its theta/elev.
-  //   FRONT/REAR = camO, orthographic, because a PERSPECTIVE camera physically cannot draw a true
-  //          elevation: the top cap fans open above the eye line and the bottom trays below it. That
-  //          splay is the projection, not the rack. Ortho makes every U equal height.
-  // Frustum derives from the rack itself — the rack is centred on y=0 (yBase = -RH/2) so a symmetric
-  // frustum frames it exactly; ORTHO_MARGIN lets the caps breathe.
-  // ⚠️ `zoom` is this build's DISTANCE multiplier (D = fitDist * zoom), so ortho takes its RECIPROCAL:
-  // bigger zoom = further away = smaller subject. Same 0.55–1.7 clamp, untouched.
-  var ORTHO_MARGIN = 1.08;
-  var camP = new THREE.PerspectiveCamera(FOV, w / h, 0.3, 500);
-  var camO = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.3, 500);
-  function orthoFit(aspect) {
-    var halfH = (RH / 2) * ORTHO_MARGIN, halfW = halfH * aspect;
-    camO.top = halfH; camO.bottom = -halfH; camO.left = -halfW; camO.right = halfW;
-    camO.updateProjectionMatrix();
-  }
-  orthoFit(w / h);
-  var camera = camP;                                  // boot on the locked ISO look
-  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));   // §F mobile cap
-  renderer.setSize(w, h);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.1;                            // §A locked
-  renderer.outputEncoding = THREE.sRGBEncoding;
-  var canvas = renderer.domElement;
-  canvas.style.display = 'block'; canvas.style.width = '100%'; canvas.style.height = '100%';
-  canvas.style.touchAction = 'pan-y';   // v1.14.264 RULING-RACK-GESTURE-LOCK: vertical pans = native page scroll; app owns horizontal orbit + pinch
-  mountEl.appendChild(canvas);
-
-  // ── §A JOHN-LOCKED LIGHT RIG (exact) ──
-  scene.add(new THREE.AmbientLight(0x1a2535, 0.04));
-  var keyL = new THREE.DirectionalLight(0xd4e5f7, 0.78);
-  keyL.position.set(5.45, 13.79, 4.91);
-  keyL.castShadow = true;
-  keyL.shadow.mapSize.set(2048, 2048);
-  keyL.shadow.camera.near = 0.5; keyL.shadow.camera.far = 50;
-  keyL.shadow.camera.left = -8; keyL.shadow.camera.right = 8;
-  keyL.shadow.camera.top = 12; keyL.shadow.camera.bottom = -12;
-  keyL.shadow.bias = -0.0005;
-  scene.add(keyL);
-  // ── v1.14.446 (R5 §20) — THE RIG COMES ONTO THE PALETTE ──────────────────────────────────────
-  // ⛔ COLOURS ONLY. Every position, the key light, the shadow camera, its map size and bias, and
-  // the tone-mapping exposure are UNTOUCHED. §20 says to improve the lighting carefully rather than
-  // replace it, and the key at 0xd4e5f7/0.78 from upper front-right is already exactly its "soft
-  // cool light from front/upper side" — so it is left alone. Three hues were not.
-  //
-  // rimL and glowL were 0x00d4aa, a mint that is on NO PHANTOM palette. This build already knew:
-  // the floor-fix comment further down names it "rimL (0x00d4aa = the off-palette mint)" as a
-  // contributing cause of the specular pool it had to kill. §20 asks for a "subtle CYAN PHANTOM
-  // edge light" and §34 makes cyan the primary system focus and the selected-rack colour. The
-  // token is --cyan #5cf2ff, so that is what the rim is now.
-  // fillL was 0x4a3a7a, a violet. §20 asks for a "very weak NEUTRAL/COOL fill" whose only job is to
-  // keep blacks off the floor of the histogram; a violet fill tints every shadowed face instead.
-  //
-  // ⭐ INTENSITIES ARE LUMINANCE-COMPENSATED, NOT LEFT ALONE. Rec-709 luminance of the old mint is
-  // 0.642 against cyan's 0.828 — cyan is ~1.29x brighter — so holding 0.42 would have made the rim
-  // ~29% hotter and walked straight into §20's "avoid overexposed cyan edges". 0.42/1.29 = 0.32,
-  // and the same correction takes the glow 0.08 -> 0.06. The rack should look the same brightness
-  // and a different colour, which is the whole point of the change.
-  // underL keeps §20's "extremely restrained violet" at the same energy; only its hue moves onto
-  // the --vio token. That one is cosmetic coherence rather than a §20 requirement — it is the first
-  // line to revert if the secondary reads wrong.
-  var fillL = new THREE.DirectionalLight(0x4a5a72, 0.09); fillL.position.set(-5, 3, -4); scene.add(fillL);   // was 0x4a3a7a violet
-  var rimL  = new THREE.DirectionalLight(0x5cf2ff, 0.32); rimL.position.set(-8, 4, -6); scene.add(rimL);     // was 0x00d4aa mint @0.42
-  var glowL = new THREE.PointLight(0x5cf2ff, 0.06, 35); glowL.position.set(0, 1, 10); scene.add(glowL);      // was 0x00d4aa mint @0.08
-  var underL = new THREE.PointLight(0x8a4bff, 0.14, 20); underL.position.set(0, yBase - 0.3, 2); scene.add(underL);   // was 0xa855f7; --vio token
-
-  // ── §B ENV CUBEMAP (procedural dark-studio, 128px faces, envMapIntensity 0.25 everywhere) ──
-  function _envCube() {
-    var faces = [];
-    for (var f = 0; f < 6; f++) {
-      var cv = document.createElement('canvas'); cv.width = cv.height = 128;
-      var g = cv.getContext('2d');
-      var grad = g.createLinearGradient(0, 0, 0, 128);
-      if (f === 2) { grad.addColorStop(0, '#3a4d63'); grad.addColorStop(1, '#0a0f16'); }
-      else if (f === 3) { grad.addColorStop(0, '#05070b'); grad.addColorStop(1, '#03050a'); }
-      else { grad.addColorStop(0, '#070b12'); grad.addColorStop(.52, '#1c2a3c'); grad.addColorStop(.58, '#0a1220'); grad.addColorStop(1, '#04060a'); }
-      g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
-      if (f === 0 || f === 1) { g.fillStyle = 'rgba(60,200,235,0.28)'; g.fillRect(0, 58, 128, 4); }
-      faces.push(cv);
-    }
-    var t = new THREE.CubeTexture(faces); t.needsUpdate = true; return _tex(t);
-  }
-  // -- v1.14.265 MIRROR ENV (CLEAR-PORT S2, port of the mock buildEnvMirror): a black studio room with
-  // white/cyan/violet light BANDS + a top softbox. The black-mirror rack reflects THESE - the plain dark
-  // gradient (_envCube) shows almost nothing on a roughness-0.05 metal. --
-  function _envCubeMirror() {
-    var faces = [];
-    for (var f = 0; f < 6; f++) {
-      var cv = document.createElement('canvas'); cv.width = cv.height = 128;
-      var g = cv.getContext('2d');
-      g.fillStyle = '#04060c'; g.fillRect(0, 0, 128, 128);
-      if (f === 2) {                                   // +Y top: broad cold softbox pool
-        var rg = g.createRadialGradient(64, 64, 10, 64, 64, 88);
-        rg.addColorStop(0, 'rgba(140,180,220,0.85)'); rg.addColorStop(1, 'rgba(4,6,12,0)');
-        g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
-      } else if (f !== 3) {                            // walls: studio bands (white + cyan + violet)
-        g.fillStyle = 'rgba(200,225,245,0.75)'; g.fillRect(0, 30, 128, 9);
-        g.fillStyle = 'rgba(60,205,240,0.65)';  g.fillRect(0, 62, 128, 6);
-        g.fillStyle = 'rgba(138,75,255,0.35)';  g.fillRect(0, 92, 128, 5);
-      } else {                                         // -Y floor: soft bounce
-        g.fillStyle = 'rgba(40,60,85,0.4)'; g.fillRect(0, 0, 128, 128);
-      }
-      faces.push(cv);
-    }
-    var t = new THREE.CubeTexture(faces); t.needsUpdate = true; return _tex(t);   // _tex registers it for bayDispose
-  }
-  scene.environment = _envCubeMirror();   // v1.14.265 MIRROR FINISH (was _envCube gradient)
-
-  // ── RACK STRUCTURE (chrome black §B: 0x0c0f14 metal .92 rough .16 env .25) ──
   var rackGrp = new THREE.Group();
   // v1.14.445 (R4 §18 — POWDER COAT, replacing the .265 MIRROR FINISH). §18 is explicit: "mostly
   // rough black powder coat, low-to-medium metalness, restrained specular response, edge highlights
@@ -38424,7 +38224,6 @@ function rackElevation_render3D(rack, mountEl) {
   // ⛔ EMPTY ON PURPOSE — the per-frame blink is gone. bayTick still iterates this and now no-ops,
   // which also removes per-frame colour writes from the render loop (§36: the animation loop should
   // update camera and render, not mutate materials every frame).
-  var ledMats = [];
   // v1.14.257 TRAY FIDELITY — chassis palette is DARK gunmetal per KIND (mock C{}); TYPE colour
   // is demoted to the front bezel strip (EDIT A). Restores the mock look; kills the .256 slabs.
   var KIND_C = { compute: 0x1a2332, switch: 0x1e293b, power: 0x1a2028, blank: 0x0f141c,
@@ -38480,8 +38279,6 @@ function rackElevation_render3D(rack, mountEl) {
   // assignment, so declaring it down with the orbit state would make this push hit `undefined` at runtime
   // (node --check cannot see that).
   var trayGroups = [];
-  var _rail3dSelGrp = null;   // N-06 Stage 2 (v1.14.301): 3D rail-compass selection emitters group; assigned ONCE at the hlBand site below, declared HERE per the same declare-above-first-use rule the R4 note above states for trayGroups
-  var _rail3dSel = null;      // { uS, uE } of the tapped unit, else null
   var _mtx = new THREE.Matrix4();
   slots.forEach(function (dev) {
     if (dev == null || dev.uStart == null || dev.uEnd == null) return;
@@ -38758,6 +38555,251 @@ function rackElevation_render3D(rack, mountEl) {
   }
   var rearDoor = new THREE.Mesh(new THREE.PlaneGeometry(RW - 0.1, RH - 0.1), rearDoorMat);
   rearDoor.position.set(0, 0, -RD/2 - 0.02); rackGrp.add(rearDoor);
+
+  return { group: rackGrp, trayMeshes: trayMeshes, trayGroups: trayGroups, yFor: yFor };
+}
+
+function rackElevation_render3D(rack, mountEl) {
+  var THREE = window.THREE;
+  if (!mountEl || !THREE) return;
+  // one live context: dispose any prior (this mount OR a stale one from a past open)
+  if (mountEl._rm3dDispose) { try { mountEl._rm3dDispose(); } catch (e) {} }
+
+  // ── I6, THE RECLAIM BARRIER (v1.14.434) ────────────────────────────────────────────────────
+  // RELEASE MOVED UP HERE, ~1200 lines ahead of where it used to happen. It ran inside
+  // register(), which is called at the BOTTOM of this function — i.e. after the WebGLRenderer
+  // below had already taken a context. Releasing first, and putting two frames between the two
+  // operations, is the whole invariant: no context is acquired in the same task as a release.
+  //
+  // The barrier arms ONLY when something was actually released, so a first render on a cold
+  // device is not delayed by two frames waiting for a reclaim that never happened.
+  //
+  // Deferral re-enters this same function with the same arguments. On re-entry releaseOthers
+  // finds nothing left to release, the barrier is down, and it proceeds — so the deferred path
+  // is the normal path, not a second implementation of it.
+  try {
+    if (typeof RackEngine === 'object' && RackEngine) {
+      if (RackEngine.releaseOthers(mountEl) > 0) RackEngine._armBarrier();
+      if (!RackEngine.acquireOrDefer(function () { rackElevation_render3D(rack, mountEl); })) return;
+    }
+  } catch (e) { try { phantom_logErr('rackElevation_render3D:barrier', e); } catch (_) {} }
+  // v1.14.401 (M2-a): the single-context guard now lives in RackEngine, which releases EVERY
+  // other live attachment regardless of which module owns it. The two hand-written guards this
+  // replaces were asymmetric — the rack disposed the aisle, the aisle did not dispose the rack
+  // (its guard sat one level up in forge3d_open, so any other caller left both live).
+  RackEngine.releaseOthers(mountEl);
+  mountEl.innerHTML = '';
+  var w = mountEl.clientWidth, h = mountEl.clientHeight;
+  if (w && h) { mountEl._rm3dSizeTries = 0; }
+  if (!w || !h) {
+    // Panel not laid out yet — retry ONLY while it's still the visible 3D mount.
+    // If it's hidden (toggled to FLAT) or detached (navigated away), abort loudly —
+    // never re-arm an uncancellable per-frame spin on a dead mount.
+    // v1.14.391 — this bail/retry decision used to read #reh3dCanvasHost unconditionally.
+    // That is the rack-detail PANEL's host, so when this shared renderer is handed the
+    // Command hero's mount or the Build workspace's mount the decision was driven by an
+    // unrelated (and possibly hidden-but-present) node: either a bare console.warn bail, or
+    // an UNCAPPED rAF spin against a mount the user had already left. The panel keeps its
+    // original condition; every other consumer is judged on its OWN mount, and the retry is
+    // now bounded so no caller can spin forever.
+    var _isPanel = (mountEl.id === 'reh3dMount');
+    var host0 = document.getElementById('reh3dCanvasHost');
+    var _alive = (mountEl.offsetParent !== null) && document.body.contains(mountEl);
+    var _mayRetry = _isPanel ? (!!host0 && host0.classList.contains('is-3d') && _alive) : _alive;
+    mountEl._rm3dSizeTries = (mountEl._rm3dSizeTries || 0) + 1;
+    if (_mayRetry && mountEl._rm3dSizeTries <= 60) {
+      requestAnimationFrame(function () { rackElevation_render3D(rack, mountEl); });
+    } else {
+      console.warn('[PHANTOM] 3D rack view: mount hidden/detached before layout — aborting render');
+    }
+    return;
+  }
+
+  var slots  = (rack && Array.isArray(rack.slots)) ? rack.slots : [];
+  var totalU = (rack && rack.totalU) ? rack.totalU : 48;
+
+  // ══════════ v1.14.255 — THE INSPECTION BAY ═══════════════════════════════════
+  // Ports MOCKUP-INSPECT3D-BAY-LOCKED.html (John-locked 2026-07-14) into the reh3d
+  // socket, replacing the .218 shelf scene. The rack is the star: every bay element is
+  // additive, low-opacity, dimmer than the rack's own lights (§ THE DESIGN LAW).
+  // Trays are Master-driven and coloured from the SHARED module map (§E). The camera,
+  // orbit, raycast, scrub wiring and teardown BELOW this block are unchanged — this
+  // block only builds scene/renderer/camera + the bay, and exposes bayTick()/bayDispose().
+  //
+  // ⚠️ DELIBERATE DEVIATION FROM THE MOCK (flagged, John's call): the locked mock's
+  // chrome-black finish repaints EVERY tray piano-black (0x0c0f14), which would erase the
+  // type colours John ruled across .251–.253 (magenta UNKNOWN, slate MEDIA CONV). §E
+  // requires the bay to show type colour and "never contradict the elevation." So chrome
+  // black is applied to the RACK STRUCTURE only; TRAYS keep their type colour (information,
+  // not finish). v1.14.256 — JOHN RULED (device, 2026-07-14): "keep trays type-colored, magenta
+  // unknown looks right." That call is CORRECT and LOCKED; piano-black trays are ruled AGAINST.
+  // Do not revert the chrome-structure / type-colour-tray split in any future session.
+  var _bayTex = [];   // CanvasTexture/CubeTexture handles — material.dispose() won't free these
+  function _tex(t) { _bayTex.push(t); return t; }
+
+  // v1.14.443 (R2 — CABINET PROPORTIONS). RD was 4.5 against RW 6.0, i.e. a cabinet three quarters
+  // as deep as it is wide. A real 600mm rack is 1000–1200mm deep — HALF AGAIN TO TWICE its width —
+  // so the old box read as a shallow display case from any angle that showed its side, which is the
+  // §7 complaint ("dark rectangles") at its root. 9.0 is 1.5x width: clearly physical, deliberately
+  // short of the literal 1.78x so the first pass cannot overshoot on a phone-sized preview. Tunable.
+  // ⭐ ONE CONSTANT MOVES THE WHOLE CABINET. RD is fully parametric — corner posts, top/bottom
+  // cross-members, front AND rear rails, back wall, side panels, feet, the CDU cartridge, bus bars,
+  // manifolds, pipes, cable arm and rear door all derive from it, and chassis depth is RD - 0.42.
+  // So the trays deepen WITH the cabinet, which is exactly §10 ("chassis extends backward; servers
+  // live inside the rack") and is not a device-family change: no face, colour, material or family
+  // treatment is touched here — that is R3.
+  // ⚠️ CAMERA IS UNAFFECTED, checked not assumed: fitDist = max(fitDistH, RD * 0.65) * 1.3, and for
+  // 48U fitDistH is (16.32/2)/tan(14°) = 32.7 against RD*0.65 = 5.85. The height term still wins by
+  // 5x, so the JOHN-LOCKED FOV-28 ISO framing does not move. It only becomes the driver on a very
+  // short rack, which is the correct behaviour for a deep low cabinet.
+  var RW = 6.0, RD = 9.0, uH = 0.34, RH = totalU * uH, yBase = -RH / 2;
+  var floorY = yBase - 0.05;
+  var FOV = 28;                                                    // John-locked framing (mock uses 28; socket was 32)
+  var fitDistH = (RH * 0.5) / Math.tan((FOV * Math.PI / 180) / 2);
+  // v1.14.447 (R7 §27) — FRAME FILL 1.3 → 1.12. fitDistH is the distance at which the rack's height
+  // exactly spans the vertical FOV, so the trailing multiplier IS the breathing room: at 1.3 the
+  // rack occupied 1/1.3 = 77% of frame height, leaving 23% dead air in a preview that R1-D fought
+  // to get on screen at all. §27 asks for "rack vertically centered, full cabinet visible, minimal
+  // unused space, slight breathing room top/bottom" — 1.12 gives 89% fill and an 11% margin, which
+  // is breathing room rather than emptiness, and grows the rack ~16% linearly for free.
+  // ⚠️ PERSPECTIVE ONLY, checked: FRONT/REAR are ORTHOGRAPHIC and take their size from
+  // ORTHO_MARGIN (1.08 → 93% fill), not from this distance, so the elevation views do not move and
+  // the two now sit at a consistent fill instead of 77% against 93%. FOV stays 28.
+  var fitDist = Math.max(fitDistH, RD * 0.65) * 1.12;             // frames full rack height at FOV 28; loop() orbits on this
+
+  var scene = new THREE.Scene();                                  // no solid bg — the env cubemap + backdrop carry depth
+  scene.fog = new THREE.FogExp2(0x030508, 0.008);                 // v1.14.259 — mock's fog (FINAL L327), never ported in .255; its absence is why .258 read washed out vs the mock's deep-black
+  // ── v1.14.271 (RULING R1) — TWO CAMERAS, held for the life of the scene, switched BY REFERENCE.
+  // Never construct one per switch. The owner's ruling: "the rack is scenery; the camera is an
+  // instrument" — the SCENE stays locked (materials/lights/fog/tone-mapping/tray geometry/type
+  // colours/floor), only the eye moves. His authorizing words: "It's gotta be leveled — like you're
+  // looking straight at the rack."
+  //   ISO  = camP, the JOHN-LOCKED .255 perspective at FOV 28. Default AND landing view. Nothing
+  //          about ISO moves — do not retune FOV, fitDist, or its theta/elev.
+  //   FRONT/REAR = camO, orthographic, because a PERSPECTIVE camera physically cannot draw a true
+  //          elevation: the top cap fans open above the eye line and the bottom trays below it. That
+  //          splay is the projection, not the rack. Ortho makes every U equal height.
+  // Frustum derives from the rack itself — the rack is centred on y=0 (yBase = -RH/2) so a symmetric
+  // frustum frames it exactly; ORTHO_MARGIN lets the caps breathe.
+  // ⚠️ `zoom` is this build's DISTANCE multiplier (D = fitDist * zoom), so ortho takes its RECIPROCAL:
+  // bigger zoom = further away = smaller subject. Same 0.55–1.7 clamp, untouched.
+  var ORTHO_MARGIN = 1.08;
+  var camP = new THREE.PerspectiveCamera(FOV, w / h, 0.3, 500);
+  var camO = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.3, 500);
+  function orthoFit(aspect) {
+    var halfH = (RH / 2) * ORTHO_MARGIN, halfW = halfH * aspect;
+    camO.top = halfH; camO.bottom = -halfH; camO.left = -halfW; camO.right = halfW;
+    camO.updateProjectionMatrix();
+  }
+  orthoFit(w / h);
+  var camera = camP;                                  // boot on the locked ISO look
+  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));   // §F mobile cap
+  renderer.setSize(w, h);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;                            // §A locked
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  var canvas = renderer.domElement;
+  canvas.style.display = 'block'; canvas.style.width = '100%'; canvas.style.height = '100%';
+  canvas.style.touchAction = 'pan-y';   // v1.14.264 RULING-RACK-GESTURE-LOCK: vertical pans = native page scroll; app owns horizontal orbit + pinch
+  mountEl.appendChild(canvas);
+
+  // ── §A JOHN-LOCKED LIGHT RIG (exact) ──
+  scene.add(new THREE.AmbientLight(0x1a2535, 0.04));
+  var keyL = new THREE.DirectionalLight(0xd4e5f7, 0.78);
+  keyL.position.set(5.45, 13.79, 4.91);
+  keyL.castShadow = true;
+  keyL.shadow.mapSize.set(2048, 2048);
+  keyL.shadow.camera.near = 0.5; keyL.shadow.camera.far = 50;
+  keyL.shadow.camera.left = -8; keyL.shadow.camera.right = 8;
+  keyL.shadow.camera.top = 12; keyL.shadow.camera.bottom = -12;
+  keyL.shadow.bias = -0.0005;
+  scene.add(keyL);
+  // ── v1.14.446 (R5 §20) — THE RIG COMES ONTO THE PALETTE ──────────────────────────────────────
+  // ⛔ COLOURS ONLY. Every position, the key light, the shadow camera, its map size and bias, and
+  // the tone-mapping exposure are UNTOUCHED. §20 says to improve the lighting carefully rather than
+  // replace it, and the key at 0xd4e5f7/0.78 from upper front-right is already exactly its "soft
+  // cool light from front/upper side" — so it is left alone. Three hues were not.
+  //
+  // rimL and glowL were 0x00d4aa, a mint that is on NO PHANTOM palette. This build already knew:
+  // the floor-fix comment further down names it "rimL (0x00d4aa = the off-palette mint)" as a
+  // contributing cause of the specular pool it had to kill. §20 asks for a "subtle CYAN PHANTOM
+  // edge light" and §34 makes cyan the primary system focus and the selected-rack colour. The
+  // token is --cyan #5cf2ff, so that is what the rim is now.
+  // fillL was 0x4a3a7a, a violet. §20 asks for a "very weak NEUTRAL/COOL fill" whose only job is to
+  // keep blacks off the floor of the histogram; a violet fill tints every shadowed face instead.
+  //
+  // ⭐ INTENSITIES ARE LUMINANCE-COMPENSATED, NOT LEFT ALONE. Rec-709 luminance of the old mint is
+  // 0.642 against cyan's 0.828 — cyan is ~1.29x brighter — so holding 0.42 would have made the rim
+  // ~29% hotter and walked straight into §20's "avoid overexposed cyan edges". 0.42/1.29 = 0.32,
+  // and the same correction takes the glow 0.08 -> 0.06. The rack should look the same brightness
+  // and a different colour, which is the whole point of the change.
+  // underL keeps §20's "extremely restrained violet" at the same energy; only its hue moves onto
+  // the --vio token. That one is cosmetic coherence rather than a §20 requirement — it is the first
+  // line to revert if the secondary reads wrong.
+  var fillL = new THREE.DirectionalLight(0x4a5a72, 0.09); fillL.position.set(-5, 3, -4); scene.add(fillL);   // was 0x4a3a7a violet
+  var rimL  = new THREE.DirectionalLight(0x5cf2ff, 0.32); rimL.position.set(-8, 4, -6); scene.add(rimL);     // was 0x00d4aa mint @0.42
+  var glowL = new THREE.PointLight(0x5cf2ff, 0.06, 35); glowL.position.set(0, 1, 10); scene.add(glowL);      // was 0x00d4aa mint @0.08
+  var underL = new THREE.PointLight(0x8a4bff, 0.14, 20); underL.position.set(0, yBase - 0.3, 2); scene.add(underL);   // was 0xa855f7; --vio token
+
+  // ── §B ENV CUBEMAP (procedural dark-studio, 128px faces, envMapIntensity 0.25 everywhere) ──
+  function _envCube() {
+    var faces = [];
+    for (var f = 0; f < 6; f++) {
+      var cv = document.createElement('canvas'); cv.width = cv.height = 128;
+      var g = cv.getContext('2d');
+      var grad = g.createLinearGradient(0, 0, 0, 128);
+      if (f === 2) { grad.addColorStop(0, '#3a4d63'); grad.addColorStop(1, '#0a0f16'); }
+      else if (f === 3) { grad.addColorStop(0, '#05070b'); grad.addColorStop(1, '#03050a'); }
+      else { grad.addColorStop(0, '#070b12'); grad.addColorStop(.52, '#1c2a3c'); grad.addColorStop(.58, '#0a1220'); grad.addColorStop(1, '#04060a'); }
+      g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+      if (f === 0 || f === 1) { g.fillStyle = 'rgba(60,200,235,0.28)'; g.fillRect(0, 58, 128, 4); }
+      faces.push(cv);
+    }
+    var t = new THREE.CubeTexture(faces); t.needsUpdate = true; return _tex(t);
+  }
+  // -- v1.14.265 MIRROR ENV (CLEAR-PORT S2, port of the mock buildEnvMirror): a black studio room with
+  // white/cyan/violet light BANDS + a top softbox. The black-mirror rack reflects THESE - the plain dark
+  // gradient (_envCube) shows almost nothing on a roughness-0.05 metal. --
+  function _envCubeMirror() {
+    var faces = [];
+    for (var f = 0; f < 6; f++) {
+      var cv = document.createElement('canvas'); cv.width = cv.height = 128;
+      var g = cv.getContext('2d');
+      g.fillStyle = '#04060c'; g.fillRect(0, 0, 128, 128);
+      if (f === 2) {                                   // +Y top: broad cold softbox pool
+        var rg = g.createRadialGradient(64, 64, 10, 64, 64, 88);
+        rg.addColorStop(0, 'rgba(140,180,220,0.85)'); rg.addColorStop(1, 'rgba(4,6,12,0)');
+        g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+      } else if (f !== 3) {                            // walls: studio bands (white + cyan + violet)
+        g.fillStyle = 'rgba(200,225,245,0.75)'; g.fillRect(0, 30, 128, 9);
+        g.fillStyle = 'rgba(60,205,240,0.65)';  g.fillRect(0, 62, 128, 6);
+        g.fillStyle = 'rgba(138,75,255,0.35)';  g.fillRect(0, 92, 128, 5);
+      } else {                                         // -Y floor: soft bounce
+        g.fillStyle = 'rgba(40,60,85,0.4)'; g.fillRect(0, 0, 128, 128);
+      }
+      faces.push(cv);
+    }
+    var t = new THREE.CubeTexture(faces); t.needsUpdate = true; return _tex(t);   // _tex registers it for bayDispose
+  }
+  scene.environment = _envCubeMirror();   // v1.14.265 MIRROR FINISH (was _envCube gradient)
+
+  // ── RACK STRUCTURE (chrome black §B: 0x0c0f14 metal .92 rough .16 env .25) ──
+  // v1.14.451 (Forge parity P1) — the rack geometry now comes from the canonical builder above.
+  // Same code, new address; the census equality is the gate.
+  var _rgeo = rackGeometry_build(rack, { slots: slots, totalU: totalU, RW: RW, RD: RD, uH: uH,
+                                         RH: RH, yBase: yBase, renderer: renderer, bayTex: _bayTex });
+  var rackGrp = _rgeo.group, trayMeshes = _rgeo.trayMeshes, trayGroups = _rgeo.trayGroups, yFor = _rgeo.yFor;
+  // v1.14.451 (P1) — CALLER STATE, NOT RACK GEOMETRY. These three were swept into the extracted
+  // block by position and belong here: ledMats is the LED blink registry bayTick walks (empty
+  // since v1.14.444, so the tick no-ops), and _rail3dSelGrp/_rail3dSel are the U-scrub selection
+  // group and its selected unit — rack-detail interaction state that Forge has no use for. The
+  // builder declared them and never touched them, which is exactly why they had to come back out.
+  var ledMats = [];
+  var _rail3dSelGrp = null;   // N-06 Stage 2 (v1.14.301): 3D rail-compass selection emitters group; assigned ONCE at the hlBand site below, declared HERE per the same declare-above-first-use rule the R4 note above states for trayGroups
+  var _rail3dSel = null;      // { uS, uE } of the tapped unit, else null
 
   // ── CABLES — SOURCED FROM THE MASTER (RULING R2). Hidden by default; the 3D-strip toggle flips them ──
   // The RENDERER below is the .256 mock port, unchanged. What changed is the DATA FEED.

@@ -69,8 +69,14 @@ const stripComments = (src) => src
   })
   .join('\n');
 
+// ⚠ v1.14.451 (Forge parity P1): the rack geometry, the device families and the coolant gate
+// moved OUT of rackElevation_render3D into the module-scope rackGeometry_build so a second
+// renderer can build the same rack. These assertions are unchanged in substance — only the
+// address they read. Both sources are concatenated, builder FIRST, so a slice that bounds a
+// family branch still lands inside the builder while caller-side state (ledMats) stays visible.
 const rendererSrc = (page) =>
-  page.evaluate(() => String(window.rackElevation_render3D)).then(stripComments);
+  page.evaluate(() => String(window.rackGeometry_build) + '\n' + String(window.rackElevation_render3D))
+    .then(stripComments);
 
 test.describe('the renderer does not invent state', () => {
 
