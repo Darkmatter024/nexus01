@@ -1,6 +1,43 @@
 # BATCH-VERIFY — consolidated device checklist (CALL 0, DIRECTIVE 2026-07-06)
 **Protocol:** ships stack; owner runs THIS list once per batch (cap: every 6 stacked ships or before
 any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends; owner checks off.
+
+---
+
+# ⭐ CURRENT BATCH — `.438`–`.453` (16 of 6). RUN THIS BLOCK. NOTHING ELSE IN THIS FILE.
+
+**Live: `v1.14.453`.** Last hardware pass was `.438`-era; everything below is unverified on a phone.
+Sixteen ships: the phase-card merge (`.439`–`.440`), the context fix (`.441`), the renderer
+programme R1-D→R8 (`.442`–`.450`) and Forge parity P1–P3 (`.451`–`.453`).
+
+⛔ **Clear the SW cache / hard-reload first, and load your real Master.** Six checks, one walk, no
+backtracking. **You are judging what you SEE. Do not open a console — if a check needs one, it is my
+bug, not your task.**
+
+| # | Do this | PASS | FAIL |
+|---|---|---|---|
+| **1** | Open **BUILD** with an active rack. **Do not scroll.** | You can see **the rack itself** above the phase bar, with the rack ID, **CONTINUE** and **OPEN AISLE** also on screen | You have to scroll to find the rack, or the preview area is empty |
+| **2** | Look at that rack. | Reads as **matte painted steel** — real depth, a visible side wall going back, crisp frame edges, trays in family colours | Black glass / a mirror · a flat frame with no depth · a rack adrift in empty space · anything neon or blown out |
+| **3** | Tap into the **rack detail**, then come **back** to Build. | The rack draws on **both** screens, every time | Either screen shows an empty box where the rack should be |
+| **4** | In the rack detail, run one phase: **START**, then **COMPLETE**, then **SKIP** the quirk prompt. | The phase advances and you stay **where you were** | You get thrown to a different screen mid-action, or a control does nothing |
+| **5** | Back on BUILD, tap **ASSIGN**. Enter a name, confirm. | Saved, and **BUILD is still the screen you are looking at** | You land on the rack detail |
+| **6** | **OPEN AISLE.** Walk across **10+ racks**. | Every rack in the **front row** is a real cabinet — frame, rails, device trays. Background racks stay dark and cheap. **No slowdown, no heat spike** by rack ten | A flat photo face in the front row · a blank rack · stuttering or the phone getting hot |
+
+### While you are in there — three things only your Master can show me
+
+- **s4:099 RU02** should read **CDU**, green, with a **dark** screen — not a gold PDU. Power shelves stay gold.
+- **An H100 rack** should have a **clean interior** — no green pipework running down the middle. A rack that declares a CDU should still show its plumbing.
+- **No green dots and nothing blinking** on any device. Small neutral white lights only.
+
+### If something fails
+
+Tell me **the check number and what you saw.** That is enough — I do not need console output, and I
+will not ask you to read one.
+
+**Rollback:** every ship is one commit; `.438` is `170c34b`. Any single stage reverts on its own.
+
+---
+
 **Batches .192-.197, .198-.201, .202-.212, .213-.214, and .215: RELEASED by owner (.202-.212 verified 2026-07-08; .213 boot plate + .214 deploy-tap FIX verified 2026-07-09; .215 crash-log hardening verified "all good" 2026-07-09). Batch .340-.345: RELEASED 2026-07-23 ("340-345 good") — cleared the 6-ship count cap and the MASTER FULL-INGEST HIGH-risk prereq. Batches .346-.350 (CLEARED 2026-07-24) and .351-.354 (CLEARED 2026-07-25) followed. **Batch .355-.363: RELEASED by owner 2026-07-30 ("everything is good to go all ships clear") — nine ships, three past the cap, incl. HIGH-risk .359 (BUILD banner rows). Cap RESET. Batch .364-.370: RELEASED by owner 2026-08-03 ("all good") — seven ships, one past the cap, incl. the .366 two-device pass and the .370 offline pass. Cap RESET. Batch .371-.375: RELEASED by owner 2026-08-04 ("all good") — five ships, cap RESET (detail at the `.375` block).** · Clear SW cache before the pass.
 
 **⛔ HEADER RECONCILED 2026-08-06 — read this line, the two above it went stale.** This line had still
