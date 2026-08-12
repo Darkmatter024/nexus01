@@ -96,13 +96,45 @@ test.describe('Forge parity', () => {
       return out.sort((a, b) => b.meshes - a.meshes);
     });
     expect(slots.length, 'no rack slots were found in the aisle scene').toBeGreaterThan(1);
-    const focused = slots[0], others = slots.slice(1);
-    // An empty canonical cabinet is ~50 meshes before a single device is placed. A photo slot can
-    // never reach that, so this cannot pass while the aisle still draws a photograph.
+    const focused = slots[0];
+    // An empty canonical cabinet is ~50 meshes before a single device is placed. A photo slot is
+    // six and never moves, so this cannot pass while the aisle still draws a photograph.
     expect(focused.meshes, `the focused slot has only ${focused.meshes} meshes — still a photo plane`).toBeGreaterThan(40);
-    const biggestOther = Math.max.apply(null, others.map((o) => o.meshes));
-    expect(focused.meshes, 'the focused rack is not richer than its neighbours — the LOD tiers collapsed')
-      .toBeGreaterThan(biggestOther * 3);
+
+    // ⚠ THE TIER CHECK CANNOT BE A MESH-COUNT RATIO BETWEEN SLOTS, and P3 is what proved it. Once
+    // the neighbours became canonical too, a SPARSE focused cab at full detail (s1:010, cable-only,
+    // 63 meshes) legitimately has fewer meshes than a DENSE neighbour at medium (s4:099, 19
+    // devices, 61). Comparing different racks measures how populated they are, not what tier they
+    // are drawn at. So the tiers are compared on the SAME rack, built both ways.
+    const tiers = await page.evaluate(() => {
+      const cab = 's4:099';
+      const elev = master_rackToElevation(PHANTOM_MASTER.active().racksByCab[cab], cab);
+      const slots2 = elev.slots || [], totalU = elev.totalU || 48, uH = 0.34, RH = totalU * uH;
+      const mk = (detail) => {
+        const b = rackGeometry_build({ slots: slots2, totalU: totalU }, {
+          slots: slots2, totalU: totalU, RW: 6.0, RD: 9.0, uH: uH, RH: RH, yBase: -RH / 2, detail: detail });
+        let n = 0; b.group.traverse((o) => { if (o.isMesh || o.isInstancedMesh || o.isLine || o.isLineSegments) n++; });
+        b.group.traverse((o) => { if (o.geometry && o.geometry.dispose) o.geometry.dispose(); });
+        return n;
+      };
+      return { full: mk('full'), medium: mk('medium') };
+    });
+    expect(tiers.medium, 'the medium tier drew nothing').toBeGreaterThan(0);
+    expect(tiers.full, `full (${tiers.full}) is not richer than medium (${tiers.medium}) — the LOD tiers collapsed`)
+      .toBeGreaterThan(tiers.medium);
+
+    // And the foreground/background split: every labelled foreground slot is canonical, the
+    // background shells are not. That is §33 — background racks stay cheap context.
+    const tiered = await page.evaluate(() => {
+      const out = { canon: 0, photo: 0 };
+      (window.__S || []).forEach((s) => s.children.forEach((c) => {
+        if (!c.userData || c.userData.label === undefined) return;
+        if (c.userData.canonHost) out.canon++; else out.photo++;
+      }));
+      return out;
+    });
+    expect(tiered.canon, 'no foreground slot is canonical').toBeGreaterThan(1);
+    expect(tiered.photo, 'the background shells were converted too — §33 keeps them cheap').toBeGreaterThan(0);
     const c = await census(page);
     expect(c.live, 'more than one live WebGL context — Contract A6').toBe(1);
   });

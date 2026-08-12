@@ -12913,7 +12913,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.452';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.453';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20437,22 +20437,22 @@ function forge3d_render(mount) {
   // materials, EXCEPT the shared ones the builder caches per kind: those are owned by the builder
   // and freeing them would blank the next rack. Textures the builder minted are collected through
   // the registry passed in, exactly as the rack detail does.
-  var _canonHost = null, _canonTex = [];
-  function _canonDispose() {
-    if (!_canonHost) return;
+  // v1.14.453 (P3) — PER-SLOT, not one global. P2 held a single canonical rack because only the
+  // focused slot had one; now all five foreground slots do, so each owns its own group and its own
+  // texture registry and is disposed independently when its slot is recycled or re-tiered.
+  function _canonDispose(slot) {
+    if (!slot || !slot.userData || !slot.userData.canonHost) return;
     try {
-      var owned = [];
-      _canonHost.traverse(function (o) {
-        if (o.geometry && o.geometry.dispose) owned.push(o.geometry);
-      });
-      if (_canonHost.parent) _canonHost.parent.remove(_canonHost);
+      var host = slot.userData.canonHost, owned = [];
+      host.traverse(function (o) { if (o.geometry && o.geometry.dispose) owned.push(o.geometry); });
+      if (host.parent) host.parent.remove(host);
       owned.forEach(function (g) { try { g.dispose(); } catch (_) {} });
-      _canonTex.forEach(function (t) { try { if (t && t.dispose) t.dispose(); } catch (_) {} });
+      (slot.userData.canonTex || []).forEach(function (t) { try { if (t && t.dispose) t.dispose(); } catch (_) {} });
     } catch (e) { phantom_logErr('forge:canonDispose', e); }
-    _canonHost = null; _canonTex = [];
+    slot.userData.canonHost = null; slot.userData.canonTex = [];
   }
-  function _canonAttach(slot) {
-    _canonDispose();
+  function _canonAttach(slot, detail) {
+    _canonDispose(slot);
     var id = slot && slot.userData && slot.userData.label;
     if (!id || slot.userData.pad) return;
     if (typeof rackGeometry_build !== 'function') {
@@ -20463,10 +20463,10 @@ function forge3d_render(mount) {
       var slots = deploy_forge_slots(id) || [];
       var totalU = deploy_forge_totalU(id);
       var cUH = 0.34, cRH = totalU * cUH;
-      _canonTex = [];
+      var tex = [];
       var built = rackGeometry_build({ slots: slots, totalU: totalU }, {
         slots: slots, totalU: totalU, RW: 6.0, RD: 9.0, uH: cUH, RH: cRH, yBase: -cRH / 2,
-        renderer: renderer, bayTex: _canonTex
+        renderer: renderer, bayTex: tex, detail: detail || 'full'
       });
       var g = built && built.group;
       if (!g) { console.warn('[forge] canonical builder returned no group for ' + id); return; }
@@ -20474,14 +20474,22 @@ function forge3d_render(mount) {
       g.scale.setScalar(k);
       g.position.set(0, 0, 0);                // the builder centres on y=0; so does the slot
       slot.add(g);
-      _canonHost = g;
+      slot.userData.canonHost = g; slot.userData.canonTex = tex;
       if (slot.userData.face) slot.userData.face.visible = false;          // the photo steps aside
       if (slot.userData.gutPlane) slot.userData.gutPlane.visible = false;
     } catch (e) {
       phantom_logErr('forge:canonAttach', e);
       if (typeof phantomToast === 'function') phantomToast('Rack detail unavailable in the aisle — showing the plate', 'warn');
-      _canonHost = null;
+      slot.userData.canonHost = null;
     }
+  }
+  // Re-tier every foreground slot in one pass: the focused rack full, the rest medium, pads left
+  // with their plate. Called on focus change and whenever the window is reassigned.
+  function _canonRetier(focusRack) {
+    focusables.forEach(function (sl) {
+      if (!sl.userData.label || sl.userData.pad) { _canonDispose(sl); if (sl.userData.face) sl.userData.face.visible = true; return; }
+      _canonAttach(sl, sl === focusRack ? 'full' : 'medium');
+    });
   }
 
   // front row: five recyclable viewport slots
@@ -20593,12 +20601,9 @@ function forge3d_render(mount) {
       old.material.map.dispose(); old.material.dispose(); old.geometry.dispose();
       r2.add(pl); r2.userData.plate = pl;
     });
-    // v1.14.452 (P2): the outgoing slot gets its photo face back before the incoming slot takes
-    // the canonical geometry, so exactly one rack is ever canonical and no slot is left blank.
-    focusables.forEach(function (r3) {
-      if (r3 !== rack && r3.userData.face) r3.userData.face.visible = true;
-    });
-    _canonAttach(rack);
+    // v1.14.453 (P3): every foreground slot is canonical now — the focused one at full detail, the
+    // other four at Tier B. One pass so a slot can never be left holding the previous tier.
+    _canonRetier(rack);
     spot.target = rack;
     heroGlow.position.x = rack.position.x;
     camTargetX = rack.position.x;
@@ -20654,6 +20659,9 @@ function forge3d_render(mount) {
     var target = keep ? focusables.find(function (s) { return s.userData.label === keep; })
                       : focusables.find(function (s) { return !s.userData.pad; });
     if (target) setFocus(target, true);
+    // v1.14.453 (P3): with no focusable target every slot is a pad, so setFocus never runs and the
+    // previous window's canonical racks would stay attached to slots that no longer name them.
+    else _canonRetier(null);
     // v1.14.404 — REPAINT AFTER POPULATION. This is the second half of the .401 blank-aisle fix.
     // The scene is populated HERE, asynchronously, on hero-image decode — long after frame() has
     // already drawn its one synchronous EMPTY frame. Cabinets only become visible on a LATER
@@ -38158,6 +38166,17 @@ function rackGeometry_build(rack, opts) {
   var RW = opts.RW, RD = opts.RD, uH = opts.uH, RH = opts.RH, yBase = opts.yBase;
   var renderer = opts.renderer;
   var _bayTex = opts.bayTex || [];
+  // v1.14.453 (Forge parity P3) — DETAIL TIER. 'full' is the default and is EXACTLY what shipped,
+  // so Build and the focused aisle rack are bit-for-bit unchanged; only a caller that asks for
+  // 'medium' gets less. §22 Tier B is "accurate chassis placement, simplified vent/port pattern,
+  // fewer effects" — so medium keeps everything that carries MEANING (the cabinet, the front
+  // rails and their EIA-310 perforation, every device chassis at its true RU in its family colour)
+  // and drops what only reads at arm's length: the per-family interiors, the U ticks, the feet and
+  // the whole rear assembly, none of which a neighbour rack shows the technician anyway.
+  // ⛔ IT IS THE SAME BUILDER AND THE SAME DATA. A neighbour is not a different representation of
+  // a rack, it is the same one drawn with fewer parts — which is what keeps §31's "no second
+  // visual truth" true while the five-rack window stays affordable.
+  var _full = (opts.detail !== 'medium');
 
   var rackGrp = new THREE.Group();
   // v1.14.445 (R4 §18 — POWDER COAT, replacing the .265 MIRROR FINISH). §18 is explicit: "mostly
@@ -38229,7 +38248,9 @@ function rackGeometry_build(rack, opts) {
   // front rails (perforated face = +Z, material index 4) + rear rails (face = -Z, index 5). Real
   // racks have four; the rear pair sells depth through an empty rack from ISO. Front-only is a
   // one-entry delete on the array below if John rules it at verify.
-  [ { z: RD/2 - 0.24, fi: 4 }, { z: -(RD/2 - 0.24), fi: 5 } ].forEach(function (rail) {
+  var _railSet = _full ? [ { z: RD/2 - 0.24, fi: 4 }, { z: -(RD/2 - 0.24), fi: 5 } ]
+                       : [ { z: RD/2 - 0.24, fi: 4 } ];   // v1.14.453 P3: medium keeps the FRONT rails; the rear pair only sells depth from ISO
+  _railSet.forEach(function (rail) {
     [-1, 1].forEach(function (s) {
       var mats = [steelMat, steelMat, steelMat, steelMat, steelMat, steelMat];
       if (railFaceMat) mats[rail.fi] = railFaceMat;
@@ -38243,7 +38264,7 @@ function rackGeometry_build(rack, opts) {
   //    First to go if FPS moves. yFor() is hoisted (defined in the tray section below).
   var tickMat = new THREE.MeshBasicMaterial({ color: 0x7d93a4, transparent: true, opacity: 0.5 });
   var tickGeo = new THREE.PlaneGeometry(0.05, 0.012);
-  for (var tu = 5; tu < totalU; tu += 5) {
+  for (var tu = 5; _full && tu < totalU; tu += 5) {   // v1.14.453 P3: ticks are a read-at-arms-length detail
     [-1, 1].forEach(function (s) {
       var tick = new THREE.Mesh(tickGeo, tickMat);
       tick.position.set(s * (RW/2 - 0.22), yFor(tu), RD/2 - 0.24 + 0.05);                    // inner edge of the front rail, proud of its face
@@ -38358,7 +38379,7 @@ function rackGeometry_build(rack, opts) {
     sp.position.set(s * (RW/2 + 0.025), 0, -0.2); sp.castShadow = true; rackGrp.add(sp);
   });
   var footMat = new THREE.MeshStandardMaterial({ color: 0x04060a, metalness: 0.62, roughness: 0.42, envMapIntensity: 0.25 });   // v1.14.445 (R4 §18): powder coat, was 1.0/0.05 mirror (.265) — the feet sit in the floor reflection, so a mirror finish here doubled the specular at the one point the eye reads contact
-  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(function (p) {
+  (_full ? [[-1,-1],[1,-1],[-1,1],[1,1]] : []).forEach(function (p) {   // v1.14.453 P3: feet read only at the selected rack's floor contact
     var foot = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.12, 8), footMat);
     foot.position.set(p[0] * (RW/2 - 0.3), -RH/2 - 0.14, p[1] * (RD/2 - 0.3)); rackGrp.add(foot);
   });
@@ -38432,7 +38453,8 @@ function rackGeometry_build(rack, opts) {
       grp.add(mo);
     }
 
-    if (kind === 'compute') {
+    if (!_full) { /* v1.14.453 P3 (Tier B): chassis + type strip only — placement and colour survive, interiors do not */ }
+    else if (kind === 'compute') {
       // left + right NIC blocks
       [-1, 1].forEach(function (sx) {
         var nic = new THREE.Mesh(new THREE.BoxGeometry(cw * 0.22, hT * 0.75, 0.02), nicMat);
@@ -38629,6 +38651,7 @@ function rackGeometry_build(rack, opts) {
   // unless the Master DECLARES it. A rack fed by a row-level CDU outside the cabinet correctly
   // shows no in-rack plumbing, because the Master did not put one in this rack.
   var _liquidCooled = false;
+  if (_full) {   // v1.14.453 P3: the whole rear assembly is invisible on a neighbour in an aisle
   try {
     _liquidCooled = slots.some(function (s) {
       return s && (typeof Vocabulary === 'object' ? Vocabulary.typeOf(s.type) : String(s.type || '').toLowerCase()) === 'cdu';
@@ -38658,6 +38681,7 @@ function rackGeometry_build(rack, opts) {
   }
   var rearDoor = new THREE.Mesh(new THREE.PlaneGeometry(RW - 0.1, RH - 0.1), rearDoorMat);
   rearDoor.position.set(0, 0, -RD/2 - 0.02); rackGrp.add(rearDoor);
+  }   // end _full rear assembly
 
   return { group: rackGrp, trayMeshes: trayMeshes, trayGroups: trayGroups, yFor: yFor };
 }
