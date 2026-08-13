@@ -7,86 +7,104 @@ Durable facts belong in `PHANTOM_CURRENT_STATE.md`; durable lessons belong in me
 
 ## Last session — 2026-08-13
 
-**Ended:** clean, one ship pushed and parked. **Live: `v1.14.454`.**
-**CALL 0 cap: 1 of 6.** Verify debt: `.454`, awaiting hardware — the block is at the TOP of
-`BATCH-VERIFY.md`.
+**Ended:** clean, two ships pushed and parked. **Live: `v1.14.455`** (`3545011`).
+**CALL 0 cap: 2 of 6.** Verify debt: `.454`–`.455`, block at the TOP of `BATCH-VERIFY.md`.
 
-⚠ **This file was STALE when the session opened, and that is the thing worth carrying forward.**
-It said *"ended clean at `.453`, nothing in flight"*. The working tree actually held an unstamped,
-untested, uncommitted `v1.14.454` plus a new spec that had never once been executed. **A previous
-session ended without updating this file, so its own record of itself was wrong.** If a future
-session finds `git status` disagreeing with this document, `git status` is the truth.
-
----
-
-## What shipped — `.454`, Forge is rack-centric
-
-Owner ruling 2026-08-12. The aisle was a free orbit that happened to start pointed at a rack: drag
-mutated yaw and pitch, pinch and wheel mutated radius, and nothing ever put them back — so focusing
-the next rack only slid `camX` sideways and inherited whatever angle the last drag left. Now
-`LOCK_YAW`/`LOCK_PITCH`/`LOCK_RADIUS` are the canonical framing and every navigation restores it;
-`walk()` routes through `setFocus`, so the arrows and flanks inherit it through the same door.
-
-**WALK AISLE** is an explicit mode — default off, `aria-pressed`, lit cyan while engaged,
-deliberately **not persisted and not a setting**. Leaving snaps back to the framing of the rack the
-tech is *nearest to*, not the one focused on entry.
+⚠ **This file was STALE when the session opened, and that is the first thing to carry forward.**
+It claimed the previous session ended clean at `.453` with nothing in flight. The working tree
+actually held an unstamped, untested, uncommitted `v1.14.454` plus a spec that had never once been
+executed. **A session ended without updating its own record of itself.** If a future session finds
+`git status` disagreeing with this document, `git status` is the truth.
 
 ---
 
-## ⚠ THREE THINGS THIS SESSION FOUND, all in work that was already written
+## What shipped
 
-**1 · A second writer on a single-clause pill.** `setWalkMode` hand-wrote `#tagState` twice.
-That pill has **one writer per shape** (`writeStatusPills`), and the comment above it records why —
-a caller once put a concatenated string into a slot that owns one clause. Worse: `setFocus`
-**early-returns when the rack is already focused**, which is exactly what a look-around-and-come-back
-lands in, so the *common* exit wrote the rack LABEL into the pill that owns `n/m RACKED · ⚠n FLAGGED`
-— duplicating `#tagId` and dropping the flagged warning until the next focus change.
-⭐ **The generalisation: when you add a second caller to a function with an early-return guard, the
-guarded path is not the edge case — work out which path is actually common.**
+**`.454` — Forge is rack-centric, WALK AISLE is an explicit mode** (ruling 2026-08-12). Free orbit
+replaced by one deterministic framing per rack; free movement became a named mode, default off,
+not persisted, not a setting.
 
-**2 · A test that failed against correct code, for the fourth time in two sessions.** Spec 36's
-snap-back check waited a fixed 3000ms. The ease is **frame-based** (0.12/frame), so wall-clock
-convergence is a function of harness frame rate — **measured at 2.67 fps here against 60 on device.**
-The convergence curve on known-good code is `0.833 · 0.582 · 0.354 · 0.214 · 0.146 · 0.088 · 0.060`
-of the original distance at t=1..7s, so a 3000ms wait lands on **0.354** — sitting on top of its own
-`0.35` threshold. It was measuring the machine. Replaced with a poll to a 30s cap, threshold
-tightened to 0.20.
-⭐ **A probe that MEASURES the curve cost ninety seconds and converted "is this a real defect?" into
-a fact.** Do that before touching app code on any timing-shaped failure.
+**`.455` — the locked pose became a real front elevation** (ruling 2026-08-13). See below; this is
+the one worth reading.
 
-**3 · A hand-listed registry that drifted the moment it could.** `08-forge-layout` asserts the 44px
-gloved floor on `#loadoutBtn` and `#searchBtn` **by ID**. `.454` added a third button to that cluster
-and neither assertion could see it — on the one surface that has already shipped a sub-44px control.
-The sweep is now **derived** from `.scene-utils .hudbtn`, so the next button is covered for free.
-⭐ This is the `.397`/`.398` lesson again. **A hand-listed set of names is a liability the day
-someone adds the fourth thing.**
+---
+
+## ⛔ THE BIG ONE: `.454` LOCKED THE WRONG POSE
+
+`.454` froze the camera at the angles `setFocus` had always targeted — `LOCK_YAW 0.10`,
+`LOCK_PITCH 0.08` — and called them canonical. **That is 5.7° of yaw and 4.6° of nose-down pitch.**
+It stopped the drift and locked in a crooked shot: the cabinet leaned, rails converged, the
+neighbour competed. The owner caught it on hardware and was explicit — **fix the MODEL, do not nudge
+world coordinates until one rack looks acceptable.**
+
+⭐ **The durable lesson: "these are the values the product already used" is not evidence the values
+are right.** It felt like the safe, conservative choice. It was the defect.
+
+⭐ **And the reason no test caught it: every `.454` assertion tested that the camera DID NOT MOVE,
+never that it was SQUARE.** A frozen-but-crooked camera satisfied all of them. Spec 37 now owns the
+front-elevation contract, and its bounds are chosen to exclude the old constants — `LOCK_YAW 0.10`
+would put `|fwd.x|` near 0.0998 against a `1e-4` bound, so it cannot go green on a rebuild of `.454`.
+
+**The model now:** pose solved from the selected rack every frame — target = rack world centre,
+normal via `getWorldQuaternion`, position = target + normal × distance, world up + `lookAt`. Yaw,
+pitch and roll are zero *by construction*, and `position.y === target.y` keeps the axis horizontal,
+which is the whole reason rails project vertical. Usable viewport measured from the DOM;
+`setViewOffset` slides the **projection** onto its centre, because moving the camera would
+reintroduce the yaw the mode exists to remove.
+
+---
+
+## ⚠ FOUR TRAPS THIS SESSION, all worth not repeating
+
+**1 · An early-return guard whose guarded path was the COMMON one.** `setWalkMode` wrote the rack
+label into `#tagState` on the branch where `setFocus` bails — and "already focused" is exactly what
+a look-around-and-come-back lands in. It also made a second writer of a pill the file gives one
+writer per shape. ⭐ **When you add a caller to a function with an early-return guard, work out which
+path is actually common.**
+
+**2 · One convergence test across several axes.** The `.455` ease snapped on **total 3-D distance**.
+Every rack shares one canonical y and z and only x differs, so the big x delta held the vector above
+threshold and camera height crept `1.8869 → 1.8971 → 1.89925` across a walk. ⭐ **The axis with the
+largest delta decides for all of them. Snap per axis.**
+
+**3 · Fixed wall-clock waits against frame-based easing.** ⚠ **This harness renders at ~2.7 fps**
+(measured: 8 renders in 3000 ms) against 60 on device. Spec 36's 3000 ms wait landed exactly on its
+own 0.35 threshold. ⭐ **Poll for the condition. A 90-second probe that MEASURES the curve turns "is
+this a real defect?" into a fact** — do that before touching app code on any timing-shaped failure.
+
+**4 · ⛔ NEVER ROUND-TRIP `dct-ios.html` OR `sw.js` THROUGH A SHELL READ/WRITE.**
+`(Get-Content -Raw) -replace … | Set-Content -Encoding utf8` **mojibaked 4,622 lines** — PS 5.1 reads
+as ANSI and re-encodes. This is the `sed -i`/CRLF trap wearing PowerShell clothes. ⛔ **`phantom-guard`
+does NOT catch it** — it checks line endings, not encoding, so a corrupted file would have sailed
+through the gate. Caught only because the tool echoed the file back. **Use Edit. Always.**
+Recovery was `git checkout -- dct-ios.html sw.js`; nothing was committed in that state.
 
 ---
 
 ## Runs (phone-webkit, each spec ALONE)
 
-`36-forge-rack-centric` 4 · `02-build-forge` 14 · `08-forge-layout` (see the ship's
-`PHANTOM_CURRENT_STATE.md` entry). Gates: three-stamp lockstep at `.454`, inline blocks compile,
-`node --check sw.js`, valid JSON, brace balance, 0 bare LF — `phantom-guard` exit 0.
+`37-locked-rack-pose` 4 · `36-forge-rack-centric` 4 · `02-build-forge` 14 · `08-forge-layout` 17 + 1
+skipped. Gates: `phantom-guard` exit 0. Served bytes verified for both ships — stamps **and** markers
+unique to each change, plus the *absence* of `LOCK_YAW` / `LOCK_RADIUS` / the `+0.4` eye offset.
 
 ---
 
-## ⛔ Open — all owner decisions, none of them started
+## ⛔ Open — owner decisions, none started
 
-1. ⭐ **The locked drag says nothing.** `.454` makes a drag a no-op until WALK AISLE is tapped, and
-   the hint text still hides itself on drag, so the gesture reads as dead. Disclosed unruled in the
-   release notes and in `BATCH-VERIFY`. **Do not invent a fix** — whether a locked drag should
-   prompt is a product call.
-2. **The R1-D remainder.** The rack is at **176px** visible; §30 recommends 270–320. Arithmetic in
-   `R1-RENDERER-BASELINE.md` §3. The only block big enough is the hero, whose phase sub-block is a
-   fact NEXT ACTION and the phase dock already show. Removing a triplicated fact is a product call.
-3. ⭐ **WALK SHIFT AND SITE/SYSTEM** — owner-queued 2026-08-11, still never started. ⚠ Expect SHIFT
-   to be findings-heavy and light on fixable code: *undoored, not unbuilt*, and 3 of its 9 questions
-   have no data source. ⛔ Do NOT give it a nav pillar (D-1) and do NOT invent the missing three.
-   📌 SITE/SYSTEM is the likelier source of real fixes.
-4. **PHASE-ENGINE step text** and the **M3 data sources** — both owner's. The chain: M3 → Shift can
-   answer its 9 questions → Shift becomes a pillar → EXIT stops occupying a slot. **D-1 is the LAST
-   domino, not the first.**
+1. **The device pass on `.454`–`.455`** — five checks at the top of `BATCH-VERIFY.md`. Check 1 is
+   the S1:008 re-look.
+2. ⭐ **The HANDOFF hero art.** Briefed 2026-08-13. ⛔ **No image generation in this session** — no
+   `GEMINI_API_KEY`, and the `design` skill emits SVG, not photoreal edits. The prompt was handed
+   over; the asset is the owner's. On arrival: new `-vN` name, move the `sw.js` PRECACHE entry
+   (`:84`), three-stamp bump, and iOS needs the PWA removed and re-added.
+3. **The locked drag says nothing** — a drag in locked mode moves nothing and the hint still hides
+   itself, so the gesture reads as dead. Disclosed unruled since `.454`. ⛔ Do not invent a fix.
+4. **The FOV literal.** The camera is constructed at `46` and reassigned to `LOCK_FOV` right after,
+   so a stale literal sits in the source while the runtime is 34. Pure refactor, no runtime effect,
+   not worth a version bump alone — fold into the next ship that touches `placeCamera`.
+5. **The R1-D remainder** (rack at 176px vs §30's 270–320), **WALK SHIFT and SITE/SYSTEM**
+   (owner-queued 2026-08-11, never started), **PHASE-ENGINE step text**, **M3 data sources**.
+   ⛔ Do NOT give SHIFT a nav pillar — D-1 is the LAST domino, not the first.
 
 ---
 
@@ -95,9 +113,8 @@ someone adds the fourth thing.**
 The dev box cannot produce a trustworthy multi-spec run — WebGL context exhaustion. A six-spec run
 once reported 1 failure and took **18.0 hours**; all six then passed alone in about three minutes.
 ⭐ **Run renderer/Forge specs ONE AT A TIME, and never read a red multi-spec run as a regression.**
-⚠ **The aisle renders at ~2.67 fps in this harness** (measured 2026-08-13, 8 renders in 3000ms).
-Any test that waits a fixed wall-clock period for an eased animation is measuring the box, not the
-product — poll for the condition instead.
-⚠ `grep -E "[0-9]+ (passed|failed)" | tail -1` **hides the failure line.** Print every pass/fail
-line, and redirect to a file rather than piping — `| tail -N` prints nothing until the run ends and
-reads exactly like a hang.
+⚠ Redirect to a file rather than piping — `| tail -N` prints nothing until the run ends and reads
+exactly like a hang. Print every pass/fail line; `grep -E "[0-9]+ (passed|failed)" | tail -1` hides
+the failure line.
+⚠ GitHub threw **four consecutive 500s** on pushes this session and Pages served stale bytes for
+several minutes after. Both are the documented transient; retry, then verify the SERVED bytes.

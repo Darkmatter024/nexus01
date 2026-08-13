@@ -5,8 +5,8 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-13, after `v1.14.454` — Forge is rack-centric and WALK AISLE is an explicit
-mode. Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453`) is cleared.**
+**Last updated: 2026-08-13, after `v1.14.455` — LOCKED RACK MODE is now a canonical front elevation.
+Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453`) is cleared.**
 
 ---
 
@@ -14,13 +14,13 @@ mode. Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`�
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.454`** (`1e1b1d8`; test follow-up `c6582f8`) |
-| Commits | `.416` through `.453` shipped 2026-08-08/12 · `.454` shipped 2026-08-13 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.454` |
+| **Version** | **`phantom-v1.14.455`** (`3545011`) |
+| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454` (`1e1b1d8`) and `.455` shipped 2026-08-13 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.455` |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
-| ⏳ Open | **`.454` — automation green, NOT yet on hardware.** Block at the TOP of `BATCH-VERIFY.md`. CALL 0 cap **1 of 6** |
+| ⏳ Open | **`.454`–`.455` — automation green, NOT yet on hardware.** Block at the TOP of `BATCH-VERIFY.md`. CALL 0 cap **2 of 6** |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -266,6 +266,65 @@ on drag, so the gesture reads as dead. WALK AISLE is one tap away. Whether a loc
 **Gates:** `phantom-guard` exit 0 — three-stamp lockstep at `.454`, inline blocks compile,
 `node --check sw.js`, valid JSON, brace balance, 0 bare LF.
 
+## 1d · ⭐ `.455` — LOCKED RACK MODE IS A CANONICAL FRONT ELEVATION (owner ruling 2026-08-13)
+
+⛔ **`.454` LOCKED THE WRONG POSE, and the owner caught it on hardware.** It froze the camera at the
+angles `setFocus` had always targeted — `LOCK_YAW 0.10`, `LOCK_PITCH 0.08` — and called them
+canonical. That is **5.7° of yaw and 4.6° of nose-down pitch**: a three-quarter shot held steady, so
+the cabinet leaned, its rails converged and the neighbour competed with it. ⭐ **Locking a pose and
+having a canonical one are different things, and "the values the product already used" was not
+evidence that those values were right.** The owner's instruction was explicit and correct — fix the
+MODEL, do not nudge world coordinates until one rack looks acceptable.
+
+**Three more faults in the same function, all found by reading it rather than by the report:**
+· a bare `+ 0.4` on the eye's y with **no matching target offset**, tilting the axis even at pitch 0,
+so the rails could never project as vertical · the look target was `(camX, RH*0.5, 0)` — the eased
+camera x plus the **hardcoded aisle origin**, i.e. derivation from world origin, not from the rack
+· FOV **46°**, a cinematic aisle lens on what is an inspection surface.
+
+**The model now.** Solved from the selected rack every frame and from nothing else:
+`target` = rack world centre · `normal` = `(0,0,1)` through `getWorldQuaternion` (so a rotated slot
+would still read square) · `position` = `target + normal * distance` · world up + `lookAt` ⇒ yaw,
+pitch and roll zero by construction. ⭐ **`position.y === target.y` makes the axis HORIZONTAL, and
+that is the entire reason vertical rails project as vertical lines.** No read of previous camera,
+previous rack, accumulated pan, orbit state or origin.
+
+📌 **The usable viewport is MEASURED.** The canvas is not the visible area — the scene-utility rail
+hangs into its top-right and the bottom stack covers its foot. `lockUsableRect` reads both from the
+DOM at the moment of use (`:13544` records what happens when that clearance becomes a constant), and
+`setViewOffset` slides the **projection** onto the usable centre. ⛔ **Recentring by moving the
+camera would reintroduce the exact yaw the mode exists to remove** — the projection is the only
+honest lever. Same mechanism buys label headroom with **zero degrees of pitch**.
+
+⛔ **THE DEFECT MEASUREMENT FOUND, and the durable shape of it.** The first cut snapped the ease on
+**total 3-D distance**. Every rack shares one canonical y and z and only x differs, so the large x
+delta held the whole vector above threshold: y and z never snapped and crept `1.8869 → 1.8971 →
+1.89925` across a walk — **a camera height that depended on how many racks you had visited.**
+⭐ **When several axes share one convergence test, the axis with the largest delta decides for all of
+them.** Snap PER AXIS. The first lock is also instant now, because Forge opening must *present* the
+canonical pose, not glide into it from wherever the camera was constructed.
+
+**Measured at 390×844:** `s1:010 −4.70` · `s1:001 −2.35` · `s4:100 0` · `s4:099 +2.35`, every one at
+**y 1.9, z 10.32353, forward (0,0,−1), roll 0**. The cycle out and back returns bit-identical.
+Vertical framing corrected from a measurement, not by eye: at `LOCK_BIAS_Y 0.06` the shot had 63px
+of slack above the label and 16 below the feet in a 620px band, so the cabinet stood on the bottom
+edge with its base under the hint; `0.023` splits it 40/25.
+
+📌 **Deliberately NOT done: orthographic.** The ruling permitted it. It would thread a second camera
+type through RackEngine, the light rig and the fog — all under RACK SCENE LOCK, where **only the
+`camera` term is open**. A 34° perspective already gives square verticals because the axis is exactly
+horizontal and centred; the remaining convergence is on the NEIGHBOURS, which is honest depth, not
+distortion of the selected rack. No second renderer.
+
+🟡 **Known cleanup, deliberately not shipped.** The camera is still *constructed* at `46` and
+reassigned to `LOCK_FOV` immediately after, so a stale literal survives in the source while the
+runtime FOV is 34 (spec 37 asserts it). Fixing it is a pure refactor with no runtime effect and
+would cost a version bump purely to keep version identity honest — it belongs to the next ship that
+touches this function.
+
+**Runs (phone-webkit, each spec ALONE):** `37-locked-rack-pose` 4 · `36-forge-rack-centric` 4 ·
+`02-build-forge` 14 · `08-forge-layout` 17 + 1 skipped. **Gates:** `phantom-guard` exit 0.
+
 ## 2 · Milestone
 
 **Programme: `SHIP-TECH-FLOW-V2-FROZEN.md` (see §1a).**
@@ -377,9 +436,13 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — ⏳ `.454` OPEN (1 of 6). Everything before it is cleared
+## 3 · Verify debt — ⏳ `.454`–`.455` OPEN (2 of 6). Everything before it is cleared
 
-⏳ **`.454` is on `main` and NOT yet on hardware.** Four checks at the TOP of `BATCH-VERIFY.md`.
+⏳ **`.454` and `.455` are on `main` and NOT yet on hardware.** Checks at the TOP of
+`BATCH-VERIFY.md`. ⚠ **`.455` exists because `.454` failed its device look** — the owner reported
+the locked rack reading off-axis with the neighbour competing, which no assertion in `.454` could
+have caught because every one of them tested that the camera *did not move*, never that it was
+*square*. Spec 37 now owns that contract and its bounds exclude the old constants.
 Everything a suite could reach was proven first, per the standing rule that the owner is not the
 test harness. What is left genuinely needs a real GPU and a real hand: whether every rack *arrives*
 at the same framing across a walk, and whether "nearest rack" feels right on leaving WALK — the
@@ -525,13 +588,22 @@ sustained thermals across a ten-rack aisle walk.
 
 ## 9 · Next action
 
-**PARKED ON `.454`. Nothing autonomous.**
+**PARKED ON `.455`. Nothing autonomous.**
 
-⏳ **CALL 0 cap 1 of 6.** `.454` is live and awaiting the four-check device pass at the top of
+⏳ **CALL 0 cap 2 of 6.** `.454` and `.455` are live and awaiting the device pass at the top of
 `BATCH-VERIFY.md`. `.438`–`.453` released on hardware 2026-08-12.
 
 ⚠ **One ruling is owed and it is small:** the locked drag does nothing and says nothing (§1c). It is
 disclosed, not fixed, because the answer is a product call.
+
+📌 **Owner-queued, not started — the HANDOFF feature-hero art.** An updated `icons/phantom-feat-
+handoff-v*.webp` was briefed 2026-08-13 (unmistakable two-technician exchange; screen reads as a
+deployment handoff package; no readable text). ⛔ **No image generation exists in this session** —
+no `GEMINI_API_KEY`, and the `design` skill's generators emit SVG, not photoreal edits — so the
+asset is the owner's to produce. When it lands: new `-vN` filename (overwriting in place serves
+stale), move the `sw.js` PRECACHE entry (`:84`) to the new name, three-stamp bump, and iOS needs the
+PWA removed and re-added to show it. ⭐ The brief's "no readable text" moves this art back INTO
+data-honesty compliance — the current one ships baked decorative text under an owner override.
 
 Open items, none of them started, all needing an owner decision first:
 - **The R1-D remainder.** The rack sits at **176px** visible where the directive's §30 recommends
