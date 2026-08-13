@@ -270,6 +270,17 @@ const SNAPSHOT = () => {
     stripCentreHit: R.chips ? topAt((R.chips.l + R.chips.r) / 2, (R.chips.t + R.chips.b) / 2) : null,
     hitLoadout: probe(lo),
     hitSearch: probe(se),
+    // v1.14.454 — DERIVED FROM THE DOM, not hand-listed. `lo` and `se` above are named one by one,
+    // so every control added to this cluster has to be REMEMBERED into this file — and .397/.398 is
+    // the standing lesson that a hand-listed registry drifts. It drifted immediately: .454 added a
+    // third button (#walkBtn) to the same cluster and neither named assertion could see it, on the
+    // one surface that has already shipped a sub-44px control. This asks the cluster what is in it,
+    // so the button the NEXT ship adds is covered by the floor and hit-test checks for free.
+    utils: Array.from(document.querySelectorAll('#forge3d-sheet .scene-utils .hudbtn')).map((el) => ({
+      id: el.id || '(unnamed)',
+      rect: rect(el),
+      hits: probe(el),
+    })),
     // The layer-separation matrix, computed in-page against one set of rects.
     intersects: {
       chips_loadout: hit(R.chips, R.lo),
@@ -366,6 +377,20 @@ test.describe('Forge bottom control stack', () => {
       for (const h of m.hitSearch) expect(h, `${tag} #searchBtn is covered — elementFromPoint returned ${h}`).toMatch(/searchBtn|svg|circle|line/);
       expect(m.stripCentreHit, `${tag} something invisible is over the pill strip: ${m.stripCentreHit}`).not.toMatch(/toast/i);
       expect(m.toastPointerEvents, `${tag} the hidden .toast is hit-testable again (:9218) — it swallows pill taps silently`).toBe('none');
+
+      // v1.14.454 — the same two questions, asked of EVERY control the cluster actually contains
+      // rather than of the two this file happens to name. The floor is law for a gloved hand, so
+      // the assertion has to follow the controls, not the other way round.
+      expect(m.utils.length, `${tag} the utility cluster reported no controls — the sweep is measuring nothing`)
+        .toBeGreaterThanOrEqual(2);
+      for (const u of m.utils) {
+        expect(u.rect.h, `${tag} #${u.id} is ${u.rect.h}px tall, under the ${tapS}px gloved floor`).toBeGreaterThanOrEqual(tapS);
+        expect(u.rect.w, `${tag} #${u.id} is ${u.rect.w}px wide, under ${tapS}px`).toBeGreaterThanOrEqual(tapS);
+        for (const h of u.hits) {
+          expect(h, `${tag} #${u.id} is covered — elementFromPoint returned ${h}. A control that draws but does not hit-test is a dead control`)
+            .toMatch(new RegExp(`${u.id}|svg|circle|line|path`));
+        }
+      }
 
       seen.push(`${n}:${m.rects.lo.w}x${m.rects.lo.h}`);
     }

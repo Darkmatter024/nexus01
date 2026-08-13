@@ -9305,6 +9305,10 @@ body.rd #forge3d-sheet.open { display: flex; }
    warning/attention and a view toggle is neither. The rule itself stays for any control that
    genuinely needs the attention channel. */
 #forge3d-sheet .hudbtn.gold{border-color:rgba(255,203,69,.4);color:var(--gold)}
+/* v1.14.454 — WALK AISLE engaged. A mode the technician is IN needs to be obvious at a glance in a
+   cold aisle, so the button lights rather than merely changing its label; cyan because §34 makes it
+   the active-state colour, and the same token the focused rack already uses. */
+#forge3d-sheet .hudbtn.is-on{border-color:color-mix(in srgb, var(--cyan) 62%, transparent);color:var(--cyan);background:rgba(92,242,255,.12);box-shadow:inset 0 0 16px rgba(92,242,255,.10)}
 /* SCENE UTILITY CLUSTER - hangs from the header bottom (top:100%), so its clearance is derived
    rather than constant. Same dimensions, material, radius and 44px floor as before; only the
    home changed. Quiet at rest on the chips ring, cyan on press. */
@@ -12913,7 +12917,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.453';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.454';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13543,6 +13547,12 @@ if (typeof window !== 'undefined') {
       <div class="scene-utils" id="sceneUtils">
         <div class="hudbtn" id="loadoutBtn" role="button" tabindex="0" title="3D loadout" aria-label="3D loadout — pick up to 5 racks">&#8862;</div>
         <div class="hudbtn" id="searchBtn" role="button" tabindex="0" aria-label="Search racks"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></div>
+        <!-- v1.14.454 — WALK AISLE. Forge is RACK-CENTRIC by default (owner ruling 2026-08-12): the
+             camera holds one deterministic framing per rack and navigation moves between canonical
+             rack positions. Free 3D movement is this explicit mode, never the default and NEVER a
+             setting — a preference would make the aisle behave differently for two technicians on
+             the same floor. It is a MODE the tech enters and leaves, and leaving it snaps back. -->
+        <div class="hudbtn" id="walkBtn" role="button" tabindex="0" aria-pressed="false" title="Walk the aisle" aria-label="Walk aisle — free camera">&#8596;</div>
       </div>
     </div>
     <div id="forge3d-mount"></div>
@@ -20586,7 +20596,39 @@ function forge3d_render(mount) {
     if (tagState) { tagState.textContent = msg; tagState.classList.remove('flagged'); }
     if (tagWalk) tagWalk.hidden = true;
   }
+  // v1.14.454 — ONE DOOR for the id + state pills, lifted out of setFocus so the walk-mode exit can
+  // restore them without becoming a second writer of #tagState. setFocus early-returns when the rack
+  // is already focused (:20602 below), which is exactly the case a walk round-trip usually lands in.
+  function writeStatusForRack(rack) {
+    var fslots = deploy_forge_slots(rack.userData.label);
+    var fracked = fslots.filter(function (s) { return s.status === 'racked'; }).length;
+    // v1.14.410 — the ' · FOCUS' suffix is dropped, and this is the ONE deviation from the
+    // owner's literal pill list. MEASURED at 390 with the row already tightened as far as it
+    // honestly goes (nowrap, --sp-1 gap, --sp-2 padding, data tracking on the id): the three
+    // strings need 384px inside a 354px row and the walk pill ran to x=402, past the viewport.
+    // The owner's own rule settles which term gives: operational text never drops below the
+    // 10px floor to fit more items — so the redundant word goes, not the size. The suffix is
+    // redundant twice over: the pill carries a lit dot, and it is HIDDEN entirely unless a rack
+    // is focused (writeStatusMessage), so its mere presence already means FOCUS.
+    // To restore it, put the suffix back here and shorten #tagWalk to 'TAP FLANKS' instead.
+    tagId.textContent = rack.userData.label;
+    writeStatusPills(fracked, fslots.length, deploy_forge_flagCount(rack.userData.label), rack.userData.label);
+  }
   var camTargetX = 0, radiusTarget = 13.5;
+  // ── v1.14.454 — CAMERA TARGET STATE, declared WITH camTargetX/radiusTarget and not 500 lines
+  // below it. setFocus and setWalkMode both write these, and both sit above the camera block that
+  // used to declare them; they are safe today only because every caller runs async (heroImg.onload,
+  // a click handler, frame() at :21213). The comment at :20563 records what this IIFE already cost
+  // once — a var declared below its first use, invisible to `node --check`. Colocated so the next
+  // synchronous caller cannot re-earn it.
+  // ⛔ LOCK_* is the canonical framing and is not configurable. These are the values setFocus was
+  // already targeting, so the locked view IS the view the product already chose — what changed is
+  // that it is now restored on every navigation instead of decaying with the first drag.
+  var LOCK_YAW = 0.10, LOCK_PITCH = 0.08, LOCK_RADIUS = 9.8;
+  var yawTarget = LOCK_YAW, pitchTarget = LOCK_PITCH;
+  // ⭐ WALK AISLE is a MODE, not a preference. Deliberately NOT persisted and NOT exposed as a
+  // setting: the aisle must behave the same way every time it opens, for everyone.
+  var walkMode = false;
 
   function setFocus(rack, animate) {
     if (focused === rack) return;
@@ -20608,20 +20650,13 @@ function forge3d_render(mount) {
     heroGlow.position.x = rack.position.x;
     camTargetX = rack.position.x;
     var info = rowOf(rack.userData.label);
-    var fslots = deploy_forge_slots(rack.userData.label);
-    var fracked = fslots.filter(function (s) { return s.status === 'racked'; }).length;
-    // v1.14.410 — the ' · FOCUS' suffix is dropped, and this is the ONE deviation from the
-    // owner's literal pill list. MEASURED at 390 with the row already tightened as far as it
-    // honestly goes (nowrap, --sp-1 gap, --sp-2 padding, data tracking on the id): the three
-    // strings need 384px inside a 354px row and the walk pill ran to x=402, past the viewport.
-    // The owner's own rule settles which term gives: operational text never drops below the
-    // 10px floor to fit more items — so the redundant word goes, not the size. The suffix is
-    // redundant twice over: the pill carries a lit dot, and it is HIDDEN entirely unless a rack
-    // is focused (writeStatusMessage), so its mere presence already means FOCUS.
-    // To restore it, put the suffix back here and shorten #tagWalk to 'TAP FLANKS' instead.
-    tagId.textContent = rack.userData.label;
-    writeStatusPills(fracked, fslots.length, deploy_forge_flagCount(rack.userData.label), rack.userData.label);
-    radiusTarget = 9.8;
+    writeStatusForRack(rack);
+    // v1.14.454 — EVERY navigation lands on the canonical framing, not just the first. This is the
+    // half that makes the aisle rack-centric: camTargetX moves the camera to THIS rack's position,
+    // and the angles are pulled back to the lock so the rack is read from the place it was designed
+    // to be read from. Under walk mode the angles are left alone — the tech is driving.
+    radiusTarget = LOCK_RADIUS;
+    if (!walkMode) { yawTarget = LOCK_YAW; pitchTarget = LOCK_PITCH; }
     focused = rack;
     store.set('deploy_forge_view_v1', rack.userData.label);
     updateChips();
@@ -20880,6 +20915,53 @@ function forge3d_render(mount) {
   }
   on(D.close, 'click', closeDetail);
   on(document.getElementById('navExit'), 'click', closeDetail);
+  // ── v1.14.454 — WALK AISLE MODE ─────────────────────────────────────────────────────────────
+  // Entering frees the camera. LEAVING SNAPS BACK to the canonical framing of the rack the tech is
+  // actually nearest to — not the one that happened to be focused when they entered, because after
+  // wandering the aisle those are usually different racks and returning to the old one would read
+  // as the app losing their place. Nearest is measured on camX against each foreground rack's own
+  // x, which is the same canonical position rack navigation uses.
+  function _nearestRack() {
+    var best = null, bestD = Infinity;
+    focusables.forEach(function (sl) {
+      if (!sl.userData.label || sl.userData.pad) return;
+      var d = Math.abs(sl.position.x - camX);
+      if (d < bestD) { bestD = d; best = sl; }
+    });
+    return best;
+  }
+  function setWalkMode(on) {
+    if (walkMode === on) return;
+    walkMode = !!on;
+    var btn = document.getElementById('walkBtn');
+    if (btn) { btn.classList.toggle('is-on', walkMode); btn.setAttribute('aria-pressed', walkMode ? 'true' : 'false'); }
+    if (walkMode) {
+      // ⛔ #tagState has ONE writer per SHAPE (:20567) — a rule this file records because a caller
+      // once put the wrong shape into a pill that owns a single clause. A mode banner is a MESSAGE,
+      // not a count, so it goes through writeStatusMessage, which also clears `.flagged`. A bare
+      // textContent leaves that class behind: red warning styling on a string that is not a warning.
+      writeStatusMessage('WALK AISLE — DRAG TO LOOK');
+      if (typeof phantomToast === 'function') phantomToast('Walk aisle — tap the button again to lock back onto a rack', 'info');
+    } else {
+      // Snap back. setFocus does the rest: it restores yawTarget/pitchTarget/radiusTarget and moves
+      // camTargetX, so the return uses exactly the same path a rack tap does — one door.
+      var near = _nearestRack();
+      yawTarget = LOCK_YAW; pitchTarget = LOCK_PITCH; radiusTarget = LOCK_RADIUS;
+      if (near) {
+        // ⚠ setFocus EARLY-RETURNS when the rack is already focused (:20602), and a walk that only
+        // looked around leaves the tech nearest the rack they started on — so that is the COMMON
+        // exit, not the edge case. The pills must therefore be restored explicitly, through their
+        // canonical writer. Writing the label here instead duplicates #tagId and drops the
+        // `n/m RACKED` and `⚠n FLAGGED` clauses until the next focus change; .413 records FLAGGED
+        // as the one clause you cannot afford to lose.
+        setFocus(near, true);
+        camTargetX = near.position.x;
+        writeStatusForRack(near);
+      }
+      if (typeof haptic === 'function') haptic([6]);
+    }
+  }
+  on(document.getElementById('walkBtn'), 'click', function () { setWalkMode(!walkMode); });
   on(document.getElementById('navPrev'), 'click', function () { walk(-1); });
   on(document.getElementById('navNext'), 'click', function () { walk(1); });
 
@@ -21040,9 +21122,27 @@ function forge3d_render(mount) {
   })();
 
   // ---------- camera ----------
-  var yaw = 0.10, pitch = 0.08, radius = 13.5, camX = 0;
+  // ── v1.14.454 — RACK-CENTRIC BY DEFAULT (owner ruling 2026-08-12) ───────────────────────────
+  // The aisle used to be a free orbit that happened to start pointed at a rack: drag mutated yaw
+  // and pitch unconditionally, pinch mutated radius, and NOTHING ever put them back — so focusing
+  // the next rack only slid camX sideways and inherited whatever angle the last drag left. Two
+  // technicians on the same floor could be looking at the same cabinet from different places, and
+  // neither framing was the one the rack was designed to be read from.
+  // Forge is now rack-centric: ONE deterministic framing per rack, and rack navigation moves the
+  // camera BETWEEN canonical rack positions rather than orbiting freely near them.
+  // 📌 LOCK_YAW / LOCK_PITCH / LOCK_RADIUS, yawTarget / pitchTarget and walkMode are declared up at
+  // :20599 WITH camTargetX and radiusTarget — the state they belong to, and above setFocus and
+  // setWalkMode, which are the functions that write them.
+  var yaw = LOCK_YAW, pitch = LOCK_PITCH, radius = 13.5, camX = 0;
   var R_MIN = 6.5, R_MAX = 22;
   function placeCamera() {
+    // In locked mode the angles are DRIVEN to the canonical framing rather than held wherever a
+    // drag left them. Same easing family as camX/radius so a rack change reads as one movement
+    // (§29: premium but fast, no cinematic drift). In walk mode the targets are simply ignored.
+    if (!walkMode) {
+      yaw   += (yawTarget - yaw) * 0.12;
+      pitch += (pitchTarget - pitch) * 0.12;
+    }
     var p = Math.max(-0.05, Math.min(0.55, pitch));
     var y = Math.max(-0.8, Math.min(0.8, yaw));
     camX += (camTargetX - camX) * 0.12;
@@ -21061,7 +21161,9 @@ function forge3d_render(mount) {
   function move(x, y) {
     if (!dragging) return;
     var ddx = x - lx, ddy = y - ly; lx = x; ly = y; moved += Math.abs(ddx) + Math.abs(ddy);
-    yaw -= ddx * 0.0042; pitch += ddy * 0.0032;
+    // ⛔ Orbiting is WALK-MODE ONLY. `moved` still accumulates so the tap-vs-drag discrimination in
+    // up() is unchanged — a locked drag moves nothing and is still not mistaken for a tap.
+    if (walkMode) { yaw -= ddx * 0.0042; pitch += ddy * 0.0032; }
     if (moved > 10 && hint) hint.classList.add('gone');
   }
   function up(x, y) { if (dragging && moved < 8) tap(x, y); dragging = false; }
@@ -21077,7 +21179,8 @@ function forge3d_render(mount) {
   }, { passive: true });
   on(window, 'touchmove', function (e) {
     if (e.touches.length === 2) { var d = tdist(e);
-      radius = Math.max(R_MIN, Math.min(R_MAX, radius * (pinchD / d))); radiusTarget = radius; pinchD = d;
+      if (walkMode) { radius = Math.max(R_MIN, Math.min(R_MAX, radius * (pinchD / d))); radiusTarget = radius; }
+      pinchD = d;   // v1.14.454: pinch is walk-mode only; the locked framing owns the distance
       if (hint) hint.classList.add('gone'); return; }
     var t = e.touches[0]; move(t.clientX, t.clientY);
   }, { passive: true });
@@ -21086,7 +21189,7 @@ function forge3d_render(mount) {
     var t = e.changedTouches[0]; up(t.clientX, t.clientY);
   }, { passive: true });
   on(window, 'wheel', function (e) {
-    radius = Math.max(R_MIN, Math.min(R_MAX, radius + e.deltaY * 0.012)); radiusTarget = radius;
+    if (walkMode) { radius = Math.max(R_MIN, Math.min(R_MAX, radius + e.deltaY * 0.012)); radiusTarget = radius; }   // v1.14.454: walk-mode only
   }, { passive: true });
 
   // ---------- tap: canvas-rect relative (handles the sheet header offset) ----------
