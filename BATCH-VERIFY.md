@@ -4,6 +4,29 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
+# 🟡 CURRENT BATCH — `.457` (1 of 6) — OPEN, AWAITING HARDWARE
+
+**Live: `v1.14.457`.** One ship: the context engine (CONTEXT-INJECT-369 V3, rescoped by owner
+ruling). Proven by automation first — spec 38 (7 tests), `10-site-profile-root` (18), `03-tools`
+(28), each run ALONE. **Almost all of it verifies from ONE panel.**
+
+⛔ **Clear the SW cache / hard-reload first, and load your real Master.** Four checks.
+**You are judging what you SEE. Do not open a console — if a check needs one, it is my bug.**
+
+| # | Do this | PASS | FAIL |
+|---|---|---|---|
+| **1** | Open **SITE PROFILE**. Scroll to **CONTEXT PREVIEW** at the bottom. | A block of text appears — this is exactly what the AI receives. It starts with the honesty lines about not inventing hardware | The panel is missing · it says CONTEXT PREVIEW unavailable |
+| **2** | **Read every line of it.** | Every line is something you recognise as **true of this site right now**. Any fact you cannot account for is a FAIL | A value you do not recognise · a count that looks invented · a line reading **"step not yet defined for this site"** |
+| **3** | Look for **empty rows**. | A field with no data is **absent entirely**. There are no rows like `LAST SCAN:` with nothing after them | Any labelled row with a blank value — that claims the record exists and is empty, which is a different and false claim |
+| **4** | Ask any AI feature about something the profile does **not** record (e.g. a detail you never entered). | It says the **record is not available** | It invents an answer. ⛔ **Fabrication here is a no-ship — tell me and I revert** |
+
+📌 **Check 2 is the whole ship.** The engine's job is that every line an AI sees traces to a real
+record. If you can point at one line you cannot account for, that is the defect.
+
+**Rollback:** one commit, `847b0f5`, reverts on its own.
+
+---
+
 # ✅ BATCH `.454`–`.456` — RELEASED ON HARDWARE 2026-08-13. CAP RESET TO 0 OF 6.
 
 **All six checks passed**, reported one at a time: *"check 1 pass, rack is straight now"* ·

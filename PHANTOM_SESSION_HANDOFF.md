@@ -7,114 +7,105 @@ Durable facts belong in `PHANTOM_CURRENT_STATE.md`; durable lessons belong in me
 
 ## Last session — 2026-08-13
 
-**Ended:** clean, two ships pushed and parked. **Live: `v1.14.455`** (`3545011`).
-**CALL 0 cap: 2 of 6.** Verify debt: `.454`–`.455`, block at the TOP of `BATCH-VERIFY.md`.
+**Ended:** clean, four ships pushed. **Live: `v1.14.457`** (`847b0f5`).
+**CALL 0 cap: 1 of 6.** Verify debt: `.457` only — block at the TOP of `BATCH-VERIFY.md`.
 
-⚠ **This file was STALE when the session opened, and that is the first thing to carry forward.**
-It claimed the previous session ended clean at `.453` with nothing in flight. The working tree
-actually held an unstamped, untested, uncommitted `v1.14.454` plus a spec that had never once been
-executed. **A session ended without updating its own record of itself.** If a future session finds
-`git status` disagreeing with this document, `git status` is the truth.
+⚠ **This file was STALE when the session opened.** It claimed the previous session ended clean at
+`.453` with nothing in flight; the tree actually held an unstamped, untested, uncommitted `.454`
+plus a spec that had never been executed. **If `git status` disagrees with this document, `git
+status` is the truth.**
 
 ---
 
 ## What shipped
 
-**`.454` — Forge is rack-centric, WALK AISLE is an explicit mode** (ruling 2026-08-12). Free orbit
-replaced by one deterministic framing per rack; free movement became a named mode, default off,
-not persisted, not a setting.
+| | |
+|---|---|
+| `.454` | Forge rack-centric; WALK AISLE an explicit mode |
+| `.455` | **The locked pose became a real front elevation** — `.454` had locked a crooked one |
+| `.456` | HANDOFF card art stops fabricating status |
+| `.457` | **The context engine** (369 V3, rescoped by owner ruling) |
 
-**`.455` — the locked pose became a real front elevation** (ruling 2026-08-13). See below; this is
-the one worth reading.
-
----
-
-## ⛔ THE BIG ONE: `.454` LOCKED THE WRONG POSE
-
-`.454` froze the camera at the angles `setFocus` had always targeted — `LOCK_YAW 0.10`,
-`LOCK_PITCH 0.08` — and called them canonical. **That is 5.7° of yaw and 4.6° of nose-down pitch.**
-It stopped the drift and locked in a crooked shot: the cabinet leaned, rails converged, the
-neighbour competed. The owner caught it on hardware and was explicit — **fix the MODEL, do not nudge
-world coordinates until one rack looks acceptable.**
-
-⭐ **The durable lesson: "these are the values the product already used" is not evidence the values
-are right.** It felt like the safe, conservative choice. It was the defect.
-
-⭐ **And the reason no test caught it: every `.454` assertion tested that the camera DID NOT MOVE,
-never that it was SQUARE.** A frozen-but-crooked camera satisfied all of them. Spec 37 now owns the
-front-elevation contract, and its bounds are chosen to exclude the old constants — `LOCK_YAW 0.10`
-would put `|fwd.x|` near 0.0998 against a `1e-4` bound, so it cannot go green on a rebuild of `.454`.
-
-**The model now:** pose solved from the selected rack every frame — target = rack world centre,
-normal via `getWorldQuaternion`, position = target + normal × distance, world up + `lookAt`. Yaw,
-pitch and roll are zero *by construction*, and `position.y === target.y` keeps the axis horizontal,
-which is the whole reason rails project vertical. Usable viewport measured from the DOM;
-`setViewOffset` slides the **projection** onto its centre, because moving the camera would
-reintroduce the yaw the mode exists to remove.
+✅ **`.454`–`.456` cleared on hardware**, all six checks. `.457` is the only open debt.
 
 ---
 
-## ⚠ FOUR TRAPS THIS SESSION, all worth not repeating
+## ⛔ THE TWO LESSONS WORTH MORE THAN THE SHIPS
 
-**1 · An early-return guard whose guarded path was the COMMON one.** `setWalkMode` wrote the rack
-label into `#tagState` on the branch where `setFocus` bails — and "already focused" is exactly what
-a look-around-and-come-back lands in. It also made a second writer of a pill the file gives one
-writer per shape. ⭐ **When you add a caller to a function with an early-return guard, work out which
-path is actually common.**
+**1 · A green suite proves nothing when the assertions test the wrong property.**
+`.454` locked the camera to the angles `setFocus` had always targeted and called them canonical —
+5.7° of yaw, 4.6° of pitch. It passed everything and still failed the owner's eye, because **every
+assertion tested that the camera did not MOVE, never that it was SQUARE.** A frozen crooked pose
+satisfied all of them. ⭐ *"These are the values the product already used"* is not evidence the
+values are right; it felt like the conservative choice and it was the defect. Spec 37 now owns the
+front-elevation contract with bounds that exclude the old constants.
 
-**2 · One convergence test across several axes.** The `.455` ease snapped on **total 3-D distance**.
-Every rack shares one canonical y and z and only x differs, so the big x delta held the vector above
-threshold and camera height crept `1.8869 → 1.8971 → 1.89925` across a walk. ⭐ **The axis with the
-largest delta decides for all of them. Snap per axis.**
-
-**3 · Fixed wall-clock waits against frame-based easing.** ⚠ **This harness renders at ~2.7 fps**
-(measured: 8 renders in 3000 ms) against 60 on device. Spec 36's 3000 ms wait landed exactly on its
-own 0.35 threshold. ⭐ **Poll for the condition. A 90-second probe that MEASURES the curve turns "is
-this a real defect?" into a fact** — do that before touching app code on any timing-shaped failure.
-
-**4 · ⛔ NEVER ROUND-TRIP `dct-ios.html` OR `sw.js` THROUGH A SHELL READ/WRITE.**
-`(Get-Content -Raw) -replace … | Set-Content -Encoding utf8` **mojibaked 4,622 lines** — PS 5.1 reads
-as ANSI and re-encodes. This is the `sed -i`/CRLF trap wearing PowerShell clothes. ⛔ **`phantom-guard`
-does NOT catch it** — it checks line endings, not encoding, so a corrupted file would have sailed
-through the gate. Caught only because the tool echoed the file back. **Use Edit. Always.**
-Recovery was `git checkout -- dct-ios.html sw.js`; nothing was committed in that state.
+**2 · A frozen spec can describe building what already exists.**
+369 V3's §1 specified a SiteProfile module on key `phantom_site_profile_v1` — **live at :24091
+since the SITE-PROFILE workstream, on a V2 schema**, so implementing it literally would have built
+a duplicate store AND regressed the schema. §6 asked for AI call sites to be wired to a choke point
+that had been there all along with seven sites already on it. ⭐ **Read the code before executing
+the spec, and report the contradiction instead of resolving it silently** — the owner rescoped it
+in one exchange. This is the `.431` lesson (searching for a spec's NAME instead of its concept)
+arriving from the opposite direction.
 
 ---
 
-## Runs (phone-webkit, each spec ALONE)
+## ⚠ FIVE TRAPS, all hit this session
 
-`37-locked-rack-pose` 4 · `36-forge-rack-centric` 4 · `02-build-forge` 14 · `08-forge-layout` 17 + 1
-skipped. Gates: `phantom-guard` exit 0. Served bytes verified for both ships — stamps **and** markers
-unique to each change, plus the *absence* of `LOCK_YAW` / `LOCK_RADIUS` / the `+0.4` eye offset.
+1. **An early-return guard whose guarded path was the COMMON one.** `setWalkMode` wrote the rack
+   label into the pill that owns `n/m RACKED` on the branch where `setFocus` bails — and "already
+   focused" is exactly what look-around-and-come-back lands in.
+2. **One convergence test across several axes.** The pose ease snapped on total 3-D distance; the
+   large x delta held it above threshold so camera height crept across a walk. ⭐ **The axis with
+   the largest delta decides for all of them — snap per axis.**
+3. **Fixed wall-clock waits against frame-based easing.** ⚠ **This harness renders at ~2.7 fps**
+   (measured) against 60 on device. ⭐ **Poll for the condition; a 90-second probe that MEASURES
+   the curve turns "is this a real defect?" into a fact.**
+4. ⛔ **NEVER ROUND-TRIP `dct-ios.html` OR `sw.js` THROUGH A SHELL READ/WRITE.**
+   `(Get-Content -Raw) … | Set-Content -Encoding utf8` **mojibaked 4,622 lines** for a one-token
+   stamp bump — PS 5.1 reads as ANSI. ⛔ **`phantom-guard` does NOT catch it** (it checks line
+   endings, not encoding) and returned **exit 0 on the corrupted file**. Use Edit. Recovery is
+   `git checkout --`. Detect with `Select-String -Pattern 'â€|â”|â­|âœ|âš'` → must be 0.
+5. **Static source greps cannot see runtime composition.** Twice a verification grep reported a
+   false MISS: once on a constant reassigned after construction, once on a string built by
+   concatenation. ⭐ **The runtime is the authority — a spec assertion sees what a grep cannot.**
+
+📌 **And two of my own test assertions were wrong before they were right** (a blank-stub regex that
+flagged a section header; a bypass count that forgot the function declaration matches a call
+pattern). **Before believing a red test, ask what it asserts against KNOWN-GOOD code.**
+
+---
+
+## Useful capability discovered
+
+⭐ **Raster conversion works on this box with no install.** There is no `cwebp`, `sharp` or
+ImageMagick, but **Playwright's Chromium** does it: load the PNG, draw to a canvas at target size,
+`canvas.toDataURL('image/webp', q)`. Used for `.456` — 1468 KB PNG → 44 KB WebP at 1170×403.
+⛔ There is **no image GENERATION** here — no `GEMINI_API_KEY`, and the `design` skill emits SVG.
 
 ---
 
 ## ⛔ Open — owner decisions, none started
 
-1. **The device pass on `.454`–`.455`** — five checks at the top of `BATCH-VERIFY.md`. Check 1 is
-   the S1:008 re-look.
-2. ⭐ **The HANDOFF hero art.** Briefed 2026-08-13. ⛔ **No image generation in this session** — no
-   `GEMINI_API_KEY`, and the `design` skill emits SVG, not photoreal edits. The prompt was handed
-   over; the asset is the owner's. On arrival: new `-vN` name, move the `sw.js` PRECACHE entry
-   (`:84`), three-stamp bump, and iOS needs the PWA removed and re-added.
-3. **The locked drag says nothing** — a drag in locked mode moves nothing and the hint still hides
-   itself, so the gesture reads as dead. Disclosed unruled since `.454`. ⛔ Do not invent a fix.
-4. **The FOV literal.** The camera is constructed at `46` and reassigned to `LOCK_FOV` right after,
-   so a stale literal sits in the source while the runtime is 34. Pure refactor, no runtime effect,
-   not worth a version bump alone — fold into the next ship that touches `placeCamera`.
-5. **The R1-D remainder** (rack at 176px vs §30's 270–320), **WALK SHIFT and SITE/SYSTEM**
-   (owner-queued 2026-08-11, never started), **PHASE-ENGINE step text**, **M3 data sources**.
-   ⛔ Do NOT give SHIFT a nav pillar — D-1 is the LAST domino, not the first.
+1. **The `.457` device pass** — four checks, top of `BATCH-VERIFY.md`. Check 2 is the whole ship.
+2. **The locked drag says nothing** (`.454`) · **the FOV literal** (`.455`, pure refactor) · **the
+   HANDOFF gesture** (`.456`, aesthetic). All disclosed, none urgent.
+3. **369 follow-ons** the spec named as non-goals: the auto-detecting paste parser is its own
+   strongest NEXT candidate; the EVIDENCE UI card waits for response formats. ⛔ Next-best-action,
+   readiness scores, Rack Intelligence and auto-handoff each need data-reality scoping first —
+   **the `.457` field inventory is the model for how to do that** (3 already emitted, 4 added,
+   1 degraded, 3 excluded for having no source).
+4. **R1-D remainder** · **WALK SHIFT and SITE/SYSTEM** (owner-queued 2026-08-11) · **PHASE-ENGINE
+   step text** · **M3 data sources**. ⛔ D-1 is the LAST domino.
 
 ---
 
 ## Machine note
 
-The dev box cannot produce a trustworthy multi-spec run — WebGL context exhaustion. A six-spec run
-once reported 1 failure and took **18.0 hours**; all six then passed alone in about three minutes.
-⭐ **Run renderer/Forge specs ONE AT A TIME, and never read a red multi-spec run as a regression.**
-⚠ Redirect to a file rather than piping — `| tail -N` prints nothing until the run ends and reads
-exactly like a hang. Print every pass/fail line; `grep -E "[0-9]+ (passed|failed)" | tail -1` hides
-the failure line.
-⚠ GitHub threw **four consecutive 500s** on pushes this session and Pages served stale bytes for
-several minutes after. Both are the documented transient; retry, then verify the SERVED bytes.
+WebGL context exhaustion means the box cannot produce a trustworthy multi-spec run — a six-spec run
+once took **18.0 hours** and all six then passed alone in three minutes. ⭐ **Run renderer/Forge
+specs ONE AT A TIME.** Redirect to a file rather than piping (`| tail -N` prints nothing until the
+end and reads like a hang), and print every pass/fail line — `tail -1` hides the failure line.
+⚠ GitHub threw **four consecutive 500s** on pushes and Pages served stale bytes for minutes after.
+Both are the documented transient: retry, then verify the SERVED bytes.

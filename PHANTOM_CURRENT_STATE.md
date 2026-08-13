@@ -14,13 +14,14 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.456`** (`7a4da60`) |
-| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454` (`1e1b1d8`), `.455` (`3545011`), `.456` shipped 2026-08-13 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.456` |
+| **Version** | **`phantom-v1.14.457`** (`847b0f5`) |
+| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454`–`.457` shipped 2026-08-13 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.457` |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
-| Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time. **CALL 0 cap reset to 0 of 6. No verify debt.** |
+| Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
+| ⏳ Open | **`.457` — automation green, NOT yet on hardware.** CALL 0 cap **1 of 6** |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -382,8 +383,50 @@ string only**, so a presence flag is all it can honestly say
 that "BURNDOWN" binds a panel to a NAMED SOURCE rather than to the truth. It ships as
 `OPEN ISSUES / BLOCKERS` or not at all. **Owner ruling still owed on the label.**
 
-⛔ **PARKED BY OWNER RULING until the `.454`–`.456` device pass clears.** It touches all 7 AI call
-sites; discipline 5 bars new features during stabilization.
+✅ **SHIPPED AS `.457` — 2026-08-13.** The device pass cleared, the hold was spent, and the owner
+ruled the last open label (`OPEN ISSUES / BLOCKERS`). See §1g.
+
+## 1g · ⭐ `.457` — THE CONTEXT ENGINE SHIPPED (369 V3, rescoped)
+
+`buildContext()` is the single entry for all **7** AI calls. Honesty guard header first and
+**never dropped**, then the existing site/deployment block, `jobState_snapshot()`, a deterministic
+MASTER slice, then caller `extra` — under ~2200 tokens, truncating **only at line boundaries** with
+`[+N more records omitted]`. ⭐ **A prompt cut mid-record hands the model half a fact that reads as
+complete**, which is worse than omitting it. `AI_PERMISSION = 'READ'`; `assertAIPermission` runs at
+the choke point; SUGGEST and CHANGE both throw and **CHANGE has no implementation path anywhere.**
+
+⛔ **IT WRAPS THE EXISTING DOOR — there is no second site-profile store and no second choke point.**
+Anyone reading the frozen spec later will find §1 and §6 describing work that was already done;
+that is why §1f exists.
+
+**Three honesty decisions inside the field set, all recorded because each one is a place the spec
+asked for a number the app does not have:**
+· **`OPEN ISSUES / BLOCKERS`** (owner ruling) — the counts are real; "BURNDOWN" is not a record
+· **`AUDITS RECORDED`** — the spec asked for "N warnings"; **no warning count is computed anywhere**,
+so emitting one would invent a figure
+· **`MANIFEST`** degraded to a presence flag — its key holds a deployment id string and nothing else
+· **BOM match % and PORT MAP excluded outright** for having no backing source
+
+⛔ **THE PLACEHOLDER TRAP, and it would have been invisible.** `PHANTOM_PHASE_MODEL` seeds every
+step with the label *"step not yet defined for this site"* because real commissioning procedure is
+site knowledge the app does not have (§2). Emitting those labels would have fed a model fabricated
+procedure wearing a checklist — and it would have READ as authoritative. **PHASE emits state only**,
+and spec 38 pins that the placeholder string can reach neither the snapshot nor the prompt.
+
+📌 **`OPERATOR` resolves through `identity_getUser()`, never `phantom_current_user_v1` directly.**
+:24106 records that the raw key was a SECOND persisted answer to "who is working", demoted to a
+migration fallback — reading it here would have resurrected the split-brain `.418` deleted.
+
+📌 **CONTEXT PREVIEW is built by CALLING `buildContext`, not by describing it.** A preview from a
+second code path would eventually disagree with what actually ships, which would make the one
+surface built for debugging attribution the thing that lies to you.
+
+⚠ **Deliberate deviation:** the callers' system prompts are NOT routed through `extra`. Each site
+concatenates its whole feature prompt after the context block and `extra` is capped at 500 tokens,
+so routing them would have silently truncated the instructions that make each feature work. **The
+~2200 cap governs the context ENGINE's output; the feature prompt is separate and always was.**
+
+**Runs:** spec 38 (7) · `10-site-profile-root` (18) · `03-tools` (28), each ALONE.
 
 ## 2 · Milestone
 
@@ -496,10 +539,16 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — ✅ CLEARED 2026-08-13 (one historical exception, unchanged)
+## 3 · Verify debt — ⏳ `.457` OPEN (1 of 6). Everything before it is cleared
 
-✅ **`.454`–`.456` RELEASED ON HARDWARE 2026-08-13.** All six checks passed. **CALL 0 cap reset to
-0 of 6.**
+⏳ **`.457` is on `main` and NOT yet on hardware.** One surface carries most of the verification:
+**SITE PROFILE → CONTEXT PREVIEW**, which renders the exact text the AI receives. Every line must
+trace to real data, empty fields must be ABSENT rather than blank rows, and no step text may read
+*"step not yet defined for this site"*. Then ask an AI feature about a field left empty — it must
+say the record is not available rather than invent one.
+
+✅ **`.454`–`.456` RELEASED ON HARDWARE 2026-08-13.** All six checks passed. Cap was reset to 0 of 6
+and `.457` takes it to 1.
 
 ⚠ **`.455` exists because `.454` failed its device look** — the owner reported the locked rack
 reading off-axis with the neighbour competing. **No assertion in `.454` could have caught it: every
@@ -665,21 +714,23 @@ sustained thermals across a ten-rack aisle walk.
 
 ## 9 · Next action
 
-⭐ **NEXT SHIP IS DECIDED AND NOW UNBLOCKED: CONTEXT-INJECT-369 V3, rescoped — see §1f.**
+**PARKED ON `.457`. Nothing autonomous.** ⏳ **CALL 0 cap 1 of 6.**
 
-✅ **CALL 0 cap RESET to 0 of 6.** `.454`–`.456` released on hardware 2026-08-13; `.438`–`.453`
-released 2026-08-12. **No verify debt.**
+`.457` shipped the context engine and needs its device look — the CONTEXT PREVIEW panel, §3 above.
 
-The owner ruled 2026-08-13 to execute the spec's INTENT against live code rather than the letter of
-§1/§6, and to hold it until the device pass cleared. **That pass has now cleared, so the hold is
-spent.** ⛔ **One ruling is still owed before the JobState collector can be written: the BURNDOWN
-label** — open counts are derivable from `phantom_deploy_issues_v1` / `phantom_discrepancies_v1` /
-`phantom_blockers_v1`, but calling that "BURNDOWN" binds a panel to a named source rather than to
-the truth. It ships as `OPEN ISSUES / BLOCKERS` or not at all.
-
-Everything else in §1f is scoped and ready: the honesty guard header, the token budget with
-boundary-only truncation, the deterministic MASTER slice, `assertAIPermission`, the CONTEXT PREVIEW,
-and the four sourced JobState fields.
+Open items, none started, all needing an owner decision first:
+- **The locked drag says nothing** (§1c) — disclosed unruled since `.454`. ⛔ Do not invent a fix.
+- **The FOV literal** (§1d) — pure refactor, no runtime effect; fold into the next ship that
+  touches `placeCamera`.
+- **The HANDOFF art gesture** (§1e) — the exchange still reads as two people holding rather than
+  one releasing. Aesthetic, and the honesty fix already shipped.
+- **369 follow-ons the spec itself listed as non-goals:** the auto-detecting paste parser is named
+  the strongest NEXT candidate; the EVIDENCE UI card waits for response formats to stabilise.
+  ⛔ Next-best-action, readiness scores, Rack Intelligence and auto-handoff each need their own
+  data-reality scoping first — the `.457` field inventory is the model for that.
+- **The R1-D remainder** (rack at 176px vs §30's 270–320) · **WALK SHIFT and SITE/SYSTEM**
+  (owner-queued 2026-08-11, never started) · **PHASE-ENGINE step text** · **M3 data sources**.
+  ⛔ D-1 is the LAST domino, not the first.
 
 ⚠ **One ruling is owed and it is small:** the locked drag does nothing and says nothing (§1c). It is
 disclosed, not fixed, because the answer is a product call.
