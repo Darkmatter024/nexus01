@@ -12917,7 +12917,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.456';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.457';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -27773,6 +27773,232 @@ function activeContext_getContextBlock() {
   return blocks.length > 0 ? blocks.join('\n\n') : '';
 }
 
+// ══ v1.14.457 — CONTEXT ENGINE (SHIP-CONTEXT-INJECT-369 V3, RESCOPED BY OWNER RULING) ════════
+// ⛔ THE FROZEN SPEC DESCRIBED BUILDING WHAT ALREADY EXISTED, and the owner ruled to execute its
+// INTENT rather than its letter (2026-08-13). §1 specified a SiteProfile module on key
+// `phantom_site_profile_v1`; that key has been live at :24091 since the SITE-PROFILE workstream,
+// on a V2 schema, with load/save/reset, a prompt block and a settings editor. §6 asked for AI call
+// sites to be wired to a single choke point; activeContext_getContextBlock() has BEEN that choke
+// point and its own comment says so. So this WRAPS the existing door rather than building a second
+// one — Contract A2, and the .431 lesson about searching for a spec's NAME instead of its concept.
+//
+// ⭐ WHAT jobState_snapshot DELIBERATELY DOES NOT EMIT. activeContext_getContextBlock() already
+// states SITE, DEPLOYMENT and ACTIVE RACK. Re-emitting them here would put two copies of one truth
+// into a single prompt, and when they drifted the model would have no way to choose which to
+// believe. This adds ONLY what the existing block does not already say.
+
+// §5 — permission tiers, enforced in code rather than asked for in a prompt.
+// ⛔ CHANGE has no implementation path anywhere. Nothing downstream of an AI response calls a
+// state-mutating function, and this assert is the entry gate that keeps it that way.
+var AI_PERMISSION = 'READ';
+function assertAIPermission(required) {
+  var rank = { READ: 0, SUGGEST: 1, CHANGE: 2 };
+  if (rank[required] > rank[AI_PERMISSION]) {
+    throw new Error('AI permission ' + required + ' denied (current: ' + AI_PERMISSION + ')');
+  }
+  return true;
+}
+
+// §2.3 — a field is {label, value, source}. ⛔ `source` is for the ship report and for whoever
+// reads this file next; it NEVER reaches the model. A field whose value resolves empty is omitted
+// entirely rather than rendered blank, because a blank label is an assertion that the record exists
+// and is empty — which is a different claim from "PHANTOM does not track this".
+var JOBSTATE_FIELDS = [
+  {
+    label: 'PHASE',
+    source: 'phantom_phase_model_v1 via PHANTOM_PHASE_MODEL.loadAll()',
+    value: function (rackId) {
+      if (!rackId || typeof PHANTOM_PHASE_MODEL === 'undefined') return '';
+      var m = PHANTOM_PHASE_MODEL.loadAll()[rackId];
+      if (!m || !Array.isArray(m.phases)) return '';
+      var done = 0, total = 0, current = '';
+      m.phases.forEach(function (p) {
+        (p.steps || []).forEach(function (s) {
+          total++;
+          if (s.state === 'DONE' || s.state === 'COMPLETE') done++;
+          else if (!current && s.state === 'IN_PROGRESS') current = p.name || p.id;
+        });
+      });
+      if (!total) return '';
+      // ⛔ STEP LABELS ARE NEVER EMITTED. They are placeholders by design — literally
+      // "step not yet defined for this site" — because real per-platform commissioning procedure
+      // is site knowledge the app does not have. Feeding that to a model as if it were procedure
+      // is fabricated telemetry wearing a checklist. State only.
+      return done + '/' + total + ' steps complete' + (current ? ' · in progress: ' + current : '');
+    }
+  },
+  {
+    label: 'OPEN ISSUES / BLOCKERS',
+    // ⭐ OWNER RULING 2026-08-13 — this is NOT labelled BURNDOWN. The counts are real, but no
+    // burndown record exists; naming it after a surface rather than after the records it counts
+    // would bind the panel to a NAME instead of to the truth.
+    source: 'phantom_deploy_issues_v1 + phantom_discrepancies_v1 + phantom_blockers_v1',
+    value: function () {
+      var parts = [];
+      try { var i = safeGet(PHANTOM_ISSUES_KEY, []) || []; if (i.length) parts.push(i.length + ' issues'); } catch (_) {}
+      try { var d = safeGet(DISCREPANCY_KEY, []) || []; if (d.length) parts.push(d.length + ' discrepancies'); } catch (_) {}
+      try {
+        var b = safeGet(PHANTOM_BLOCKERS_KEY, []) || [];
+        var openB = b.filter(function (x) { return x && !x.clearedAt; });
+        if (openB.length) parts.push(openB.length + ' open blockers');
+      } catch (_) {}
+      return parts.join(' · ');
+    }
+  },
+  {
+    label: 'AUDITS RECORDED',
+    // Relabelled from the spec's "AUDIT: N warnings". A warning COUNT is not computed anywhere,
+    // and emitting one would be inventing a figure. The number of recorded audits is a real fact.
+    source: 'phantom_audits_v1',
+    value: function () {
+      try { var a = safeGet('phantom_audits_v1', []) || []; return a.length ? String(a.length) : ''; } catch (_) { return ''; }
+    }
+  },
+  {
+    label: 'LAST SCAN',
+    source: 'phantom_scan_collection (most recent by ts)',
+    value: function () {
+      try {
+        var s = safeGet('phantom_scan_collection', []) || [];
+        if (!s.length) return '';
+        var last = s[s.length - 1];
+        if (!last || !last.ts) return String(s.length) + ' recorded';
+        var mins = Math.round((Date.now() - last.ts) / 60000);
+        var when = mins < 1 ? 'just now' : (mins < 60 ? mins + ' min ago' : Math.round(mins / 60) + ' h ago');
+        return s.length + ' recorded · most recent ' + when;
+      } catch (_) { return ''; }
+    }
+  },
+  {
+    label: 'MANIFEST',
+    // ⚠ DEGRADED ON PURPOSE. phantom_manifest_last_deploy holds a deployment id STRING and nothing
+    // else, so "loaded state" is the most this record can honestly support — a presence flag.
+    source: 'phantom_manifest_last_deploy (deployment id only)',
+    value: function () {
+      try {
+        var id = localStorage.getItem(MANIFEST_LAST_KEY);
+        return id ? 'present for deployment ' + id : '';
+      } catch (_) { return ''; }
+    }
+  },
+  {
+    label: 'OPERATOR',
+    // ⛔ Through identity_getUser(), never phantom_current_user_v1 directly. :24106 records that
+    // the raw key was a SECOND persisted answer to "who is working" and was demoted to a migration
+    // fallback; reading it here would resurrect the split-brain that ship deleted. Contract 9a: the
+    // ACTOR is credited, never the Site Lead by default.
+    source: 'identity_getUser() → PHANTOM_SITE.currentOperator()',
+    value: function () {
+      var who = '';
+      try { if (typeof identity_getUser === 'function') who = identity_getUser(); } catch (_) {}
+      if (!who) return '';
+      var lead = '';
+      try { var p = siteProfile_load(); if (p && p.siteLead) lead = p.siteLead; } catch (_) {}
+      return who + (lead && lead !== who ? ' (site lead: ' + lead + ')' : '');
+    }
+  }
+];
+
+function jobState_snapshot(rackId) {
+  var lines = [];
+  JOBSTATE_FIELDS.forEach(function (f) {
+    var v = '';
+    try { v = f.value(rackId); } catch (e) {
+      console.warn('[context] JobState field failed: ' + f.label, e);
+    }
+    if (v) lines.push(f.label + ': ' + v);
+  });
+  return lines.length ? 'JOB STATE:\n' + lines.join('\n') : '';
+}
+
+// §3.2 — token accounting. Approximation is the spec's own (chars/4); the point is a predictable
+// ceiling, not an exact count.
+function ctx_tokens(s) { return Math.ceil(String(s || '').length / 4); }
+
+// ⛔ TRUNCATE AT LINE BOUNDARIES ONLY. A prompt cut mid-record hands the model half a fact, which
+// is worse than omitting it — it looks complete. Dropped lines are announced, never silent.
+function ctx_capTokens(s, cap) {
+  if (ctx_tokens(s) <= cap) return s;
+  var lines = String(s).split('\n'), out = [], used = 0;
+  for (var i = 0; i < lines.length; i++) {
+    var t = ctx_tokens(lines[i]) + 1;
+    if (used + t > cap) break;
+    out.push(lines[i]); used += t;
+  }
+  var dropped = lines.length - out.length;
+  if (dropped > 0) out.push('[+' + dropped + ' more records omitted]');
+  return out.join('\n');
+}
+
+// §3.1 — the honesty guard. ⛔ NEVER DROPPED, whatever the budget does.
+var CTX_HONESTY_GUARD = [
+  'FACTS BELOW ARE FROM SITE RECORDS AND LIVE APP STATE.',
+  'Do not invent hardware or job details not listed.',
+  'If asked about something not in these records, say the record is not available.',
+  'When uncertain, use graded language: "likely", "possible", "needs confirmation".',
+  'Never present an inference as a recorded fact.'
+].join('\n');
+
+// §4 — evidence discipline, appended as prompt text. UI for this is explicitly a later ship.
+var CTX_EVIDENCE_RULE = 'When you state a finding about this site, rack, or hardware, name which '
+  + 'context section it came from (SITE PROFILE, JOB STATE, or MASTER FILE). If a finding is '
+  + 'inference rather than record, label it as inference.';
+
+// §3 — THE SINGLE CHOKE POINT. Every AI call goes through here.
+// Drop order under budget: MASTER slice → extra → JOB STATE. The site/deployment block and the
+// honesty guard are never dropped.
+function buildContext(opts) {
+  opts = opts || {};
+  assertAIPermission('READ');
+  var rackId = opts.rackId || '';
+  var parts = [CTX_HONESTY_GUARD, CTX_EVIDENCE_RULE];
+
+  // The existing door — SITE PROFILE + ACTIVE DEPLOYMENT/RACK + field quirks.
+  var core = '';
+  try { core = activeContext_getContextBlock() || ''; } catch (e) { console.warn('[context] core block failed', e); }
+  if (core) parts.push(ctx_capTokens(core, 900));
+
+  var job = '';
+  try { job = jobState_snapshot(rackId || _ctx_activeRackId()); } catch (e) { console.warn('[context] job state failed', e); }
+
+  // §3.3 — MASTER slice, DETERMINISTIC ONLY. A rackId maps to that rack's rows and nothing else.
+  // ⛔ With no rackId the slice is OMITTED: no keyword guessing, no AI relevance selection. No
+  // surface currently declares a deterministic MASTER relationship, so none is inferred.
+  var master = '';
+  if (rackId) {
+    try {
+      if (typeof master_rackToElevation === 'function') {
+        var elev = master_rackToElevation(rackId);
+        var devs = (elev && elev.devices) || [];
+        if (devs.length) {
+          master = 'MASTER FILE — rack ' + rackId + ':\n' + devs.map(function (d) {
+            return '- U' + (d.ru || '?') + ' ' + (d.type || 'unknown') + ' ' + (d.name || d.model || '');
+          }).join('\n');
+        }
+      }
+    } catch (e) { console.warn('[context] master slice failed', e); }
+  }
+
+  var extra = opts.extra ? ctx_capTokens(String(opts.extra), 500) : '';
+
+  // Assemble under the ~2200 cap, dropping in the spec's order.
+  var budget = 2200 - ctx_tokens(parts.join('\n\n'));
+  var tail = [];
+  if (job) { var jt = ctx_capTokens(job, 400); if (ctx_tokens(jt) <= budget) { tail.push(jt); budget -= ctx_tokens(jt); } }
+  if (master) { var mt = ctx_capTokens(master, Math.min(1000, budget)); if (mt && budget > 0) { tail.push(mt); budget -= ctx_tokens(mt); } }
+  if (extra && budget > 0) { var et = ctx_capTokens(extra, budget); if (et) tail.push(et); }
+
+  return parts.concat(tail).join('\n\n');
+}
+
+// The rack the technician is actually on, for callers that do not name one.
+function _ctx_activeRackId() {
+  try {
+    var c = activeContext_get();
+    return (c && c.rack && c.rack.id) ? c.rack.id : '';
+  } catch (_) { return ''; }
+}
+
 // BUILD-2 (v1.14.130): compact "field quirks" block from the Ghost-Echo store for the AI context.
 // Own quirks are site-scoped (tolerant normalize); imported peer quirks are cross-site (same rule
 // as ge_findQuirks). Sorted active-hardware-first → corroborated (echoes) → recency; capped to keep
@@ -29670,6 +29896,37 @@ function siteProfile_showEditor(container) {
   html += '<button class="pt-btn pt-btn-primary" style="flex:1;padding:14px" onclick="siteProfile_saveFromEditor()">\u25B6 SAVE PROFILE</button>';
   html += '<button class="pt-btn pt-btn-ghost" style="flex:0 0 auto;padding:14px 16px" onclick="siteProfile_resetToDefaults()">\u21BA DEFAULTS</button>';
   html += '</div>';
+
+  // \u2500\u2500 v1.14.457 \u2014 CONTEXT PREVIEW (spec \u00A77) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // \u2B50 THE POINT OF THIS PANEL IS DEBUGGING ATTRIBUTION. When an AI answer is wrong, the only
+  // question that matters first is whether the MODEL was wrong or the APP fed it something wrong,
+  // and until now there was no way to tell from the device. This renders the exact text
+  // buildContext() hands the model \u2014 same function, not a re-description of it, because a preview
+  // built from a second code path would eventually disagree with what actually ships.
+  // Read-only by construction: it prints a string. Tier is READ (\u00A75).
+  try {
+    var _ctxPreview = (typeof buildContext === 'function') ? buildContext({ surface: 'preview' }) : '';
+    html += '<div style="margin-top:18px;border-top:1px solid rgba(155,89,255,0.18);padding-top:14px">';
+    html += '<div style="font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--slate);text-transform:uppercase;margin-bottom:6px">CONTEXT PREVIEW &middot; what the AI receives</div>';
+    if (_ctxPreview) {
+      html += '<pre style="font-family:var(--mono);font-size:10px;line-height:1.55;color:var(--white);background:rgba(4,6,10,0.6);border:1px solid rgba(155,89,255,0.16);border-radius:10px;padding:12px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;max-height:340px;overflow-y:auto">'
+           + escHtml(_ctxPreview) + '</pre>';
+      html += '<div style="font-family:var(--mono);font-size:10px;color:var(--slate);margin-top:6px;line-height:1.5">'
+           + '~' + ctx_tokens(_ctxPreview) + ' tokens of a ~2200 budget. Empty fields are omitted, never blank-stubbed. '
+           + 'Derived from MASTER FILE. MASTER FILE remains source of truth.</div>';
+    } else {
+      // \u26D4 Honest zero-state, not a blank box. No context is a real and correct state on a device
+      // with no profile and no active deployment, and it must SAY so rather than look broken.
+      html += '<div style="font-family:var(--raj);font-size:12px;color:var(--slate);line-height:1.6">'
+           + 'No context yet \u2014 the AI would receive only its honesty guard. Load a Master and set a site profile above.</div>';
+    }
+    html += '</div>';
+  } catch (e) {
+    console.warn('[context] preview failed to render', e);
+    // --gold, not --amber: --amber is NOT defined in :root and an undefined var() invalidates the
+    // whole declaration silently, so the one line that reports a failure would render unstyled.
+    html += '<div style="margin-top:18px;font-family:var(--mono);font-size:10px;color:var(--gold)">CONTEXT PREVIEW unavailable \u2014 see console.</div>';
+  }
 
   c.innerHTML = html;
 
@@ -36362,7 +36619,7 @@ async function deploy_aiReview(deploymentId) {
 
   try {
     var resp = await phantomAI('parser',
-      activeContext_getContextBlock() + '\n\n' +
+      buildContext({ surface: 'edp-review' }) + '\n\n' +
       'You are a data center deployment validator. Review this parsed EDP JSON for logical errors and inconsistencies.\n\n' +
       'Check for:\n' +
       '- Optic type/count discrepancies (each fiber needs 2 optics)\n' +
@@ -46798,7 +47055,7 @@ function edp_getInterruptedCheckpoint() {
 // Uses a chunked-mode flag on the retry context to disable automatic retries — failed sections
 // use the UI retry button instead, which gives faster feedback.
 async function edp_parseSection(section, docHint, raw) {
-  var system = activeContext_getContextBlock() + '\n\n' + section.buildPrompt(docHint);
+  var system = buildContext({ surface: 'edp-parse' }) + '\n\n' + section.buildPrompt(docHint);
   // Build the request manually so we can pass maxRetries: 0 (no retries in chunked mode)
   // and optionally override timeoutMs for sections that need more reasoning time.
   var reqCtx = { attempt: 0, maxRetries: 0, delays: [] };
@@ -47809,7 +48066,7 @@ async function renderAI(text,el){
   el.innerHTML=`<div class="pf info2"><div class="pf-sev">AI ANALYSIS</div><div class="pf-title"><span class="spin"></span>Claude is reading your output...</div></div><div class="skeleton-wrap"><div class="skeleton-line thick w80"></div><div class="skeleton-grid"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div><div class="skeleton-line w90"></div><div class="skeleton-line w60"></div><div class="skeleton-line w45"></div></div>`;
   try {
     const resp=await phantomAI('parser',
-      activeContext_getContextBlock() + '\n\n' +
+      buildContext({ surface: 'render' }) + '\n\n' +
       'You are a senior data center technician expert in fiber optics, networking, HPC infrastructure. The user pastes raw field documentation — fiber maps, port maps, patch schedules, cable runs, or any field text. Extract key info, identify anomalies, provide clear actionable findings. Respond ONLY in JSON (no markdown, no backticks): {"doc_type":"brief description","summary":"2-3 sentence summary","findings":[{"level":"critical|warn|ok|info","title":"short title","detail":"actionable explanation"}],"key_data":[{"label":"field","value":"value"}]}. Max 8 findings, 8 key_data. Be specific and technical.',
       text);
     if(!resp.ok) throw new Error(`API ${resp.status}`);
@@ -49060,8 +49317,10 @@ async function saveRack() {
 
 // ── AI PARSER for elevation data ──
 async function parseElevationWithAI(rackName, raw) {
+  // rackName is a real rack id, so §3.3's deterministic MASTER slice applies here — this is the
+  // one call site that can name its rack, and it gets that rack's rows and nothing else.
   const resp = await phantomAI('rack',
-      activeContext_getContextBlock() + '\n\n' +
+      buildContext({ surface: 'rack-elevation', rackId: rackName }) + '\n\n' +
       `You are a data center infrastructure expert. Parse rack elevation data in ANY format — CSV, plain text, spreadsheet paste, DCIM export, freeform notes — and return structured JSON.
 
 Output ONLY a JSON array, no markdown, no backticks:
@@ -49462,7 +49721,7 @@ async function renderPortMapValidator(text, el) {
 
   try {
     const resp = await phantomAI('portmap',
-      activeContext_getContextBlock() + '\n\n' +
+      buildContext({ surface: 'portmap' }) + '\n\n' +
       `You are a senior data center network engineer and cabling specialist with deep expertise in port map documentation, structured cabling standards, fiber optics, and network infrastructure design.
 
 The user will paste a port map in ANY format — spreadsheet copy, CSV, plain text, Word table, Visio export, hand-typed notes, or anything else. Your job is to:
@@ -49997,7 +50256,11 @@ async function vaAsk(question) {
 
     var liveCtx = brief_buildLiveContext();
     var hwCtx = hwMatrix_queryContext(question);
-    const resp = await phantomAI('va', activeContext_getContextBlock() + liveCtx + '\n\n' + hwCtx + va_ticketContext() + VA_SYSTEM, question);
+    // ⚠ liveCtx / hwCtx / va_ticketContext() stay OUTSIDE `extra` on purpose. They are large
+    // feature-authored blocks, and `extra` is capped at 500 tokens — routing them through it would
+    // silently truncate the assistant's own working context to satisfy a budget meant for the
+    // context ENGINE's output. VA_SYSTEM is the system prompt and is never context at all.
+    const resp = await phantomAI('va', buildContext({ surface: 'va' }) + liveCtx + '\n\n' + hwCtx + va_ticketContext() + VA_SYSTEM, question);
 
     if (!resp.ok) throw new Error('API ' + resp.status);
     const data = await resp.json();
@@ -53039,7 +53302,7 @@ const AUDIT = (() => {
     phantomToast('AI identifying...', 'ok');
     try {
       const resp = await phantomAI('optic_id',
-        activeContext_getContextBlock() + '\n\n' +
+        buildContext({ surface: 'optic-id' }) + '\n\n' +
         'You are an optic transceiver expert. Given a serial number, part number, or label text, identify the optic type. Respond ONLY in JSON (no markdown): {"type":"SR4|LR4|DR4|ER4|ZR|DAC|AOC|QSFP28|QSFP-DD|OSFP|SFP+|SFP28|OTHER","vendor":"vendor name or unknown","partNumber":"full part number or unknown","speed":"100G|400G|etc","reach":"distance","wavelength":"nm or N/A","confidence":"high|medium|low"}',
         'Identify this optic: ' + serial);
       if (!resp.ok) throw new Error('API ' + resp.status);
