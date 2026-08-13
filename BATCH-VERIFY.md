@@ -4,12 +4,16 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
-# 🟡 CURRENT BATCH — `.454`–`.455` (2 of 6) — OPEN, AWAITING HARDWARE
+# 🟡 CURRENT BATCH — `.454`–`.456` (3 of 6) — OPEN, AWAITING HARDWARE
 
-**Live: `v1.14.455`.** Two ships: `.454` made Forge rack-centric with WALK AISLE as an explicit mode
-(ruling 2026-08-12); **`.455` fixed the pose `.454` locked to** (ruling 2026-08-13). Proven by
-automation first — specs 37, 36, `02-build-forge` and `08-forge-layout`, each run ALONE. What is
-left needs your eyes and a real GPU.
+**Live: `v1.14.456`.** Three ships: `.454` made Forge rack-centric with WALK AISLE as an explicit
+mode (ruling 2026-08-12); **`.455` fixed the pose `.454` locked to** (ruling 2026-08-13); `.456`
+replaced the HANDOFF card art that was baking fabricated status text into the image. Proven by
+automation first — specs 37, 36, `02-build-forge`, `08-forge-layout`, `03-tools`, `05-offline`,
+each run ALONE. What is left needs your eyes and a real GPU.
+
+✅ **Checks 1 and 2 already PASSED on hardware 2026-08-13** — owner: *"check 1 pass, rack is
+straight now"* · *"check 2 pass, no drift across 10 racks"*. **Checks 3, 4, 5 and 6 remain.**
 
 ⚠ **`.455` exists because `.454` failed your look at S1:008.** `.454` froze the camera at 5.7° of
 yaw and 4.6° of pitch — it stopped the view drifting but locked it to a crooked pose, so the cabinet
@@ -20,15 +24,18 @@ leaned and the neighbour competed. **Check 1 below is the re-look.**
 
 | # | Do this | PASS | FAIL |
 |---|---|---|---|
-| **1** | **OPEN AISLE** on **S1:008**. Just look at it. | Cabinet is **dead straight and square on** — both vertical rails truly vertical, the top edge horizontal, left and right sides even, no lean. It sits **centred**, not pushed left by the button column | It leans or looks skewed · it sits off-centre · the rack beside it competes for attention |
-| **2** | Walk across **6+ racks** (flank taps or arrows). | Every cabinet arrives at **exactly the same framing** — same angle, same size, same height on screen | The framing drifts, or later racks sit higher/lower or further away than the first |
+| ✅ **1** | **OPEN AISLE** on **S1:008**. Just look at it. | Cabinet is **dead straight and square on** — both vertical rails truly vertical, the top edge horizontal, left and right sides even, no lean. It sits **centred**, not pushed left by the button column | It leans or looks skewed · it sits off-centre · the rack beside it competes for attention |
+| ✅ **2** | Walk across **6+ racks** (flank taps or arrows). | Every cabinet arrives at **exactly the same framing** — same angle, same size, same height on screen | The framing drifts, or later racks sit higher/lower or further away than the first |
 | **3** | On any rack, **drag across the rack area** without touching the ↔ button. | **Nothing moves.** The rack stays locked | The view orbits or tilts |
 | **4** | Tap the **↔ button** (third in the right-hand column). Drag around. | The button **lights cyan** while engaged, and dragging **does** look around freely | No colour change, or dragging still does nothing |
 | **5** | Tap **↔** again to leave. | Snaps back onto the **nearest** rack, dead square again, and the status pill reads its **`n/m RACKED`** count | The pill reads `WALK AISLE`, or shows the rack **name twice**, or the rack comes back crooked, or you land on a rack you walked away from |
 
-📌 **Checks 1 and 5 are the ones worth your attention.** 1 is the defect you reported, re-looked at.
-5 is where `.454` found and fixed a pill defect, and whether "nearest" *feels* right is a product
-call no assertion can make.
+| **6** | ⚠ **REMOVE AND RE-ADD THE PWA** (a reload will NOT do — the old art is precached). Open the reference surface with the **HANDOFF** card. | The card shows a **dark tablet exchange with NO readable words anywhere in the artwork** | The old art with `RACK BUILD Complete` still showing · or an empty card with a diagonal hatch, which means the new raster 404d |
+
+📌 **Check 5 is the one left with teeth.** It is where `.454` found and fixed a pill defect, and
+whether "nearest" *feels* right is a product call no assertion can make.
+📌 **Check 6 is `.456` and needs the PWA re-added, not a reload.** The honesty fix is the point: the
+old image asserted four completions PHANTOM never measured.
 
 ⚠ **What the suite already proved, so you do not have to:** at 390×844 the camera sits at
 y 1.9 / z 10.32353 with forward (0,0,−1) and zero roll on **every** rack, and a walk out and back

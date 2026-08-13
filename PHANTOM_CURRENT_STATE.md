@@ -14,13 +14,13 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.455`** (`3545011`) |
-| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454` (`1e1b1d8`) and `.455` shipped 2026-08-13 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.455` |
+| **Version** | **`phantom-v1.14.456`** (`7a4da60`) |
+| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454` (`1e1b1d8`), `.455` (`3545011`), `.456` shipped 2026-08-13 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.456` |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
-| ⏳ Open | **`.454`–`.455` — automation green, NOT yet on hardware.** Block at the TOP of `BATCH-VERIFY.md`. CALL 0 cap **2 of 6** |
+| ⏳ Open | **`.454`–`.456` — automation green, NOT yet on hardware.** Block at the TOP of `BATCH-VERIFY.md`. CALL 0 cap **3 of 6** |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -325,6 +325,66 @@ touches this function.
 **Runs (phone-webkit, each spec ALONE):** `37-locked-rack-pose` 4 · `36-forge-rack-centric` 4 ·
 `02-build-forge` 14 · `08-forge-layout` 17 + 1 skipped. **Gates:** `phantom-guard` exit 0.
 
+## 1e · `.456` — THE HANDOFF CARD ART STOPS FABRICATING STATUS
+
+The shipped raster baked readable status into the image: `RACK BUILD Complete`, `CABLE REPORT
+Complete`, `POWER CHECK Complete`, `INTAKE SYNC Complete`, `READY FOR HANDOFF`. **None of that is
+data PHANTOM has** — fabricated completion state rendered as real, on the card a tech taps to reach
+the handoff flow. Contract 10, and it had been shipping behind an owner override of the
+honesty-lock hold. The replacement carries no readable text and no logo, so **the override is
+retired rather than renewed.**
+
+⛔ **WHAT THIS SHIP DOES NOT CLAIM, recorded so nobody reads it as a completed brief.** The owner's
+brief also asked for a ticked checklist, rack status blocks and a port-map detail on the tablet
+screen, and for the exchange to read unmistakably as one hand releasing while the other receives.
+**The delivered art has none of the three widgets and the grip still reads as two people holding.**
+It shipped because the honesty fix is live-affecting while the rest is aesthetic refinement.
+
+📌 **No image tooling on this box and none was installed** — no `cwebp`, `sharp` or ImageMagick.
+Playwright's Chromium did the conversion via `canvas.toDataURL('image/webp', 0.86)`: 2172×724 /
+1468 KB PNG → **1170×403 / 44 KB**, the 39px cover-crop taken entirely from the LEFT because a
+centre crop would eat the receiving hand while the left is empty black by design. ⭐ **That is the
+reusable raster path on this machine.**
+⚠ New `-v2` filename because overwriting a precached asset in place serves the old bytes.
+**Device verify needs the PWA removed and re-added, not a reload.**
+
+## 1f · ⭐ SHIP-CONTEXT-INJECT-369 V3 — RESCOPED BY OWNER RULING 2026-08-13
+
+The frozen spec (`Downloads/SHIP-CONTEXT-INJECT-369-V3-FROZEN.md`) was written without sight of
+live code and **§1 and §6 describe building what already exists.** Owner ruled: execute the
+INTENT against live code, report deviations. ⛔ **Do NOT build a second site-profile store.**
+
+**Already built — do not rebuild:** `SITE_PROFILE_KEY = 'phantom_site_profile_v1'` :24091 (the
+spec's exact key, on a **V2** schema via `siteProfile_migrateV1toV2` :27128, so §1.1's
+`schemaVersion: 1` would REGRESS it) · `siteProfile_load/save/isConfirmed/resetToDefaults` ·
+`siteProfile_getContextBlock()` :27548 = §1.2's `toPromptBlock()` · `siteProfile_showEditor()`
+:29561 = §7's editor · **`activeContext_getContextBlock()` :27668 is already the single choke
+point** and its own comment says so · **§6's call sites are already wired** at :36365, :46801,
+:47812, :49064, :49465, :50000, :53042.
+
+**The genuinely new ship:** the §3.1 honesty guard header (absent — the block starts straight into
+`SITE PROFILE —`) · §3.2 token cap, boundary-only truncation, drop order · §3.3 deterministic
+MASTER slice · §4 evidence discipline · §5 `AI_PERMISSION` + `assertAIPermission` (**confirmed
+absent**) · §7 CONTEXT PREVIEW · and four JobState fields.
+
+**§2.1 field mapping — the gate, answered:**
+· **Already emitted:** SITE · DEPLOYMENT · ACTIVE RACK
+· **INCLUDE (new):** PHASE (`phantom_phase_model_v1`; ⚠ emit state, never the placeholder step
+prose) · AUDIT (`phantom_audits_v1`, `phantom_active_audit`, `phantom_deploy_audit_v1`) ·
+LAST SCAN (`phantom_scan_collection` :23152) · SHIFT/OPERATOR (`phantom_current_user_v1`,
+`phantom_identity` — **credit the ACTOR, Contract 9a**)
+· **INCLUDE degraded:** MANIFEST — `phantom_manifest_last_deploy` :31880 holds a deployment **id
+string only**, so a presence flag is all it can honestly say
+· ⛔ **EXCLUDE:** BOM match % (no computed figure exists; §2.2's own condition unmet) · PORT MAP
+(no persisted state key) · BURNDOWN (**no `phantom_burndown_*` key**)
+⭐ **BURNDOWN is the honesty trap in this spec.** Open counts ARE derivable from
+`phantom_deploy_issues_v1` / `phantom_discrepancies_v1` / `phantom_blockers_v1` — but labelling
+that "BURNDOWN" binds a panel to a NAMED SOURCE rather than to the truth. It ships as
+`OPEN ISSUES / BLOCKERS` or not at all. **Owner ruling still owed on the label.**
+
+⛔ **PARKED BY OWNER RULING until the `.454`–`.456` device pass clears.** It touches all 7 AI call
+sites; discipline 5 bars new features during stabilization.
+
 ## 2 · Milestone
 
 **Programme: `SHIP-TECH-FLOW-V2-FROZEN.md` (see §1a).**
@@ -588,10 +648,14 @@ sustained thermals across a ten-rack aisle walk.
 
 ## 9 · Next action
 
-**PARKED ON `.455`. Nothing autonomous.**
+**PARKED ON `.456`. Nothing autonomous.**
 
-⏳ **CALL 0 cap 2 of 6.** `.454` and `.455` are live and awaiting the device pass at the top of
-`BATCH-VERIFY.md`. `.438`–`.453` released on hardware 2026-08-12.
+⏳ **CALL 0 cap 3 of 6.** `.454`, `.455` and `.456` are live and awaiting the device pass at the top
+of `BATCH-VERIFY.md`. `.438`–`.453` released on hardware 2026-08-12.
+
+⭐ **NEXT SHIP IS DECIDED AND PARKED: CONTEXT-INJECT-369 V3, rescoped — see §1f.** Owner ruled
+2026-08-13 to execute the intent against live code rather than the letter of §1/§6, and to hold it
+until the device pass clears. One label ruling is still owed inside it (BURNDOWN vs OPEN ISSUES).
 
 ⚠ **One ruling is owed and it is small:** the locked drag does nothing and says nothing (§1c). It is
 disclosed, not fixed, because the answer is a product call.
