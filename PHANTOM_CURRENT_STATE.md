@@ -20,7 +20,7 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
-| ⏳ Open | **`.454`–`.456` — automation green, NOT yet on hardware.** Block at the TOP of `BATCH-VERIFY.md`. CALL 0 cap **3 of 6** |
+| Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time. **CALL 0 cap reset to 0 of 6. No verify debt.** |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -496,13 +496,17 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — ⏳ `.454`–`.455` OPEN (2 of 6). Everything before it is cleared
+## 3 · Verify debt — ✅ CLEARED 2026-08-13 (one historical exception, unchanged)
 
-⏳ **`.454` and `.455` are on `main` and NOT yet on hardware.** Checks at the TOP of
-`BATCH-VERIFY.md`. ⚠ **`.455` exists because `.454` failed its device look** — the owner reported
-the locked rack reading off-axis with the neighbour competing, which no assertion in `.454` could
-have caught because every one of them tested that the camera *did not move*, never that it was
-*square*. Spec 37 now owns that contract and its bounds exclude the old constants.
+✅ **`.454`–`.456` RELEASED ON HARDWARE 2026-08-13.** All six checks passed. **CALL 0 cap reset to
+0 of 6.**
+
+⚠ **`.455` exists because `.454` failed its device look** — the owner reported the locked rack
+reading off-axis with the neighbour competing. **No assertion in `.454` could have caught it: every
+one tested that the camera did not MOVE, never that it was SQUARE**, so a frozen crooked pose
+satisfied all of them. Spec 37 now owns that contract with bounds that exclude the old constants.
+⭐ **That is the durable shape — a suite can be fully green on a feature that is visibly wrong when
+the assertions test the wrong property.**
 Everything a suite could reach was proven first, per the standing rule that the owner is not the
 test harness. What is left genuinely needs a real GPU and a real hand: whether every rack *arrives*
 at the same framing across a walk, and whether "nearest rack" feels right on leaving WALK — the
@@ -632,6 +636,19 @@ githubstatus is all-green — a transient repo-side lock, **not code**. An empty
 
 ## 8 · Last physical-iPhone verification
 
+✅ **2026-08-13, against `v1.14.456`.** All six checks of the `.454`–`.456` pass, reported one at a
+time: the rack dead straight and square on S1:008 · no framing drift across ten racks · a locked
+drag moving nothing · WALK AISLE lighting cyan and freeing the camera · leaving it snapping back
+onto the nearest rack with its `n/m RACKED` count restored · and the HANDOFF card showing the new
+art with no readable words after a PWA remove-and-re-add.
+
+⭐ **Check 1 is the one that mattered most, because it was the owner's own defect report re-looked
+at.** A camera that is mathematically square still has to LOOK square on a real panel. Check 5
+confirmed a product judgement — that "nearest rack" feels right — and check 6 required a real iOS
+PWA reinstall, because a precached raster does not yield to a reload.
+
+### Historical
+
 ✅ **2026-08-12, against `v1.14.453` — owner: *"clear"*.** The consolidated six-check walk in
 `BATCH-VERIFY.md` was run on the phone against his real Master and passed: the rack visible above
 the fold without scrolling, reading as matte steel with real depth; the rack drawing on BOTH Build
@@ -648,14 +665,21 @@ sustained thermals across a ten-rack aisle walk.
 
 ## 9 · Next action
 
-**PARKED ON `.456`. Nothing autonomous.**
+⭐ **NEXT SHIP IS DECIDED AND NOW UNBLOCKED: CONTEXT-INJECT-369 V3, rescoped — see §1f.**
 
-⏳ **CALL 0 cap 3 of 6.** `.454`, `.455` and `.456` are live and awaiting the device pass at the top
-of `BATCH-VERIFY.md`. `.438`–`.453` released on hardware 2026-08-12.
+✅ **CALL 0 cap RESET to 0 of 6.** `.454`–`.456` released on hardware 2026-08-13; `.438`–`.453`
+released 2026-08-12. **No verify debt.**
 
-⭐ **NEXT SHIP IS DECIDED AND PARKED: CONTEXT-INJECT-369 V3, rescoped — see §1f.** Owner ruled
-2026-08-13 to execute the intent against live code rather than the letter of §1/§6, and to hold it
-until the device pass clears. One label ruling is still owed inside it (BURNDOWN vs OPEN ISSUES).
+The owner ruled 2026-08-13 to execute the spec's INTENT against live code rather than the letter of
+§1/§6, and to hold it until the device pass cleared. **That pass has now cleared, so the hold is
+spent.** ⛔ **One ruling is still owed before the JobState collector can be written: the BURNDOWN
+label** — open counts are derivable from `phantom_deploy_issues_v1` / `phantom_discrepancies_v1` /
+`phantom_blockers_v1`, but calling that "BURNDOWN" binds a panel to a named source rather than to
+the truth. It ships as `OPEN ISSUES / BLOCKERS` or not at all.
+
+Everything else in §1f is scoped and ready: the honesty guard header, the token budget with
+boundary-only truncation, the deterministic MASTER slice, `assertAIPermission`, the CONTEXT PREVIEW,
+and the four sourced JobState fields.
 
 ⚠ **One ruling is owed and it is small:** the locked drag does nothing and says nothing (§1c). It is
 disclosed, not fixed, because the answer is a product call.

@@ -4,16 +4,32 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
-# 🟡 CURRENT BATCH — `.454`–`.456` (3 of 6) — OPEN, AWAITING HARDWARE
+# ✅ BATCH `.454`–`.456` — RELEASED ON HARDWARE 2026-08-13. CAP RESET TO 0 OF 6.
 
-**Live: `v1.14.456`.** Three ships: `.454` made Forge rack-centric with WALK AISLE as an explicit
-mode (ruling 2026-08-12); **`.455` fixed the pose `.454` locked to** (ruling 2026-08-13); `.456`
-replaced the HANDOFF card art that was baking fabricated status text into the image. Proven by
-automation first — specs 37, 36, `02-build-forge`, `08-forge-layout`, `03-tools`, `05-offline`,
-each run ALONE. What is left needs your eyes and a real GPU.
+**All six checks passed**, reported one at a time: *"check 1 pass, rack is straight now"* ·
+*"check 2 pass, no drift across 10 racks"* · *"check 3 pass"* · *"check 4 pass"* · *"check 5 pass"* ·
+*"check 6 pass"*. **No verify debt. Nothing is owed.**
 
-✅ **Checks 1 and 2 already PASSED on hardware 2026-08-13** — owner: *"check 1 pass, rack is
-straight now"* · *"check 2 pass, no drift across 10 racks"*. **Checks 3, 4, 5 and 6 remain.**
+Three ships released: `.454` made Forge rack-centric with WALK AISLE as an explicit mode (ruling
+2026-08-12); **`.455` fixed the pose `.454` locked to** (ruling 2026-08-13); `.456` replaced the
+HANDOFF card art that baked fabricated status text into the image.
+
+⭐ **What this pass uniquely bought, because no suite could reach it.** Check 1 was the owner's own
+defect report re-looked at — a camera that is *mathematically* square still has to *look* square on
+a real panel, and only he could say so. Check 5 confirmed the "nearest rack" behaviour on leaving
+WALK AISLE **feels** right, which is a product judgement no assertion can make. Check 6 needed a
+real iOS PWA remove-and-re-add, because a precached raster does not yield to a reload.
+
+📌 **The `.454` → `.455` sequence is the lesson worth keeping.** `.454` passed everything the suite
+could ask and still failed the owner's eye: every assertion tested that the camera **did not move**,
+never that it was **square**, so a frozen crooked pose satisfied all of them. Spec 37 now owns that
+contract with bounds that exclude the old constants.
+
+*The checklist is kept below as the record of what was actually run.*
+
+---
+
+# CURRENT BATCH — `.454`–`.456` (3 of 6) — RUN, PASSED, RELEASED
 
 ⚠ **`.455` exists because `.454` failed your look at S1:008.** `.454` froze the camera at 5.7° of
 yaw and 4.6° of pitch — it stopped the view drifting but locked it to a crooked pose, so the cabinet
