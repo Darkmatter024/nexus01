@@ -12917,7 +12917,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.454';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.455';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -20621,14 +20621,110 @@ function forge3d_render(mount) {
   // a click handler, frame() at :21213). The comment at :20563 records what this IIFE already cost
   // once — a var declared below its first use, invisible to `node --check`. Colocated so the next
   // synchronous caller cannot re-earn it.
-  // ⛔ LOCK_* is the canonical framing and is not configurable. These are the values setFocus was
-  // already targeting, so the locked view IS the view the product already chose — what changed is
-  // that it is now restored on every navigation instead of decaying with the first drag.
-  var LOCK_YAW = 0.10, LOCK_PITCH = 0.08, LOCK_RADIUS = 9.8;
-  var yawTarget = LOCK_YAW, pitchTarget = LOCK_PITCH;
+  // ══ v1.14.455 — THE CANONICAL LOCKED POSE IS DERIVED FROM THE RACK, NOT FROM CAMERA STATE ═══
+  // ⛔ WHAT `.454` GOT WRONG, stated plainly. It locked the camera to the values setFocus had
+  // always targeted — LOCK_YAW 0.10, LOCK_PITCH 0.08 — and called them canonical. They are 5.7°
+  // of yaw and 4.6° of nose-down pitch. So the "locked" view was a three-quarter shot held
+  // steady: the cabinet leaned, its rails converged, and the neighbour competed with it. Locking
+  // the wrong pose is not the same as having a canonical one.
+  //
+  // ⭐ LOCKED RACK MODE IS A FRONT ELEVATION. The pose is computed from the selected rack's own
+  // transform every time and depends on NOTHING else — not the previous camera, not the previous
+  // rack, not accumulated pan, not walk coordinates, not the aisle origin:
+  //     target   = rack world centre                     (rack.getWorldPosition)
+  //     position = target + rackFrontNormal * distance   (normal via getWorldQuaternion, so a
+  //                                                       rotated slot would still be read square)
+  //     up       = world up, camera.lookAt(target)       ⇒ yaw 0, pitch 0, roll 0
+  // Because position.y === target.y the view axis is HORIZONTAL, which is the whole reason the
+  // vertical rails project as vertical lines and the cross-members as horizontal ones. ⛔ Any
+  // vertical framing bias must therefore move the PROJECTION, never the camera — tilt the camera
+  // to see the label and you have thrown away the front elevation to save one constant.
+  var LOCK_FOV = 34;          // was 46. An inspection view, not a cinematic aisle: longer effective
+                              // focal length, so the cabinet reads square instead of splayed.
+  var LOCK_FRAME_H = 5.4;     // world units of content to fit INSIDE the usable rect — the 3.8 rack
+                              // plus its label plate, its feet, and deliberate breathing room.
+  var LOCK_BIAS_Y = 0.023;    // fraction of the usable height to bias content DOWN, buying headroom
+                              // for the label without a single degree of pitch. ⭐ MEASURED, not
+                              // taste: at 0.06 the shot came back with 63px of slack above the
+                              // label and 16px below the feet in a 620px usable band — the cabinet
+                              // read as standing on the bottom edge with its base under the hint.
+                              // 0.023 splits the 79px of slack about evenly (~40 above, ~39 below).
+  var LOCK_SNAP = 0.0009;     // below this the ease is over and the pose is SET EXACTLY, so two
+                              // arrivals at the same rack are identical rather than merely close.
+  var lockPos = new THREE.Vector3(), lockAt = new THREE.Vector3(), lockReady = false;
+  // 📌 yawTarget / pitchTarget are GONE. They existed to ease the orbit back to a "canonical" angle
+  // that turned out not to be canonical at all. Locked mode eases the eye and target as vectors and
+  // walk mode drives yaw/pitch directly, so nothing reads them — leaving them declared would be a
+  // second, dead description of where the camera is pointing.
   // ⭐ WALK AISLE is a MODE, not a preference. Deliberately NOT persisted and NOT exposed as a
   // setting: the aisle must behave the same way every time it opens, for everyone.
   var walkMode = false;
+
+  // ── THE USABLE RACK VIEWPORT, MEASURED — never a constant ───────────────────────────────────
+  // The canvas is not the visible area. The scene-utility rail hangs into its top-right and the
+  // bottom control stack covers its foot, so centring the rack on the raw canvas centre puts it
+  // visibly left of where the technician perceives the middle. Both are read from the DOM at the
+  // moment of use: the header has no height token and the bottom stack changes height with the
+  // status row, and 13544 already records what happens when this sort of clearance is written
+  // down as a number instead of derived.
+  function lockUsableRect() {
+    var cv = renderer.domElement;
+    var cr = cv.getBoundingClientRect();
+    var u = { l: 0, t: 0, r: cr.width, b: cr.height };
+    var su = document.getElementById('sceneUtils');
+    if (su) { var sb = su.getBoundingClientRect(); if (sb.width > 0) u.r = Math.min(u.r, sb.left - cr.left); }
+    var hb = document.querySelector('#forge3d-sheet .hud-bottom');
+    if (hb) { var hh = hb.getBoundingClientRect(); if (hh.height > 0) u.b = Math.min(u.b, hh.top - cr.top); }
+    // ⛔ A measurement that collapses must never collapse the VIEW. If a surface is mid-transition
+    // or display:none its rect is 0 and the rack would be framed into a sliver; fall back whole.
+    if (u.r - u.l < cr.width * 0.4) u.r = cr.width;
+    if (u.b - u.t < cr.height * 0.4) u.b = cr.height;
+    return { u: u, w: cr.width || W(), h: cr.height || H() };
+  }
+
+  // ── MEASURED ON CHANGE, NOT EVERY FRAME ─────────────────────────────────────────────────────
+  // The usable rect genuinely moves at runtime — the status row grows a line when a rack is
+  // flagged, and the bottom stack grows with it — so a value measured once at open would be wrong
+  // by the time it mattered. But three getBoundingClientRect calls per frame is layout thrash on
+  // the surface whose whole acceptance criterion is "no slowdown across ten racks". So it is
+  // sampled on a slow cadence and whenever the pose is explicitly re-solved, and the projection is
+  // rebuilt ONLY when the numbers actually changed.
+  var _lockM = null, _lockSig = '', _lockTick = 0;
+  function lockSync(force) {
+    if (!force && _lockM && (_lockTick++ % 15)) return _lockM;
+    var m = lockUsableRect();
+    var sig = [Math.round(m.w), Math.round(m.h), Math.round(m.u.r), Math.round(m.u.b)].join('/');
+    _lockM = m;
+    if (sig !== _lockSig) {
+      _lockSig = sig;
+      // Shift the PROJECTION so the optical centre lands on the usable rect's centre. This is the
+      // only honest way to recentre: moving the camera sideways would introduce the very yaw the
+      // mode exists to eliminate. setViewOffset keeps the frustum square and slides the window.
+      var ucx = (m.u.l + m.u.r) / 2, ucy = (m.u.t + m.u.b) / 2;
+      var biasPx = (m.u.b - m.u.t) * LOCK_BIAS_Y;
+      camera.setViewOffset(m.w, m.h, (m.w / 2) - ucx, (m.h / 2) - ucy - biasPx, m.w, m.h);
+      camera.updateProjectionMatrix();
+    }
+    return m;
+  }
+  function lockApplyProjection() { _lockSig = ''; lockSync(true); }
+
+  // The distance that makes LOCK_FRAME_H of world fill the USABLE height — so chrome eating the
+  // canvas makes the camera step back rather than crop the cabinet.
+  function lockDistance() {
+    var m = _lockM || lockSync(true);
+    var frac = Math.max(0.3, (m.u.b - m.u.t) / (m.h || 1));
+    return (LOCK_FRAME_H / frac) / (2 * Math.tan(LOCK_FOV * Math.PI / 360));
+  }
+
+  // The canonical pose for a rack, from that rack and nothing else.
+  function lockPoseFor(rack, out) {
+    rack.getWorldPosition(out.at);
+    var q = rack.getWorldQuaternion(new THREE.Quaternion());
+    var n = new THREE.Vector3(0, 0, 1).applyQuaternion(q).normalize();
+    out.pos.copy(out.at).addScaledVector(n, lockDistance());
+    return out;
+  }
 
   function setFocus(rack, animate) {
     if (focused === rack) return;
@@ -20651,13 +20747,17 @@ function forge3d_render(mount) {
     camTargetX = rack.position.x;
     var info = rowOf(rack.userData.label);
     writeStatusForRack(rack);
-    // v1.14.454 — EVERY navigation lands on the canonical framing, not just the first. This is the
-    // half that makes the aisle rack-centric: camTargetX moves the camera to THIS rack's position,
-    // and the angles are pulled back to the lock so the rack is read from the place it was designed
-    // to be read from. Under walk mode the angles are left alone — the tech is driving.
-    radiusTarget = LOCK_RADIUS;
-    if (!walkMode) { yawTarget = LOCK_YAW; pitchTarget = LOCK_PITCH; }
+    // v1.14.455 — EVERY navigation lands on the SAME pose relative to its own rack. The pose is
+    // solved from this rack's transform, so S1:008 and S1:011 are the same rig moved in front of a
+    // different cabinet — no inherited yaw, no accumulated height, no drift across a walk. camX and
+    // radiusTarget are kept in step purely so WALK AISLE has somewhere sane to start from.
     focused = rack;
+    if (!walkMode) {
+      lockPoseFor(rack, { pos: lockPos, at: lockAt });
+      lockReady = true;
+    }
+    camTargetX = rack.position.x;
+    radiusTarget = lockDistance();
     store.set('deploy_forge_view_v1', rack.userData.label);
     updateChips();
     if (D.panel.classList.contains('open')) openDetail(rack);
@@ -20943,10 +21043,12 @@ function forge3d_render(mount) {
       writeStatusMessage('WALK AISLE — DRAG TO LOOK');
       if (typeof phantomToast === 'function') phantomToast('Walk aisle — tap the button again to lock back onto a rack', 'info');
     } else {
-      // Snap back. setFocus does the rest: it restores yawTarget/pitchTarget/radiusTarget and moves
-      // camTargetX, so the return uses exactly the same path a rack tap does — one door.
+      // Snap back through the SAME door a rack tap uses, so the pose you land on after a walk is
+      // mathematically the pose selecting that rack normally would have given — not a near copy.
+      // walkMode is already false here, so setFocus solves and installs the canonical pose; when it
+      // early-returns on an already-focused rack, the explicit solve below covers that path.
       var near = _nearestRack();
-      yawTarget = LOCK_YAW; pitchTarget = LOCK_PITCH; radiusTarget = LOCK_RADIUS;
+      yaw = 0; pitch = 0;
       if (near) {
         // ⚠ setFocus EARLY-RETURNS when the rack is already focused (:20602), and a walk that only
         // looked around leaves the tech nearest the rack they started on — so that is the COMMON
@@ -20957,6 +21059,11 @@ function forge3d_render(mount) {
         setFocus(near, true);
         camTargetX = near.position.x;
         writeStatusForRack(near);
+        // v1.14.455 — and the camera half of that same early-return. setFocus only solves the pose
+        // when it does NOT bail, so on the common exit the pose would still be the free-walk one.
+        // Solve it here from the rack, identically, so both paths converge on the same numbers.
+        lockPoseFor(near, { pos: lockPos, at: lockAt });
+        lockReady = true;
       }
       if (typeof haptic === 'function') haptic([6]);
     }
@@ -21130,29 +21237,74 @@ function forge3d_render(mount) {
   // neither framing was the one the rack was designed to be read from.
   // Forge is now rack-centric: ONE deterministic framing per rack, and rack navigation moves the
   // camera BETWEEN canonical rack positions rather than orbiting freely near them.
-  // 📌 LOCK_YAW / LOCK_PITCH / LOCK_RADIUS, yawTarget / pitchTarget and walkMode are declared up at
-  // :20599 WITH camTargetX and radiusTarget — the state they belong to, and above setFocus and
-  // setWalkMode, which are the functions that write them.
-  var yaw = LOCK_YAW, pitch = LOCK_PITCH, radius = 13.5, camX = 0;
+  // 📌 The lock constants, the pose solver and walkMode are declared up at :20599 WITH camTargetX
+  // and radiusTarget — the state they belong to, and above setFocus and setWalkMode, which write
+  // them. v1.14.455 replaced the LOCKED half of this function entirely; the WALK half below is the
+  // original orbit, untouched, because free movement is the one place an orbit is the right model.
+  var yaw = 0, pitch = 0, radius = 13.5, camX = 0;
   var R_MIN = 6.5, R_MAX = 22;
-  function placeCamera() {
-    // In locked mode the angles are DRIVEN to the canonical framing rather than held wherever a
-    // drag left them. Same easing family as camX/radius so a rack change reads as one movement
-    // (§29: premium but fast, no cinematic drift). In walk mode the targets are simply ignored.
-    if (!walkMode) {
-      yaw   += (yawTarget - yaw) * 0.12;
-      pitch += (pitchTarget - pitch) * 0.12;
-    }
-    var p = Math.max(-0.05, Math.min(0.55, pitch));
-    var y = Math.max(-0.8, Math.min(0.8, yaw));
-    camX += (camTargetX - camX) * 0.12;
-    radius += (radiusTarget - radius) * 0.08;
-    var T = new THREE.Vector3(camX, RH * 0.5, 0);
-    camera.position.set(T.x + radius * Math.sin(y) * Math.cos(p),
-                        T.y + radius * Math.sin(p) + 0.4,
-                        T.z + radius * Math.cos(y) * Math.cos(p));
-    camera.lookAt(T);
+  var _lookAt = new THREE.Vector3();
+  var lockHeld = false;   // has the canonical pose ever been installed? first one is instant
+  // Per-axis ease with an exact landing. Each component converges independently and is SET, not
+  // approached, once it is within LOCK_SNAP — so an axis that is already correct stays bit-exact
+  // while another is still travelling.
+  function _ease(v, t) {
+    ['x', 'y', 'z'].forEach(function (a) {
+      if (Math.abs(t[a] - v[a]) < LOCK_SNAP) v[a] = t[a];
+      else v[a] += (t[a] - v[a]) * 0.14;
+    });
   }
+
+  // ⛔ THE ORBIT MODEL CANNOT EXPRESS A FRONT ELEVATION SAFELY, which is why locked no longer uses
+  // it. Its target was hardcoded to (camX, RH*0.5, 0) — the AISLE ORIGIN with an eased x — and its
+  // eye carried a bare `+ 0.4` on y with no matching target offset, so the axis tilted downward
+  // even at pitch 0 and the rails could never be vertical. Locked mode now sets the eye and the
+  // target as vectors solved from the rack, and walk mode keeps the orbit for the one job it does
+  // well. The two are seeded from each other at the mode boundary so neither transition jumps.
+  function placeCamera() {
+    if (walkMode) {
+      var p = Math.max(-0.05, Math.min(0.55, pitch));
+      var y = Math.max(-0.8, Math.min(0.8, yaw));
+      camX += (camTargetX - camX) * 0.12;
+      radius += (radiusTarget - radius) * 0.08;
+      _lookAt.set(camX, RH * 0.5, 0);
+      camera.position.set(_lookAt.x + radius * Math.sin(y) * Math.cos(p),
+                          _lookAt.y + radius * Math.sin(p),
+                          _lookAt.z + radius * Math.cos(y) * Math.cos(p));
+      camera.up.set(0, 1, 0);
+      camera.lookAt(_lookAt);
+      return;
+    }
+
+    // LOCKED. Re-solve every frame from the focused rack so the pose can never be stale, and so a
+    // resize or a chrome height change re-frames instead of drifting.
+    lockSync(false);
+    if (focused && !focused.userData.pad) { lockPoseFor(focused, { pos: lockPos, at: lockAt }); lockReady = true; }
+    if (!lockReady) return;
+
+    // ⭐ THE FIRST LOCK IS INSTANT. Forge opening must PRESENT the canonical pose, not glide into it
+    // from wherever the camera happened to be constructed — easing in from an arbitrary start is
+    // just a slower way of letting a non-canonical pose decide the first frame.
+    if (!lockHeld) { camera.position.copy(lockPos); _lookAt.copy(lockAt); lockHeld = true; }
+    else {
+      // ⛔ SNAP PER AXIS, NOT ON TOTAL DISTANCE, and this was a real defect in the first cut. Every
+      // rack shares the same canonical y and z — only x differs — so a rack change is the same rig
+      // sliding along a rail. Testing the TOTAL distance meant the large x delta held the whole
+      // vector above the threshold, so y and z never snapped and crept 1.8869 → 1.8971 → 1.89925
+      // across a walk: a camera height that depends on how many racks you visited. Per axis, y and
+      // z are exact within a frame or two and STAY exact, and only x is ever in flight.
+      _ease(camera.position, lockPos);
+      _ease(_lookAt, lockAt);
+    }
+    // World up with a horizontal axis ⇒ roll 0 and no convergence on the verticals.
+    camera.up.set(0, 1, 0);
+    camera.lookAt(_lookAt);
+    // Keep camX/radius shadowing the locked pose so entering WALK starts exactly here.
+    camX = camera.position.x; radius = camera.position.distanceTo(_lookAt); yaw = 0; pitch = 0;
+  }
+  camera.fov = LOCK_FOV;
+  lockApplyProjection();
+  camera.updateProjectionMatrix();
   placeCamera();
 
   var dragging = false, lx = 0, ly = 0, moved = 0, pinchD = 0;
@@ -21241,8 +21393,13 @@ function forge3d_render(mount) {
 
   on(window, 'resize', function () {
     camera.aspect = W() / H();
-    camera.updateProjectionMatrix();
     renderer.setSize(W(), H());
+    // v1.14.455 — ⛔ setSize does NOT preserve a view offset, and updateProjectionMatrix would bake
+    // the stale one. Re-measure the usable rect and re-apply BEFORE rebuilding the matrix, or a
+    // rotate leaves the rack centred on the old chrome. lockDistance is read from the same rect, so
+    // the next placeCamera re-frames rather than cropping.
+    lockApplyProjection();
+    camera.updateProjectionMatrix();
   });
 
   // ---------- teardown (single-GL-context invariant) ----------

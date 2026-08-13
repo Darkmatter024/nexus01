@@ -84,6 +84,13 @@ test.describe('Forge is rack-centric', () => {
 
   test('⛔ LOCKED IS THE DEFAULT — a drag does not move the camera', async ({ phantom, page }) => {
     test.setTimeout(300_000);
+    // 📌 v1.14.455 SIMPLIFIED THIS, and the reason is worth keeping. The two-boot control run below
+    // existed because the .454 pose was never stable: camX and radius eased forever, so neither the
+    // camera's position NOR its look direction was constant and a single before/after sample could
+    // not tell "the drag moved it" from "it was always moving". The pose is now solved from the rack
+    // and SNAPPED, so the locked direction is a constant — (0,0,-1) — and a drag either changes it
+    // or does not. The control run is kept because it costs one boot and still proves the stronger
+    // statement: two independent sessions land on the same place.
     // ⚠ THIS IS A CONTROL COMPARISON, and it has to be. The aisle eases camX and radius toward
     // their targets every frame and the harness renders at a few fps, so the camera is STILL
     // converging twelve seconds after open (sampled at 3s: x -1.00, -2.26, -2.93, -3.34). Neither
@@ -105,6 +112,12 @@ test.describe('Forge is rack-centric', () => {
     expect(control.found && dragged.found, 'no camera was captured — this test proved nothing').toBe(true);
     expect(dragged.y, 'a drag pitched the camera while locked').toBeCloseTo(control.y, 3);
     expect(dragged.x, 'a drag orbited the camera while locked').toBeCloseTo(control.x, 3);
+    // v1.14.455 — and it is not merely UNCHANGED, it is SQUARE. A camera frozen at the wrong angle
+    // would satisfy the two assertions above; .454 shipped exactly that. Spec 37 owns the full
+    // front-elevation contract, but the cheap half is pinned here too so this file cannot go green
+    // on a locked-but-crooked camera.
+    expect(Math.abs(dragged.x), `locked but yawed off the rack normal (fwd.x ${dragged.x})`).toBeLessThan(1e-4);
+    expect(Math.abs(dragged.y), `locked but pitched off horizontal (fwd.y ${dragged.y})`).toBeLessThan(1e-4);
   });
 
   test('WALK AISLE is an explicit mode, and it frees the camera', async ({ phantom, page }) => {
