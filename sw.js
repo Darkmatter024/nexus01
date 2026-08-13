@@ -34,7 +34,7 @@
 // a clean v1.13.3 — dropping the prior -N cache-iteration suffix — so this real
 // version bump busts every client's cache and the three stamps (app const /
 // version.json / this key) line up again. Patch bumps continue from here.
-const CACHE_VERSION = 'phantom-v1.14.455';
+const CACHE_VERSION = 'phantom-v1.14.456';
 
 // Assets to precache on install. Keep this minimal — single-file PWA means
 // most of PHANTOM is in dct-ios.html itself.
@@ -114,7 +114,15 @@ const PRECACHE_URLS = [
   'icons/MASTER-phone@3x.webp',
   'icons/OPS-phone@3x.webp',
   'icons/DEPLOY-phone@3x.webp',
-  'icons/HANDOFF-phone@3x.webp'
+  // v1.14.456: HANDOFF card art replaced. The old raster baked readable status text
+  // ("RACK BUILD Complete", "CABLE REPORT Complete", "POWER CHECK Complete",
+  // "INTAKE SYNC Complete", "READY FOR HANDOFF") into the image - fabricated status
+  // presented as real, which is a Contract 10 violation that had been living behind an
+  // owner override. The replacement carries no readable text and no logo, so the
+  // override is retired rather than renewed. New -v2 filename because overwriting a
+  // precached asset in place serves the old bytes from cache; the previous file stays
+  // on disk, orphaned-but-retained per repo precedent.
+  'icons/HANDOFF-phone@3x-v2.webp'
 ];
 
 // v1.6.29: One source of truth for "is this Request URL cacheable?".
