@@ -1165,33 +1165,51 @@ test.describe('Forge bottom control stack', () => {
     await openAisle(page);
     await populateDock(page);
 
+    // v1.14.454 — PROBED PER BUTTON, DERIVED FROM EACH BUTTON'S OWN RECT.
+    // ⚠ This previously probed two FIXED points on the cluster box — top+22 and bottom-22 — and
+    // called them "grid" and "search", which silently assumed the cluster holds exactly two
+    // controls with search at the bottom. `.454` added a third (#walkBtn) and the assumption broke
+    // immediately: at 44px tall with 10px gaps the cluster is 152px, so bottom-22 = 130 is the
+    // THIRD button's centre, while search moved to 54..98 where nothing probed at all. The test
+    // reported "search is not hit-testable (got walkBtn)" against a cluster where nothing overlaps
+    // and every button is fine. It was measuring ordinal position, not the invariant.
+    // The invariant is per control: on the bare scene each one owns its own pixels, and when an
+    // overlay opens the overlay owns them. Ask each button where its own centre lands, so the
+    // button the next ship adds is covered without editing this file.
     const topmostAtUtils = () => page.evaluate(() => {
       const su = document.getElementById('sceneUtils');
-      if (!su) return { grid: 'NO CLUSTER', search: 'NO CLUSTER' };
-      const b = su.getBoundingClientRect();
-      const cx = Math.round((b.x + b.right) / 2);
-      const nameAt = (y) => {
-        const e = document.elementFromPoint(cx, y);
-        if (!e) return 'null';
-        // an <svg> child still means the button owns the pixel
-        const owner = e.closest('#loadoutBtn, #searchBtn, #picker, .detail-panel, .search-overlay') || e;
-        return owner.id || (typeof owner.className === 'string' ? owner.className.split(/\s+/)[0] : owner.tagName);
-      };
-      return { grid: nameAt(Math.round(b.y + 22)), search: nameAt(Math.round(b.bottom - 22)) };
+      if (!su) return null;
+      const out = {};
+      Array.from(su.querySelectorAll('.hudbtn')).forEach((btn) => {
+        const b = btn.getBoundingClientRect();
+        const e = document.elementFromPoint(Math.round(b.x + b.width / 2), Math.round(b.y + b.height / 2));
+        // an <svg> or glyph child still means the button owns the pixel; .hudbtn resolves any of
+        // them without naming ids one by one.
+        const owner = e ? (e.closest('.hudbtn, #picker, .detail-panel, .search-overlay') || e) : null;
+        out[btn.id || '(unnamed)'] = owner
+          ? (owner.id || (typeof owner.className === 'string' ? owner.className.split(/\s+/)[0] : owner.tagName))
+          : 'null';
+      });
+      return out;
     });
     const tag = `[${testInfo.project.name}]`;
+    const ids = (m) => Object.keys(m || {});
 
-    // (1) On the bare scene the utilities must be LIVE — the floor case.
+    // (1) On the bare scene the utilities must be LIVE — the floor case, for EVERY control.
     const onScene = await topmostAtUtils();
-    expect(onScene.grid, `${tag} the grid button is not hit-testable on the open scene (got ${onScene.grid}) — a control that renders but cannot be tapped is a dead control`).toBe('loadoutBtn');
-    expect(onScene.search, `${tag} the search button is not hit-testable on the open scene (got ${onScene.search})`).toBe('searchBtn');
+    expect(onScene, `${tag} the utility cluster is missing entirely`).not.toBeNull();
+    expect(ids(onScene).length, `${tag} the cluster reported no controls — this test would assert nothing`).toBeGreaterThanOrEqual(2);
+    for (const id of ids(onScene)) {
+      expect(onScene[id], `${tag} #${id} is not hit-testable on the open scene (got ${onScene[id]}) — a control that renders but cannot be tapped is a dead control`).toBe(id);
+    }
 
     // (2) With the loadout picker open, the picker owns those pixels.
     await page.evaluate(() => document.getElementById('picker').classList.add('open'));
     await settle(page);
     const overPicker = await topmostAtUtils();
-    expect(overPicker.grid, `${tag} the grid button is drawn OVER the open loadout picker — tapping while choosing racks would fire it (got ${overPicker.grid})`).toBe('picker');
-    expect(overPicker.search, `${tag} the search button is drawn OVER the open loadout picker (got ${overPicker.search})`).toBe('picker');
+    for (const id of ids(overPicker)) {
+      expect(overPicker[id], `${tag} #${id} is drawn OVER the open loadout picker — tapping while choosing racks would fire it (got ${overPicker[id]})`).toBe('picker');
+    }
     await page.evaluate(() => document.getElementById('picker').classList.remove('open'));
     await settle(page);
 
@@ -1207,8 +1225,9 @@ test.describe('Forge bottom control stack', () => {
       // see settleTransform(). The invariant under test is about the overlay at REST.
       await settleTransform(page, '#forge3d-sheet .detail-panel');
       const overPanel = await topmostAtUtils();
-      expect(overPanel.grid, `${tag} the grid button is drawn OVER the open detail panel (got ${overPanel.grid})`).not.toBe('loadoutBtn');
-      expect(overPanel.search, `${tag} the search button is drawn OVER the open detail panel (got ${overPanel.search})`).not.toBe('searchBtn');
+      for (const id of ids(overPanel)) {
+        expect(overPanel[id], `${tag} #${id} is drawn OVER the open detail panel (got ${overPanel[id]})`).not.toBe(id);
+      }
       await page.evaluate(() => document.getElementById('detailPanel').classList.remove('open'));
       // The close slides too. Step (4) below asserts the buttons come BACK, and it was racing
       // the same 340ms in the other direction — passing only because a barely-started close
@@ -1218,7 +1237,9 @@ test.describe('Forge bottom control stack', () => {
 
     // (4) And they come back. A control permanently buried is the opposite failure.
     const back = await topmostAtUtils();
-    expect(back.grid, `${tag} the grid button never became tappable again after the overlays closed (got ${back.grid})`).toBe('loadoutBtn');
+    for (const id of ids(back)) {
+      expect(back[id], `${tag} #${id} never became tappable again after the overlays closed (got ${back[id]})`).toBe(id);
+    }
 
     // (5) v1.14.416 — THE 340ms TAP WINDOW, pinned by sampling MID-SLIDE ON PURPOSE.
     // Every check above measures at rest, which is correct for a layering invariant. This one
@@ -1243,15 +1264,18 @@ test.describe('Forge bottom control stack', () => {
         dp.style.transition = 'none';
         dp.style.transform = 'translateY(60%)';   // mid-slide: panel top ~506px, buttons ~112px
         void dp.offsetHeight;                      // force layout so the probe reads the new box
-        const b = su.getBoundingClientRect();
-        const cx = Math.round((b.x + b.right) / 2);
-        const py = Math.round(b.y + 22);
+        // v1.14.454 — the TOPMOST control, taken from the cluster rather than assumed to be the
+        // loadout button, so this keeps probing the right pixel if the order ever changes.
+        const first = su.querySelector('.hudbtn');
+        const fb = first.getBoundingClientRect();
+        const cx = Math.round(fb.x + fb.width / 2);
+        const py = Math.round(fb.y + fb.height / 2);
         const panelTop = dp.getBoundingClientRect().top;
         const e = document.elementFromPoint(cx, py);
-        const owner = e ? (e.closest('#loadoutBtn, #searchBtn, .detail-panel') || e) : null;
+        const owner = e ? (e.closest('.hudbtn, .detail-panel') || e) : null;
         const name = owner ? (owner.id || (typeof owner.className === 'string' ? owner.className.split(/\s+/)[0] : owner.tagName)) : 'null';
         dp.style.transition = ''; dp.style.transform = ''; dp.classList.remove('open');
-        return { hit: name, panelTop: Math.round(panelTop), probeY: py, utilsPE: getComputedStyle(su).pointerEvents };
+        return { hit: name, first: first.id, panelTop: Math.round(panelTop), probeY: py, utilsPE: getComputedStyle(su).pointerEvents };
       });
       // Guard the fixture itself: if the parked panel already covered the probe point, this test
       // would pass for the wrong reason and pin nothing.
@@ -1259,14 +1283,14 @@ test.describe('Forge bottom control stack', () => {
         `${tag} fixture invalid — the parked panel already covers the probe point, so this asserts nothing`)
         .toBeGreaterThan(midSlide.probeY);
       expect(midSlide.hit,
-        `${tag} the loadout button is hit-testable while the detail panel is OPEN but still sliding `
+        `${tag} #${midSlide.first} is hit-testable while the detail panel is OPEN but still sliding `
         + `(panel top ${midSlide.panelTop}px, probe ${midSlide.probeY}px, cluster pointer-events: ${midSlide.utilsPE}) `
         + `— a tap in that ~340ms window fires the button instead of the panel`)
-        .not.toBe('loadoutBtn');
+        .not.toBe(midSlide.first);
       await settleTransform(page, '#forge3d-sheet .detail-panel');
     }
 
-    testInfo.annotations.push({ type: 'utils-layering', description: `scene ${onScene.grid}/${onScene.search} · picker ${overPicker.grid} · restored ${back.grid}` });
+    testInfo.annotations.push({ type: 'utils-layering', description: `${ids(onScene).length} controls — scene ${ids(onScene).map((i) => onScene[i]).join('/')} · picker ${ids(overPicker).map((i) => overPicker[i]).join('/')} · restored ${ids(back).map((i) => back[i]).join('/')}` });
   });
 
   test('the carousel owns row 1 alone, and no chip hides under a control', async ({ phantom, page }, testInfo) => {
