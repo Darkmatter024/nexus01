@@ -34,7 +34,7 @@
 // a clean v1.13.3 — dropping the prior -N cache-iteration suffix — so this real
 // version bump busts every client's cache and the three stamps (app const /
 // version.json / this key) line up again. Patch bumps continue from here.
-const CACHE_VERSION = 'phantom-v1.14.457';
+const CACHE_VERSION = 'phantom-v1.14.458';
 
 // Assets to precache on install. Keep this minimal — single-file PWA means
 // most of PHANTOM is in dct-ios.html itself.
@@ -137,8 +137,10 @@ function isCacheableScheme(req) {
 // ── INSTALL ───────────────────────────────────────────────────────────
 // v1.6.29: Per-URL adds via Promise.allSettled. One failing URL no longer
 // aborts the entire install — failed entries are logged but tolerated.
-// skipWaiting() at the end so upgrades activate immediately on next page
-// load (no waiting for all tabs to close).
+// ⛔ v1.14.458: the old note here read "skipWaiting() at the end so upgrades activate immediately
+// on next page load". That is no longer true and was the P0: activating immediately meant no
+// worker ever reached `waiting`, so the SW UPDATE badge had nothing to promote. A new worker now
+// INSTALLS AND WAITS; the user's tap posts SKIP_WAITING and the message handler below promotes it.
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
@@ -155,8 +157,23 @@ self.addEventListener('install', (event) => {
       console.log('[PHANTOM SW] Precache: all ' + PRECACHE_URLS.length +
                   ' URLs cached for ' + CACHE_VERSION);
     }
-    await self.skipWaiting();
+    // ⛔ v1.14.458 — skipWaiting() REMOVED FROM INSTALL, and this is the root of the P0.
+    // Calling it here meant a new worker NEVER sat in `waiting`. Everything downstream was built
+    // on the assumption that it did: the app only posts SKIP_WAITING `if (reg.waiting)` — always
+    // null — so the message was never sent, and this file had no listener to receive it anyway.
+    // The result was an UPDATE badge whose tap had nothing to activate and degraded to a bare
+    // reload. A worker must WAIT so the badge means something and one tap can promote it.
   })());
+});
+
+// ── MESSAGE ───────────────────────────────────────────────────────────
+// v1.14.458 — the receiving half of the activation contract. It did not exist: the app had been
+// posting SKIP_WAITING into a worker with no message listener since the feature shipped, which is
+// why the tap could never promote anything. ONE message type, no parallel handler.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // ── ACTIVATE ──────────────────────────────────────────────────────────
@@ -201,10 +218,37 @@ self.addEventListener('fetch', (event) => {
   // to the precached shell: the directory root maps to the landing
   // (index.html); any other document maps to the app (dct-ios.html).
   if (event.request.mode === 'navigate') {
+    // ⛔ v1.14.458 — `cache: 'reload'` ADDED, and its absence was half the P0. A plain
+    // fetch(event.request) uses the DEFAULT http cache mode, so the browser's own HTTP cache can
+    // satisfy it — GitHub Pages serves these with a max-age — and the "network-first" navigation
+    // then returns the OLD shell while reporting success. The reload appeared to work and the
+    // version never moved. 'reload' forces the request past the HTTP cache to the origin; the
+    // offline fallback below is untouched, so a genuinely offline device still gets its shell.
     event.respondWith(
-      fetch(event.request).catch(function () {
-        return caches.match('dct-ios.html');
-      })
+      fetch(event.request, { cache: 'reload' })
+        .catch(function () { return fetch(event.request); })
+        .catch(function () { return caches.match('dct-ios.html'); })
+    );
+    return;
+  }
+
+  // ── version.json: NETWORK-FIRST ──────────────────────────────────────
+  // ⛔ v1.14.458 — version.json was served CACHE-FIRST from PRECACHE_URLS, which broke the very
+  // backstop that exists to catch stalled SW detection. phantom_versionFileBackstop() fetches it
+  // with `cache: 'no-store'`, but that is an HTTP-cache directive and does NOT bypass a service
+  // worker — so the check that asks "is there a newer build?" was answered out of the old build's
+  // own cache. It must come from the network when the network is there.
+  if (url.pathname.endsWith('/version.json') || url.pathname === '/version.json') {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then(function (res) {
+          if (res && res.ok) {
+            var copy = res.clone();
+            caches.open(CACHE_VERSION).then(function (c) { c.put(event.request, copy); }).catch(function () {});
+          }
+          return res;
+        })
+        .catch(function () { return caches.match(event.request); })
     );
     return;
   }

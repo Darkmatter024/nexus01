@@ -12917,7 +12917,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.457';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.458';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -12944,16 +12944,62 @@ document.addEventListener('DOMContentLoaded', function() {
 // Poll interval for reg.update() while app is in foreground. 10 min.
 const PHANTOM_UPDATE_POLL_MS = 10 * 60 * 1000;
 
+// ══ v1.14.458 — ONE CANONICAL UPDATE PATH ═══════════════════════════════════════════════════
+// ⛔ THE P0 THIS REPLACES. The badge could appear with nothing waiting (the version-file backstop
+// forced it on a version.json mismatch alone), the tap posted SKIP_WAITING only `if (reg.waiting)`
+// — which was ALWAYS null because sw.js called skipWaiting() during install — sw.js had no message
+// listener to receive it anyway, and the reload was a blind 80ms timer with no controllerchange
+// reaction anywhere in the app. So one tap reloaded a page whose worker had not changed, the
+// navigation could be answered from the HTTP cache, and the version never moved.
+//
+// The flow is now exactly one line of causation, and every step is observable:
+//   updatefound → installing → installed → WAITING → badge → tap → SKIP_WAITING →
+//   worker activates → controllerchange → ONE reload → new shell → badge gone.
+var PHANTOM_SW_REG = null;      // the one registration handle; no second lookup path
+var _swUpdating = false;        // in-flight guard: repeat taps do nothing
+var _swReloaded = false;        // controllerchange must produce exactly ONE reload
+
+// ⛔ EXACTLY ONE controllerchange REACTION, registered once, before any registration resolves.
+// This is the step that was missing entirely. The reload now happens because the new worker owns
+// the page, not because a timer expired — which is why 80ms was never long enough on a real phone.
+//
+// ⛔⛔ IT IS GATED ON _swUpdating, AND THE FIRST CUT WAS NOT — that was a live regression caught by
+// `05-offline`. On a FIRST load there is no controller, so `clients.claim()` in the worker's
+// activate handler moves the page from uncontrolled to controlled and fires controllerchange all
+// by itself. An ungated listener therefore reloads the app on every first load: the harness saw a
+// page silently reset mid-test, and in a cold aisle it is an app that reboots itself under a
+// technician's hands for no reason they can see. The reload is the completion of an update the
+// TECHNICIAN asked for, so it happens only when we are the ones who asked.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!_swUpdating) return;     // not our activation — a first-install claim, or another tab
+    if (_swReloaded) return;      // a second controllerchange must never reload again
+    _swReloaded = true;
+    window.location.reload();
+  });
+}
+
+// Is there an ACTIONABLE update — a worker that a tap can actually promote?
+// The badge is allowed to show only when this returns true. A version mismatch alone is NOT an
+// actionable update; it is a reason to go and look for one.
+function phantom_swActionable(reg) {
+  return !!(reg && reg.waiting);
+}
+
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('./sw.js').then(function(reg) {
-      // New SW waiting (update already downloaded)
+      PHANTOM_SW_REG = reg;
+      // New SW already waiting from a previous session
       if (reg.waiting) phantom_ghostUpdateReady();
       // SW update found during this session
       reg.addEventListener('updatefound', function() {
         var sw = reg.installing;
         if (!sw) return;
         sw.addEventListener('statechange', function() {
+          // ⛔ 'installed' + an existing controller means a genuine UPDATE (not a first install),
+          // and with skipWaiting gone the worker is now genuinely parked in `waiting` at this
+          // point — so the badge finally means what it says.
           if (sw.state === 'installed' && navigator.serviceWorker.controller) {
             phantom_ghostUpdateReady();
           }
@@ -12994,27 +13040,127 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 
 function phantom_versionFileBackstop() {
   try {
+    // ⛔ v1.14.458 — A VERSION MISMATCH NO LONGER FAKES THE BADGE. This used to call
+    // phantom_ghostUpdateReady() directly, which showed SW UPDATE when no worker was installing or
+    // waiting — the owner's case C. Tapping it then had nothing to promote and degraded to a bare
+    // reload. A mismatch is evidence that the SW has not noticed yet, so the honest response is to
+    // make it look: reg.update() refetches sw.js, and if it really changed the normal
+    // updatefound → installed → waiting path raises the badge for real.
+    // ⚠ sw.js now serves version.json NETWORK-FIRST. `cache:'no-store'` here is an HTTP-cache
+    // directive and does NOT bypass a service worker, so before that change this check was being
+    // answered out of the old build's own cache.
     fetch('./version.json', { cache: 'no-store' })
       .then(function(r) { return r && r.ok ? r.json() : null; })
       .then(function(data) {
         if (!data || !data.version) return;
-        if (data.version !== PHANTOM_APP_VERSION) {
-          phantom_ghostUpdateReady();
-        }
+        if (data.version === PHANTOM_APP_VERSION) return;
+        console.warn('[PHANTOM SW] version.json reports ' + data.version + ' but this shell is '
+                   + PHANTOM_APP_VERSION + ' — asking the worker to re-check.');
+        var reg = PHANTOM_SW_REG;
+        if (reg && reg.waiting) { phantom_ghostUpdateReady(); return; }
+        if (reg && typeof reg.update === 'function') reg.update().catch(function () {});
       })
       .catch(function() { /* offline or 404, expected */ });
   } catch (e) { /* defensive */ }
 }
 
+// ⭐ THE SINGLE ACTIVATION DOOR. Both the boot-panel row and the header pill call THIS — there is
+// no second copy. Previously the same eight lines existed twice (phantom_reloadToUpdate and inline
+// inside sw_pillTap), which is two doors onto one action.
+function phantom_swApplyUpdate() {
+  if (_swUpdating) return;                      // §"disable repeat taps while activation runs"
+  _swUpdating = true;
+  phantom_swSetPillBusy();
+
+  var fail = function (why) {
+    // ⛔ NO SILENT FAILURE, and no pretending. Say what went wrong and give the control back.
+    _swUpdating = false;
+    console.warn('[PHANTOM SW] update did not activate: ' + why);
+    // ⚠ THE BUSY LOCK MUST BE RELEASED FIRST. sw_pillRefresh() refuses to touch a pill in the
+    // 'busy' state, and its honesty guard also refuses to paint 'update' when nothing is waiting —
+    // so calling it straight from here left the pill stuck reading UPDATING forever. That is the
+    // exact "looks like it worked while doing nothing" failure this ship exists to delete, and it
+    // was reintroduced by the guard that was supposed to prevent dishonesty. Caught by spec 39.
+    var pill = document.getElementById('sw-status-pill');
+    if (pill) pill.setAttribute('data-sw-state', 'ready');
+    var row = document.getElementById('phantom-ghost-toast');
+    if (row) { var b = row.querySelector('.boot-badge'); if (b) b.textContent = 'TAP TO RELOAD'; }
+    if (typeof sw_pillRefresh === 'function') {
+      // Only re-assert UPDATE if one is genuinely still there to apply.
+      if (phantom_swActionable(PHANTOM_SW_REG)) sw_pillRefresh('update'); else sw_pillRefresh();
+    }
+    if (typeof phantomToast === 'function') phantomToast('Update did not apply — ' + why, 'warn');
+  };
+
+  navigator.serviceWorker.getRegistration().then(function (reg) {
+    if (!reg) return fail('no registration');
+    var promote = function (r) {
+      if (r && r.waiting) {
+        // The activation contract. sw.js listens for this and calls skipWaiting(); the resulting
+        // activation fires controllerchange, and THAT is what reloads the page — exactly once.
+        r.waiting.postMessage({ type: 'SKIP_WAITING' });
+        // Backstop only: if controllerchange never arrives (an iOS edge case), recover rather than
+        // hang forever showing UPDATING. This is deliberately long enough that it cannot race a
+        // normal activation — the old code's 80ms timer WAS the race.
+        setTimeout(function () { if (!_swReloaded) fail('no controllerchange within 10s'); }, 10000);
+        return true;
+      }
+      return false;
+    };
+    if (promote(reg)) return;
+    // No waiting worker: ask for one, then promote it when it parks.
+    reg.update().then(function () {
+      if (promote(reg)) return;
+      if (reg.installing) {
+        reg.installing.addEventListener('statechange', function () {
+          if (reg.waiting) promote(reg);
+        });
+        setTimeout(function () { if (!_swReloaded && !reg.waiting) fail('worker never reached waiting'); }, 15000);
+      } else {
+        fail('no update available to install');
+      }
+    }).catch(function (e) { fail('update check failed: ' + e); });
+  }).catch(function (e) { fail('getRegistration failed: ' + e); });
+}
+
+// The transient state the spec asks for. Repeat taps are already blocked by _swUpdating; this is
+// the half the technician can see.
+function phantom_swSetPillBusy() {
+  var pill = document.getElementById('sw-status-pill');
+  if (pill) {
+    pill.setAttribute('data-sw-state', 'busy');
+    var t = pill.querySelector('.sw-pill-text');
+    if (t) t.textContent = 'UPDATING…';
+  }
+  var row = document.getElementById('phantom-ghost-toast');
+  if (row) {
+    var b = row.querySelector('.boot-badge');
+    if (b) b.textContent = 'UPDATING…';
+  }
+}
+
+// ⭐ THE DIAGNOSTIC THE OWNER ASKED FOR — a string, not a console dump, so it can be READ ON THE
+// DEVICE. Returns the precise lifecycle position so a failure is classified rather than guessed.
+function phantom_swDiagnostics() {
+  var reg = PHANTOM_SW_REG;
+  var lines = [
+    'app build      : ' + PHANTOM_APP_VERSION,
+    'controller     : ' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'yes' : 'NONE'),
+    'SW installing  : ' + (reg && reg.installing ? reg.installing.state : '-'),
+    'SW waiting     : ' + (reg && reg.waiting ? reg.waiting.state : '-'),
+    'SW active      : ' + (reg && reg.active ? reg.active.state : '-'),
+    'actionable     : ' + (phantom_swActionable(reg) ? 'YES — one tap will apply it' : 'no update waiting'),
+    'updating now   : ' + (_swUpdating ? 'yes' : 'no')
+  ];
+  return lines.join('\n');
+}
+
 function phantom_ghostUpdateReady() {
   if (document.getElementById('phantom-ghost-toast')) return;
 
-  function phantom_reloadToUpdate() {
-    navigator.serviceWorker.getRegistration().then(function(reg) {
-      if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-      setTimeout(function() { window.location.reload(); }, 80);
-    }).catch(function() { window.location.reload(); });
-  }
+  // v1.14.458 — the local phantom_reloadToUpdate() copy is GONE. It was byte-identical to the
+  // block inside sw_pillTap, so one action had two implementations and a fix to either would have
+  // left the other broken. Both surfaces now call phantom_swApplyUpdate().
 
   var bootList = document.querySelector('#boot .boot-items');
   if (bootList) {
@@ -13028,9 +13174,9 @@ function phantom_ghostUpdateReady() {
       '<div class="boot-dot"></div>' +
       '<span>New tactical data synced</span>' +
       '<span class="boot-badge boot-badge-update">TAP TO RELOAD</span>';
-    row.addEventListener('click', phantom_reloadToUpdate);
+    row.addEventListener('click', phantom_swApplyUpdate);
     row.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); phantom_reloadToUpdate(); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); phantom_swApplyUpdate(); }
     });
     bootList.appendChild(row);
   }
@@ -13050,8 +13196,18 @@ function sw_pillRefresh(forceState) {
   // forceState('update') re-affirms it; the reload after SKIP_WAITING is
   // what actually clears it (fresh load starts with no 'update' state).
   if (forceState !== 'update' && pill.getAttribute('data-sw-state') === 'update') return;
+  // v1.14.458 — an activation in flight owns the pill until it resolves or fails.
+  if (pill.getAttribute('data-sw-state') === 'busy' && forceState !== 'update') return;
   var state = 'none', label = 'SW NONE';
   if (forceState === 'update') {
+    // ⛔ THE BADGE MUST BE HONEST. It may only claim an update when a worker is genuinely parked
+    // in `waiting` and a tap can promote it. Before this, the version-file backstop forced the
+    // badge on a version.json mismatch with nothing installed — the tap then had nothing to do.
+    // The one exception is an activation already in flight, which legitimately owns the pill.
+    if (!_swUpdating && !phantom_swActionable(PHANTOM_SW_REG)) {
+      console.warn('[PHANTOM SW] update badge suppressed — no worker is waiting to be promoted');
+      return;
+    }
     state = 'update'; label = 'SW UPDATE';
   } else if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     state = 'ready'; label = 'SW READY';
@@ -13064,16 +13220,12 @@ function sw_pillTap() {
   var pill = document.getElementById('sw-status-pill');
   if (!pill) return;
   var state = pill.getAttribute('data-sw-state');
+  if (state === 'busy') return;               // activation in flight — repeat taps do nothing
   if (state === 'update') {
-    // Tap-to-reload pending update
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration().then(function(reg) {
-        if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-        setTimeout(function() { window.location.reload(); }, 80);
-      }).catch(function() { window.location.reload(); });
-    }
+    // v1.14.458 — ONE DOOR. This used to hold its own copy of the activation logic; it now calls
+    // the same function the boot row does, so there is exactly one implementation to be right.
+    if ('serviceWorker' in navigator) phantom_swApplyUpdate();
   } else {
-    // Otherwise just refresh status
     sw_pillRefresh();
   }
 }
