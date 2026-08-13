@@ -5,8 +5,8 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-12, after `v1.14.453` — ⭐ BATCH `.438`–`.453` CLEARED ON HARDWARE. The rack
-renderer programme (R1→R8) and Forge parity (P1→P3) are both complete and device-verified.**
+**Last updated: 2026-08-13, after `v1.14.454` — Forge is rack-centric and WALK AISLE is an explicit
+mode. Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453`) is cleared.**
 
 ---
 
@@ -14,12 +14,13 @@ renderer programme (R1→R8) and Forge parity (P1→P3) are both complete and de
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.453`** (`226a0a8`) |
-| Commits | `.416` through `.453` shipped 2026-08-08/12 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.453` |
+| **Version** | **`phantom-v1.14.454`** (`1e1b1d8`; test follow-up `c6582f8`) |
+| Commits | `.416` through `.453` shipped 2026-08-08/12 · `.454` shipped 2026-08-13 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.454` |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
+| ⏳ Open | **`.454` — automation green, NOT yet on hardware.** Block at the TOP of `BATCH-VERIFY.md`. CALL 0 cap **1 of 6** |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -226,6 +227,45 @@ that already ships. Adding a contact shadow would revert a documented fix. The b
 (`DEPLOY_FORGE_FACE_B64`) was NOT retired: it is still referenced by the thirteen background shells
 and empty pads, which §33 rules should stay cheap context.
 
+## 1c · ⭐ `.454` — FORGE IS RACK-CENTRIC (owner ruling 2026-08-12). AUTOMATION GREEN, HARDWARE OPEN
+
+The aisle was a free orbit that happened to start pointed at a rack: drag mutated yaw and pitch,
+pinch and wheel mutated radius, and **nothing ever put them back** — so focusing the next rack only
+slid `camX` sideways and inherited whatever angle the last drag left. Two technicians on the same
+floor could read the same cabinet from different places and neither was the framing the rack was
+designed to be read from. `LOCK_YAW`/`LOCK_PITCH`/`LOCK_RADIUS` are now the canonical framing —
+**the values `setFocus` was already targeting**, so the locked view IS the view the product already
+chose; what changed is that every navigation restores it. `walk()` routes through `setFocus`, so
+the arrows and flanks inherit it through the same door.
+
+⭐ **WALK AISLE is a MODE, not a setting.** Default off, `aria-pressed`, lit cyan while engaged.
+⛔ **Deliberately NOT persisted and NOT a preference** — a stored camera lock would make the aisle
+behave differently for two technicians on the same floor. Leaving snaps back to the framing of the
+rack the tech is **nearest to**, not the one focused on entry.
+
+⛔ **THE DEFECT THIS SHIP FOUND IN ITS OWN FIRST CUT, and the file already had the rule.**
+`setWalkMode` hand-wrote `#tagState`, which has **one writer per SHAPE** (`writeStatusPills`) — a
+rule recorded there because a caller once put a concatenated string into a pill that owns a single
+clause. Worse: **`setFocus` early-returns when the rack is already focused**, which is exactly what
+a look-around-and-come-back lands in, so the *common* exit wrote the rack LABEL into the pill that
+owns `n/m RACKED · ⚠n FLAGGED` — duplicating `#tagId` and dropping the flagged warning until the
+next focus change. Fixed by lifting the write into `writeStatusForRack` and routing the mode banner
+through `writeStatusMessage`.
+⭐ **The generalisation, worth more than the fix: when you add a second caller to a function with an
+early-return guard, work out which path is actually COMMON.** The guarded path was not the edge case.
+
+📌 **Camera-target vars were authored ~500 lines below the two functions that write them**, safe only
+because every caller runs async. Colocated with `camTargetX`/`radiusTarget` above both writers.
+
+⚠ **DISCLOSED AND UNRULED — in locked mode a drag moves nothing**, and the hint still hides itself
+on drag, so the gesture reads as dead. WALK AISLE is one tap away. Whether a locked drag should
+*say* so is a product call and is **not** to be invented.
+
+**Runs (phone-webkit, each spec ALONE):** `36-forge-rack-centric` 4 · `02-build-forge` 14 (incl. the
+×10 round trip, one live context every round) · `08-forge-layout` 17 passed / 1 skipped.
+**Gates:** `phantom-guard` exit 0 — three-stamp lockstep at `.454`, inline blocks compile,
+`node --check sw.js`, valid JSON, brace balance, 0 bare LF.
+
 ## 2 · Milestone
 
 **Programme: `SHIP-TECH-FLOW-V2-FROZEN.md` (see §1a).**
@@ -337,7 +377,15 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — ✅ CLEARED 2026-08-12 (one exception, unchanged)
+## 3 · Verify debt — ⏳ `.454` OPEN (1 of 6). Everything before it is cleared
+
+⏳ **`.454` is on `main` and NOT yet on hardware.** Four checks at the TOP of `BATCH-VERIFY.md`.
+Everything a suite could reach was proven first, per the standing rule that the owner is not the
+test harness. What is left genuinely needs a real GPU and a real hand: whether every rack *arrives*
+at the same framing across a walk, and whether "nearest rack" feels right on leaving WALK — the
+latter is a product judgement, not an assertion.
+
+### Historical — the batch before it
 
 ✅ **`.438`–`.453` RELEASED ON HARDWARE 2026-08-12.** Sixteen ships, ten past the cap: the
 phase-card merge (`.439`/`.440`), the context fix (`.441`), the renderer programme R1-D→R8
@@ -477,9 +525,13 @@ sustained thermals across a ten-rack aisle walk.
 
 ## 9 · Next action
 
-**Nothing autonomous. The queue is empty by design and the batch is clear.**
+**PARKED ON `.454`. Nothing autonomous.**
 
-⭐ **CALL 0 cap RESET to 0 of 6.** `.438`–`.453` released on hardware 2026-08-12.
+⏳ **CALL 0 cap 1 of 6.** `.454` is live and awaiting the four-check device pass at the top of
+`BATCH-VERIFY.md`. `.438`–`.453` released on hardware 2026-08-12.
+
+⚠ **One ruling is owed and it is small:** the locked drag does nothing and says nothing (§1c). It is
+disclosed, not fixed, because the answer is a product call.
 
 Open items, none of them started, all needing an owner decision first:
 - **The R1-D remainder.** The rack sits at **176px** visible where the directive's §30 recommends

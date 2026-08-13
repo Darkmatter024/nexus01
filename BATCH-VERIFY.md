@@ -4,6 +4,34 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
+# 🟡 CURRENT BATCH — `.454` (1 of 6) — OPEN, AWAITING HARDWARE
+
+**Live: `v1.14.454`.** One ship: Forge is rack-centric and WALK AISLE is an explicit mode
+(owner ruling 2026-08-12). Everything below was proven by automation first — spec 36 (4 tests),
+`02-build-forge` and `08-forge-layout`, each run ALONE. What is left needs your eyes and a real GPU.
+
+⛔ **Clear the SW cache / hard-reload first, and load your real Master.** Four checks, one walk.
+**You are judging what you SEE. Do not open a console — if a check needs one, it is my bug.**
+
+| # | Do this | PASS | FAIL |
+|---|---|---|---|
+| **1** | **OPEN AISLE.** Walk across **6+ racks** using the flank taps or the arrows. | Every rack arrives at **the same framing** — same angle, same distance, every time | The view drifts as you walk, so later racks sit at a different angle than the first |
+| **2** | On any rack, **drag across the rack area** without touching the new button. | **Nothing moves.** The rack stays locked where it was | The view orbits or tilts |
+| **3** | Tap the **↔ button** (third in the right-hand column). Drag around. | The button **lights cyan** while engaged, and now dragging **does** look around freely | The button does not change appearance, or dragging still does nothing |
+| **4** | Tap **↔** again to leave. | Snaps back onto the **nearest** rack at the locked framing, and the status pill reads its **`n/m RACKED`** count again | The pill is left reading `WALK AISLE`, or shows the rack **name twice** (once in each pill), or you are returned to a rack you walked away from |
+
+📌 **Check 4 is the one worth your attention** — it is where this ship found and fixed a defect, and
+it is the only leg a suite cannot fully judge, because what "nearest" should feel like is a product
+call, not an assertion.
+
+⚠ **Known and unruled, not a bug report:** in locked mode a drag does nothing and the hint text
+still disappears when you drag, so the gesture reads as dead. WALK AISLE is one tap away. Whether a
+locked drag should *say* that is yours to rule.
+
+**Rollback:** one commit, reverts on its own.
+
+---
+
 # ✅ BATCH `.438`–`.453` — RELEASED ON HARDWARE 2026-08-12. CAP RESET TO 0 OF 6.
 
 **Owner: *"clear"*.** The six-check walk below was run on the phone against his real Master and
@@ -20,9 +48,13 @@ by automation first.
 
 ---
 
-# CURRENT BATCH — `.438`–`.453` (16 of 6) — RUN, PASSED, RELEASED
+# PREVIOUS BATCH — `.438`–`.453` (16 of 6) — RUN, PASSED, RELEASED
 
-**Live: `v1.14.453`.** Last hardware pass was `.438`-era; everything below is unverified on a phone.
+📌 **Heading corrected 2026-08-13: this is no longer the current batch.** `.454` is, and it is the
+block above. This file has gone stale at exactly this line once before — see the reconciliation note
+further down — so the heading is demoted the moment a new batch opens rather than at the next pass.
+
+**Live at the time: `v1.14.453`.** Everything below was unverified on a phone when written.
 Sixteen ships: the phase-card merge (`.439`–`.440`), the context fix (`.441`), the renderer
 programme R1-D→R8 (`.442`–`.450`) and Forge parity P1–P3 (`.451`–`.453`).
 
