@@ -4,6 +4,41 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
+# 🟡 CURRENT BATCH — `.460`–`.461` (2 of 6) — OPEN, AWAITING HARDWARE
+
+**Live: `v1.14.461`.** Two ships from the SHIFT / SITE-SYSTEM walk: `.460` gave SHIFT a door that
+exists, `.461` made Build's CONTINUE incapable of failing silently. Automation first — spec 40 (4),
+spec 41 (3), `06-composition` (12), `01-nav` (14), `02-build-forge` (14), each run ALONE.
+
+⛔ **Load your real Master.** Two checks. **You are judging what you SEE.**
+
+| # | Do this | PASS | FAIL |
+|---|---|---|---|
+| **1** | Open **COMMAND**. Look for a **SHIFT** row on the deck. Tap it, pick a preset, come back. | The row is there reading **SET SHIFT END** · one tap opens the shift-end sheet · after a preset the row shows a **countdown** | No SHIFT row at all · the row does nothing when tapped · a countdown showing **before** you set one |
+| **2** | Open **BUILD**, active rack, tap **CONTINUE**. | You enter the rack workflow for that rack | See below — **every failure mode is useful here** |
+
+⭐ **CHECK 1 IS A FIRST USE, NOT A REGRESSION CHECK.** SHIFT's only door was a control measuring
+0×0 inside a hidden container, at every screen size — the shift-end timer has **never** been
+reachable in production. `.460` is the first build where a technician can set one.
+
+⭐ **CHECK 2 IS A DIAGNOSTIC. Tell me exactly which of these happens:**
+· **It opens the rack workflow** → fixed, or the original was environmental.
+· **Toast: "Cannot open the rack workflow — the Build surface is not mounted"** → the render host
+did not resolve.
+· **Toast: "Rack workflow drew off-screen"** → the render succeeded into a hidden or zero-height
+host — the silent-success class.
+· ⭐ **Still absolutely nothing, no message** → **the most informative outcome.** It rules out all
+three paths I instrumented and points at pointer interception on real iOS, which the harness cannot
+reproduce. Say so and I go looking there.
+
+⚠ **The reported CONTINUE failure does NOT reproduce in the harness** — the exact state renders and
+the button works there. `.461` does not claim to have fixed it; it claims the failure can no longer
+be silent.
+
+**Rollback:** one commit each — `.460` `2e598f9` · `.461` `5b07828`.
+
+---
+
 # ✅ BATCH `.457`–`.459` — RELEASED ON HARDWARE 2026-08-14. CAP RESET TO 0 OF 6.
 
 **Both passes cleared.** Owner: *"pass A pass, one tap and it went to .459"* · *"pass B pass"*.

@@ -14,14 +14,15 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.459`** (`bbddb34`) |
-| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454`–`.459` shipped 2026-08-13 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.459` |
+| **Version** | **`phantom-v1.14.461`** (`5b07828`) |
+| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454`–`.459` shipped 2026-08-13 · `.460`–`.461` shipped 2026-08-14 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.461` |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 | Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
-| Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact.** CALL 0 cap reset to **0 of 6. No verify debt** |
+| Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact** |
+| ⏳ Open | **`.460`–`.461` — automation green, NOT yet on hardware.** CALL 0 cap **2 of 6**. `.460` the SHIFT door (§1i) · `.461` CONTINUE can no longer fail silently (§1j) |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -479,6 +480,77 @@ the broken path and will jump straight to `.459` without exercising the fix.
 2 skipped on desktop-chromium. ⭐ **The lifecycle is automatable because Chromium installs service
 workers** — the standing lesson that "the harness skips it" is not "it needs hardware".
 
+## 1i · ⭐ `.460` — THE SHIFT WALK: ITS DOOR WAS DEAD
+
+Owner-queued 2026-08-11, walked 2026-08-14 by **opening the surfaces**, not reading their CSS.
+
+⛔ **SHIFT WAS NOT UNDOORED — IT WAS DEAD-DOORED, and the record said otherwise.** D-1 read *"It
+renders today as one pill on Command."* It rendered nowhere a technician could see.
+`shift_openSheet` had **exactly one caller in the entire app** — an onclick on `#cc-shiftpill` —
+and that pill measured **0×0, unreachable at 390 AND 1440**, because it sits inside `.lens` →
+`#cc-center`, both `display:none`. `.lens` is the pre-`.425` phone composition the Command Deck
+replaced; the pill was left inside it, in the retired `cc-` Crash-Cart namespace.
+`shift_renderHero()` wrote into that hidden node successfully on **every clock tick** — no warn, no
+toast, and **no way for a technician to set a shift end at all.**
+
+⭐ **THE FIRST RE-HOME LANDED IN A SECOND HIDDEN NODE, and that is the durable part.** `.382` had
+left a note saying the microbar slot `#cs-shift` was where "Phase 2 re-homes it properly", so that
+is where it went — and **`.cs-microbar` is itself `display:none` at 390** (`:58507`, the same phone
+rule that hides `.cs-hd`). Present, wired, correct and dead, exactly like the pill it replaced.
+**Spec 40 caught it only because it measures GEOMETRY and hit-testing rather than presence.** A test
+asking *"is the control there and wired"* would have passed through both defects.
+📌 **The door is now `#cs-shiftbar`, a row in `#cs-grid` — the deck's own flow container — where
+visibility is STRUCTURAL: it cannot be switched off by a composition rule without being visibly
+removed.** The microbar keeps its clock and `cmd_clock` stays its only writer.
+
+📌 **TWO THINGS ARE BOTH CALLED "SHIFT". Do not conflate them** (also corrected in D-1). What ships
+is a **shift-END timer** — 6 AM / 6 PM / +12h / custom / clear, a healthy sheet, 6 controls all
+≥44px. The **9-question SHIFT pillar** D-1 argues about is a different, larger concept. Making the
+timer reachable does not advance the pillar.
+
+✅ **SITE/SYSTEM PASSED ITS WALK AND NEEDED NO CODE.** 13 visible controls, **zero dead handlers,
+nothing under 44px**, contents purely administrative. The brief's specific suspicion — operational
+features misplaced on an administrative surface — was **unfounded**. The walk also confirmed `.457`
+live there: honesty guard, evidence rule, SITE PROFILE block, `JOB STATE: OPERATOR`, token count.
+
+⚠ **Disclosed, not fixed:** a `"Loading storage metrics…"` line that never resolved during the walk
+(verify on device before calling it a defect) · `"CONTEXT INJECTION ACTIVE"` names **three** AI
+surfaces when `.457` wired **seven** — understated rather than false, but now inaccurate copy on an
+honesty-adjacent panel.
+
+## 1j · `.461` — BUILD'S CONTINUE CAN NO LONGER FAIL SILENTLY
+
+Reported: CONTINUE on BUILD / FIELD MODE looked active and did nothing. State `s1:002` ·
+*Platform not in Master* · Phase 1 of 5 MECHANICAL · 0%.
+
+⚠ **THE HONEST BOUND ON THIS SHIP: that state REPRODUCES CLEANLY in the harness and CONTINUE
+WORKS.** 326×56, hit-tests to itself, `pointer-events: auto`, nothing covering it, calls
+`deploy_showRackDetail` without throwing, host renders 390px with a back control. **This ship does
+NOT claim to have fixed the reported failure and must not be read as having done so.** What it
+fixes is why that failure was **invisible**.
+
+⛔ **THREE SILENT EXITS ON ONE PATH:**
+· `deploy_showRackDetail` held a bare `if (!c) return;` — **and bailed AFTER its side effects**:
+`ops-detail` on `<body>`, `nav_push`, `activeContext_setRack`, `stripeView_setRack`,
+`wakeLock_evaluate`. **The app believed it had navigated to a rack detail it never drew**, and the
+CTA's own `try/catch` could not help because *nothing throws*.
+· `deploy_ensureDeployPanelVisible` gave up silently when the deploy sub-tab button was absent,
+leaving the host switched off for a caller about to render into it.
+· **Nothing checked that the render landed anywhere visible.** `innerHTML` into a hidden or
+zero-height host succeeds perfectly — the recorded *silent-success-into-a-hidden-node* class.
+
+**Fixed surgically:** the missing-host return warns, toasts the reason, and **clears `ops-detail`**
+so the app stops believing it navigated · the missing sub-tab warns · a **deferred `rAF`** measures
+the host after `innerHTML` and reports a hidden or zero-height render.
+⚠ **The `rAF` defer is load-bearing** — measuring synchronously at `innerHTML` reports a false zero
+on a host that is about to lay out correctly.
+
+⭐ **AN ENVIRONMENT ARTIFACT NEARLY PRODUCED A FIX FOR NOTHING.** The first diagnostic seeded storage
+then reloaded **after** boot, which re-showed the splash and left `#pe-tapcatch` (its full-screen
+`inset:0` catcher) over the page. `elementFromPoint` duly reported the splash intercepting CONTINUE
+— **which looks exactly like the reported symptom.** Seeding through the fixture made it vanish.
+**Prove an environment artifact is not the cause before fixing what it appears to show.**
+
 ## 2 · Milestone
 
 **Programme: `SHIP-TECH-FLOW-V2-FROZEN.md` (see §1a).**
@@ -590,10 +662,18 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — ✅ CLEARED 2026-08-14. Nothing is owed
+## 3 · Verify debt — ⏳ `.460`–`.461` OPEN (2 of 6). Everything before it is cleared
 
-✅ **`.457`–`.459` RELEASED ON HARDWARE 2026-08-14.** Both passes cleared. **CALL 0 cap reset to
-0 of 6.**
+⏳ **Two checks, both on surfaces the owner uses every shift.**
+**(a) `.460` — the SHIFT door.** Open COMMAND: a SHIFT row reading `SET SHIFT END`, one tap opens
+the sheet, a preset shows a countdown on the row. ⚠ Until this passes, **the shift-end timer has
+never been reachable in production** — this is a first use, not a regression check.
+**(b) `.461` — CONTINUE on Build.** ⭐ **Every outcome is informative.** It opens → good. It says
+*"Build surface is not mounted"* or *"drew off-screen"* → that names the cause. **It stays
+completely silent → that rules out all three instrumented paths and points at pointer interception
+on real iOS, which the harness cannot see.** Report which.
+
+✅ **`.457`–`.459` RELEASED ON HARDWARE 2026-08-14.** Both passes cleared.
 
 ⭐ **THE SW UPDATE P0 IS CLOSED.** One tap took the installed iPhone PWA from `.458` to `.459` with
 field data intact, no reinstall and no Safari cache clearing. **Delivery works again**, which is
@@ -798,10 +878,22 @@ sustained thermals across a ten-rack aisle walk.
 
 ## 9 · Next action
 
-**Nothing autonomous. The queue is empty by design and the batch is clear.**
+**PARKED ON `.461`. Nothing autonomous.** ⏳ **CALL 0 cap 2 of 6** — see §3 for the two checks.
 
-✅ **CALL 0 cap RESET to 0 of 6.** `.457`–`.459` released on hardware 2026-08-14; `.454`–`.456`
-released 2026-08-13; `.438`–`.453` released 2026-08-12. **No verify debt.**
+⭐ **The `.461` check is a DIAGNOSTIC, not just a pass/fail.** The reported CONTINUE failure does
+not reproduce in the harness, so the useful outcome is *which* message appears — or that none does.
+Silence would eliminate host resolution, sub-tab reveal and hidden-host rendering in one report.
+
+Open, none started, all owner decisions:
+- **The `"Loading storage metrics…"` line** and the **`CONTEXT INJECTION ACTIVE` copy naming 3 of 7
+  AI surfaces** — both found in the `.460` walk, both disclosed and unfixed (§1i).
+- **The locked drag says nothing** (§1c) · **the FOV literal** (§1d) · **the HANDOFF gesture** (§1e).
+- **369 follow-ons:** the auto-detecting paste parser is the spec's own named next candidate; the
+  EVIDENCE UI card waits for response formats. ⛔ Next-best-action, readiness scores, Rack
+  Intelligence and auto-handoff each need data-reality scoping first — **the `.457` field inventory
+  is the model for how to do that.**
+- **The R1-D remainder** · **PHASE-ENGINE step text** · **M3 data sources**. ⛔ D-1 is the LAST
+  domino — and note §1i corrected the sentence D-1 was partly resting on.
 
 Open items, none started, all needing an owner decision first:
 - **The locked drag says nothing** (§1c) — disclosed unruled since `.454`. ⛔ Do not invent a fix.
