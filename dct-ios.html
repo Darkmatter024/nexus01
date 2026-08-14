@@ -12917,7 +12917,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.460';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.461';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -37074,7 +37074,14 @@ function deploy_ensureDeployPanelVisible() {
   }
   if (pr) pr.classList.remove('wk-grid');
   var btn = document.querySelector('#pg-work .subtab-strip .stab[data-wk="wk-deploy"]');
+  // ⛔ v1.14.461 — THE MISSING-BUTTON CASE IS NOW AUDIBLE. This read `if (btn && …) showStab(…)`,
+  // so when the sub-tab button was absent the function returned having done nothing to reveal
+  // #wk-deploy — and its caller then rendered a rack detail into a host that was never switched
+  // on. That is the second half of the dead-CONTINUE path and it made no sound at all. It is a
+  // warn rather than a toast because this function is called on paths where the panel is already
+  // correct; the toast belongs to the caller that can actually see the render fail.
   if (btn && typeof showStab === 'function') showStab(btn, 'work-sub', 'wk-deploy');
+  else if (!btn) console.warn('[deploy] deploy sub-tab button not found — #wk-deploy may stay hidden and any render into it will be invisible');
 }
 function deploy_showDetail(id) {
   deploy_ensureDeployPanelVisible();
@@ -41092,7 +41099,18 @@ function deploy_showRackDetail(deployId, rackId) {
   var rackAudit = deploy_loadAuditFor(deployId) || [];
 
   var c = deploy_opsHost();
-  if (!c) return;
+  // ⛔ v1.14.461 — WAS `if (!c) return;`, a bare silent return on the operational centre's primary
+  // action. CONTINUE on Build calls straight into here, so when the host did not resolve the
+  // technician got NOTHING: no render, no warning, no toast. Worse, it bailed AFTER the side
+  // effects above had already run — `ops-detail` on <body>, nav_push, activeContext_setRack,
+  // stripeView_setRack, wakeLock_evaluate — leaving the app believing it had navigated to a rack
+  // detail that was never drawn. The CTA's own try/catch could not help: nothing threw.
+  if (!c) {
+    console.warn('[deploy] rack detail has no host — deploy_opsHost() resolved neither #wk-deploy nor #ops-content');
+    if (typeof phantomToast === 'function') phantomToast('Cannot open the rack workflow — the Build surface is not mounted. Go to BUILD and try again.', 'error');
+    try { document.body.classList.remove('ops-detail'); } catch (_) {}
+    return;
+  }
 
   var ru = deploy_computeRackRollup(rackId, allPhases);
   var html = '';
@@ -41395,6 +41413,28 @@ function deploy_showRackDetail(deployId, rackId) {
   } catch(e) { /* SOP section unavailable — continue */ }
 
   c.innerHTML = html;
+
+  // ⛔ v1.14.461 — DID THE RENDER ACTUALLY LAND SOMEWHERE THE TECHNICIAN CAN SEE?
+  // Writing into a host is not the same as showing anything. This app's recorded failure class is
+  // "silent success into a hidden node": innerHTML succeeds perfectly into a display:none or
+  // zero-height container, the error instrument only catches throws, and the surface reads as a
+  // control that does nothing. deploy_ensureDeployPanelVisible() above tries to prevent that, but
+  // it gives up silently if the deploy sub-tab button is missing — so the guarantee is not one.
+  // ⚠ Deferred a frame: layout is not settled at the moment innerHTML returns, and measuring here
+  // synchronously would report a false zero on a host that is about to be perfectly fine.
+  try {
+    requestAnimationFrame(function () {
+      try {
+        var r = c.getBoundingClientRect();
+        var cs = getComputedStyle(c);
+        if (r.height < 8 || cs.display === 'none' || cs.visibility === 'hidden') {
+          console.warn('[deploy] rack detail rendered into a host that is not visible — id=' + (c.id || '(anon)')
+            + ' height=' + Math.round(r.height) + ' display=' + cs.display + ' visibility=' + cs.visibility);
+          if (typeof phantomToast === 'function') phantomToast('Rack workflow drew off-screen — tap BUILD, then the rack again', 'error');
+        }
+      } catch (_) {}
+    });
+  } catch (_) {}
 
   // v1.14.268 — PHASE DOCK. Paint the dock from the phases we just computed and, if the sheet is
   // open, push the freshly-recomputed cards into it. This runs AFTER c.innerHTML by design: every
