@@ -4,13 +4,46 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
-# 🟡 CURRENT BATCH — `.457` (1 of 6) — OPEN, AWAITING HARDWARE
+# 🟡 CURRENT BATCH — `.457`–`.459` (3 of 6) — OPEN, AWAITING HARDWARE
 
-**Live: `v1.14.457`.** One ship: the context engine (CONTEXT-INJECT-369 V3, rescoped by owner
-ruling). Proven by automation first — spec 38 (7 tests), `10-site-profile-root` (18), `03-tools`
-(28), each run ALONE. **Almost all of it verifies from ONE panel.**
+**Live: `v1.14.459`.** Three ships, and **two unrelated passes**: the context engine (`.457`) and
+the P0 SW-update fix (`.458`, with `.459` as its no-op test payload).
 
-⛔ **Clear the SW cache / hard-reload first, and load your real Master.** Four checks.
+---
+
+## ⭐ PASS A — THE SW UPDATE PATH (`.458`/`.459`). DO THIS ONE FIRST.
+
+A broken update path blocks every future ship, so this outranks everything else.
+
+⚠ **CHECK THE VERSION PILL BEFORE YOU TAP ANYTHING — the sequencing decides whether this proves
+anything.** The fixed mechanism lives in `.458`, so the phone must already be RUNNING `.458`.
+· Pill reads **`v1.14.458`** → this is the real test, go.
+· Pill reads **`.457` or earlier** → still on the broken path. Force-close the PWA (swipe it out of
+the app switcher), reopen, wait a few seconds. You will land on `.459` directly, which does **NOT**
+test the fix — tell me and I will cut a `.460` to test against.
+
+| # | Do this | PASS | FAIL |
+|---|---|---|---|
+| **A1** | Sitting on `.458` with the **SW UPDATE** badge showing, tap it **once**. | The control changes to **`UPDATING…`** | Nothing visibly changes |
+| **A2** | Watch. | The app reloads **exactly once** | It never reloads · it reloads more than once |
+| **A3** | Read the version pill. | **`v1.14.459`** | Still `.458` — the reload restored the old shell |
+| **A4** | Look at the badge. | **Gone** | Still showing SW UPDATE · stuck on `UPDATING…` |
+| **A5** | Check your data: Site Profile, Active Master, racks, work, events. | **All still there** | ⛔ Anything missing is a no-ship — tell me and I revert |
+
+⛔ **No reinstall and no Safari cache clearing are part of this.** If either turns out to be needed,
+that is a FAIL and the fix is not done.
+
+📌 **`.459` changes nothing but three version stamps** — a two-line code diff. That is deliberate:
+nothing else in the app can account for the number changing, so A3 is unambiguous.
+
+---
+
+## PASS B — THE CONTEXT ENGINE (`.457`)
+
+Proven by automation first — spec 38 (7 tests), `10-site-profile-root` (18), `03-tools` (28), each
+run ALONE. **Almost all of it verifies from ONE panel.**
+
+⛔ **Load your real Master.** Four checks.
 **You are judging what you SEE. Do not open a console — if a check needs one, it is my bug.**
 
 | # | Do this | PASS | FAIL |
@@ -23,7 +56,8 @@ ruling). Proven by automation first — spec 38 (7 tests), `10-site-profile-root
 📌 **Check 2 is the whole ship.** The engine's job is that every line an AI sees traces to a real
 record. If you can point at one line you cannot account for, that is the defect.
 
-**Rollback:** one commit, `847b0f5`, reverts on its own.
+**Rollback:** each ship is one commit and reverts on its own — `.457` `847b0f5` · `.458` `6e4d0d0` ·
+`.459` `bbddb34`.
 
 ---
 

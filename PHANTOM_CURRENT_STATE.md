@@ -14,14 +14,14 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.457`** (`847b0f5`) |
-| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454`–`.457` shipped 2026-08-13 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.457` |
+| **Version** | **`phantom-v1.14.459`** (`bbddb34`) |
+| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454`–`.459` shipped 2026-08-13 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.459` |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 | Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
-| ⏳ Open | **`.457` — automation green, NOT yet on hardware.** CALL 0 cap **1 of 6** |
+| ⏳ Open | **`.457`–`.459` — automation green, NOT yet on hardware.** CALL 0 cap **3 of 6**. Two independent passes: the context engine (§1g) and the SW update path (§1h) |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -428,6 +428,57 @@ so routing them would have silently truncated the instructions that make each fe
 
 **Runs:** spec 38 (7) · `10-site-profile-root` (18) · `03-tools` (28), each ALONE.
 
+## 1h · ⛔ `.458`/`.459` — P0: THE SW UPDATE BUTTON DID NOT COMPLETE THE UPDATE
+
+Reported on a real installed iPhone PWA at `.457`: the purple **SW UPDATE** control appeared and
+tapping it did not move the app to the new build. Owner's **case C compounded with case F** — a
+badge shown with no worker waiting, and a reload answerable by a stale shell.
+
+⛔ **ROOT CAUSE: `sw.js` called `skipWaiting()` during INSTALL, so a worker NEVER reached
+`waiting`.** Everything downstream was built on the assumption that it did, and each fault hid the
+next: the app posted `SKIP_WAITING` only `if (reg.waiting)` — therefore never · **`sw.js` had no
+`message` listener**, so the message had no receiver either way · **there was no `controllerchange`
+listener anywhere in the app**; the reload was a blind **80ms `setTimeout`**, which on a real phone
+always fires before a worker can take control · and `phantom_versionFileBackstop` forced the badge
+on a `version.json` mismatch alone, so it could appear with nothing installing and nothing waiting.
+
+⭐ **A SIXTH FAULT MADE THE RELOAD UNRELIABLE EVEN IF THE REST HAD WORKED.** Navigations were
+*described* as network-first but called plain `fetch(event.request)`, which uses the **default HTTP
+cache mode** — Pages serves these with a `max-age` — so the browser's own cache could return the OLD
+shell **while reporting success**. Separately `version.json` was served **cache-first** from
+`PRECACHE_URLS`, so the backstop meant to catch stalled detection was answered out of the old
+build's own cache. ⭐ **`cache: 'no-store'` is an HTTP directive and does NOT bypass a service
+worker** — that mistake is easy to repeat.
+
+**The fix is one path:** install → **WAIT** → badge only if `phantom_swActionable()` finds a waiting
+worker → one tap → `phantom_swApplyUpdate()` (the single door; the byte-identical copy inside
+`sw_pillTap` is deleted) → `SKIP_WAITING` → the new message handler promotes it → activation →
+**one gated `controllerchange`** → **one** reload. Navigations fetch `cache:'reload'`; `version.json`
+is network-first. The control shows `UPDATING…`, ignores repeat taps, and on failure restores itself
+and says why.
+
+⛔ **TWO DEFECTS THE NEW SPEC CAUGHT INSIDE THIS SHIP, both mine, and the second is the one to
+remember.** First: the failure path called `sw_pillRefresh` to restore the control, but the honesty
+guard added in the same change refuses to paint UPDATE with nothing waiting **and** refuses to touch
+a `busy` pill — so a failed activation left the button reading `UPDATING…` forever. *The guard
+against dishonesty reintroduced exactly it.* Second, and worse: **the `controllerchange` listener
+was ungated.** On a first load there is no controller, so `clients.claim()` moves the page from
+uncontrolled to controlled and fires `controllerchange` by itself — **the app reloaded itself on
+every first load.** `05-offline` caught it as a page silently resetting mid-test; in a cold aisle it
+is an app rebooting under a technician's hands for no visible reason. The reload is now gated on
+`_swUpdating`: it happens only as the completion of an update the technician asked for.
+⭐ **Proven by stash-and-rerun** — baseline passed, the change failed, and after the gate `05-offline`
+returned to its documented 13 passed / 2 skipped. **That is the technique for "is this mine?".**
+
+📌 **`.459` is a NO-OP TEST PAYLOAD — three stamps, a two-line code diff, no behaviour change.** It
+exists so the update mechanism can be verified with nothing else able to explain a version change.
+⚠ **It only proves anything if the device is already RUNNING `.458`.** A device on `.457` is still on
+the broken path and will jump straight to `.459` without exercising the fix.
+
+**Runs:** spec 39 — **7 passed on desktop-chromium AND 7 on phone-webkit** · `05-offline` 13 passed /
+2 skipped on desktop-chromium. ⭐ **The lifecycle is automatable because Chromium installs service
+workers** — the standing lesson that "the harness skips it" is not "it needs hardware".
+
 ## 2 · Milestone
 
 **Programme: `SHIP-TECH-FLOW-V2-FROZEN.md` (see §1a).**
@@ -539,7 +590,14 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — ⏳ `.457` OPEN (1 of 6). Everything before it is cleared
+## 3 · Verify debt — ⏳ `.457`–`.459` OPEN (3 of 6). Everything before it is cleared
+
+⏳ **TWO INDEPENDENT PASSES ARE OWED, and they do not share a surface.**
+**(a) `.458`/`.459` — the SW update path.** One tap on SW UPDATE must take the visible stamp from
+`.458` to `.459`, reload exactly once, clear the badge, and leave Site Profile, Active Master and
+rack/work/event data intact. ⚠ **The device must already be RUNNING `.458`** or the test proves
+nothing — see §1h. ⭐ **Run this one first: a broken update path blocks every future ship.**
+**(b) `.457` — the context engine.** Detail below.
 
 ⏳ **`.457` is on `main` and NOT yet on hardware.** One surface carries most of the verification:
 **SITE PROFILE → CONTEXT PREVIEW**, which renders the exact text the AI receives. Every line must
@@ -714,9 +772,11 @@ sustained thermals across a ten-rack aisle walk.
 
 ## 9 · Next action
 
-**PARKED ON `.457`. Nothing autonomous.** ⏳ **CALL 0 cap 1 of 6.**
+**PARKED ON `.459`. Nothing autonomous.** ⏳ **CALL 0 cap 3 of 6.**
 
-`.457` shipped the context engine and needs its device look — the CONTEXT PREVIEW panel, §3 above.
+⭐ **Two device passes owed, and the SW update one goes FIRST** — a broken update path blocks every
+future ship, and `.459` exists purely as its no-op test payload. Then the `.457` CONTEXT PREVIEW
+look. Both are in §3 and at the top of `BATCH-VERIFY.md`.
 
 Open items, none started, all needing an owner decision first:
 - **The locked drag says nothing** (§1c) — disclosed unruled since `.454`. ⛔ Do not invent a fix.
