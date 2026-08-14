@@ -4,10 +4,29 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
-# 🟡 CURRENT BATCH — `.457`–`.459` (3 of 6) — OPEN, AWAITING HARDWARE
+# ✅ BATCH `.457`–`.459` — RELEASED ON HARDWARE 2026-08-14. CAP RESET TO 0 OF 6.
 
-**Live: `v1.14.459`.** Three ships, and **two unrelated passes**: the context engine (`.457`) and
-the P0 SW-update fix (`.458`, with `.459` as its no-op test payload).
+**Both passes cleared.** Owner: *"pass A pass, one tap and it went to .459"* · *"pass B pass"*.
+**No verify debt. Nothing is owed.**
+
+⭐ **PASS A IS THE ONE THAT MATTERED. The P0 is closed: SW UPDATE now completes an update in one
+tap on a real installed iPhone PWA**, `.458` → `.459`, with field data intact and no reinstall and
+no Safari cache clearing. Every future ship now delivers by one tap instead of a force-close, which
+is why this outranked everything else in the queue.
+
+📌 **The verification only worked because `.459` was a NO-OP.** Three version stamps, a two-line code
+diff — so nothing in the app other than the update mechanism could account for the number changing.
+⭐ **That is the reusable shape for testing a delivery mechanism: ship a payload that can prove
+nothing except the thing under test.**
+
+**Pass B** cleared the context engine: every line of CONTEXT PREVIEW traced to a real record, no
+blank-stubbed rows, no placeholder step text reaching the model.
+
+*The checklists are kept below as the record of what was actually run.*
+
+---
+
+# CURRENT BATCH — `.457`–`.459` (3 of 6) — RUN, PASSED, RELEASED
 
 ---
 

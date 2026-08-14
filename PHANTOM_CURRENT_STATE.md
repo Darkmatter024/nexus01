@@ -21,7 +21,7 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 | Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
-| ⏳ Open | **`.457`–`.459` — automation green, NOT yet on hardware.** CALL 0 cap **3 of 6**. Two independent passes: the context engine (§1g) and the SW update path (§1h) |
+| Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact.** CALL 0 cap reset to **0 of 6. No verify debt** |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -590,20 +590,18 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — ⏳ `.457`–`.459` OPEN (3 of 6). Everything before it is cleared
+## 3 · Verify debt — ✅ CLEARED 2026-08-14. Nothing is owed
 
-⏳ **TWO INDEPENDENT PASSES ARE OWED, and they do not share a surface.**
-**(a) `.458`/`.459` — the SW update path.** One tap on SW UPDATE must take the visible stamp from
-`.458` to `.459`, reload exactly once, clear the badge, and leave Site Profile, Active Master and
-rack/work/event data intact. ⚠ **The device must already be RUNNING `.458`** or the test proves
-nothing — see §1h. ⭐ **Run this one first: a broken update path blocks every future ship.**
-**(b) `.457` — the context engine.** Detail below.
+✅ **`.457`–`.459` RELEASED ON HARDWARE 2026-08-14.** Both passes cleared. **CALL 0 cap reset to
+0 of 6.**
 
-⏳ **`.457` is on `main` and NOT yet on hardware.** One surface carries most of the verification:
-**SITE PROFILE → CONTEXT PREVIEW**, which renders the exact text the AI receives. Every line must
-trace to real data, empty fields must be ABSENT rather than blank rows, and no step text may read
-*"step not yet defined for this site"*. Then ask an AI feature about a field left empty — it must
-say the record is not available rather than invent one.
+⭐ **THE SW UPDATE P0 IS CLOSED.** One tap took the installed iPhone PWA from `.458` to `.459` with
+field data intact, no reinstall and no Safari cache clearing. **Delivery works again**, which is
+the precondition for every ship after this one.
+
+📌 **The test worked because `.459` was a deliberate no-op** — three stamps, a two-line code diff —
+so nothing but the update mechanism could account for the version moving. ⭐ **To verify a delivery
+mechanism, ship a payload that can prove nothing except the thing under test.**
 
 ✅ **`.454`–`.456` RELEASED ON HARDWARE 2026-08-13.** All six checks passed. Cap was reset to 0 of 6
 and `.457` takes it to 1.
@@ -743,6 +741,19 @@ githubstatus is all-green — a transient repo-side lock, **not code**. An empty
 
 ## 8 · Last physical-iPhone verification
 
+✅ **2026-08-14, against `v1.14.459`.** Both passes of the `.457`–`.459` batch. **Pass A closed the
+SW UPDATE P0** — one tap moved the installed PWA from `.458` to `.459`, reloading once, clearing the
+badge, and leaving Site Profile, Active Master and rack/work/event data intact; no reinstall, no
+Safari cache clearing. **Pass B** cleared the context engine: every line of CONTEXT PREVIEW traced
+to a real record, no blank-stubbed rows, no placeholder step text in the prompt.
+
+⭐ **Pass A is the most load-bearing device verification in this file, because it verifies the
+DELIVERY of every future one.** While it was broken, no ship could reach the phone by the intended
+route. ⭐ And it was only conclusive because the payload was a no-op — nothing but the mechanism
+could have moved the number.
+
+### Historical
+
 ✅ **2026-08-13, against `v1.14.456`.** All six checks of the `.454`–`.456` pass, reported one at a
 time: the rack dead straight and square on S1:008 · no framing drift across ten racks · a locked
 drag moving nothing · WALK AISLE lighting cyan and freeing the camera · leaving it snapping back
@@ -772,11 +783,10 @@ sustained thermals across a ten-rack aisle walk.
 
 ## 9 · Next action
 
-**PARKED ON `.459`. Nothing autonomous.** ⏳ **CALL 0 cap 3 of 6.**
+**Nothing autonomous. The queue is empty by design and the batch is clear.**
 
-⭐ **Two device passes owed, and the SW update one goes FIRST** — a broken update path blocks every
-future ship, and `.459` exists purely as its no-op test payload. Then the `.457` CONTEXT PREVIEW
-look. Both are in §3 and at the top of `BATCH-VERIFY.md`.
+✅ **CALL 0 cap RESET to 0 of 6.** `.457`–`.459` released on hardware 2026-08-14; `.454`–`.456`
+released 2026-08-13; `.438`–`.453` released 2026-08-12. **No verify debt.**
 
 Open items, none started, all needing an owner decision first:
 - **The locked drag says nothing** (§1c) — disclosed unruled since `.454`. ⛔ Do not invent a fix.
