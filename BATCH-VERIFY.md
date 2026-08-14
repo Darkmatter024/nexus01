@@ -4,22 +4,29 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
-# 🟡 CURRENT BATCH — `.460`–`.461` (2 of 6) — OPEN, AWAITING HARDWARE
+# 🟡 CURRENT BATCH — `.460`–`.462` (3 of 6) — OPEN, AWAITING HARDWARE
 
-**Live: `v1.14.461`.** Two ships from the SHIFT / SITE-SYSTEM walk: `.460` gave SHIFT a door that
-exists, `.461` made Build's CONTINUE incapable of failing silently. Automation first — spec 40 (4),
-spec 41 (3), `06-composition` (12), `01-nav` (14), `02-build-forge` (14), each run ALONE.
+**Live: `v1.14.462`.** Three ships: `.460` gave SHIFT a door that exists, `.461` made Build's
+CONTINUE incapable of failing silently, `.462` replaced the Home card art. Automation first —
+spec 40 (4), spec 41 (3), `06-composition` (12), `01-nav` (14), `02-build-forge` (14),
+`05-offline` (7+8 skipped), `03-tools` (28), each run ALONE.
 
-⛔ **Load your real Master.** Two checks. **You are judging what you SEE.**
+⛔ **Load your real Master.** Three checks. **You are judging what you SEE.**
 
 | # | Do this | PASS | FAIL |
 |---|---|---|---|
-| **1** | Open **COMMAND**. Look for a **SHIFT** row on the deck. Tap it, pick a preset, come back. | The row is there reading **SET SHIFT END** · one tap opens the shift-end sheet · after a preset the row shows a **countdown** | No SHIFT row at all · the row does nothing when tapped · a countdown showing **before** you set one |
+| ✅ **1** | Open **COMMAND**. Look for a **SHIFT** row on the deck. Tap it, pick a preset, come back. | The row is there reading **SET SHIFT END** · one tap opens the shift-end sheet · after a preset the row shows a **countdown** | No SHIFT row at all · the row does nothing when tapped · a countdown showing **before** you set one |
 | **2** | Open **BUILD**, active rack, tap **CONTINUE**. | You enter the rack workflow for that rack | See below — **every failure mode is useful here** |
+| **3** | **SW UPDATE onto `.462` first.** Then look at: Home **FIELD OPERATIONS** · **Work → Handoff** · **SITE PROFILE**. | All three show the new photographic art — two gloved hands passing a tablet on the handoff surfaces, a technician reviewing a tablet for Site Profile. **No portal/transfer-machine panel anywhere.** Then go offline and reopen: all three still render | The old machine panel survives on any surface (the SW did not replace the cached asset) · a blank/broken image · a stretched or badly cropped photo · **the Work→Handoff hero framed oddly** |
 
-⭐ **CHECK 1 IS A FIRST USE, NOT A REGRESSION CHECK.** SHIFT's only door was a control measuring
-0×0 inside a hidden container, at every screen size — the shift-end timer has **never** been
-reachable in production. `.460` is the first build where a technician can set one.
+⭐ **CHECK 1 PASSED 2026-08-14.** Kept in the table as the record of what was run. It was a FIRST
+USE, not a regression check: SHIFT's only door was a control measuring 0×0 inside a hidden
+container at every screen size, so the shift-end timer had **never** been reachable in production.
+
+📌 **CHECK 3 HAS ONE LEG AUTOMATION COULD NOT REACH.** The Home tile and the Site Profile hero were
+measured and screenshotted at 390×844 and both look right. **The Work→Handoff hero measured 0×0**
+because that sub-surface would not come up from the automated door — the asset is wired and loads,
+but nobody has seen how it frames. That is the part of check 3 that genuinely needs your eye.
 
 ⭐ **CHECK 2 IS A DIAGNOSTIC. Tell me exactly which of these happens:**
 · **It opens the rack workflow** → fixed, or the original was environmental.
@@ -35,7 +42,7 @@ reproduce. Say so and I go looking there.
 the button works there. `.461` does not claim to have fixed it; it claims the failure can no longer
 be silent.
 
-**Rollback:** one commit each — `.460` `2e598f9` · `.461` `5b07828`.
+**Rollback:** one commit each — `.460` `2e598f9` · `.461` `5b07828` · `.462` `f94203d`.
 
 ---
 

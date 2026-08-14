@@ -14,15 +14,15 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.461`** (`5b07828`) |
-| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454`–`.459` shipped 2026-08-13 · `.460`–`.461` shipped 2026-08-14 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.461` |
+| **Version** | **`phantom-v1.14.462`** (`f94203d`) |
+| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454`–`.459` shipped 2026-08-13 · `.460`–`.462` shipped 2026-08-14 |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.462` |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 | Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
 | Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact** |
-| ⏳ Open | **`.460`–`.461` — automation green, NOT yet on hardware.** CALL 0 cap **2 of 6**. `.460` the SHIFT door (§1i) · `.461` CONTINUE can no longer fail silently (§1j) |
+| ⏳ Open | **`.460`–`.462` — CALL 0 cap 3 of 6.** ✅ `.460` SHIFT door **PASSED on hardware 2026-08-14** (§1i) · ⏳ `.461` CONTINUE (§1j) · ⏳ `.462` Home card art (§1k) |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -551,6 +551,50 @@ then reloaded **after** boot, which re-showed the splash and left `#pe-tapcatch`
 — **which looks exactly like the reported symptom.** Seeding through the fixture made it vanish.
 **Prove an environment artifact is not the cause before fixing what it appears to show.**
 
+## 1k · `.462` — HOME CARD ART: SHIFT HANDOFF AND SITE PROFILE (owner directive 2026-08-14)
+
+Asset replacement, **not a redesign**. No logic, routing, Master state, handoff data, Site Profile
+data or navigation changed.
+
+**Was:** the stylised portal / transfer-machine panel `phantom-feat-handoff-v2.webp` on **two**
+handoff surfaces — the Work→Handoff hero and the Command Deck FIELD OPERATIONS tile — and the
+**PLATFORMS** art in the Site Profile sheet's hero slot, which described a sub-section of that sheet
+rather than the sheet.
+**Now:** `icons/phantom-feat-handoff-v3.webp` on **both** handoff surfaces (one canonical source)
+and `icons/phantom-feat-siteprofile-960.webp` on the Site Profile hero.
+
+⛔ **A STANDING OWNER OVERRIDE IS RETIRED, AND THAT IS RECORDED IN PLACE RATHER THAN DONE QUIETLY.**
+The old handoff art shipped baked `SOURCE_SYNC 88% / STEP 4 OF 9` under an explicit **2026-07-21**
+ruling whose comment read *"do NOT correct it back."* The new directive retires that image and
+forbids baked labels, percentages and fake telemetry in this artwork. **The later ruling wins; the
+override is spent, not ignored** — and the code comment now says so, so nobody restores the old art
+citing the old permission. ⭐ **Neither replacement carries any readable text**, which also means
+this art no longer needs an honesty-lock exception at all.
+
+📌 **NO NEW DOORS.** §8 asked for the Site Profile artwork on a Site/System hero and forbade
+creating a duplicate door to show it. **That hero slot already existed** — the asset swapped in
+place and no surface was added.
+
+**Sizing, and why the attributes moved.** Both are 960×540 — 3× the 320px `.pfeat__art` actually
+renders at — and both keep the sources' native 16:9, so `height:auto` lays them out undistorted.
+⚠ **The `width`/`height` attributes moved from `720×720` to `960×540`**: left square they would have
+reserved the wrong box and shifted layout on load.
+
+📌 **Converted through Playwright's Chromium canvas at q0.88** — the path proven at `.456`, since
+there is no `cwebp`/`sharp`/ImageMagick here and none was installed. **238 KB JPG → 43 KB · 1822 KB
+PNG → 56 KB.** The 1.8 MB source would otherwise have gone into `PRECACHE_URLS`. Both retired assets
+stay on disk, orphaned-but-retained per repo precedent; only their precache entries went, which also
+keeps the `?legacy` rip cord byte-compatible.
+
+**Measured at 390×844:** Site Profile hero **320×180, ratio 1.778** — exactly the source aspect.
+Command Deck tile **324×209** under `background-size:cover` with the tablet exchange centred, and
+`.cs-op-scrim` already supplies the dark gradient the card text needs, so **no new overlay was
+invented**. No failed image requests.
+
+⚠ **NOT VERIFIED, and it is a device check:** the **Work→Handoff feature hero measured 0×0** in the
+harness because that sub-surface did not come up from the automated door. The asset is wired and
+loads; its on-screen framing is unconfirmed.
+
 ## 2 · Milestone
 
 **Programme: `SHIP-TECH-FLOW-V2-FROZEN.md` (see §1a).**
@@ -662,16 +706,22 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — ⏳ `.460`–`.461` OPEN (2 of 6). Everything before it is cleared
+## 3 · Verify debt — ⏳ `.460`–`.462` OPEN (3 of 6). Everything before it is cleared
 
-⏳ **Two checks, both on surfaces the owner uses every shift.**
-**(a) `.460` — the SHIFT door.** Open COMMAND: a SHIFT row reading `SET SHIFT END`, one tap opens
-the sheet, a preset shows a countdown on the row. ⚠ Until this passes, **the shift-end timer has
-never been reachable in production** — this is a first use, not a regression check.
-**(b) `.461` — CONTINUE on Build.** ⭐ **Every outcome is informative.** It opens → good. It says
+✅ **(a) `.460` — the SHIFT door. PASSED on hardware 2026-08-14.** The shift-end timer is reachable
+in production for the first time; the row was confirmed rendering on the deck in the `.462` capture
+too (`SET SHIFT END · "Not set — the countdown stays off until you do"`).
+
+⏳ **(b) `.461` — CONTINUE on Build.** ⭐ **Every outcome is informative.** It opens → good. It says
 *"Build surface is not mounted"* or *"drew off-screen"* → that names the cause. **It stays
 completely silent → that rules out all three instrumented paths and points at pointer interception
 on real iOS, which the harness cannot see.** Report which.
+
+⏳ **(c) `.462` — the Home card art.** Home FIELD OPERATIONS shows the tablet exchange · Work→Handoff
+shows the same image **framed sensibly (the one leg automation could not reach)** · SITE PROFILE
+shows the technician-with-tablet hero · none of the portal/machine art survives anywhere · all three
+still render after going offline. ⚠ §23 also asks that a normal **SW UPDATE** replaces the cached
+old artwork — that can only be proven on the device.
 
 ✅ **`.457`–`.459` RELEASED ON HARDWARE 2026-08-14.** Both passes cleared.
 
@@ -878,7 +928,8 @@ sustained thermals across a ten-rack aisle walk.
 
 ## 9 · Next action
 
-**PARKED ON `.461`. Nothing autonomous.** ⏳ **CALL 0 cap 2 of 6** — see §3 for the two checks.
+**PARKED ON `.462`. Nothing autonomous.** ⏳ **CALL 0 cap 3 of 6** — see §3. One of the three
+(`.460`) has already passed.
 
 ⭐ **The `.461` check is a DIAGNOSTIC, not just a pass/fail.** The reported CONTINUE failure does
 not reproduce in the harness, so the useful outcome is *which* message appears — or that none does.
