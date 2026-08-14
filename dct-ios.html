@@ -12917,7 +12917,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.461';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.462';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13665,9 +13665,13 @@ if (typeof window !== 'undefined') {
       <div class="rd-sheet-titles"><div class="t">SITE PROFILE</div><div class="s">SYSTEM &middot; SITE CONFIGURATION</div></div>
       <button class="rd-sheet-close" onclick="rd_closeProfile()" aria-label="Close site profile">&#10005;</button>
     </div>
-    <!-- v1.14.325 — PLATFORMS feature-hero art (file-referenced webp; redesign-only via the sheet gate). Decorative: alt="" -->
+    <!-- v1.14.462 — SITE PROFILE feature-hero art (owner directive 2026-08-14). This slot carried
+         the PLATFORMS art, which described a sub-section of the sheet rather than the sheet. The
+         directive's §8 asks for the artwork on "a Site/System page with a Site Profile hero" and
+         says not to create a duplicate door to show it — this slot already IS that hero, so the
+         asset swaps in place and no new surface is introduced. Decorative: alt="" -->
     <div class="pfeat">
-      <img class="pfeat__art" alt="" width="720" height="720" loading="lazy" src="icons/phantom-feat-platforms-720.webp">
+      <img class="pfeat__art" alt="" width="960" height="540" loading="lazy" src="icons/phantom-feat-siteprofile-960.webp">
     </div>
     <div class="rd-sheet-body" id="rd-profile-body"></div>
   </div>
@@ -13929,7 +13933,11 @@ if (typeof window !== 'undefined') {
                 <span class="cs-op-body"><span class="cs-op-t">Universal Scan</span><span class="cs-op-m" id="cs-op-scan-m">Capture a rack</span></span>
               </button>
               <button type="button" class="cs-op" onclick="cmd_route('work','handoff')" aria-label="Shift handoff">
-                <span class="cs-op-art" style="background-image:url(icons/phantom-feat-handoff-v2.webp)" aria-hidden="true"></span>
+                <!-- v1.14.462: the approved technician-to-technician tablet handoff replaces the
+                     portal/transfer-machine art. This tile is on the Command Deck (Home), which is
+                     the surface the directive names, and .cs-op-scrim already supplies the dark
+                     gradient the card text needs. -->
+                <span class="cs-op-art" style="background-image:url(icons/phantom-feat-handoff-v3.webp)" aria-hidden="true"></span>
                 <span class="cs-op-scrim" aria-hidden="true"></span>
                 <span class="cs-op-chip" id="cs-op-hof-chip">Open</span>
                 <span class="cs-op-body"><span class="cs-op-t">Shift Handoff</span><span class="cs-op-m" id="cs-op-hof-m">Close out the shift</span></span>
@@ -14146,9 +14154,16 @@ if (typeof window !== 'undefined') {
       <!-- Scan: pg-scan content re-parented in here at boot by redesign_homeScan(). Empty in source. -->
       <div class="work-sub" id="wk-scan"></div>
       <div class="work-sub" id="wk-handoff">
-        <!-- v1.14.326 — HANDOFF feature-hero art (file-referenced webp; redesign-only: the parent .page only gets .active under body.rd showMode, so ?legacy byte-identical). ⚠OWNER OVERRIDE of the honesty-lock hold ('no use it' 2026-07-21): the baked SOURCE_SYNC 88% / STEP 4 OF 9 text is decorative art on this status screen by explicit owner ruling — do NOT "correct" it back. Decorative: alt="" -->
+        <!-- v1.14.462 — HANDOFF feature-hero art replaced (owner directive 2026-08-14).
+             ⛔ THIS SUPERSEDES THE 2026-07-21 OWNER OVERRIDE that previously stood here. That note
+             read: "the baked SOURCE_SYNC 88% / STEP 4 OF 9 text is decorative art on this status
+             screen by explicit owner ruling — do NOT correct it back." The new directive retires
+             that image from production and forbids baked labels, percentages and fake telemetry in
+             this artwork. The later ruling wins; the override is spent, not ignored. Recorded here
+             rather than silently dropped so nobody restores the old art citing the old note.
+             The replacement carries no readable text at all. Decorative: alt="" -->
         <div class="pfeat">
-          <img class="pfeat__art" alt="" width="720" height="720" loading="lazy" src="icons/phantom-feat-handoff-v2.webp">
+          <img class="pfeat__art" alt="" width="960" height="540" loading="lazy" src="icons/phantom-feat-handoff-v3.webp">
         </div>
         <div style="padding:24px 16px;text-align:center">
           <div style="font-size:var(--fs-caption);letter-spacing:1.5px;color:var(--slate);margin-bottom:14px">SHIFT HANDOFF</div>

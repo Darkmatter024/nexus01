@@ -34,7 +34,7 @@
 // a clean v1.13.3 — dropping the prior -N cache-iteration suffix — so this real
 // version bump busts every client's cache and the three stamps (app const /
 // version.json / this key) line up again. Patch bumps continue from here.
-const CACHE_VERSION = 'phantom-v1.14.461';
+const CACHE_VERSION = 'phantom-v1.14.462';
 
 // Assets to precache on install. Keep this minimal — single-file PWA means
 // most of PHANTOM is in dct-ios.html itself.
@@ -76,12 +76,18 @@ const PRECACHE_URLS = [
   'icons/phantom-nav-build-v2-256.webp',
   'icons/phantom-nav-tools-v2-256.webp',
   'icons/phantom-nav-exit-v2-256.webp',
-  // v1.14.325: PLATFORMS feature-hero art (mounted on the Site Profile sheet). Now a
-  // precached FILE (owner ruled files-not-inline 2026-07-21) so it stays offline-first.
-  'icons/phantom-feat-platforms-720.webp',
-  // v1.14.326: HANDOFF feature-hero art (mounted on the redesign Work->Handoff screen).
-  // Owner override of the honesty-lock hold ('no use it') — ships with baked decorative text.
-  'icons/phantom-feat-handoff-v2.webp',
+  // v1.14.462 — HOME CARD ART (owner directive 2026-08-14). Both feature heroes replaced with the
+  // approved photographic direction: a real technician, a real datacenter, rugged field hardware.
+  // ⛔ NEITHER CARRIES READABLE TEXT. The handoff art they replace shipped baked SOURCE_SYNC 88% /
+  // STEP 4 OF 9 under a 2026-07-21 override; the new directive retires it, so that override is
+  // spent. The Site Profile slot previously showed the PLATFORMS art, which described a sub-section
+  // of the sheet rather than the sheet.
+  // Precached FILES (owner ruled files-not-inline 2026-07-21) so both stay offline-first.
+  'icons/phantom-feat-siteprofile-960.webp',
+  'icons/phantom-feat-handoff-v3.webp',
+  // ⚠ phantom-feat-platforms-720.webp and phantom-feat-handoff-v2.webp are NOT deleted — repo
+  // precedent is orphaned-but-retained on disk, only the precache entry goes. That also keeps the
+  // ?legacy rip cord byte-compatible if it ever reaches for them.
   'icons/phantom-ref-optics-768.webp',
   'icons/phantom-ref-cli-768.webp',
   'icons/phantom-ref-hwref-768.webp',
