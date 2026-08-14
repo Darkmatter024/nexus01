@@ -696,8 +696,23 @@ Scoped 2026-08-08 against the approved blueprint. **The nav is two pillars short
 **Command · Build · Scan · Tools · Shift**, and *both* `Scan` and `Shift` have zero nav references today.
 **`EXIT` is removed** — but per **R-02a**, hold-to-freeze **moves into Shift**; the slot goes, the feature does not.
 
-**SHIFT is undoored, not unbuilt** — 12 `shift_*` functions, a sheet, a hero, a report generator, and
-`phantom_shift_end` already hardened through `safeStore` at `.406`. It renders today as one pill on Command.
+⛔ **RECORD CORRECTED 2026-08-14 BY AN ACTUAL WALK — the sentence here was wrong, and it had been
+informing this ruling.** It read *"It renders today as one pill on Command."* **It did not render
+anywhere a technician could see.** `shift_openSheet` had exactly ONE caller in the whole app — an
+onclick on `#cc-shiftpill` — and that pill measured **0×0 and was unreachable at every viewport,
+390 and 1440 alike**, because it sits inside `.lens` → `#cc-center`, both `display:none`. `.lens` is
+the pre-`.425` phone composition the Command Deck replaced; the pill was left inside it, and `cc-`
+is the retired Crash-Cart namespace besides. `shift_renderHero()` wrote into that hidden node
+successfully on every clock tick — no warn, no toast. **Fixed at `.460`: the door is `#cs-shiftbar`,
+a row in the deck's own flow container.**
+
+📌 **AND TWO THINGS ARE BOTH CALLED "SHIFT". Do not conflate them.** What ships is a **shift-END
+timer** (6 AM / 6 PM / +12h / custom / clear) — a healthy sheet, 6 controls, all ≥44px. The
+**9-question SHIFT pillar** this D-1 entry argues about is a different, larger concept. The timer
+being reachable does not advance the pillar, and the pillar's data gaps do not affect the timer.
+
+**SHIFT-the-pillar is undoored, not unbuilt** — `shift_*` functions, a sheet, a hero and
+`phantom_shift_end` hardened through `safeStore` at `.406`.
 
 **Why it cannot be pulled forward: 6 of Shift's 9 questions have sources, 3 have nothing** —
 the `Store` write journal (§6.1), the derived readiness gate list, and `PhantomIntelligence.queue` (§7.5)

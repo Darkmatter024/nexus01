@@ -12917,7 +12917,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.459';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.460';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13873,6 +13873,15 @@ if (typeof window !== 'undefined') {
           </div>
           <button class="cs-hero-cta" id="cs-hero-cta" type="button" onclick="cmd_continueWork()">Continue deployment</button>
         </div>
+        <!-- v1.14.460 — SHIFT'S DOOR (owner ruling 2026-08-14). It lives HERE, in the deck's own
+             flow container, because that is the one place its visibility is STRUCTURAL rather than
+             conditional. The affordance this replaces sat inside `.lens` (the pre-.425 phone
+             composition, display:none) and a first attempt at re-homing it landed in `.cs-microbar`
+             — also display:none at 390. Both were "present, wired, correct and dead". A row in
+             #cs-grid cannot be hidden by a composition rule without being visibly removed.
+             Filled by shift_renderHero(); one writer, one door onto shift_openSheet(). -->
+        <div class="cs-card cs-shiftbar" id="cs-shiftbar" role="button" tabindex="0"
+             aria-label="Set shift end time" style="display:none"></div>
         <!-- §9.9 PHANTOM Intelligence. Renders the SAME cmd_nba() recommendation the
              phone NBA uses - one brain, two faces. The orb is the approved assistant
              ghost. "Defer" from the spec is NOT built: the app has no defer state and
@@ -23741,9 +23750,13 @@ function cmd_clock() {
   var e = document.getElementById('cc-clock'); if (e) e.textContent = h + ':' + ('0' + d.getMinutes()).slice(-2) + ' ' + ap;
   // v1.14.382: the Command Shell microbar's right slot shows the SAME wall clock.
   // The spec's mock reads "Shift 01"; there is no shift-number concept in this app
-  // and inventing one would be fake telemetry. The real shift feature (SHIFT_END_KEY
-  // / shift_renderHero) is a countdown that is honest about being unset, and Phase 2
-  // re-homes it here properly.
+  // and inventing one would be fake telemetry.
+  // 📌 v1.14.460 — .382's note here said "Phase 2 re-homes it here properly", meaning the shift
+  // affordance would move INTO this slot. Phase 2 went somewhere else, and the reason is worth
+  // keeping: `.cs-microbar` is display:none at 390 (:58507, the phone rule that also hides
+  // `.cs-hd`). Re-homing the door here would have moved it from one hidden node to another. The
+  // door is #cs-shiftbar in the deck's flow instead. This slot stays exactly what it was — a
+  // clock, with cmd_clock as its only writer.
   var cse = document.getElementById('cs-shift'); if (cse) cse.textContent = h + ':' + ('0' + d.getMinutes()).slice(-2) + ' ' + ap;
   if (typeof shift_renderHero === 'function') shift_renderHero();
 }
@@ -23787,13 +23800,51 @@ function shift_fmtRemaining(ms) {
   return Math.floor(mins / 60) + ' HR ' + (mins % 60) + ' MIN LEFT';
 }
 function shift_renderHero() {
-  var sp = document.getElementById('cc-shiftpill');
-  if (!sp) return;
+  // ── v1.14.460 — THE DOOR MOVED TO COMMAND (owner ruling 2026-08-14) ─────────────────────────
+  // ⛔ WHAT THE WALK FOUND. `shift_openSheet` had exactly ONE caller in the entire app: the
+  // onclick bound below onto #cc-shiftpill. That pill measures 0x0 and is unreachable at EVERY
+  // viewport — 390 and 1440 both — because it lives inside `.lens` → `#cc-center`, and both are
+  // display:none. `.lens` is the OLD phone composition that .425's Command Deck replaced; the pill
+  // was left behind inside it and the `cc-` namespace is retired Crash Cart besides. So this
+  // function has been writing state into a hidden node and succeeding silently on every clock
+  // tick — no warn, no toast, and a technician with no way to set a shift end at all.
+  // ⭐ The record said SHIFT "renders today as one pill on Command". It did not render anywhere.
   var st = shift_state();
   var cls, txt;
   if (st.kind === 'countdown') { cls = 'se-set'; txt = shift_fmtRemaining(st.ms); }
   else if (st.kind === 'ended') { cls = 'se-ended'; txt = 'SHIFT ENDED'; }
   else { cls = 'se-unset'; txt = 'SET SHIFT END'; }
+
+  // THE LIVE DOOR: #cs-shiftbar, a row in the Command Deck's own flow container. ⛔ NOT the
+  // microbar — that is display:none at 390 (:58507), which is how a first attempt at this move
+  // landed in a second hidden node. A row in #cs-grid cannot be hidden by a composition rule
+  // without being visibly removed, so its reachability is structural.
+  var bar = document.getElementById('cs-shiftbar');
+  if (bar) {
+    var sub = st.kind === 'countdown' ? 'Tap to change'
+            : st.kind === 'ended' ? 'Tap to set the next one'
+            : 'Not set — the countdown stays off until you do';
+    var bsig = cls + '|' + txt;
+    if (bar.dataset.seSig !== bsig) {
+      bar.dataset.seSig = bsig;
+      bar.className = 'cs-card cs-shiftbar ' + cls;
+      bar.setAttribute('aria-label', st.kind === 'countdown' ? ('Shift ends in ' + txt + ' — tap to change')
+                        : st.kind === 'ended' ? 'Shift ended — tap to set a new shift end'
+                        : 'Set shift end time');
+      bar.onclick = shift_openSheet;
+      bar.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); shift_openSheet(); } };
+      bar.innerHTML = '<div class="csb-k">Shift</div>'
+                    + '<div class="csb-v">' + txt + '</div>'
+                    + '<div class="csb-s">' + sub + '</div>';
+      bar.style.display = '';
+    }
+  }
+
+  // The legacy `.lens` pill is still written for the ?legacy / pre-deck composition. It is inert
+  // where `.lens` is hidden, and Rule 7 protects legacy from churn — so it is left rendering
+  // rather than deleted, but it is no longer the only door.
+  var sp = document.getElementById('cc-shiftpill');
+  if (!sp) return;
   var sig = cls + '|' + txt;
   if (sp.dataset.seSig === sig) { sp.style.display = ''; return; }
   sp.dataset.seSig = sig;
@@ -57841,6 +57892,33 @@ body.rd.cshell .cs-microbar {
   font-size: var(--fs-micro); letter-spacing: .16em; text-transform: uppercase; color: var(--slate); margin-top: 10px;
 }
 body.rd.cshell .cs-microbar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* v1.14.460 — SHIFT'S DOOR (owner ruling 2026-08-14), a row in the deck's flow container.
+   ⛔ WHY HERE AND NOT IN THE MICROBAR. The affordance this replaces measured 0x0 at every
+   viewport: it sat inside `.lens`, the pre-.425 phone composition, which is display:none. The
+   first attempt at re-homing it put it in `.cs-microbar` — also display:none at 390 (:58507).
+   Both were present, wired, correct and dead. A row in #cs-grid is visible structurally: it
+   cannot be switched off by a composition rule without being visibly removed.
+   The card is a real box, so the 44px gloved floor is met by its own height — no hit-area
+   trickery needed. */
+body.rd.cshell .cs-shiftbar {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--sp-4, 14px) var(--sp-5, 16px); min-height: 64px; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+body.rd.cshell .cs-shiftbar:active { transform: scale(.995); }
+body.rd.cshell .cs-shiftbar .csb-k {
+  font-family: var(--mono); font-size: var(--fs-micro); letter-spacing: .16em;
+  text-transform: uppercase; color: var(--slate);
+}
+body.rd.cshell .cs-shiftbar .csb-v { font-size: 17px; font-weight: 700; letter-spacing: .02em; color: var(--white); }
+body.rd.cshell .cs-shiftbar .csb-s { font-size: 12px; color: var(--slate); }
+/* Unset is an INVITATION, not an alert — cyan is the interactive channel. */
+body.rd.cshell .cs-shiftbar.se-unset .csb-v { color: var(--cyan); }
+body.rd.cshell .cs-shiftbar.se-set   .csb-v { color: var(--cyan); }
+/* ⛔ ENDED uses --gold, the ATTENTION channel. It is a real state the tech must act on, not
+   decoration; red/green stay reserved for the STATE channel per the .444 colour law. */
+body.rd.cshell .cs-shiftbar.se-ended .csb-v { color: var(--gold); }
 
 /* §8.7 — Active Deployment hero. The art is the EXISTING approved
    icons/DEPLOY-phone@3x.webp (1170x403, already in PRECACHE_URLS, already the
