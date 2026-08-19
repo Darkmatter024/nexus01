@@ -32386,6 +32386,80 @@ function _deploy_toolsBackHdr(title, backOnclick) {
 // showOpsTab() (16583) which paints the legacy #ops-tab-strip pills — the confirmed leak;
 // showPage('work') just activates #pg-work (exists) with no legacy render. BACK target is the
 // Work grid via the tool header's wk_showGrid(). Legacy path untouched → ?legacy=1 byte-identical.
+// ══ v1.14.463 — THE PASTE ROUTER ════════════════════════════════════════════════════════════
+// ⛔ ONE PENDING SLOT, CONSUMED ONCE, CLEARED UNCONDITIONALLY. A handoff value that lingers is a
+// second source of truth for "what is the technician working on", and this codebase has paid for
+// that class more than once (Contract A1: never one answer in memory and another in storage).
+var _pastePending = null;
+
+function paste_route(verdict, text) {
+  var t = PASTE_TARGETS[verdict];
+  if (!t) {
+    try { console.warn('[paste] no target for verdict: ' + verdict); } catch (_) {}
+    if (typeof phantomToast === 'function') phantomToast('No tool for that content', 'error');
+    return;
+  }
+  _pastePending = { verdict: verdict, box: t.box, text: String(text || '') };
+  // ⛔ THE EXISTING DOOR. Contract A2 — the router is a router; it adds no rd_open* of its own.
+  // A target may DECLINE (EDP with no active deployment). Declining is a real answer, and the
+  // technician must hear it rather than watch a tap do nothing.
+  var ok = false;
+  try { ok = t.open() !== false; } catch (e) {
+    try { console.warn('[paste] route threw for ' + verdict, e); } catch (_) {}
+    ok = false;
+  }
+  if (!ok) {
+    _pastePending = null;
+    try { console.warn('[paste] target declined the route: ' + verdict); } catch (_) {}
+    if (typeof phantomToast === 'function') {
+      phantomToast(verdict === 'edp'
+        ? 'Vendor EDP attaches to a deployment — start or open one first'
+        : 'That tool is unavailable on this build', 'warn');
+    }
+    return;
+  }
+  // ⚠ The sheet closes only AFTER the target accepted. On a decline the technician keeps the
+  // sheet, and keeps their text — losing a paste is the one outcome this feature must not produce.
+  if (typeof rd_closePaste === 'function') rd_closePaste();
+  paste_consumePending();
+}
+
+// ⚠ THE WRITE CAN SUCCEED INTO NOTHING. This app's recorded failure class is a render into a
+// hidden or absent node: it throws nothing and the screen looks broken. So this VERIFIES the box
+// exists and actually holds the text, and says so when it does not — losing a technician's paste
+// silently is the worst outcome this feature can produce.
+function paste_consumePending() {
+  var p = _pastePending;
+  _pastePending = null;               // cleared FIRST — no path leaves it behind
+  if (!p) return;
+  var tries = 0;
+  var attempt = function () {
+    var box = document.getElementById(p.box);
+    if (box) {
+      // ⛔ CONTRACT 11 — DO NOT DESTROY HAND-ENTERED WORK IN SILENCE. Routing INTO a box the
+      // technician has already typed in is a legitimate overwrite (they chose this destination),
+      // but it must be stated. The brief wrote the value unconditionally, which is how a
+      // half-finished entry disappears with nothing on screen to explain it.
+      var had = String(box.value || '').trim();
+      box.value = p.text;
+      try { box.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
+      if (box.value !== p.text) {
+        try { console.warn('[paste] destination box ' + p.box + ' did not accept the text'); } catch (_) {}
+        if (typeof phantomToast === 'function') phantomToast('Paste did not transfer — paste it here again', 'warn');
+        return;
+      }
+      if (had && had !== String(p.text || '').trim() && typeof phantomToast === 'function') {
+        phantomToast('Replaced what was already in this box', 'warn');
+      }
+      return;
+    }
+    if (++tries < 10) { setTimeout(attempt, 120); return; }   // the tool renders asynchronously
+    try { console.warn('[paste] destination box ' + p.box + ' never mounted for verdict ' + p.verdict); } catch (_) {}
+    if (typeof phantomToast === 'function') phantomToast('Opened the tool, but could not fill it — paste it here again', 'warn');
+  };
+  attempt();
+}
+
 function rd_openOpsTool(tab, backAction) {
   if (typeof redesign_isOn === 'function' && !redesign_isOn()) return;   // redesign-only; legacy uses #ops-tab-strip
   if (!OPS_TABS || !OPS_TABS[tab]) { if (typeof phantomToast === 'function') phantomToast('Unknown tool: ' + tab, 'error'); return; }

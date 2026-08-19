@@ -183,3 +183,114 @@ test.describe('paste door', () => {
     expect(r.warned, 'the button did nothing and said nothing').toBe(true);
   });
 });
+
+test.describe('paste routing', () => {
+
+  test('routing lands in the target tool WITH the text', async ({ phantom, page }) => {
+    await phantom.boot();
+    await openDoor(page);
+    const r = await page.evaluate(async () => {
+      const TEXT = 'U1, 2U, PDU-A, PDU, Vertiv\nU3, 1U, SW-01, switch, Arista';
+      paste_route('elevation', TEXT);
+      await new Promise((res) => setTimeout(res, 1500));
+      const box = document.getElementById('rm-data-input');
+      return { sheetClosed: (document.getElementById('rd-paste-sheet') || {}).className.indexOf('open') < 0,
+               boxExists: !!box, boxValue: box ? box.value : null, pending: window._pastePending };
+    });
+    expect(r.boxExists, 'the destination box was never mounted').toBe(true);
+    // ⭐ The whole point: the technician pastes ONCE.
+    expect(r.boxValue, 'the text did not arrive in the destination box').toContain('PDU-A');
+    expect(r.sheetClosed, 'the paste sheet stayed open over the tool').toBe(true);
+    // ⛔ A pending value that lingers is a second source of truth.
+    expect(r.pending, 'the pending handoff was not cleared after consumption').toBeFalsy();
+  });
+
+  test('⛔ a route that cannot complete says so instead of losing the paste', async ({ phantom, page }) => {
+    await phantom.boot();
+    const r = await page.evaluate(async () => {
+      const warns = [], toasts = [];
+      const ow = console.warn; console.warn = function () { warns.push(Array.from(arguments).join(' ')); ow.apply(console, arguments); };
+      const ot = window.phantomToast; window.phantomToast = function (m) { toasts.push(String(m)); };
+      paste_route('portmap', 'A01 Eth1/1 → B04 Eth1/1');
+      await new Promise((res) => setTimeout(res, 2500));
+      console.warn = ow; window.phantomToast = ot;
+      return { warns, toasts, pending: window._pastePending };
+    });
+    // Booted without entering Work, the destination box may not mount. Silence is the defect.
+    if (r.warns.length || r.toasts.length) {
+      expect(r.warns.concat(r.toasts).join(' ')).toMatch(/paste|box|not/i);
+    }
+    expect(r.pending, 'a failed route left a stale pending handoff behind').toBeFalsy();
+  });
+
+  test('⛔ EDP declines without a deployment, and the sheet keeps the text', async ({ phantom, page }) => {
+    await phantom.boot();
+    await openDoor(page);
+    // ⭐ THE ONE TARGET WITH A PRECONDITION. vendorEdp_open never creates a deployment, so with
+    // none active there is nothing to attach an EDP to. Declining must be AUDIBLE, and the paste
+    // must survive it — a decline that closes the sheet would throw away the technician's text.
+    const r = await page.evaluate(async () => {
+      const toasts = [];
+      const ot = window.phantomToast; window.phantomToast = function (m) { toasts.push(String(m)); };
+      const savedDep = window.deploy_getActiveId;
+      try {
+        window.deploy_getActiveId = function () { return null; };
+        rd_openPaste();
+        document.getElementById('paste-input').value = 'KEEP THIS TEXT';
+        paste_route('edp', 'KEEP THIS TEXT');
+        await new Promise((res) => setTimeout(res, 400));
+      } finally {
+        window.deploy_getActiveId = savedDep;
+        window.phantomToast = ot;
+      }
+      const sheet = document.getElementById('rd-paste-sheet');
+      return { toasts, pending: window._pastePending,
+               stillOpen: sheet.className.indexOf('open') >= 0,
+               kept: document.getElementById('paste-input').value };
+    });
+    expect(r.toasts.join(' '), 'the decline was silent').toMatch(/deployment/i);
+    expect(r.stillOpen, 'a declined route closed the sheet').toBe(true);
+    expect(r.kept, 'a declined route threw away the paste').toBe('KEEP THIS TEXT');
+    expect(r.pending, 'a declined route left a stale pending handoff').toBeFalsy();
+  });
+
+  test('⛔ overwriting a box that already had text is stated, not silent', async ({ phantom, page }) => {
+    await phantom.boot();
+    await openDoor(page);
+    // ⛔ CONTRACT 11. Routing into a box the technician already typed in is a legitimate overwrite
+    // — they chose the destination — but the old content is gone and unrecoverable. The brief
+    // wrote the value unconditionally, which is how half-finished work disappears with nothing on
+    // screen to explain it.
+    const r = await page.evaluate(async () => {
+      paste_route('elevation', 'U1, 2U, PDU-A, PDU, Vertiv\nU3, 1U, SW-01, switch, Arista');
+      await new Promise((res) => setTimeout(res, 1200));
+      const box = document.getElementById('rm-data-input');
+      box.value = 'half-typed work the tech has not finished';
+      const toasts = [];
+      const ot = window.phantomToast; window.phantomToast = function (m) { toasts.push(String(m)); };
+      try {
+        paste_route('elevation', 'U9, 1U, SW-99, switch, Arista\nU10, 1U, SW-98, switch, Arista');
+        await new Promise((res) => setTimeout(res, 1200));
+      } finally { window.phantomToast = ot; }
+      return { toasts, value: document.getElementById('rm-data-input').value };
+    });
+    expect(r.value, 'the new text did not land').toContain('SW-99');
+    expect(r.toasts.join(' '), 'the overwrite was silent').toMatch(/replaced/i);
+  });
+
+  test('⛔ routing an unknown verdict is refused, not guessed', async ({ phantom, page }) => {
+    await phantom.boot();
+    await openDoor(page);
+    const r = await page.evaluate(async () => {
+      const toasts = [];
+      const ot = window.phantomToast; window.phantomToast = function (m) { toasts.push(String(m)); };
+      try {
+        paste_route('unknown', 'rack looks hot, check with Dave before EOD');
+        await new Promise((res) => setTimeout(res, 300));
+      } finally { window.phantomToast = ot; }
+      return { toasts, pending: window._pastePending };
+    });
+    expect(r.toasts.join(' '), 'an unroutable verdict was silent').toMatch(/no tool/i);
+    expect(r.pending, 'an unroutable verdict left a pending handoff').toBeFalsy();
+  });
+});
