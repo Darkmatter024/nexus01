@@ -24097,6 +24097,107 @@ function initSubtab(groupClass, defaultId, stabSelector) {
   document.querySelectorAll(stabSelector).forEach((s, i) => s.classList.toggle('active', i === 0));
 }
 
+// ══ v1.14.463 — THE PASTE CLASSIFIER ════════════════════════════════════════════════════════
+// ⛔ SHAPE ONLY, NEVER MEANING, AND NEVER THE NETWORK. Contract A9 is offline-first: a front door
+// that needs signal is dead exactly when a technician is at a rack with no bars. This is a PURE
+// function — text in, verdict out — which is also why it is cheap to test without a browser.
+// ⭐ It may return 'unknown'. That is a correct answer, not a failure: worst case it degrades to
+// choosing a tool, which is what the technician does today, so the door can never be worse than
+// no door. Naming a format it is not sure of would waste the paste and cost trust.
+// ⚠ EACH TARGET CARRIES ITS OWN OPENER, and that is not over-engineering — it is what the codebase
+// actually looks like. VERIFIED 2026-08-19: only portmap / rackmap / bom are OPS_TABS keys reachable
+// via rd_openOpsTool. The CLI parser has its own door (goCliParser) because #parserInput2 lives in
+// static markup, not in the sops tab. Vendor EDP has vendorEdp_open(depId), which takes a deployment
+// id and never creates one — so EDP has a PRECONDITION the others do not: an active deployment must
+// exist. A flat {tool} table would have routed two of five formats to the wrong place.
+// `open()` returns false when it cannot honour the route; the router then says so.
+var PASTE_TARGETS = {
+  portmap:   { label: 'OPEN PORT MAP',   box: 'portmapInput',
+               open: function () { rd_openOpsTool('portmap'); return true; } },
+  elevation: { label: 'OPEN RACK MAP',   box: 'rm-data-input',
+               open: function () { rd_openOpsTool('rackmap'); return true; } },
+  bom:       { label: 'OPEN BOM',        box: 'bom-ingest-csv-input',
+               open: function () { rd_openOpsTool('bom'); return true; } },
+  cli:       { label: 'OPEN CLI PARSER', box: 'parserInput2',
+               open: function () {
+                 if (typeof goCliParser !== 'function') return false;
+                 goCliParser(); return true;
+               } },
+  edp:       { label: 'OPEN EDP IMPORT', box: 'vendor-edp-input',
+               open: function () {
+                 // ⛔ THE ONE TARGET WITH A PRECONDITION. vendorEdp_open cross-checks against a
+                 // deployment's frozen Master snapshot and never creates a deployment, so with no
+                 // active deployment there is nothing to attach the EDP to. Refuse honestly rather
+                 // than opening a surface that cannot accept the paste.
+                 var dep = (typeof deploy_getActiveId === 'function') ? deploy_getActiveId() : null;
+                 if (!dep || typeof vendorEdp_open !== 'function') return false;
+                 vendorEdp_open(dep); return true;
+               } }
+};
+
+// Read the opening lines only. 200 lines / 32 KB is a starting point, not a finding — every format
+// here is identifiable from its head, so a bound cannot change a verdict. If one ever does, that is
+// a classifier bug and not a reason to raise the bound.
+function _paste_head(text) {
+  var s = String(text || '').slice(0, 32768);
+  return s.split(/\r?\n/).slice(0, 200);
+}
+
+function paste_classify(text) {
+  var lines = _paste_head(text).map(function (l) { return l.trim(); }).filter(Boolean);
+  if (lines.length === 0 || String(text || '').trim().length < 12) {
+    return { verdict: 'unknown', why: 'Not enough to go on.' };
+  }
+  var joined = lines.join('\n');
+  var score = { portmap: 0, elevation: 0, cli: 0, bom: 0, edp: 0 };
+
+  // PORT MAP — endpoint pairs joined by an arrow, or a CSV header with src/dst vocabulary.
+  var arrows = (joined.match(/(→|->|=>)/g) || []).length;
+  if (arrows >= 2) score.portmap += 3;
+  var portTok = (joined.match(/\b(Eth\d+\/\d+|xe-\d+\/\d+\/\d+|swp\d+|Ethernet\d+)\b/gi) || []).length;
+  if (portTok >= 2) score.portmap += 2;
+  if (/^\s*[^,\n]*\b(src|source)[_ ]?(rack|port)\b/i.test(lines[0]) &&
+      /\b(dst|dest|destination)[_ ]?(rack|port)\b/i.test(lines[0])) score.portmap += 4;
+
+  // ELEVATION — lines opening with a U-number or RU range.
+  var uLines = lines.filter(function (l) { return /^U\d+(\s*[-–]\s*U?\d+)?\s*[,\t]/i.test(l); }).length;
+  if (uLines >= 2) score.elevation += 4;
+  else if (uLines === 1) score.elevation += 1;
+
+  // CLI — a command echo or known counter headers.
+  if (/^[#>$]?\s*(show|perfquery|ethtool)\b/im.test(joined)) score.cli += 4;
+  if (/\b(Rx Power|Tx Power|CRC|FCS|Symbol Err)\b/i.test(joined)) score.cli += 2;
+  if (/\w+[#>]\s*show\b/i.test(joined)) score.cli += 2;
+
+  // BOM — comma header carrying parts vocabulary.
+  if (/,/.test(lines[0]) && /\b(part|qty|quantity|description|vendor|mfg|manufacturer|sku)\b/i.test(lines[0])) score.bom += 4;
+
+  // EDP — strong vendor-document markers ONLY. ⛔ UNDER-CLAIMS ON PURPOSE: EDP is prose plus
+  // tables and has the weakest shape signal here. Stretching a rule to cover it would trade one
+  // saved tap for wasted pastes. If it is not obvious, it is 'unknown'.
+  if (/\b(equipment data pack|EDP)\b/i.test(joined) && lines.length > 8) score.edp += 4;
+
+  var best = null, bestScore = 0, second = 0;
+  Object.keys(score).forEach(function (k) {
+    if (score[k] > bestScore) { second = bestScore; bestScore = score[k]; best = k; }
+    else if (score[k] > second) { second = score[k]; }
+  });
+
+  // ⛔ TIES GO TO UNKNOWN. The real collision is CSV-vs-CSV. Landing a technician in the wrong
+  // parser to avoid saying "I don't know" is the failure this whole door exists to prevent.
+  if (!best || bestScore < 3 || bestScore - second < 2) {
+    return { verdict: 'unknown', why: 'Not a format PHANTOM recognises.' };
+  }
+  var why = {
+    portmap:   'Looks like a port map.',
+    elevation: 'Looks like rack elevation data.',
+    cli:       'Looks like CLI output.',
+    bom:       'Looks like a BOM.',
+    edp:       'Looks like a vendor EDP.'
+  }[best];
+  return { verdict: best, why: why };
+}
+
 // ━━━ OPS TAB ━━━
 let currentOpsTab = 'sops';
 
