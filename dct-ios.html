@@ -24292,15 +24292,22 @@ function paste_classify(text) {
   // tables and has the weakest shape signal here. Stretching a rule to cover it would trade one
   // saved tap for wasted pastes. If it is not obvious, it is 'unknown'. A bare "EDP" is three
   // letters that appear in ordinary shift notes and must NEVER score alone; the full phrase alone
-  // is not enough either. Require the phrase AND independent document-shape evidence — a
-  // document-field line, or the acronym echoed alongside the phrase ("Equipment Data Pack (EDP)").
+  // is not enough either. Require the phrase AND independent document-shape evidence.
   // ⛔ DO NOT LOOSEN THE ^field: ANCHOR. A reviewer attacked it directly and could not defeat it.
+  // ⭐ COUNT THE FIELDS, DO NOT ACCEPT ONE. A document carries a DOCUMENT'S WORTH of fields; one
+  // field line plus the acronym is a status note ABOUT an EDP, not an EDP —
+  // "Equipment Data Pack (EDP) status: / Vendor: still waiting / Received: not yet" scored 'edp'
+  // off a single `Received:` corroborated by the echo. That is the same structural principle the
+  // gate above runs on, applied to the one rule that had been exempted from it: the anchor was
+  // never the weak part, the QUANTITY of evidence it was asked to carry was.
+  // 📌 The acronym-echo corroborator is GONE rather than demoted. Once two document fields are
+  // required it can no longer change any verdict, and a scoring branch that cannot decide anything
+  // is dead weight that still has to be reasoned about by whoever reads this next.
   var edpPhrase = /\bequipment data pack\b/i.test(joined);
-  var edpFieldLine = dLines.some(function (l) {
+  var edpFieldCount = dLines.filter(function (l) {
     return /^(serial|model|manufacturer|mfg|part\s*(no\.?|number|#)?|ship\s*date|received|inspected|asset\s*tag|document\s*type)\s*:/i.test(l);
-  });
-  var edpAcronymEcho = /\bequipment data pack\b[^\n]{0,20}\(\s*edp\s*\)|\(\s*edp\s*\)[^\n]{0,20}\bequipment data pack\b/i.test(joined);
-  if (edpPhrase && (edpFieldLine || edpAcronymEcho)) score.edp += 4;
+  }).length;
+  if (edpPhrase && edpFieldCount >= 2) score.edp += 4;
 
   var best = null, bestScore = 0, second = 0;
   Object.keys(score).forEach(function (k) {

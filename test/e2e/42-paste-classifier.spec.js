@@ -69,6 +69,12 @@ test.describe('paste classifier', () => {
       // Title line above, human note below — the ordinary shape of a pasted export.
       ['port map wrapped in a title and a trailing note', 'portmap',
         'Port map for row A, exported 2026-08-19\n' + PORTMAP + '\nNote: please confirm optics before install.'],
+      // ⚠ THE OPPOSITE FAILURE FOR ROUND 4. Requiring TWO document fields must not start refusing
+      // short real EDPs — over-tightening is the failure mode that broke rounds 2 and 3, and it is
+      // invisible unless a positive fixture exists to catch it. Two fields is the new floor, so
+      // this is the smallest EDP that may still classify.
+      ['a short vendor EDP carrying only two document fields', 'edp',
+        'Equipment Data Pack\nManufacturer: NVIDIA\nModel: GB300-NVL72'],
     ]) {
       const r = await classify(page, text);
       expect(r.verdict, `${name} was refused (got ${r.verdict})`).toBe(want);
@@ -152,6 +158,13 @@ test.describe('paste classifier', () => {
         '[14:02] Dave: check the vendor, description, and qty fields\n[14:06] Me: will do after the walk'],
       ['planning arrows on two separate lines',
         'Plan A -> Plan B for the spine cutover\nThen Plan B -> Plan C if the optics are late'],
+      // ⛔ FIX ROUND 4 — the last rule the structural gate had NOT been applied to. A status note
+      // ABOUT an EDP is not an EDP: the phrase, the acronym echo and ONE document field cleared a
+      // rule that asked for "a document-field line" in the singular. A document carries a
+      // document's worth of fields, so the corroborator is now COUNTED. ⚠ The `^field:` anchor is
+      // untouched — it survived every attack; the quantity of evidence it carried was the defect.
+      ['a status note about an EDP, with the acronym echo and one document field',
+        'Equipment Data Pack (EDP) status:\nVendor: still waiting\nReceived: not yet'],
     ]) {
       const r = await classify(page, text);
       expect(r.verdict, `${name} was classified as ${r.verdict}`).toBe('unknown');
