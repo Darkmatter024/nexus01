@@ -9118,8 +9118,19 @@ body.rd #rf-hw.plat-detail-open > :not(#rf-plat-detail) { display:none !importan
    (renders the REUSED siteProfile_showEditor). Frame-safe — sits above the bottom nav. */
 #hdr-agg-profile-row { display: none; }
 body.rd #hdr-agg-profile-row { display: flex; }
-#rd-profile-sheet { position: fixed; top: 0; left: 0; right: 0; bottom: calc(72px + var(--safe-bottom, 0px)); z-index: 60; display: none; flex-direction: column; background: linear-gradient(180deg, #06090f, #0a0e16); }
-body.rd #rd-profile-sheet.open { display: flex; }
+/* v1.14.463 — #rd-paste-sheet JOINS this selector rather than adding a third byte-identical copy
+   of the positioning block. The brief assumed a shared selector list existed; it did not — profile
+   and errors each carried their own duplicate. Extending the first one is the surgical move and it
+   changes nothing for #rd-profile-sheet. ⛔ The body.rd + .open gating is what keeps ?legacy
+   byte-identical: outside the redesign this sheet is display:none and unreachable, like its peers. */
+#rd-profile-sheet, #rd-paste-sheet { position: fixed; top: 0; left: 0; right: 0; bottom: calc(72px + var(--safe-bottom, 0px)); z-index: 60; display: none; flex-direction: column; background: linear-gradient(180deg, #06090f, #0a0e16); }
+body.rd #rd-profile-sheet.open, body.rd #rd-paste-sheet.open { display: flex; }
+/* The action buttons carry their own height, so the 44px gloved floor is met by the CONTROL and
+   not by a hit-area trick that a screenshot cannot show and a glove cannot feel. */
+body.rd #rd-paste-sheet .paste-box { min-height: 150px; }
+body.rd #rd-paste-sheet .paste-verdict { font-family: var(--mono); font-size: var(--fs-caption); letter-spacing: .08em; color: var(--cyan); margin: 12px 2px 8px; min-height: 16px; }
+body.rd #rd-paste-sheet .paste-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+body.rd #rd-paste-sheet .paste-act { min-height: 48px; width: auto; padding: 0 18px; }
 /* v1.14.221 — SYS -> ERRORS diagnostics row + sheet (redesign-only; mirrors the profile gating above) */
 #hdr-agg-errors-row { display: none; }
 body.rd #hdr-agg-errors-row { display: flex; }
@@ -13674,6 +13685,25 @@ if (typeof window !== 'undefined') {
       <img class="pfeat__art" alt="" width="960" height="540" loading="lazy" src="icons/phantom-feat-siteprofile-960.webp">
     </div>
     <div class="rd-sheet-body" id="rd-profile-body"></div>
+  </div>
+
+  <!-- v1.14.463 — PASTE ANYTHING sheet. One box, one verdict line, one action row. The ONE door
+       that does not make the technician name the format before pasting; every parser keeps its
+       own door, so this adds no second engine (Contract A2) and removes no existing route.
+       Reuses the .rd-sheet primitive, its header and its dismiss behaviour verbatim. -->
+  <div id="rd-paste-sheet" role="dialog" aria-modal="true" aria-label="Paste anything">
+    <div class="rd-sheet-hdr">
+      <div class="rd-sheet-titles"><div class="t">PASTE ANYTHING</div><div class="s">PHANTOM IDENTIFIES IT</div></div>
+      <button class="rd-sheet-close" onclick="rd_closePaste()" aria-label="Close paste">&#10005;</button>
+    </div>
+    <div class="rd-sheet-body">
+      <!-- ⚠ oninput rather than a parse-time addEventListener IIFE: the brief's version had to run
+           after this markup existed, and an ordering assumption is exactly how a control ends up
+           present, wired and dead. The attribute cannot race its own element. -->
+      <textarea class="sop-textarea paste-box" id="paste-input" rows="8" oninput="paste_render(this.value)" placeholder="Paste a port map, rack elevation, CLI output, BOM CSV or vendor EDP."></textarea>
+      <div id="paste-verdict" class="paste-verdict" role="status" aria-live="polite"></div>
+      <div id="paste-actions" class="paste-actions"></div>
+    </div>
   </div>
 
   <!-- v1.14.221 — ERRORS diagnostics sheet (SYS -> ERRORS). Reuses the .rd-sheet primitive;
@@ -19673,6 +19703,77 @@ function rd_openProfile() {
 function rd_closeProfile() {
   var sheet = document.getElementById('rd-profile-sheet');
   if (sheet) sheet.classList.remove('open');
+}
+
+// v1.14.463 — THE PASTE DOOR. rd_openPaste / rd_closePaste mirror rd_openProfile exactly, so the
+// sheet primitive and its dismiss behaviour are the EXISTING ones and not a second implementation.
+function rd_openPaste() {
+  var sheet = document.getElementById('rd-paste-sheet');
+  // ⛔ Contract 14: a missing sheet is reported, never returned past in silence. The caller is a
+  // tap, so the technician has to be told why nothing opened.
+  if (!sheet) {
+    console.warn('[paste] #rd-paste-sheet markup missing — the door has no destination');
+    if (typeof phantomToast === 'function') phantomToast('Paste is unavailable on this build', 'error');
+    return;
+  }
+  var box = document.getElementById('paste-input');
+  if (box) box.value = '';
+  paste_render('');
+  sheet.classList.add('open');
+  if (box) setTimeout(function () { try { box.focus(); } catch (_) {} }, 80);
+}
+function rd_closePaste() {
+  var sheet = document.getElementById('rd-paste-sheet');
+  if (sheet) sheet.classList.remove('open');
+}
+
+// Draw the verdict line and the action row for the current text. Called on every input event.
+// ⛔ THE ZERO STATE CLAIMS NOTHING. Empty box => empty verdict and no actions, because a caption
+// that names a format before anything has been pasted is fabricated state (Contract 10).
+function paste_render(text) {
+  var vEl = document.getElementById('paste-verdict');
+  var aEl = document.getElementById('paste-actions');
+  if (!vEl || !aEl) {
+    console.warn('[paste] verdict/action host missing — nothing was drawn');
+    return;
+  }
+  if (!String(text || '').trim()) { vEl.textContent = ''; aEl.innerHTML = ''; return; }
+  var r = paste_classify(text);
+  vEl.textContent = r.why;
+  aEl.innerHTML = '';
+  var mk = function (key, label, primary) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pt-btn ' + (primary ? 'pt-btn-primary' : 'pt-btn-ghost') + ' paste-act';
+    b.textContent = label;
+    b.onclick = function () { paste_dispatch(key); };
+    return b;
+  };
+  if (r.verdict !== 'unknown' && PASTE_TARGETS[r.verdict]) {
+    // ONE route on a confident match — a menu would hand the choice straight back to the
+    // technician, which is the work this door exists to remove.
+    aEl.appendChild(mk(r.verdict, PASTE_TARGETS[r.verdict].label + ' ▸', true));
+    return;
+  }
+  // ⛔ UNKNOWN OFFERS EVERY DOOR AND ROUTES NOWHERE BY ITSELF. This is the honest degrade: it is
+  // exactly what the technician does today, so the front door is never WORSE than no front door.
+  Object.keys(PASTE_TARGETS).forEach(function (k) {
+    aEl.appendChild(mk(k, PASTE_TARGETS[k].label, false));
+  });
+}
+
+// ⚠ ROUTING LANDS IN TASK 3. Until it does, this guard is what stops a live control from being a
+// dead one: the button reports why it did nothing instead of throwing a ReferenceError into a
+// handler nobody reads. It stays afterwards — paste_route can still be absent on a partial build,
+// and a tap that silently does nothing is the exact defect class this app keeps rediscovering.
+function paste_dispatch(verdict) {
+  var text = (document.getElementById('paste-input') || {}).value || '';
+  if (typeof paste_route !== 'function') {
+    console.warn('[paste] paste_route is not defined — routing is not wired on this build');
+    if (typeof phantomToast === 'function') phantomToast('Routing is not available on this build', 'error');
+    return;
+  }
+  paste_route(verdict, text);
 }
 // v1.14.221 — ERRORS diagnostics sheet (SYS -> ERRORS). Renders the phantom_crash_log ring
 // newest-first with COPY ALL + CLEAR, reusing the .rd-sheet primitive + phantomViewCrashLog's
