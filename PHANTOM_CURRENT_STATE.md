@@ -14,7 +14,7 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.462`** (`f94203d`) |
+| **Version** | **`phantom-v1.14.463`** (`e3e97e4`) |
 | Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454`–`.459` shipped 2026-08-13 · `.460`–`.462` shipped 2026-08-14 |
 | Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.462` |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
@@ -23,7 +23,7 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 | Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
 | Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact** |
 | ⏳ Open | **`.460`–`.462` — CALL 0 cap 3 of 6.** ✅ `.460` SHIFT door passed 2026-08-14 (§1i) · ✅ `.462` Home card art passed 2026-08-19, §23 with it (§1k) · ⏳ **`.461` CONTINUE is the only leg still open** (§1j) |
-| 🟡 Staged | **`.463` PASTE ANYTHING — BUILT, GATED, NOT PUSHED** (§1l). Eight commits ahead of origin; three stamps at `.463`; `phantom-guard` exit 0; 60 tests green on **phone-webkit**. Owner parked the push. **Live is still `.462` until it goes.** |
+| ⏳ Open | **`.463` PASTE ANYTHING — SHIPPED 2026-08-19** (§1l), takes the batch to **4 of 6**. Served bytes verified **byte-identical to the git blob**, carrying `paste_classify`, `paste_route`, `rd_openPaste` and the `pasterow` builder. 60 tests green on **phone-webkit**. ⏳ Device check 4/4b owed |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -596,7 +596,16 @@ invented**. No failed image requests.
 harness because that sub-surface did not come up from the automated door. The asset is wired and
 loads; its on-screen framing is unconfirmed.
 
-## 1l · 🟡 `.463` — PASTE ANYTHING: BUILT AND GATED, PUSH PARKED BY OWNER
+## 1l · `.463` — PASTE ANYTHING: SHIPPED 2026-08-19, DEVICE CHECK OWED
+
+✅ **PUSHED AND CONFIRMED IN THE SERVED BYTES.** `33aa69d..e3e97e4`. Live `version.json` reads
+`.463`, served `dct-ios.html` and `sw.js` both stamp `.463`, and the served HTML is **byte-identical
+to the git blob** — carrying `function paste_classify`, `function paste_route`, `function
+rd_openPaste`, `id="rd-paste-sheet"` and the `E('div', 'pasterow')` builder.
+📌 `class="pasterow"` greps **0** in the served bytes and that is correct, not a miss — the row is
+built in JS inside `bw_render`, so it exists in no static markup.
+📌 Served 3,595,004 vs working tree 3,654,358: the gap is **exactly** the 59,354 CRLF line count.
+Compare the **git blob**, never the working tree, or a clean deploy reads as a 59 KB discrepancy.
 
 One door that does not make the technician name the format first. Paste a port map, elevation, CLI
 output, BOM CSV or vendor EDP into one box; PHANTOM says which of the five it looks like, offers

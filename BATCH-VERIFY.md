@@ -6,8 +6,7 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 # 🟡 CURRENT BATCH — `.460`–`.463` (4 of 6) — OPEN, AWAITING HARDWARE
 
-**Live: `v1.14.462`. `.463` is STAGED AND UNPUSHED** — it lands with the next push, so check 4
-cannot be run until then. Four ships: `.460` gave SHIFT a door that exists, `.461` made Build's
+**Live: `v1.14.463`** (shipped 2026-08-19, confirmed in the served bytes). Four ships: `.460` gave SHIFT a door that exists, `.461` made Build's
 CONTINUE incapable of failing silently, `.462` replaced the Home card art, `.463` added the PASTE
 front door. Automation first — spec 40 (4), spec 41 (3), `06-composition` (12), `01-nav` (14),
 `02-build-forge` (14), `05-offline` (7+8 skipped), `03-tools` (28), spec 42 (6), spec 43 (12),
