@@ -22,7 +22,7 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 | Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
 | Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact** |
-| ⏳ Open | **`.460`–`.462` — CALL 0 cap 3 of 6.** ✅ `.460` SHIFT door **PASSED on hardware 2026-08-14** (§1i) · ⏳ `.461` CONTINUE (§1j) · ⏳ `.462` Home card art (§1k) |
+| ⏳ Open | **`.460`–`.462` — CALL 0 cap 3 of 6.** ✅ `.460` SHIFT door passed 2026-08-14 (§1i) · ✅ `.462` Home card art passed 2026-08-19, §23 with it (§1k) · ⏳ **`.461` CONTINUE is the only leg still open** (§1j) |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -717,11 +717,11 @@ too (`SET SHIFT END · "Not set — the countdown stays off until you do"`).
 completely silent → that rules out all three instrumented paths and points at pointer interception
 on real iOS, which the harness cannot see.** Report which.
 
-⏳ **(c) `.462` — the Home card art.** Home FIELD OPERATIONS shows the tablet exchange · Work→Handoff
-shows the same image **framed sensibly (the one leg automation could not reach)** · SITE PROFILE
-shows the technician-with-tablet hero · none of the portal/machine art survives anywhere · all three
-still render after going offline. ⚠ §23 also asks that a normal **SW UPDATE** replaces the cached
-old artwork — that can only be proven on the device.
+✅ **(c) `.462` — the Home card art. PASSED on hardware 2026-08-19.** All three surfaces carry the
+new photographic art with no portal/machine panel surviving, **including the Work→Handoff hero —
+the one leg automation could not reach.** ⭐ **§23 is proven with it:** the pass required updating
+onto `.462` first, so a normal SW UPDATE demonstrably replaced the **cached** old artwork rather
+than leaving the machine panel in place.
 
 ✅ **`.457`–`.459` RELEASED ON HARDWARE 2026-08-14.** Both passes cleared.
 
