@@ -37,6 +37,44 @@ test.describe('paste classifier', () => {
     expect((await classify(page, EDP)).verdict).toBe('edp');
   });
 
+  // ⭐ THESE MATTER AS MUCH AS THE ADVERSARIAL BLOCK. Rounds 1 and 2 tightened the keyword rules
+  // until they started refusing REAL pastes — a door that refuses real pastes is just a broken
+  // door with good manners. Each case below is a genuine export or terminal capture that the
+  // round-2 classifier returned 'unknown' for, and each names the anchor that rejected it.
+  test('⭐ real pastes are not refused for being messy', async ({ phantom, page }) => {
+    await phantom.boot();
+    for (const [name, want, text] of [
+      // Rejected because the src/dst check was anchored to lines[0] only.
+      ['port-map CSV under a comment banner', 'portmap',
+        '// exported from cabling tool v3\n' + PORTMAP_CSV],
+      // Same cause: real exports put a "do not edit" banner above the header row.
+      ['BOM CSV under a comment banner', 'bom',
+        '# BOM export 2026-08-19, do not edit below this line\n' + BOM],
+      // Rejected because the prompt marker was anchored with ^[#>$] at position 0.
+      ['CLI echo behind a capture timestamp', 'cli',
+        '[14:02:11] # show interfaces Eth1/1 transceiver\n'
+        + '[14:02:12] Eth1/1  Rx Power: -2.31 dBm  Tx Power: -1.90 dBm'],
+      // Found by round-3 adversarial probing, same anchor: a real device prompt carries the
+      // HOSTNAME in front of the marker, which ^[#>$] also rejected.
+      ['CLI echo behind a device hostname prompt', 'cli',
+        'spine1# show interfaces Eth1/1 transceiver\n'
+        + 'Eth1/1  Rx Power: -2.31 dBm  Tx Power: -1.90 dBm'],
+      // A spreadsheet copy quotes its fields; an exact-field header match must see through that.
+      ['BOM CSV copied out of a spreadsheet', 'bom',
+        '"part","qty","description","vendor"\n"MCX713106AS","8","ConnectX-7 NIC, 400G","NVIDIA"'],
+      // A CSV row may legitimately end in a full stop. Column shape outranks punctuation.
+      ['BOM CSV whose notes column ends in a full stop', 'bom',
+        'part,qty,description,vendor,notes\n'
+        + 'MCX713106AS,8,ConnectX-7 NIC,NVIDIA,Spare units held in the cage for now.'],
+      // Title line above, human note below — the ordinary shape of a pasted export.
+      ['port map wrapped in a title and a trailing note', 'portmap',
+        'Port map for row A, exported 2026-08-19\n' + PORTMAP + '\nNote: please confirm optics before install.'],
+    ]) {
+      const r = await classify(page, text);
+      expect(r.verdict, `${name} was refused (got ${r.verdict})`).toBe(want);
+    }
+  });
+
   test('⛔ ambiguous and unrecognisable input returns unknown, never a guess', async ({ phantom, page }) => {
     await phantom.boot();
     for (const [name, text] of [
@@ -80,6 +118,40 @@ test.describe('paste classifier', () => {
         "Thanks for looping in the vendor, we'll proceed as discussed on the call."],
       ['edp full phrase mentioned once in an ordinary status update, not a document',
         'Still waiting on the equipment data pack from the vendor rep before I can close this ticket out tonight'],
+      // ⛔ FIX ROUND 3 — the round-2 rules were defeated AGAIN by fresh sentences carrying the
+      // same trigger words, which is why the design changed: prose can always contain the
+      // keywords, so vocabulary can never be the discriminator. A structural gate now runs
+      // BEFORE scoring, and a lone sentence can no longer classify whatever words it holds.
+      ['prose asking for Rx Power work',
+        'show any Rx Power anomalies to Dave before EOD, thanks.'],
+      ['prose reporting a perfquery result',
+        'perfquery flagged CRC errors on three ports overnight, ticket filed for review.'],
+      ['prose reporting an ethtool result',
+        'ethtool showed FCS errors climbing on spine2 this morning, keep an eye on it.'],
+      ['prose scheduling ethtool work, with a counter term',
+        'ethtool output review scheduled for tomorrow, Tx Power levels on some optics look low per last report.'],
+      // ⭐ THREE commas — enough delimiters to look structural. It is still a sentence: split on
+      // its commas it yields two labels and two clauses, and a column label is not a clause.
+      ['a sentence carrying three commas and two BOM header words',
+        'Vendor, quantity, and description all match the packing slip, nothing else to flag here today.'],
+      ['a request naming two BOM header words',
+        'vendor, description, please confirm these two fields are correct before we proceed further today'],
+      // ⛔ ROUND-3 SELF-PROBING — found by attacking the new gate, not reported by a reviewer.
+      // Each one clears the gate's line-shape tests and had to be stopped by the header rule
+      // ("a header row is labels, and labels are short") or by the prose veto.
+      ['a ticket asking for src/dst columns to be added',
+        'Columns needed: src rack, src port, dst rack, dst port\nAlso add optic, length, media'],
+      ['two comma-lists, one of them carrying BOM header words',
+        'Dave, Priya, and Marcus are on shift\nvendor, description, and qty still need checking'],
+      ['an imperative asking for command output, with counter terms',
+        'show me the ethtool output, the FCS numbers, and the CRC deltas\n'
+        + 'Rx Power, Tx Power, CRC counts all looked fine yesterday'],
+      ['counter terms with real numbers, but written as prose',
+        'Rx Power dropped to -3 on Eth1/1 yesterday\nTx Power was -2 on Eth1/2 as well'],
+      ['a chat log that happens to be timestamped',
+        '[14:02] Dave: check the vendor, description, and qty fields\n[14:06] Me: will do after the walk'],
+      ['planning arrows on two separate lines',
+        'Plan A -> Plan B for the spine cutover\nThen Plan B -> Plan C if the optics are late'],
     ]) {
       const r = await classify(page, text);
       expect(r.verdict, `${name} was classified as ${r.verdict}`).toBe('unknown');

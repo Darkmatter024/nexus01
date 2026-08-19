@@ -24143,69 +24143,160 @@ function _paste_head(text) {
   return s.split(/\r?\n/).slice(0, 200);
 }
 
+// ══ THE STRUCTURAL GATE — runs BEFORE any scoring ═══════════════════════════════════════════
+// ⛔ THIS IS WHY THE THRESHOLDS ARE NOT BEING TUNED AGAIN. Two rounds tried to separate a
+// technician's prose from technical output using VOCABULARY plus corroboration. That cannot
+// work: prose can always contain the keywords, so every narrowing was defeated by a fresh
+// sentence — and every narrowing also began rejecting REAL pastes (a port map with a comment
+// line above the header, a CLI echo with a timestamp in front of the prompt).
+// ⭐ The property that actually separates them is STRUCTURE, not vocabulary: real pastes are
+// line-oriented, repetitive and delimited; prose is sentences. So SHAPE IS DECIDED FIRST, and a
+// paste that does not look like data returns 'unknown' whatever words it contains. The format
+// rules below can then stay loose, because the gate — not a keyword list — carries the
+// false-positive load. A door that refuses real pastes is a broken door with good manners.
+
+// A delimited line means SHORT FIELDS. A sentence that happens to carry three commas is still a
+// sentence: "Vendor, quantity, and description all match the packing slip, nothing else to flag
+// here today." splits into two labels and two clauses, not into columns.
+function _paste_fieldsAreColumns(l) {
+  var f = l.split(/[,\t|]/).map(function (x) { return x.trim(); }).filter(Boolean);
+  if (f.length < 3) return false;
+  var short = f.filter(function (x) { return x.split(/\s+/).filter(Boolean).length <= 4; }).length;
+  return short >= Math.ceil(f.length * 0.6);
+}
+
+// Prose markers argue AGAINST every verdict. A finished sentence, two sentences on one line, or a
+// conversational connective is a note a human wrote, not output a machine printed.
+function _paste_isProse(l) {
+  var w = l.split(/\s+/).filter(Boolean).length;
+  if (/[.!?]\s+[A-Z]/.test(l)) return true;
+  if (w >= 6 && /[.!?]["')\]]?$/.test(l)) return true;
+  if (w >= 5 && /\b(thanks|please|let's|we'll|we will|keep an eye|nothing else|no action|heads up|fyi|per last|before eod|as discussed)\b/i.test(l)) return true;
+  return false;
+}
+
+// Any ONE of these makes a line look like data rather than a sentence: delimited columns, an
+// arrow, a U-opener, whitespace-aligned columns, a short "field:" label, a shell prompt, or a log
+// timestamp. ⭐ The columns test runs FIRST, ahead of the prose veto, because a real CSV row may
+// legitimately end in a full stop (a description or notes field) and column shape is stronger
+// evidence than punctuation.
+function _paste_isStructural(l) {
+  var delims = (l.match(/[,\t|]/g) || []).length;
+  if (delims >= 2 && _paste_fieldsAreColumns(l)) return true;
+  if (_paste_isProse(l)) return false;
+  if (/(→|->|=>)/.test(l)) return true;
+  if (/^U\d+\s*([-–]\s*U?\d+)?\b/i.test(l)) return true;
+  if (l.split(/\s{2,}|\t/).filter(Boolean).length >= 3) return true;
+  if (/^[A-Za-z][A-Za-z0-9 _\/#.\-]{0,23}:/.test(l) &&
+      l.split(':')[0].split(/\s+/).filter(Boolean).length <= 3) return true;
+  if (/(^|[\s\w])[#>$]\s+[a-z][a-z0-9_\-]*(\s|$)/.test(l)) return true;
+  if (/^\[?\d{1,2}:\d{2}(:\d{2})?\]?\s/.test(l)) return true;
+  return false;
+}
+
+// A LONE line may only classify if it is STRONGLY structural. A single sentence must always be
+// 'unknown': there is no second line repeating the shape, so there is nothing to corroborate it,
+// and one weak line is never enough shape to route a technician on.
+function _paste_isStronglyStructural(l) {
+  if ((l.match(/[,\t|]/g) || []).length >= 3 && _paste_fieldsAreColumns(l)) return true;
+  if (_paste_isProse(l)) return false;
+  return /(→|->|=>)/.test(l) && /\b(Eth\d+\/\d+|xe-\d+\/\d+\/\d+|swp\d+|Ethernet\d+)\b/i.test(l);
+}
+
 function paste_classify(text) {
   var lines = _paste_head(text).map(function (l) { return l.trim(); }).filter(Boolean);
   if (lines.length === 0 || String(text || '').trim().length < 12) {
     return { verdict: 'unknown', why: 'Not enough to go on.' };
   }
-  var joined = lines.join('\n');
+
+  // ⛔ THE GATE. Keywords cannot buy their way past it. A multi-line paste needs at least TWO
+  // structural lines because real output REPEATS its shape and prose does not; a single-line
+  // paste needs one strongly structural line.
+  var structural = lines.map(_paste_isStructural);
+  var sCount = structural.filter(Boolean).length;
+  if (lines.length === 1 ? !_paste_isStronglyStructural(lines[0]) : sCount < 2) {
+    return { verdict: 'unknown', why: 'That reads as notes, not data.' };
+  }
+
+  // Evidence comes from DATA LINES ONLY — a prose line is a note, and a note is not evidence.
+  // A structural line is never treated as prose, so a CSV row ending in a full stop still counts.
+  var dLines = lines.filter(function (l, i) { return structural[i] || !_paste_isProse(l); });
+  var joined = dLines.join('\n');
+  // ⭐ HEADERS ARE NOT ALWAYS ON LINE 1. Real exports put a title or a "// generated by" banner
+  // above the header row, and anchoring to lines[0] rejected real files. Scan the first 5.
+  var head = dLines.slice(0, 5);
   var score = { portmap: 0, elevation: 0, cli: 0, bom: 0, edp: 0 };
 
-  // PORT MAP — endpoint pairs joined by an arrow, or a CSV header with src/dst vocabulary.
-  // ⛔ Arrows ALONE are not evidence — two informal '->' tokens show up in ordinary planning
-  // prose ("Plan A -> Plan B -> Plan C for tomorrow"), and that string must not out-score
-  // 'unknown'. Arrows only count when corroborated by real port tokens on the same text.
+  // A HEADER ROW IS LABELS, AND LABELS ARE SHORT. Returns the delimited fields of a line only if
+  // it can actually be a header: three or more of them, none longer than three words. ⛔ This is
+  // what stops a ticket sentence from being read as a header — "Columns needed: src rack, src
+  // port, dst rack, dst port" and "vendor, description, and qty still need checking" both split
+  // into fields carrying a CLAUSE, and a clause is not a column label. Surrounding quotes are
+  // stripped because a spreadsheet copy quotes its fields.
+  function _headerFields(l) {
+    var f = l.split(/[,\t|]/).map(function (x) {
+      return x.trim().replace(/^["']+|["']+$/g, '').trim();
+    }).filter(Boolean);
+    if (f.length < 3) return null;
+    for (var i = 0; i < f.length; i++) {
+      if (f[i].split(/\s+/).filter(Boolean).length > 3) return null;
+    }
+    return f;
+  }
+
+  // PORT MAP — endpoint pairs joined by an arrow, or a header with src/dst vocabulary.
+  // ⛔ Arrows ALONE are not evidence — informal '->' tokens show up in planning prose. They
+  // count only when corroborated by real port tokens.
   var arrows = (joined.match(/(→|->|=>)/g) || []).length;
   var portTok = (joined.match(/\b(Eth\d+\/\d+|xe-\d+\/\d+\/\d+|swp\d+|Ethernet\d+)\b/gi) || []).length;
   if (arrows >= 2 && portTok >= 2) score.portmap += 3;
   if (portTok >= 2) score.portmap += 2;
-  if (/^\s*[^,\n]*\b(src|source)[_ ]?(rack|port)\b/i.test(lines[0]) &&
-      /\b(dst|dest|destination)[_ ]?(rack|port)\b/i.test(lines[0])) score.portmap += 4;
+  if (head.some(function (l) {
+        var f = _headerFields(l);
+        return !!f &&
+          f.some(function (x) { return /\b(src|source)[_ ]?(rack|port)\b/i.test(x); }) &&
+          f.some(function (x) { return /\b(dst|dest|destination)[_ ]?(rack|port)\b/i.test(x); });
+      })) score.portmap += 4;
 
   // ELEVATION — lines opening with a U-number or RU range.
-  var uLines = lines.filter(function (l) { return /^U\d+(\s*[-–]\s*U?\d+)?\s*[,\t]/i.test(l); }).length;
+  var uLines = dLines.filter(function (l) { return /^U\d+(\s*[-–]\s*U?\d+)?\s*[,\t]/i.test(l); }).length;
   if (uLines >= 2) score.elevation += 4;
   else if (uLines === 1) score.elevation += 1;
 
-  // CLI — a command echo or known counter headers. ⛔ CORROBORATION MUST BE STRUCTURAL: a counter
-  // term merely present SOMEWHERE in the paste is coincidence, not evidence — "ethtool was the
-  // topic on today's call. Someone also mentioned FCS drift on an old switch, unrelated issue."
-  // has both words and is two unrelated sentences. A bare command word only counts when a counter
-  // term sits on THAT SAME LINE — the shape a real command's own output line actually has
-  // ("Eth1/1  Rx Power: ... Tx Power: ..."). A port token no longer corroborates a bare command at
-  // all: "Eth1/1 and Eth2/1 were swapped" is ordinary networking prose, not command output.
-  var cliCounterRe = /\b(Rx Power|Tx Power|CRC|FCS|Symbol Err)\b/i;
+  // CLI — a command echo, or repeated counter-WITH-A-VALUE output lines. ⭐ The prompt marker is
+  // no longer anchored to position 0: real terminal captures put a timestamp in front of it
+  // ("[14:02:11] # show interfaces ...") or a hostname immediately behind it ("spine1# show ..."),
+  // and a `^[#>$]` anchor rejected both. ⛔ A counter NAME on its own is vocabulary, which is
+  // exactly what prose can fake; a counter carrying a NUMBER is output ("Rx Power: -2.31 dBm").
+  // That is the same evidence in structural form, so that is the form the rule asks for.
   var cliCmdWordRe = /^\s*(show|perfquery|ethtool)\b/i;
-  var cliPromptCmd = /^[#>$]\s*(show|perfquery|ethtool)\b/im.test(joined);
-  var cliSameLineCorroborated = lines.some(function (l) { return cliCmdWordRe.test(l) && cliCounterRe.test(l); });
-  var cliCounters = cliCounterRe.test(joined);
+  var cliCounterValRe = /\b(Rx Power|Tx Power|CRC|FCS|Symbol Err(or)?s?)\b[^A-Za-z\n]{0,16}[-+]?\d/i;
+  var cliPromptCmd = /(^|[\s\w])[#>$]\s*(show|perfquery|ethtool)\b/im.test(joined);
+  var cliBareCmd = dLines.some(function (l) { return cliCmdWordRe.test(l); });
+  var cliValueLines = dLines.filter(function (l) { return cliCounterValRe.test(l); }).length;
   if (cliPromptCmd) score.cli += 4;
-  else if (cliSameLineCorroborated) score.cli += 4;
-  if (cliCounters) score.cli += 2;
-  if (/\w+[#>]\s*show\b/i.test(joined)) score.cli += 2;
+  else if (cliBareCmd && cliValueLines >= 1) score.cli += 4;
+  else if (cliValueLines >= 2) score.cli += 4;
+  if (cliValueLines >= 1) score.cli += 2;
 
-  // BOM — comma header carrying parts vocabulary. ⛔ A comma plus any ONE vocabulary word
-  // appearing anywhere in the line is not a header — "Thanks for looping in the vendor, we'll
-  // proceed as discussed" has both and is plain prose. Require the line to actually LOOK like a
-  // header row: split it into comma fields, and require at least 2 of those FIELDS (not just
-  // substrings) to equal a header word outright, across a plausible column count. A sentence
-  // does not produce short, word-for-word fields when split on its commas — a real header does.
+  // BOM — a comma header carrying parts vocabulary. ⛔ A comma plus any ONE vocabulary word is
+  // not a header. Require the line to actually LOOK like a header row: at least 3 comma fields,
+  // with at least 2 of those FIELDS equal to a header word outright, not merely containing one.
   var bomHeaderWordRe = /^(part(\s*(no\.?|number|#))?|qty|quantity|description|desc|vendor|mfg|manufacturer|sku)$/i;
-  var bomFields = lines[0].split(',').map(function (f) { return f.trim(); }).filter(Boolean);
-  var bomVocabHits = bomFields.filter(function (f) { return bomHeaderWordRe.test(f); }).length;
-  if (bomFields.length >= 3 && bomVocabHits >= 2) score.bom += 4;
+  if (head.some(function (l) {
+        var f = _headerFields(l);
+        return !!f && f.filter(function (x) { return bomHeaderWordRe.test(x); }).length >= 2;
+      })) score.bom += 4;
 
   // EDP — strong vendor-document markers ONLY. ⛔ UNDER-CLAIMS ON PURPOSE: EDP is prose plus
   // tables and has the weakest shape signal here. Stretching a rule to cover it would trade one
-  // saved tap for wasted pastes. If it is not obvious, it is 'unknown'. A bare "EDP" is just
-  // three letters that can appear in an ordinary shift note — it must NEVER score alone. The full
-  // phrase alone is not enough either: "Still waiting on the equipment data pack from the vendor
-  // rep before I can close this ticket out tonight" says the phrase once in an ordinary status
-  // update, not a document. Require the phrase AND independent document-shape evidence — a
-  // document-field line (Serial/Model/Manufacturer/Part Number/Ship Date/...), or the acronym
-  // echoed alongside the phrase ("Equipment Data Pack (EDP)") — so a passing mention can't qualify.
+  // saved tap for wasted pastes. If it is not obvious, it is 'unknown'. A bare "EDP" is three
+  // letters that appear in ordinary shift notes and must NEVER score alone; the full phrase alone
+  // is not enough either. Require the phrase AND independent document-shape evidence — a
+  // document-field line, or the acronym echoed alongside the phrase ("Equipment Data Pack (EDP)").
+  // ⛔ DO NOT LOOSEN THE ^field: ANCHOR. A reviewer attacked it directly and could not defeat it.
   var edpPhrase = /\bequipment data pack\b/i.test(joined);
-  var edpFieldLine = lines.some(function (l) {
+  var edpFieldLine = dLines.some(function (l) {
     return /^(serial|model|manufacturer|mfg|part\s*(no\.?|number|#)?|ship\s*date|received|inspected|asset\s*tag|document\s*type)\s*:/i.test(l);
   });
   var edpAcronymEcho = /\bequipment data pack\b[^\n]{0,20}\(\s*edp\s*\)|\(\s*edp\s*\)[^\n]{0,20}\bequipment data pack\b/i.test(joined);
