@@ -24152,9 +24152,12 @@ function paste_classify(text) {
   var score = { portmap: 0, elevation: 0, cli: 0, bom: 0, edp: 0 };
 
   // PORT MAP — endpoint pairs joined by an arrow, or a CSV header with src/dst vocabulary.
+  // ⛔ Arrows ALONE are not evidence — two informal '->' tokens show up in ordinary planning
+  // prose ("Plan A -> Plan B -> Plan C for tomorrow"), and that string must not out-score
+  // 'unknown'. Arrows only count when corroborated by real port tokens on the same text.
   var arrows = (joined.match(/(→|->|=>)/g) || []).length;
-  if (arrows >= 2) score.portmap += 3;
   var portTok = (joined.match(/\b(Eth\d+\/\d+|xe-\d+\/\d+\/\d+|swp\d+|Ethernet\d+)\b/gi) || []).length;
+  if (arrows >= 2 && portTok >= 2) score.portmap += 3;
   if (portTok >= 2) score.portmap += 2;
   if (/^\s*[^,\n]*\b(src|source)[_ ]?(rack|port)\b/i.test(lines[0]) &&
       /\b(dst|dest|destination)[_ ]?(rack|port)\b/i.test(lines[0])) score.portmap += 4;
@@ -24164,9 +24167,16 @@ function paste_classify(text) {
   if (uLines >= 2) score.elevation += 4;
   else if (uLines === 1) score.elevation += 1;
 
-  // CLI — a command echo or known counter headers.
-  if (/^[#>$]?\s*(show|perfquery|ethtool)\b/im.test(joined)) score.cli += 4;
-  if (/\b(Rx Power|Tx Power|CRC|FCS|Symbol Err)\b/i.test(joined)) score.cli += 2;
+  // CLI — a command echo or known counter headers. ⛔ A bare 'show'/'perfquery'/'ethtool' as
+  // the first word of a line is NOT evidence by itself — "show status update: rack cooling
+  // nominal..." is a shift note, not a command echo. It only counts when the prompt character
+  // is present, or when corroborated by a counter header or a port token.
+  var cliPromptCmd = /^[#>$]\s*(show|perfquery|ethtool)\b/im.test(joined);
+  var cliBareCmd = /^\s*(show|perfquery|ethtool)\b/im.test(joined);
+  var cliCounters = /\b(Rx Power|Tx Power|CRC|FCS|Symbol Err)\b/i.test(joined);
+  if (cliPromptCmd) score.cli += 4;
+  else if (cliBareCmd && (cliCounters || portTok >= 2)) score.cli += 4;
+  if (cliCounters) score.cli += 2;
   if (/\w+[#>]\s*show\b/i.test(joined)) score.cli += 2;
 
   // BOM — comma header carrying parts vocabulary.
@@ -24174,8 +24184,10 @@ function paste_classify(text) {
 
   // EDP — strong vendor-document markers ONLY. ⛔ UNDER-CLAIMS ON PURPOSE: EDP is prose plus
   // tables and has the weakest shape signal here. Stretching a rule to cover it would trade one
-  // saved tap for wasted pastes. If it is not obvious, it is 'unknown'.
-  if (/\b(equipment data pack|EDP)\b/i.test(joined) && lines.length > 8) score.edp += 4;
+  // saved tap for wasted pastes. If it is not obvious, it is 'unknown'. A bare "EDP" is just
+  // three letters that can appear in an ordinary shift note — it must NEVER score alone. Only
+  // the full, unambiguous phrase counts.
+  if (/\bequipment data pack\b/i.test(joined)) score.edp += 4;
 
   var best = null, bestScore = 0, second = 0;
   Object.keys(score).forEach(function (k) {

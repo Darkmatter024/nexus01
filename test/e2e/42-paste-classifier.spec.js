@@ -12,6 +12,18 @@ const PORTMAP_CSV = 'src_rack,src_port,dst_rack,dst_port,optic\nA01,Eth1/1,B04,E
 const ELEVATION = 'U1, 2U, PDU-A, PDU, Vertiv GeistV2\nU3, 1U, SW-SPINE-01, switch, Arista 7050CX3\nU4-U7, 4U, GPU-01, gpu, GB300';
 const CLI = '# show interfaces Eth1/1 transceiver\nEth1/1  Rx Power: -2.31 dBm  Tx Power: -1.90 dBm';
 const BOM = 'part,qty,description,vendor\nMCX713106AS,8,ConnectX-7 NIC,NVIDIA';
+// Realistic vendor-EDP text carrying the full, unambiguous phrase — a bare "EDP" alone must
+// never be enough (see the fix-round-1 regression case below), so this is the happy path that
+// proves the strict rule still recognises a real one.
+const EDP = 'VENDOR EQUIPMENT DATA PACK — GB300 NVL72 Rack Unit\n'
+          + 'Document Type: Equipment Data Pack (EDP)\n'
+          + 'Manufacturer: NVIDIA\n'
+          + 'Model: GB300-NVL72\n'
+          + 'Serial: SN-88213-A\n'
+          + 'Ship Date: 2026-07-02\n'
+          + 'Received: 2026-07-14\n'
+          + 'Inspected By: J. Alvarez\n'
+          + 'Notes: no shipping damage observed, all crates intact.';
 
 test.describe('paste classifier', () => {
 
@@ -22,6 +34,7 @@ test.describe('paste classifier', () => {
     expect((await classify(page, ELEVATION)).verdict).toBe('elevation');
     expect((await classify(page, CLI)).verdict).toBe('cli');
     expect((await classify(page, BOM)).verdict).toBe('bom');
+    expect((await classify(page, EDP)).verdict).toBe('edp');
   });
 
   test('⛔ ambiguous and unrecognisable input returns unknown, never a guess', async ({ phantom, page }) => {
@@ -32,6 +45,24 @@ test.describe('paste classifier', () => {
       ['whitespace', '   \n\n  \t '],
       ['empty', ''],
       ['one word', 'racks'],
+      // ⛔ FIX ROUND 1 REGRESSIONS — found by running the classifier, not by inspection. Each of
+      // these previously cleared BOTH decision thresholds off one weak/coincidental signal, with
+      // second = 0, so the tie-break arithmetic (which only resolves genuine cross-category ties)
+      // never engaged. Pinned here so none of the three can regress silently.
+      ['a "show" word that is prose, not a command echo',
+        'show status update: rack cooling nominal, no action needed'],
+      ['a shift note that mentions EDP once but is otherwise prose',
+        'Shift handoff notes for night crew:\n'
+        + 'Aisle 3 temps look fine, no alarms since 18:00.\n'
+        + 'Ran into a delay waiting on the EDP from the vendor rep, should land tomorrow.\n'
+        + 'Cabinet B12 door sensor still flaky, ticket open.\n'
+        + 'Fiber spool count looks short, will recount in the morning.\n'
+        + 'No blockers on the GPU install otherwise.\n'
+        + 'Coffee machine on level 2 is out again.\n'
+        + 'Reminder: badge access renewal due Friday.\n'
+        + 'Handing off to Dana at 06:00.'],
+      ['informal arrows in planning prose, not port endpoints',
+        "let's move from Plan A -> Plan B -> Plan C for tomorrow"],
     ]) {
       const r = await classify(page, text);
       expect(r.verdict, `${name} was classified as ${r.verdict}`).toBe('unknown');
