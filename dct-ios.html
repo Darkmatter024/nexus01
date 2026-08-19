@@ -24167,27 +24167,49 @@ function paste_classify(text) {
   if (uLines >= 2) score.elevation += 4;
   else if (uLines === 1) score.elevation += 1;
 
-  // CLI — a command echo or known counter headers. ⛔ A bare 'show'/'perfquery'/'ethtool' as
-  // the first word of a line is NOT evidence by itself — "show status update: rack cooling
-  // nominal..." is a shift note, not a command echo. It only counts when the prompt character
-  // is present, or when corroborated by a counter header or a port token.
+  // CLI — a command echo or known counter headers. ⛔ CORROBORATION MUST BE STRUCTURAL: a counter
+  // term merely present SOMEWHERE in the paste is coincidence, not evidence — "ethtool was the
+  // topic on today's call. Someone also mentioned FCS drift on an old switch, unrelated issue."
+  // has both words and is two unrelated sentences. A bare command word only counts when a counter
+  // term sits on THAT SAME LINE — the shape a real command's own output line actually has
+  // ("Eth1/1  Rx Power: ... Tx Power: ..."). A port token no longer corroborates a bare command at
+  // all: "Eth1/1 and Eth2/1 were swapped" is ordinary networking prose, not command output.
+  var cliCounterRe = /\b(Rx Power|Tx Power|CRC|FCS|Symbol Err)\b/i;
+  var cliCmdWordRe = /^\s*(show|perfquery|ethtool)\b/i;
   var cliPromptCmd = /^[#>$]\s*(show|perfquery|ethtool)\b/im.test(joined);
-  var cliBareCmd = /^\s*(show|perfquery|ethtool)\b/im.test(joined);
-  var cliCounters = /\b(Rx Power|Tx Power|CRC|FCS|Symbol Err)\b/i.test(joined);
+  var cliSameLineCorroborated = lines.some(function (l) { return cliCmdWordRe.test(l) && cliCounterRe.test(l); });
+  var cliCounters = cliCounterRe.test(joined);
   if (cliPromptCmd) score.cli += 4;
-  else if (cliBareCmd && (cliCounters || portTok >= 2)) score.cli += 4;
+  else if (cliSameLineCorroborated) score.cli += 4;
   if (cliCounters) score.cli += 2;
   if (/\w+[#>]\s*show\b/i.test(joined)) score.cli += 2;
 
-  // BOM — comma header carrying parts vocabulary.
-  if (/,/.test(lines[0]) && /\b(part|qty|quantity|description|vendor|mfg|manufacturer|sku)\b/i.test(lines[0])) score.bom += 4;
+  // BOM — comma header carrying parts vocabulary. ⛔ A comma plus any ONE vocabulary word
+  // appearing anywhere in the line is not a header — "Thanks for looping in the vendor, we'll
+  // proceed as discussed" has both and is plain prose. Require the line to actually LOOK like a
+  // header row: split it into comma fields, and require at least 2 of those FIELDS (not just
+  // substrings) to equal a header word outright, across a plausible column count. A sentence
+  // does not produce short, word-for-word fields when split on its commas — a real header does.
+  var bomHeaderWordRe = /^(part(\s*(no\.?|number|#))?|qty|quantity|description|desc|vendor|mfg|manufacturer|sku)$/i;
+  var bomFields = lines[0].split(',').map(function (f) { return f.trim(); }).filter(Boolean);
+  var bomVocabHits = bomFields.filter(function (f) { return bomHeaderWordRe.test(f); }).length;
+  if (bomFields.length >= 3 && bomVocabHits >= 2) score.bom += 4;
 
   // EDP — strong vendor-document markers ONLY. ⛔ UNDER-CLAIMS ON PURPOSE: EDP is prose plus
   // tables and has the weakest shape signal here. Stretching a rule to cover it would trade one
   // saved tap for wasted pastes. If it is not obvious, it is 'unknown'. A bare "EDP" is just
-  // three letters that can appear in an ordinary shift note — it must NEVER score alone. Only
-  // the full, unambiguous phrase counts.
-  if (/\bequipment data pack\b/i.test(joined)) score.edp += 4;
+  // three letters that can appear in an ordinary shift note — it must NEVER score alone. The full
+  // phrase alone is not enough either: "Still waiting on the equipment data pack from the vendor
+  // rep before I can close this ticket out tonight" says the phrase once in an ordinary status
+  // update, not a document. Require the phrase AND independent document-shape evidence — a
+  // document-field line (Serial/Model/Manufacturer/Part Number/Ship Date/...), or the acronym
+  // echoed alongside the phrase ("Equipment Data Pack (EDP)") — so a passing mention can't qualify.
+  var edpPhrase = /\bequipment data pack\b/i.test(joined);
+  var edpFieldLine = lines.some(function (l) {
+    return /^(serial|model|manufacturer|mfg|part\s*(no\.?|number|#)?|ship\s*date|received|inspected|asset\s*tag|document\s*type)\s*:/i.test(l);
+  });
+  var edpAcronymEcho = /\bequipment data pack\b[^\n]{0,20}\(\s*edp\s*\)|\(\s*edp\s*\)[^\n]{0,20}\bequipment data pack\b/i.test(joined);
+  if (edpPhrase && (edpFieldLine || edpAcronymEcho)) score.edp += 4;
 
   var best = null, bestScore = 0, second = 0;
   Object.keys(score).forEach(function (k) {

@@ -63,6 +63,23 @@ test.describe('paste classifier', () => {
         + 'Handing off to Dana at 06:00.'],
       ['informal arrows in planning prose, not port endpoints',
         "let's move from Plan A -> Plan B -> Plan C for tomorrow"],
+      // ⛔ FIX ROUND 2 REGRESSIONS — same root cause, three more instances: a command word and its
+      // "corroborating" signal were merely present SOMEWHERE in the same blob, not structurally
+      // related to each other. Pinned here so none can regress silently.
+      ['cli command word and a counter term in unrelated sentences',
+        "ethtool was the topic on today's call.\nSomeone also mentioned FCS drift on an old switch, unrelated issue."],
+      ['cli command word and port tokens in one unrelated prose sentence',
+        'perfquery training is postponed. Eth1/1 and Eth2/1 were swapped yesterday for an unrelated reason, no other news.'],
+      ['cli command word buried mid-note, counter term on a different unrelated line',
+        'Site walk notes, aisle 4:\n'
+        + 'Temps nominal, no alarms triggered.\n'
+        + 'ethtool link status confirmed fine on spare NICs.\n'
+        + 'Rx Power looked normal on last optics check, unrelated to this walk.\n'
+        + 'No further action needed today.'],
+      ['bom vocabulary word in an ordinary comma sentence, not a header row',
+        "Thanks for looping in the vendor, we'll proceed as discussed on the call."],
+      ['edp full phrase mentioned once in an ordinary status update, not a document',
+        'Still waiting on the equipment data pack from the vendor rep before I can close this ticket out tonight'],
     ]) {
       const r = await classify(page, text);
       expect(r.verdict, `${name} was classified as ${r.verdict}`).toBe('unknown');
