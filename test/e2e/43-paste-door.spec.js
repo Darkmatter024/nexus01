@@ -3,19 +3,63 @@
 // inside a display:none ancestor (the SHIFT pill, and the first re-home of it). Assert GEOMETRY
 // and hit-testing, because "is it there and wired" passes straight through that defect.
 //
-// ⚠ THE CELL TEST IS NOT HERE YET, AND ITS ABSENCE IS DELIBERATE. Task 2's brief put a tenth
-// ops-cell in the OPS wall, which is a 3x3 grid of exactly nine whose own banner reads "Nine tools
-// on this build". Placement is an owner decision, so the sheet ships first and the reachability
-// test lands with the door. ⛔ Do not call Task 2 done on these three passing — a sheet nothing
-// opens is not a door.
+// ⚠ THE DOOR IS A .pasterow ON WORK, NOT THE BRIEF'S TENTH ops-cell (owner ruling 2026-08-19).
+// The OPS wall is a 3x3 of exactly nine whose banner reads "Nine tools on this build", and .bnr's
+// own background is the missing-raster hatch, so an art-less banner would ship looking broken.
 const { test, expect } = require('./fixtures');
 
+// showMode('work') runs bw_render(), which paints #bw-shell — the surface Work actually shows.
+// ⭐ HOW THE FIRST PLACEMENT WAS CAUGHT, worth keeping: the row measured 0x0 in #work-grid, and
+// the SIBLINGS were measured before the markup was touched. All four shipped banners and the OPS
+// row measured 0x0 too, which said "the container is hidden", not "this control is broken".
+// Fixing the row on that first reading would have been a fix for nothing.
 const openDoor = async (page) => {
   await page.evaluate(() => { if (typeof showMode === 'function') showMode('work'); });
   await page.waitForTimeout(2500);
 };
 
 test.describe('paste door', () => {
+
+  test('⛔ the PASTE row is reachable on Work', async ({ phantom, page }) => {
+    await phantom.boot();
+    await openDoor(page);
+    const c = await page.evaluate(() => {
+      const el = document.querySelector('.pasterow[data-oc="paste"]');
+      if (!el) return { exists: false };
+      el.scrollIntoView({ block: 'center' });
+      const r = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
+      return { exists: true, w: Math.round(r.width), h: Math.round(r.height),
+               covered: hit ? !(hit === el || el.contains(hit)) : true,
+               coveredBy: hit && !(hit === el || el.contains(hit)) ? (hit.id || hit.className) : null,
+               // ⛔ It must live inside #bw-shell, the surface Work actually shows. The banner
+               // stack in #work-grid is hidden by .bw-on from the first Work visit onward, so a
+               // row there would pass "exists and wired" and still never be seen.
+               inBwShell: !!el.closest('#bw-shell') };
+    });
+    expect(c.exists, 'no PASTE row on Work').toBe(true);
+    expect(c.w, 'the PASTE row is 0px wide — unreachable').toBeGreaterThan(0);
+    expect(c.h, `the PASTE row is ${c.h}px tall, under the 44px gloved floor`).toBeGreaterThanOrEqual(44);
+    expect(c.covered, `the PASTE row is covered by ${c.coveredBy}`).toBe(false);
+    expect(c.inBwShell, 'the PASTE row is outside #bw-shell — it would be hidden by .bw-on').toBe(true);
+  });
+
+  test('⛔ tapping the row actually opens the sheet', async ({ phantom, page }) => {
+    await phantom.boot();
+    await openDoor(page);
+    // ⭐ Assert the ROUND TRIP through a real click, not a direct rd_openPaste() call. Both
+    // controls this app shipped dead were "wired correctly" — the handler was never the problem.
+    await page.evaluate(() => document.querySelector('.pasterow[data-oc="paste"]').scrollIntoView({ block: 'center' }));
+    await page.click('.pasterow[data-oc="paste"]');
+    await page.waitForTimeout(300);
+    const s = await page.evaluate(() => {
+      const sheet = document.getElementById('rd-paste-sheet');
+      const r = sheet ? sheet.getBoundingClientRect() : null;
+      return { open: !!(sheet && sheet.className.indexOf('open') >= 0), h: r ? Math.round(r.height) : 0 };
+    });
+    expect(s.open, 'tapping PASTE did not open the sheet').toBe(true);
+    expect(s.h, 'the sheet opened with no height').toBeGreaterThan(100);
+  });
 
   test('the sheet opens with an empty, honest zero state', async ({ phantom, page }) => {
     await phantom.boot();

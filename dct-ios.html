@@ -9000,6 +9000,21 @@ body.rd #work-grid .brow-stack { display:flex; flex-direction:column; gap:12px; 
 /* OPS — §4 ruling: the collapsed head is a .bnr at the SAME 2.90 geometry as the other
    four rows. The mock's fixed `height:96px` .opshead (a 3.771:1 box) was the defect; the
    1170x403 asset was never the problem and is NOT re-cut. */
+/* v1.14.463 — PASTE control strip. Shares the stack's border, radius, press feedback and type
+   with .bnr, but NOT its aspect-ratio or its background: 2.90 is a poster ratio for a destination
+   carrying art, and .bnr's background is the deliberate missing-raster hatch. This row is a
+   control, so it takes a control's height. ⛔ min-height 64px keeps the whole strip a gloved
+   target — the 44px floor is met by the ROW, not by an inner hit area. */
+.pasterow { position:relative; display:flex; align-items:center; justify-content:space-between; gap:12px;
+  width:100%; max-width:100%; min-height:64px; padding:12px 44px 12px 15px; border-radius:16px; overflow:hidden; cursor:pointer;
+  border:1px solid color-mix(in srgb, var(--rfac) 38%, transparent);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 12px 26px -14px #000;
+  background:linear-gradient(158deg, color-mix(in srgb, var(--rfac) 11%, #05070b), #020304 72%);
+  transition:transform .14s ease, border-color .2s; -webkit-tap-highlight-color:transparent; }
+.pasterow:active { transform:scale(.985); border-color:color-mix(in srgb, var(--rfac) 85%, white 8%); }
+.pasterow .ptxt { min-width:0; }
+.pasterow .chev { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:24px; line-height:1; color:var(--rfac); opacity:.75; }
+@media (prefers-reduced-motion:reduce) { .pasterow { transition:none; } }
 .opsrow { position:relative; border-radius:16px; overflow:hidden; background:#020203;
   border:1px solid color-mix(in srgb, var(--rfac) 38%, transparent);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 12px 26px -14px #000; }
@@ -21858,6 +21873,40 @@ function bw_render() {
   var onl = (typeof navigator === 'undefined') || navigator.onLine !== false;
   st.appendChild(E('span', null, onl ? 'ON-DEVICE' : 'ON-DEVICE \u00b7 OFFLINE'));
   host.appendChild(st);
+
+  // \u2500\u2500 v1.14.463 \u2014 THE PASTE DOOR (owner ruling 2026-08-19: its own row on Work) \u2500\u2500
+  // \u26d4 IT LIVES HERE, NOT IN #work-grid's banner stack, AND THAT IS NOT A STYLE CHOICE.
+  // bw_render adds 'bw-on' to #pg-work in all three of its branches and NOTHING in this file
+  // ever removes it, so `body.rd #pg-work.bw-on #work-grid { display:none }` (:58425) hides the
+  // whole banner stack from the first Work visit onward. A row placed there would have been
+  // present, wired, correct and DEAD \u2014 the SHIFT-pill defect, third instance. #bw-shell is the
+  // surface a technician actually lands on, so the door is built here.
+  // \ud83d\udccc Deliberately ABOVE the three routing branches, so it exists in every state including
+  // "No Master loaded": classifying a paste needs no Master, and a tech holding CLI output on a
+  // fresh device is exactly who this door is for.
+  var pasteRow = E('div', 'pasterow');
+  pasteRow.setAttribute('style', '--rfac:var(--cyan)');
+  pasteRow.setAttribute('role', 'button');
+  pasteRow.setAttribute('tabindex', '0');
+  pasteRow.setAttribute('data-oc', 'paste');
+  pasteRow.setAttribute('aria-label', 'Paste anything \u2014 PHANTOM identifies the format');
+  var pTxt = E('div', 'ptxt');
+  pTxt.appendChild(E('div', 'rf-cname', 'PASTE ANYTHING'));
+  pTxt.appendChild(E('div', 'rf-cmeta', 'Port map \u00b7 elevation \u00b7 CLI \u00b7 BOM \u00b7 EDP'));
+  pasteRow.appendChild(pTxt);
+  var pChev = E('div', 'chev', '\u203a');
+  pChev.setAttribute('aria-hidden', 'true');
+  pasteRow.appendChild(pChev);
+  pasteRow.onclick = function () {
+    // \u26d4 Contract 14: the door reports its own absence rather than failing silently under a tap.
+    if (typeof rd_openPaste !== 'function') {
+      try { console.warn('[paste] rd_openPaste is not defined \u2014 the PASTE row has no destination'); } catch (_) {}
+      if (typeof phantomToast === 'function') phantomToast('Paste is unavailable on this build', 'error');
+      return;
+    }
+    rd_openPaste();
+  };
+  host.appendChild(pasteRow);
 
   // ── routing: no Master -> the canonical intake door ──
   if (!c.master && !c.dep) {
