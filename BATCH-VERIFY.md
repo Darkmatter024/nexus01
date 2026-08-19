@@ -4,20 +4,34 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
-# 🟡 CURRENT BATCH — `.460`–`.462` (3 of 6) — OPEN, AWAITING HARDWARE
+# 🟡 CURRENT BATCH — `.460`–`.463` (4 of 6) — OPEN, AWAITING HARDWARE
 
-**Live: `v1.14.462`.** Three ships: `.460` gave SHIFT a door that exists, `.461` made Build's
-CONTINUE incapable of failing silently, `.462` replaced the Home card art. Automation first —
-spec 40 (4), spec 41 (3), `06-composition` (12), `01-nav` (14), `02-build-forge` (14),
-`05-offline` (7+8 skipped), `03-tools` (28), each run ALONE.
+**Live: `v1.14.462`. `.463` is STAGED AND UNPUSHED** — it lands with the next push, so check 4
+cannot be run until then. Four ships: `.460` gave SHIFT a door that exists, `.461` made Build's
+CONTINUE incapable of failing silently, `.462` replaced the Home card art, `.463` added the PASTE
+front door. Automation first — spec 40 (4), spec 41 (3), `06-composition` (12), `01-nav` (14),
+`02-build-forge` (14), `05-offline` (7+8 skipped), `03-tools` (28), spec 42 (6), spec 43 (12),
+each run ALONE, all on **phone-webkit**.
 
-⛔ **Load your real Master.** Three checks. **You are judging what you SEE.**
+⛔ **Load your real Master.** Four checks. **You are judging what you SEE.**
 
 | # | Do this | PASS | FAIL |
 |---|---|---|---|
 | ✅ **1** | Open **COMMAND**. Look for a **SHIFT** row on the deck. Tap it, pick a preset, come back. | The row is there reading **SET SHIFT END** · one tap opens the shift-end sheet · after a preset the row shows a **countdown** | No SHIFT row at all · the row does nothing when tapped · a countdown showing **before** you set one |
 | **2** | Open **BUILD**, active rack, tap **CONTINUE**. | You enter the rack workflow for that rack | See below — **every failure mode is useful here** |
 | ✅ **3** | **SW UPDATE onto `.462` first.** Then look at: Home **FIELD OPERATIONS** · **Work → Handoff** · **SITE PROFILE**. | All three show the new photographic art — two gloved hands passing a tablet on the handoff surfaces, a technician reviewing a tablet for Site Profile. **No portal/transfer-machine panel anywhere.** Then go offline and reopen: all three still render | The old machine panel survives on any surface (the SW did not replace the cached asset) · a blank/broken image · a stretched or badly cropped photo · **the Work→Handoff hero framed oddly** |
+
+| **4** | Open **BUILD**. Find the **PASTE ANYTHING** row. Paste a real port map from your notes, then tap the button it offers. | It names the format and **one tap lands you in PORT MAP with your text already in the box** — you paste once | It names the wrong format · it opens the tool **empty** · it claims a format for something that is not one |
+| **4b** | In the same box, paste an ordinary note to yourself — a couple of lines of prose. | It says it does **not** recognise the format and offers the full tool list | **It guesses.** Any confident verdict on prose is the failure this whole door exists to prevent |
+
+⚠ **CHECK 4 — WHERE THE ROW IS, because the brief said the wrong place.** It is a **PASTE ANYTHING**
+row on the **BUILD / FIELD MODE** workspace, near the top under the site header — **not** in the OPS
+tool wall. It is present even with no Master loaded, because classifying a paste does not need one.
+
+📌 **Check 4 is judged on the ROUND TRIP, not the caption.** The caption being right is half of it;
+the half that matters is that your text is already in the destination box when you arrive. If it
+names the format correctly but the tool opens empty, that is a FAIL and worth telling me, because it
+means the handoff — not the classifier — is where it broke.
 
 ⭐ **CHECK 1 PASSED 2026-08-14.** Kept in the table as the record of what was run. It was a FIRST
 USE, not a regression check: SHIFT's only door was a control measuring 0×0 inside a hidden

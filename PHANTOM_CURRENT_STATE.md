@@ -23,6 +23,7 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 | Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
 | Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact** |
 | ⏳ Open | **`.460`–`.462` — CALL 0 cap 3 of 6.** ✅ `.460` SHIFT door passed 2026-08-14 (§1i) · ✅ `.462` Home card art passed 2026-08-19, §23 with it (§1k) · ⏳ **`.461` CONTINUE is the only leg still open** (§1j) |
+| 🟡 Staged | **`.463` PASTE ANYTHING — BUILT, GATED, NOT PUSHED** (§1l). Eight commits ahead of origin; three stamps at `.463`; `phantom-guard` exit 0; 60 tests green on **phone-webkit**. Owner parked the push. **Live is still `.462` until it goes.** |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
@@ -594,6 +595,59 @@ invented**. No failed image requests.
 ⚠ **NOT VERIFIED, and it is a device check:** the **Work→Handoff feature hero measured 0×0** in the
 harness because that sub-surface did not come up from the automated door. The asset is wired and
 loads; its on-screen framing is unconfirmed.
+
+## 1l · 🟡 `.463` — PASTE ANYTHING: BUILT AND GATED, PUSH PARKED BY OWNER
+
+One door that does not make the technician name the format first. Paste a port map, elevation, CLI
+output, BOM CSV or vendor EDP into one box; PHANTOM says which of the five it looks like, offers
+**one** route, and opens that parser **with the text already in it**. ⛔ **It classifies and never
+parses**, and every one of the five keeps the door it already had — no parser was modified, no
+second engine added, no existing route removed (Contract A2).
+
+⭐ **THE DURABLE FINDING — STRUCTURE SEPARATES A PASTE FROM A SENTENCE; VOCABULARY CANNOT.** Three
+fix rounds each narrowed keyword rules and each was defeated by a fresh phrasing — *and* each
+narrowing started refusing REAL pastes (a port map under a comment banner, a CLI echo behind a
+capture timestamp). ⛔ **Prose can always contain the keywords, so that line has no good point on
+it.** Real pastes are line-oriented, repetitive and delimited; prose is sentences. A structural gate
+now runs ahead of all format scoring and carries the false-positive load, which is what lets the
+format rules stay generous enough for messy real data. **A lone sentence cannot classify however
+many trigger words it holds.**
+📌 Round 4 applied that same principle to the one rule exempted from it: the EDP `^field:` anchor
+was never the weak part — **the QUANTITY of evidence it was asked to carry was.** One field plus the
+acronym is a status note *about* an EDP; fields are now counted.
+
+⛔ **`bw-on` HIDES THE WHOLE WORK BANNER STACK, AND THIS SHIP ONLY DISCOVERED IT — IT DID NOT CAUSE
+IT AND DID NOT FIX IT.** `bw_render()` adds `bw-on` to `#pg-work` in **all three** of its routing
+branches and **nothing in the file ever removes it** (3 adds, 0 removes); it runs on every
+`showMode('work')`. So `body.rd #pg-work.bw-on #work-grid { display:none }` (:58425) hides the
+five-row stack — DEPLOY · SCAN · HANDOFF · MASTER FILE · **OPS and its nine tools** — from the first
+Work visit onward. **OWNER RULING OWED:** was `#bw-shell` (`.385`) meant to supersede the banner
+landing (`.359`)? The PASTE door was built inside `#bw-shell` because of it; a row in the stack
+would have been present, wired, correct and **dead** — the SHIFT-pill defect a third time.
+⭐ **How it was caught, and this is the reusable method: the row measured 0×0, and the SIBLINGS were
+measured BEFORE the markup was touched.** All four shipped banners and the OPS row read 0×0 too,
+which says *the container is hidden*, not *this control is broken*. **A 0×0 on a new control is only
+evidence about that control once its neighbours are proven non-zero.**
+
+⚠ **A STALE CLAIM WAS INHERITED AND REPEATED — RECORDED SO IT DIES HERE.** The session ledger said
+`phone-webkit` was **down machine-wide** on a `libegl.dll` system-runtime gap, and that was carried
+into three commit messages before anyone retested it. **It launches and runs green.** The ship is
+verified on the primary gate after all: spec 42 (6), spec 43 (12), `03-tools` (28), `01-nav` (14) —
+**60 passed on phone-webkit**. ⛔ **Retest an environment claim before inheriting it into a ship
+record**; "the harness is broken" is exactly the kind of assertion that gets copied forward unread.
+
+📌 **Deviations from the authored briefs, all found by reading live code first:** the tenth
+`ops-cell` would have broken a 3×3 wall of exactly nine and falsified its own *"Nine tools on this
+build"* copy · no shared sheet-positioning selector existed to join (profile and errors each held a
+byte-identical copy, so one was extended rather than a third added) · a parse-time
+`addEventListener` IIFE became an `oninput` attribute, since an ordering assumption is how controls
+die · and the router's unconditional `box.value = text` now **states** an overwrite of hand-entered
+content (Contract 11).
+⚠ **`.bnr` cannot be used without art, deliberately** — its own background is the missing-raster
+hatch, authored so a 404 "looks WRONG instead of empty". PASTE is a `.pasterow` control strip.
+
+**Gates:** three stamps at `.463` · `phantom-guard` exit 0 · `node --check sw.js` · valid JSON ·
+0 bare LF · 0 mojibake · inline blocks compile.
 
 ## 2 · Milestone
 
