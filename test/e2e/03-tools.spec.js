@@ -378,11 +378,16 @@ test.describe('ops tool doors (rd_openOpsTool)', () => {
       // (global lexical binding, reachable by bare name only).
       registry: (window.DEPLOY_TOOLS || []).map((t) => t.tab),
       renderers: (typeof OPS_TABS !== 'undefined') ? Object.keys(OPS_TABS) : [],
-      wall: Array.from(document.querySelectorAll('#wk-opswall .ops-cell')).map((c) => c.getAttribute('data-oc')),
-      wallHandlers: Array.from(document.querySelectorAll('#wk-opswall .ops-cell')).map((c) => c.getAttribute('onclick')),
+      // v1.14.464 — THE WALL MOVED, SO THIS FOLLOWS IT. #wk-opswall was deleted with the Build
+      // banner stack (owner ruling 2026-08-19: #bw-shell replaced that landing). The nine tools
+      // now live in the Field tools row, in the SAME registry order the wall used. The invariant
+      // is unchanged and is still the point: registry, doors and renderers must agree.
+      wall: Array.from(document.querySelectorAll('.cs-tools .cs-tool'))
+        .map((c) => ((c.getAttribute('onclick') || '').match(/rd_openOpsTool\('([a-z]+)'\)/) || [])[1]),
+      wallHandlers: Array.from(document.querySelectorAll('.cs-tools .cs-tool')).map((c) => c.getAttribute('onclick')),
     }));
 
-    expect(reg.wall, 'the OPS wall must carry the nine registry tools').toEqual(OPS_TOOLS.map((t) => t.tab));
+    expect(reg.wall, 'the Field tools row must carry the nine registry tools').toEqual(OPS_TOOLS.map((t) => t.tab));
     expect(reg.registry).toEqual(OPS_TOOLS.map((t) => t.tab));
 
     // Every wall cell must route through the ONE canonical door and name a tab that
@@ -472,7 +477,19 @@ test.describe('ops tool reachability', () => {
     // bw-tabs (:20632) only exist in the populated branch, which needs a Master + a
     // resolved rack. The comment the wall shipped with (:13459) states the contract
     // this breaks: "every tool stays ONE tap from this landing".
-    test.fail(true, 'OPS wall hidden by #pg-work.bw-on (:20458/:54055) — nine tools have no phone door');
+    // ── UPDATED v1.14.464. THE CAUSE CHANGED; THE DEFECT THIS ASSERTS DID NOT. ──
+    // The wall is no longer hidden — it is GONE. Owner ruled 2026-08-19 that #bw-shell replaced
+    // the banner landing, so the stack was deleted and its nine tools were restored into the
+    // Field tools row FIRST (SOPS and BURNDOWN had no other caller in the file and were
+    // unreachable in shipped .463; deleting the stack without restoring them would have removed
+    // two tools from the product).
+    // ⛔ THAT ROW LIVES IN #pg-cmd — COMMAND, NOT BUILD. So every tool is reachable again, but
+    // NOT "one tap from the Build landing", which is what this test asserts and what the wall's
+    // own shipped comment promised. Contract A7 says Build is the operational centre, so the pin
+    // STAYS: a tech standing on Build still has zero ops-tool doors under the thumb.
+    // ⚠ Do not repoint this at Command to make it green. That would be weakening the test to fit
+    // the code, and this block's own header forbids it. It flips only when Build has a door.
+    test.fail(true, 'ops tools live on Command (#cs-fieldtools), not the Build landing — Contract A7 unmet');
 
     await phantom.boot();
     await gotoMode(page, 'work');

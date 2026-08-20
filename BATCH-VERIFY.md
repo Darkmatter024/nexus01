@@ -4,9 +4,9 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
-# 🟡 CURRENT BATCH — `.460`–`.463` (4 of 6) — OPEN, AWAITING HARDWARE
+# 🟡 CURRENT BATCH — `.460`–`.464` (5 of 6) — OPEN, AWAITING HARDWARE
 
-**Live: `v1.14.463`** (shipped 2026-08-19, confirmed in the served bytes). Four ships: `.460` gave SHIFT a door that exists, `.461` made Build's
+**Live: `v1.14.464`** (shipped 2026-08-19, confirmed in the served bytes). Five ships: `.460` gave SHIFT a door that exists, `.461` made Build's
 CONTINUE incapable of failing silently, `.462` replaced the Home card art, `.463` added the PASTE
 front door. Automation first — spec 40 (4), spec 41 (3), `06-composition` (12), `01-nav` (14),
 `02-build-forge` (14), `05-offline` (7+8 skipped), `03-tools` (28), spec 42 (6), spec 43 (12),
@@ -22,6 +22,15 @@ each run ALONE, all on **phone-webkit**.
 
 | **4** | Open **BUILD**. Find the **PASTE ANYTHING** row. Paste a real port map from your notes, then tap the button it offers. | It names the format and **one tap lands you in PORT MAP with your text already in the box** — you paste once | It names the wrong format · it opens the tool **empty** · it claims a format for something that is not one |
 | **4b** | In the same box, paste an ordinary note to yourself — a couple of lines of prose. | It says it does **not** recognise the format and offers the full tool list | **It guesses.** Any confident verdict on prose is the failure this whole door exists to prevent |
+
+| **5** | Open **COMMAND**, scroll to **Field tools**. Then open **BUILD**. | Field tools shows **nine** tiles, and **SOPs** and **BURNDOWN** both open when tapped. On BUILD the old five-row banner stack and its 3×3 tool wall are **gone** | Fewer than nine tiles · SOPs or Burndown does nothing · any banner row still on Build |
+
+⛔ **CHECK 5 IS THE ONE THAT MATTERS MOST IN THIS BATCH, and here is why.** SOPS and BURNDOWN had
+**no reachable door at all** in `.463` — their only one was inside a container hidden since `.385`.
+You have not been able to open either of them on the phone for some time. This check is the first
+confirmation they are back. ⚠ **They are on COMMAND, not Build.** That is your ruling as taken; the
+open question it leaves is whether Build should have its own tool door, and a test is pinned red
+against exactly that until you rule.
 
 ⚠ **CHECK 4 — WHERE THE ROW IS, because the brief said the wrong place.** It is a **PASTE ANYTHING**
 row on the **BUILD / FIELD MODE** workspace, near the top under the site header — **not** in the OPS

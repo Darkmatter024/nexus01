@@ -14,7 +14,7 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.463`** (`e3e97e4`) |
+| **Version** | **`phantom-v1.14.464`** |
 | Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454`–`.459` shipped 2026-08-13 · `.460`–`.462` shipped 2026-08-14 |
 | Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.462` |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
@@ -657,6 +657,47 @@ hatch, authored so a 404 "looks WRONG instead of empty". PASTE is a `.pasterow` 
 
 **Gates:** three stamps at `.463` · `phantom-guard` exit 0 · `node --check sw.js` · valid JSON ·
 0 bare LF · 0 mojibake · inline blocks compile.
+
+## 1m · ⭐ `.464` — THE BANNER STACK IS RETIRED, AND THREE LOST TOOLS COME BACK (owner ruling 2026-08-19)
+
+⛔ **THE STACK WAS NOT REDUNDANT — IT WAS UNREACHABLE, AND IT HAD TAKEN THREE TOOLS WITH IT.**
+`bw_render` adds `bw-on` to `#pg-work` in all three routing branches and nothing ever removed it;
+it runs on every `showMode('work')`. `body.rd #pg-work.bw-on #work-grid` was therefore
+`display:none` from the first Work visit onward. **RACK MAP, SOPS and BURNDOWN had no other
+reachable door** — SOPS and BURNDOWN had **exactly one caller each in the whole file** and it was
+the ops-cell inside that hidden container. Measured at 390 on phone-webkit against live `.463`:
+**0 reachable doors** for those three against **1 each** for the six that also sit in the Command
+Field tools row. A technician could not open SOPs or Burndown at all.
+
+⭐ **SO THE FOLD WAS A RESTORE-THEN-DELETE.** The three went into the Field tools row FIRST (six →
+nine), and only then was the stack removed. **Deleting first would have removed two tools from the
+product permanently.** The row is in `DEPLOY_TOOLS` registry order — the same order the retired 3×3
+wall used — so the layout the technician already learned survives the move, and `03-tools` pins that
+order with an order-sensitive comparison. Art is the retired cells' own assets, already in
+`PRECACHE_URLS`, so nothing was orphaned and the precache list did not move.
+
+⛔ **THE PINNED TEST STAYS RED, DELIBERATELY, AND MUST NOT BE REPOINTED.** `03-tools` has carried an
+expected-failure since `.385` asserting the ops tools are one tap from the **BUILD** landing,
+quoting the wall's own shipped promise. The Field tools row lives in `#pg-cmd` — **Command, not
+Build** — so every tool is reachable again while **Contract A7's operational-centre claim remains
+unmet**. The pin was updated to name the new cause and left failing. Repointing it at Command would
+be weakening a test to fit the code, which that block's own header forbids. **It flips when Build
+has a door.** 🟡 **Owner call owed: does Build get its own tool door?**
+
+📌 **CREDIT: THE HARNESS FOUND THIS FIRST.** The `bw-on` cause, the exact CSS rule and the hidden
+wall were already written into that pinned test months ago. This ship rediscovered a defect the
+suite had recorded and nobody had read. ⭐ **Before reporting a discovery, grep the suite for it.**
+
+📌 **DELIBERATELY NOT DONE.** `#work-grid` and `#wk-job-host` stay — `wk_renderJob` writes into the
+job host and `wk_showGrid` is still the BACK target from an open ops tool. The `.bnr`/`.opsrow`/
+`.opswall` CSS stays: inert, and its `.rf-cname`/`.rf-cmeta`/`.chev` neighbours are **SHARED** —
+`.pasterow` uses all three — so tidying there would risk a live door to delete bytes that cost
+nothing. `wk_toggleOpsWall` and `wk_paintOpsWall` stay, inert with zero callers; deleting them
+cascades into nine per-tool stat readers for no user benefit.
+
+**Verified on phone-webkit, each spec ALONE:** `44-tool-reachability` 3 · `03-tools` 28 ·
+`43-paste-door` 12 · `01-nav` 14 · `02-build-forge` 14 · `06-composition` 12 ·
+`42-paste-classifier` 6 — **89 passed.** Gates: three stamps at `.464`, `phantom-guard` exit 0.
 
 ## 2 · Milestone
 
