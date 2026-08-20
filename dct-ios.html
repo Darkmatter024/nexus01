@@ -12943,7 +12943,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.466';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.467';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -39923,7 +39923,7 @@ function rackElevation_render3D(rack, mountEl) {
   // other live attachment regardless of which module owns it. The two hand-written guards this
   // replaces were asymmetric — the rack disposed the aisle, the aisle did not dispose the rack
   // (its guard sat one level up in forge3d_open, so any other caller left both live).
-  RackEngine.releaseOthers(mountEl);
+  if (typeof RackEngine === 'object' && RackEngine) { try { RackEngine.releaseOthers(mountEl); } catch (_) {} }
   mountEl.innerHTML = '';
   var w = mountEl.clientWidth, h = mountEl.clientHeight;
   if (w && h) { mountEl._rm3dSizeTries = 0; }

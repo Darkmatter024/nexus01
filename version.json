@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.466",
+  "version": "phantom-v1.14.467",
   "released": "2026-08-20",
-  "prevVersion": "phantom-v1.14.465",
-  "notes": "v1.14.466 - Legacy mode opt-in now uses sessionStorage instead of localStorage. BUGFIX: ?legacy=1 was persisting indefinitely, trapping operators in the old shell even on clean URLs. New behavior: ?legacy=1 works as a session-scoped rip-cord (survives tab reload) but clears when the tab closes, allowing new sessions to boot the current shell. Operators who need legacy mode can re-opt-in with ?legacy=1 per session. No data loss, behavior preserved."
+  "prevVersion": "phantom-v1.14.466",
+  "notes": "v1.14.467 - BUGFIX: rackElevation_render3D phone-webkit crash. The unguarded RackEngine.releaseOthers() call at line 39926 threw when RackEngine was not initialized, causing BUILD to paint one frame then go black on iOS Safari. Added guard: typeof RackEngine === 'object' && RackEngine with try-catch. Closes regression at .465 — verified against .464 pass on phone-webkit (02-build-forge:14 tests). Three-stamp lockstep enforced by phantom-guard."
 }
