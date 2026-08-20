@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.465",
+  "version": "phantom-v1.14.466",
   "released": "2026-08-20",
-  "prevVersion": "phantom-v1.14.464",
-  "notes": "v1.14.465 - Colour ruling surgical fix: minimap scrubbar slots completed. Canvas device-type colours applied in .464 (storage pink, server light-blue per TYPE_COLOR), but minimap indicators missed. Updated body.rd scrubbar-slot tokens to match. No code deletions or rewrites. Three-stamp lockstep. (Prior .465 merge took old branch with 4486 deletions; discarded. This applies ruling on current codebase.)"
+  "prevVersion": "phantom-v1.14.465",
+  "notes": "v1.14.466 - Legacy mode opt-in now uses sessionStorage instead of localStorage. BUGFIX: ?legacy=1 was persisting indefinitely, trapping operators in the old shell even on clean URLs. New behavior: ?legacy=1 works as a session-scoped rip-cord (survives tab reload) but clears when the tab closes, allowing new sessions to boot the current shell. Operators who need legacy mode can re-opt-in with ?legacy=1 per session. No data loss, behavior preserved."
 }

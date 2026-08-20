@@ -12943,7 +12943,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.465';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.466';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -19587,9 +19587,9 @@ function redesign_isOn() {
   // Legacy is NOT removed — it stays a full, reachable fallback until trust is earned.
   try {
     var s = location.search;
-    if (s.indexOf('legacy=1') !== -1 || s.indexOf('redesign=0') !== -1) localStorage.setItem('phantom_legacy', '1');
-    if (s.indexOf('redesign=1') !== -1 || s.indexOf('legacy=0') !== -1) localStorage.removeItem('phantom_legacy');
-    return localStorage.getItem('phantom_legacy') !== '1';
+    if (s.indexOf('legacy=1') !== -1 || s.indexOf('redesign=0') !== -1) sessionStorage.setItem('phantom_legacy', '1');
+    if (s.indexOf('redesign=1') !== -1 || s.indexOf('legacy=0') !== -1) sessionStorage.removeItem('phantom_legacy');
+    return sessionStorage.getItem('phantom_legacy') !== '1';
   } catch (_) { return true; }
 }
 // v1.14.382 - COMMAND SHELL opt-in. Mirrors redesign_isOn()'s parse but is
@@ -19638,7 +19638,7 @@ function cshell_isOn() {
 // even if removeItem fails (private mode, quota, disabled storage).
 function legacy_returnToNewUI() {
   try {
-    localStorage.removeItem('phantom_legacy');
+    sessionStorage.removeItem('phantom_legacy');
   } catch (e) {
     try { console.warn('[PHANTOM] could not clear phantom_legacy:', e); } catch (_) {}
     try { phantomToast('Could not clear legacy mode - loading with ?redesign=1'); } catch (_) {}
