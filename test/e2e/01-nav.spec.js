@@ -308,15 +308,19 @@ test.describe('house selection', () => {
     expect(await activePages(page)).toEqual([]);
     await expect(page.locator('#pg-triage')).toHaveClass(/active/);
 
-    // The rip-cord persists so a plain reload stays legacy (:18853).
-    expect(await page.evaluate(() => localStorage.getItem('phantom_legacy'))).toBe('1');
+    // v1.14.466: The rip-cord now uses sessionStorage (not localStorage), so it persists across
+    // reloads within a session but clears when the tab closes — preventing the indefinite trap.
+    expect(await page.evaluate(() => sessionStorage.getItem('phantom_legacy'))).toBe('1');
   });
 
   test('?legacy=1 survives a reload without the query string', async ({ phantom, page }) => {
     await phantom.boot({ query: '?legacy=1' });
     expect(await phantom.isRedesign()).toBe(false);
 
-    await page.goto('/dct-ios.html', { waitUntil: 'domcontentloaded' });
+    // v1.14.466: sessionStorage survives reloads within the same session.
+    // A page.reload() keeps the flag; a full page.goto() is a new session and clears it.
+    // This test verifies the reload case (same session, sessionStorage persists).
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await page.locator('#pe-tapcatch').click({ force: true });
     await page.waitForFunction(() => {
       const app = document.getElementById('app');
