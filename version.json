@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.467",
+  "version": "phantom-v1.14.468",
   "released": "2026-08-20",
-  "prevVersion": "phantom-v1.14.466",
-  "notes": "v1.14.467 - BUGFIX: rackElevation_render3D phone-webkit crash. The unguarded RackEngine.releaseOthers() call at line 39926 threw when RackEngine was not initialized, causing BUILD to paint one frame then go black on iOS Safari. Added guard: typeof RackEngine === 'object' && RackEngine with try-catch. Closes regression at .465 — verified against .464 pass on phone-webkit (02-build-forge:14 tests). Three-stamp lockstep enforced by phantom-guard."
+  "prevVersion": "phantom-v1.14.467",
+  "notes": "v1.14.468 - MIGRATION: legacy mode localStorage cleanup. Removes stale phantom_legacy flag from localStorage on every boot (one-line defensive cleanup in redesign_isOn). Devices upgrading from .465 or earlier with the old flag in localStorage will have it cleared, eliminating the sticky legacy mode trap. Also fixed two stale code comments (lines 19596, 19632) that said 'localStorage' but meant 'sessionStorage' (since .466). Three-stamp lockstep enforced by phantom-guard."
 }
