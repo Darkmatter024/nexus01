@@ -11092,9 +11092,9 @@ body.rd .rack-hybrid-minimap .scrubbar-u-label { background: none; padding: 0; r
 body.rd .rack-hybrid-minimap .scrubbar-slot { left: 3px; right: 3px; opacity: 1; background: rgba(var(--kc, 138,75,255), 0.20); border: 1px solid rgba(var(--kc, 138,75,255), 0.85); box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 1px rgba(0,0,0,0.38); transition: background 0.12s; }
 body.rd .rack-hybrid-minimap .scrubbar-slot[data-type="switch"]  { --kc: 138,75,255; }   /* #8a4bff violet */
 body.rd .rack-hybrid-minimap .scrubbar-slot[data-type="gpu"]     { --kc: 31,255,208; }    /* #1fffd0 teal (compute) */
-body.rd .rack-hybrid-minimap .scrubbar-slot[data-type="storage"] { --kc: 255,203,69; }    /* #ffcb45 gold */
+body.rd .rack-hybrid-minimap .scrubbar-slot[data-type="storage"] { --kc: 255,123,208; }    /* #ff7bd0 pink (TYPE_COLOR) */
 body.rd .rack-hybrid-minimap .scrubbar-slot[data-type="cooling"] { --kc: 10,191,216; }    /* #0abfd8 media-blue */
-body.rd .rack-hybrid-minimap .scrubbar-slot[data-type="server"]  { --kc: 93,116,136; }    /* #5d7488 patch-slate */
+body.rd .rack-hybrid-minimap .scrubbar-slot[data-type="server"]  { --kc: 127,208,255; }    /* #7fd0ff light-blue (TYPE_COLOR) */
 body.rd .rack-hybrid-minimap .scrubbar-slot[data-type="network"] { --kc: 59,130,246; }    /* #3b82f6 azure - RULING S4 resolution (distinct from switch violet); validate on screenshot */
 /* Detent (RULING S2 / DETENT S2): engaged glass brightens (~0.32) + 2.5px cyan ring. */
 body.rd .rack-hybrid-minimap .scrubbar-slot.lt-engaged { background: rgba(var(--kc, 138,75,255), 0.32); box-shadow: inset 0 1px 0 rgba(255,255,255,0.30), inset 0 -1px 1px rgba(0,0,0,0.38), 0 0 0 2px rgba(40,224,255,0.75), 0 0 10px rgba(40,224,255,0.35); z-index: 3; }
@@ -12943,7 +12943,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.464';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.465';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
