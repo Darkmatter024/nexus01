@@ -9117,6 +9117,44 @@ body.rd #master-back { display:flex; align-items:center; gap:12px; margin:4px 0 
 .rf-back-btn:active { color:var(--cyan); }
 .rf-back-btn:active::before { border-color:rgba(40,224,255,.5); }
 #ref-back .rf-back-title, #master-back .rf-back-title { font-family:var(--orb); font-weight:700; letter-spacing:.14em; font-size:18px; color:var(--white); }   /* v1.14.363: #master-back joins the selector — .rf-back-title carries NO unscoped styling, so reusing the class alone would render the title in the default face (which is why #work-back's title is unstyled today). Selector extension only; no new declaration, #ref-back unchanged. */
+/* ════════════════════════════════════════════════════════════════════════════
+   v1.14.465 — OPS-IN-PLACE: EXPANDABLE OPS BANNER ON BUILD
+   Owner ruling 2026-08-21: OPS row expands in-place to a responsive grid.
+   ════════════════════════════════════════════════════════════════════════════ */
+#ops-banner-container { position:relative; z-index:10; background:transparent; }
+.ops-banner-row { background:linear-gradient(135deg,rgba(92,242,255,.05),rgba(155,89,255,.05)); border-bottom:1px solid rgba(92,242,255,.1); padding:12px 16px; display:flex; align-items:center; cursor:pointer; user-select:none; transition:all 200ms cubic-bezier(.4,0,.2,1); }
+.ops-banner-row:hover { background:linear-gradient(135deg,rgba(92,242,255,.1),rgba(155,89,255,.1)); }
+.ops-banner-btn { display:flex; align-items:center; gap:8px; background:none; border:none; color:var(--text-primary); cursor:pointer; font-family:var(--mono); font-size:12px; letter-spacing:2px; width:100%; padding:0; margin:0; text-align:left; }
+.ops-banner-icon { font-size:20px; flex-shrink:0; }
+.ops-banner-label { flex-grow:0; }
+.ops-banner-chevron { margin-left:auto; flex-shrink:0; transition:transform 300ms cubic-bezier(.4,0,.2,1); }
+#ops-banner-row.ops-expanded .ops-banner-chevron { transform:rotate(180deg); }
+.ops-grid-host { background:var(--surf-0); padding:0; overflow:hidden; max-height:0; opacity:0; transition:max-height 300ms,opacity 300ms cubic-bezier(.4,0,.2,1); }
+.ops-grid-host.ops-grid-show { max-height:2000px; opacity:1; }
+.ops-grid-header { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid rgba(92,242,255,.1); background:linear-gradient(135deg,rgba(92,242,255,.03),rgba(155,89,255,.03)); }
+.ops-grid-back { background:none; border:none; color:var(--text-primary); cursor:pointer; font-size:18px; padding:0; width:auto; height:auto; flex-shrink:0; }
+.ops-grid-back:hover { opacity:.7; }
+.ops-grid-title { font-family:var(--mono); font-size:12px; letter-spacing:2px; color:var(--text-primary); text-transform:uppercase; }
+.ops-grid-spacer { flex-grow:1; }
+.ops-grid { display:grid; gap:8px; padding:12px 16px 16px; grid-auto-rows:auto; }
+@media (max-width:600px) { .ops-grid { grid-template-columns:1fr 1fr; grid-auto-rows:140px; } }
+@media (min-width:601px) and (max-width:1023px) { .ops-grid { grid-template-columns:repeat(4,1fr); grid-auto-rows:248px; } }
+@media (min-width:1024px) { .ops-grid { grid-template-columns:repeat(6,1fr); grid-auto-rows:248px; } }
+.ops-panel { display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:12px 8px; background:var(--surf-1); border:1px solid rgba(92,242,255,.1); border-radius:12px; cursor:pointer; transition:all 200ms cubic-bezier(.4,0,.2,1); text-align:center; }
+.ops-panel:hover { background:var(--surf-2); border-color:rgba(92,242,255,.25); transform:translateY(-2px); }
+.ops-panel:active { transform:translateY(0); background:var(--surf-1); }
+.ops-panel-icon { font-size:28px; margin-bottom:4px; flex-shrink:0; }
+.ops-panel-name { font-family:var(--mono); font-size:11px; letter-spacing:2px; color:var(--text-primary); text-transform:uppercase; margin-bottom:2px; line-height:1; }
+.ops-panel-meta { font-family:var(--mono); font-size:9px; letter-spacing:1px; color:var(--text-tertiary); opacity:.6; margin-bottom:8px; line-height:1; }
+.ops-panel-divider { width:100%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent); margin:8px 0; flex-shrink:0; }
+.ops-panel-stat { font-family:var(--raj); font-size:18px; font-weight:700; color:var(--panel-accent,#5cf2ff); line-height:1; margin-bottom:2px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
+@media (min-width:601px) { .ops-panel-stat { font-size:24px; } }
+.ops-panel-label { font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--text-tertiary); opacity:.7; line-height:1; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
+.ops-panel-cta { margin-top:auto; padding:6px 12px; background:transparent; border:none; color:var(--panel-accent,#5cf2ff); font-family:var(--mono); font-size:10px; letter-spacing:1px; cursor:pointer; opacity:.7; transition:opacity 200ms; flex-shrink:0; }
+.ops-panel-cta:hover { opacity:1; }
+.ops-panel-cta:active { opacity:.5; }
+.ops-panel.ops-panel-empty { background:transparent; border:1px dashed rgba(255,255,255,.1); cursor:default; pointer-events:none; }
+.ops-panel.ops-panel-empty:hover { background:transparent; border-color:rgba(255,255,255,.1); transform:none; }
 body.rd #pg-ref:not(.rf-grid) .ref-sub.stab-active { animation:rf-fade .22s ease both; }
 @keyframes rf-fade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 /* ━━━ v1.14.175 — R-3b PLATFORMS drill-in (redesign-only). A platform tap swaps the
@@ -19549,7 +19587,7 @@ function showMode(mode) {
   if (mode === 'command' && typeof cmd_render === 'function') { try { cmd_render(); } catch (_) {} }
   // v1.14.385: BUILD resolves a real build context instead of landing on the static
   // launcher. Redesign-gated inside bw_render(); ?legacy=1 never reaches it.
-  if (mode === 'work' && typeof bw_render === 'function') { try { bw_render(); } catch (e) { phantom_logErr('showMode:bw_render', e); } }
+  if (mode === 'work' && typeof bw_render === 'function') { try { bw_render(); if (typeof ops_init === 'function') ops_init(); } catch (e) { phantom_logErr('showMode:bw_render', e); } }
   ['command', 'work', 'ref'].forEach(function(m) {
     var el = document.getElementById('mode-' + m);
     if (el) el.classList.toggle('active', m === mode);
@@ -21853,6 +21891,175 @@ function bw_metrics(rack, ru) {
   return m;
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// v1.14.465 — OPS-IN-PLACE STATE & RENDERING
+// ════════════════════════════════════════════════════════════════════════════
+var _opsRowExpanded = false;
+var _opsRowDeployId = null;
+const OPS_PANELS_CONFIG = [
+  { tool: 'bom', name: 'BOM', meta: 'PARTS', icon: '📦', accent: '#28e0ff' },
+  { tool: 'manifest', name: 'MANIFEST', meta: 'GEAR', icon: '📋', accent: '#8a4bff' },
+  { tool: 'portmap', name: 'PORT MAP', meta: 'CABLING', icon: '🔌', accent: '#1fffd0' },
+  { tool: 'rackmap', name: 'RACK MAP', meta: 'ELEVATION', icon: '📐', accent: '#ffcb45' },
+  { tool: 'sops', name: 'SOPs', meta: 'PROCEDURES', icon: '📄', accent: '#28e0ff' },
+  { tool: 'burndown', name: 'BURNDOWN', meta: 'PROGRESS', icon: '📊', accent: '#ffcb45' },
+  { tool: 'audits', name: 'AUDITS', meta: 'SERIALS', icon: '✓', accent: '#ff8a00' },
+  { tool: 'blast', name: 'BLAST RADIUS', meta: 'POWER MAP', icon: '⚡', accent: '#ff453a' },
+  { tool: 'optics', name: 'OPTICS', meta: 'FIBER · MPO', icon: '◎', accent: '#1fffd0' }
+];
+function ops_toggle() {
+  _opsRowExpanded = !_opsRowExpanded;
+  var banner = document.getElementById('ops-banner-row');
+  var grid = document.getElementById('ops-grid-host');
+  if (!banner || !grid) return;
+  banner.classList.toggle('ops-expanded', _opsRowExpanded);
+  grid.classList.toggle('ops-grid-show', _opsRowExpanded);
+  if (_opsRowExpanded) {
+    ops_renderPanels();
+    var depId = (typeof deploy_getActive === 'function') ? (deploy_getActive() || {}).id : null;
+    if (depId) { try { localStorage.setItem('ops-expanded-' + depId, 'true'); } catch(e) {} }
+  } else {
+    var depId = _opsRowDeployId;
+    if (depId) { try { localStorage.removeItem('ops-expanded-' + depId); } catch(e) {} }
+  }
+}
+function ops_renderPanels() {
+  var host = document.getElementById('ops-grid-inner');
+  if (!host) return;
+  var activeDep = (typeof deploy_getActive === 'function') ? deploy_getActive() : null;
+  _opsRowDeployId = activeDep ? activeDep.id : null;
+  host.innerHTML = '';
+  OPS_PANELS_CONFIG.forEach(function(cfg) {
+    var stat = ops_getStatistic(cfg.tool, activeDep);
+    var panel = document.createElement('div');
+    panel.className = 'ops-panel';
+    panel.setAttribute('data-tool', cfg.tool);
+    panel.setAttribute('data-accent', cfg.accent);
+    panel.style.setProperty('--panel-accent', cfg.accent);
+    panel.onclick = function() {
+      try { rd_openOpsTool(cfg.tool, "showMode('work')"); }
+      catch(e) { try { console.warn('[OPS] rd_openOpsTool failed for ' + cfg.tool, e); } catch(_) {} if (typeof phantomToast === 'function') phantomToast('Could not open ' + cfg.name, 'error'); }
+    };
+    panel.innerHTML = '<div class="ops-panel-icon">' + cfg.icon + '</div><div class="ops-panel-name">' + cfg.name + '</div><div class="ops-panel-meta">' + cfg.meta + '</div><div class="ops-panel-divider"></div><div class="ops-panel-stat">' + stat.value + '</div><div class="ops-panel-label">' + stat.label + '</div><button class="ops-panel-cta" onclick="event.stopPropagation(); rd_openOpsTool(\'' + cfg.tool + '\', \'showMode(\\\"work\\\")\');">▶ Open</button>';
+    host.appendChild(panel);
+  });
+}
+function ops_getStatistic(tool, activeDep) {
+  var value = '—'; var label = 'loading';
+  try {
+    switch(tool) {
+      case 'bom':
+        value = '—'; label = 'revisions';
+        break;
+      case 'manifest':
+        if (activeDep && activeDep.edpParsed && activeDep.edpParsed.racks) {
+          value = String(activeDep.edpParsed.racks.length); label = 'racks';
+        } else {
+          value = '—'; label = 'no deploy';
+        }
+        break;
+      case 'portmap':
+        var results = document.getElementById('portmapResults');
+        value = (results && results.innerHTML) ? '✓' : '○'; label = 'ready';
+        break;
+      case 'rackmap':
+        var lastKey = (typeof RACK_VIEWER_LAST_KEY !== 'undefined') ? RACK_VIEWER_LAST_KEY : 'phantom_rack_viewer_last';
+        var lastRack = null;
+        try { lastRack = localStorage.getItem(lastKey); } catch(e) {}
+        value = lastRack || '○'; label = lastRack ? 'viewed' : 'ready';
+        break;
+      case 'sops':
+        if (typeof loadSOPs === 'function') {
+          var sops = loadSOPs() || [];
+          value = String(sops.length); label = 'procedures';
+        } else {
+          value = '—'; label = 'unavailable';
+        }
+        break;
+      case 'burndown':
+        if (typeof BD !== 'undefined' && BD.loadJobs) {
+          var jobs = BD.loadJobs() || [];
+          var active = jobs.filter(function(j) { return !j.archived; });
+          if (active.length > 0) {
+            var job = active[0];
+            var done = (job.ports || []).filter(function(p) { return p.status === 'done'; }).length;
+            var total = (job.ports || []).length;
+            value = done + '/' + total; label = 'done';
+          } else {
+            value = String(jobs.length); label = 'jobs';
+          }
+        } else {
+          value = '—'; label = 'unavailable';
+        }
+        break;
+      case 'audits':
+        if (typeof AUDIT !== 'undefined' && AUDIT.load) {
+          var audits = AUDIT.load() || [];
+          value = String(audits.length); label = 'audits';
+        } else {
+          value = '—'; label = 'unavailable';
+        }
+        break;
+      case 'blast':
+        if (activeDep && typeof power_loadTopology === 'function') {
+          var topo = power_loadTopology(activeDep.id);
+          if (topo && topo.racks) {
+            value = String(topo.racks.length); label = 'racks';
+          } else {
+            value = '✗'; label = 'no map';
+          }
+        } else {
+          value = '—'; label = 'no deploy';
+        }
+        break;
+      case 'optics':
+        if (typeof loadOpticInventory === 'function') {
+          var inv = loadOpticInventory() || [];
+          value = String(inv.length); label = 'scans';
+        } else {
+          value = '—'; label = 'unavailable';
+        }
+        break;
+    }
+  } catch(e) {
+    try { console.warn('[OPS] statistic failed for ' + tool, e); } catch(_) {}
+    value = '!'; label = 'error';
+  }
+  return { value: value, label: label };
+}
+function ops_restoreState() {
+  var activeDep = (typeof deploy_getActive === 'function') ? deploy_getActive() : null;
+  if (!activeDep) return;
+  var isExpanded = false;
+  try { isExpanded = localStorage.getItem('ops-expanded-' + activeDep.id) === 'true'; } catch(e) {}
+  if (isExpanded && !_opsRowExpanded) ops_toggle();
+}
+function ops_ensureContainer() {
+  var bwShell = document.getElementById('bw-shell');
+  if (!bwShell) return false;
+  var existing = document.getElementById('ops-banner-container');
+  if (existing) return true;
+  var container = document.createElement('div');
+  container.id = 'ops-banner-container';
+  var banner = document.createElement('div');
+  banner.id = 'ops-banner-row';
+  banner.className = 'ops-banner-row';
+  banner.innerHTML = '<button class="ops-banner-btn" onclick="ops_toggle()" aria-label="Expand OPS panel"><span class="ops-banner-icon">◎</span><span class="ops-banner-label">OPS</span><span class="ops-banner-chevron">▼</span></button>';
+  var gridHost = document.createElement('div');
+  gridHost.id = 'ops-grid-host';
+  gridHost.className = 'ops-grid-host';
+  gridHost.style.display = 'none';
+  gridHost.innerHTML = '<div class="ops-grid-header"><button class="ops-grid-back" onclick="ops_toggle()" aria-label="Collapse OPS panel">←</button><div class="ops-grid-title">OPS</div><div class="ops-grid-spacer"></div></div><div class="ops-grid" id="ops-grid-inner"></div>';
+  container.appendChild(banner);
+  container.appendChild(gridHost);
+  bwShell.insertBefore(container, bwShell.firstChild);
+  return true;
+}
+function ops_init() {
+  if (!ops_ensureContainer()) return;
+  ops_restoreState();
+}
+
 function bw_render() {
   var host = document.getElementById('bw-shell');
   if (!host) {
@@ -22300,6 +22507,8 @@ function bw_render() {
   });
   cx.appendChild(ls);
   host.appendChild(cx);
+  // OPS-IN-PLACE: ensure banner container exists and refresh state
+  if (typeof ops_init === 'function') { try { ops_init(); } catch(e) { try { console.warn('[OPS] init failed', e); } catch(_) {} } }
 }
 
 // Mounts the EXISTING rack scene. Scene internals - lighting, materials, fog, tone
