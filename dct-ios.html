@@ -13068,7 +13068,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.469';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.471';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -22803,8 +22803,7 @@ function bw_render() {
   });
   cx.appendChild(ls);
   host.appendChild(cx);
-  // OPS-IN-PLACE: ensure banner container exists and refresh state
-  if (typeof ops_init === 'function') { try { ops_init(); } catch(e) { try { console.warn('[OPS] init failed', e); } catch(_) {} } }
+  // OPS-IN-PLACE init is called by showMode('work'), not here — avoid duplicate initialization
 }
 
 // Mounts the EXISTING rack scene. Scene internals - lighting, materials, fog, tone
