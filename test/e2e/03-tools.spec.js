@@ -172,6 +172,7 @@ const OPS_TOOLS = [
   { tab: 'audits', title: 'AUDITS', proof: '#ops-tool-host button[onclick="AUDIT.showNewForm()"]', text: 'Optic Audits' },
   { tab: 'blast', title: 'BLAST RADIUS', proof: '#ops-tool-host .br-wrap', text: 'BLAST RADIUS' },
   { tab: 'optics', title: 'OPTICS', proof: '#ops-tool-host', text: 'Optic' },
+  { tab: 'isolate', title: 'ISOLATE', proof: '#ops-tool-host .iso', text: 'Down-link' },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════

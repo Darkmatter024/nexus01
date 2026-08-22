@@ -8905,6 +8905,89 @@ body.rd #ref-grid .rf-glabel { font-family: var(--ff-display); font-size: var(--
 }
 body.rd .rf-cnr { display: none; }   /* unified recipe has no corner brackets */
 
+/* ━━━ SHIP-ISOLATE-OPS-380 · ISOLATE tool (redesign only) ━━━ */
+body.rd .iso{padding:var(--sp-4) var(--sp-5) 120px}
+body.rd .iso .eyebrow{font-size:var(--fs-micro);letter-spacing:var(--hud-track-wide);text-transform:uppercase;color:var(--slate);font-weight:700}
+body.rd .iso .title{font-size:var(--fs-hero);font-weight:700;line-height:1.1;margin:2px 0 var(--sp-4)}
+body.rd .iso .sec{font-size:var(--fs-micro);letter-spacing:var(--hud-track-wide);text-transform:uppercase;color:var(--slate);font-weight:700;margin:var(--sp-6) 0 var(--sp-3)}
+body.rd .iso .card{--rfac:var(--cyan);position:relative;border-radius:var(--r-card);border:1px solid color-mix(in srgb,var(--rfac) 30%,transparent);background:linear-gradient(158deg,#050506 0%,#010102 46%,#000 76%,#030304 100%);box-shadow:inset 0 1px 0 rgba(210,234,244,.12),0 12px 26px -14px rgba(0,0,0,.9);padding:var(--sp-4);margin-bottom:var(--sp-3)}
+body.rd .iso .card.glow{box-shadow:inset 0 1px 0 rgba(210,234,244,.12),inset 0 0 30px -6px color-mix(in srgb,var(--rfac) 18%,transparent),0 12px 26px -14px rgba(0,0,0,.9)}
+body.rd .iso .card .k{font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);text-transform:uppercase;color:var(--slate);font-weight:700;margin-bottom:6px}
+body.rd .iso .card p{margin:0;color:var(--slate);line-height:1.45}
+body.rd .iso .grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)}
+body.rd .iso .tile{--rfac:var(--cyan);position:relative;aspect-ratio:1/1;border-radius:var(--r-card);border:1px solid color-mix(in srgb,var(--rfac) 36%,transparent);background:radial-gradient(circle at 82% 16%,color-mix(in srgb,var(--rfac) 22%,transparent),transparent 50%),linear-gradient(158deg,#050506 0%,#010102 46%,#000 76%,#030304 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 26px -14px rgba(0,0,0,.9);display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 14px 15px;cursor:pointer;transition:transform .14s;-webkit-tap-highlight-color:transparent}
+body.rd .iso .tile:active{transform:scale(.97)}
+body.rd .iso .tile.soon{opacity:.45;cursor:default;pointer-events:none}
+body.rd .iso .tile.gold{--rfac:var(--gold)}body.rd .iso .tile.violet{--rfac:var(--violet)}body.rd .iso .tile.teal{--rfac:var(--teal)}body.rd .iso .tile.red{--rfac:var(--red)}body.rd .iso .tile.white{--rfac:#cfe3ee}
+body.rd .iso .tile .art{position:absolute;inset:0;display:grid;place-items:center}
+body.rd .iso .tile .art svg{width:54%;height:54%;filter:drop-shadow(0 0 10px color-mix(in srgb,var(--rfac) 55%,transparent))}
+body.rd .iso .tile .nm{position:relative;font-size:var(--fs-body);letter-spacing:var(--hud-track-mid);text-transform:uppercase;font-weight:700}
+body.rd .iso .tile .mt{position:relative;font-size:var(--fs-micro);letter-spacing:var(--hud-track-data);color:var(--slate);padding-top:2px}
+body.rd .iso .tile .pill{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:var(--fs-micro);padding:3px 7px;border-radius:var(--r-pill);background:rgba(0,0,0,.6);border:1px solid color-mix(in srgb,var(--rfac) 50%,transparent);color:var(--rfac)}
+body.rd .iso .row{display:flex;align-items:center;gap:var(--sp-3);min-height:var(--tap-m);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-ctl);background:var(--surf-1);border:var(--hud-card-edge);margin-bottom:var(--sp-2);cursor:pointer}
+body.rd .iso .row.soon{opacity:.4;cursor:default;pointer-events:none}
+body.rd .iso .row .dot{width:8px;height:8px;border-radius:50%;flex:none}
+body.rd .iso .row .t{flex:1;min-width:0}body.rd .iso .row .t b{display:block;font-size:var(--fs-body)}body.rd .iso .row .t span{font-family:var(--mono);font-size:var(--fs-micro);color:var(--slate)}
+body.rd .iso .row .st{font-family:var(--mono);font-size:var(--fs-micro);letter-spacing:var(--hud-track-data)}
+body.rd .iso .ooda{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0 0 var(--sp-4)}
+body.rd .iso .ooda div{padding:8px 0 6px;text-align:center;font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);text-transform:uppercase;color:var(--slate-dim);font-weight:700;border-bottom:2px solid var(--slate2)}
+body.rd .iso .ooda div small{display:block;font-family:var(--mono);font-size:9px;letter-spacing:0;margin-top:2px;color:inherit;opacity:.8}
+body.rd .iso .ooda div.done{color:var(--slate);border-color:var(--slate)}
+body.rd .iso .ooda div.now{color:var(--cyan);border-color:var(--cyan);text-shadow:0 0 10px rgba(92,242,255,.5)}
+body.rd .iso .ooda div.gate{color:var(--gold)}body.rd .iso .ooda div.gate.now{border-color:var(--gold);text-shadow:0 0 10px rgba(255,214,10,.5)}
+body.rd .iso .steps{display:flex;gap:5px;margin-bottom:var(--sp-4)}
+body.rd .iso .steps i{flex:1;height:3px;border-radius:2px;background:var(--slate2)}
+body.rd .iso .steps i.d{background:var(--slate)}body.rd .iso .steps i.n{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}body.rd .iso .steps i.g{background:var(--gold);opacity:.55}body.rd .iso .steps i.g.n{opacity:1;box-shadow:0 0 8px var(--gold)}
+body.rd .iso .why{border-left:2px solid var(--cyan);padding:2px 0 2px var(--sp-3);color:var(--slate);line-height:1.5;margin:0 0 var(--sp-4)}
+body.rd .iso .rule{border-left:2px solid var(--gold);padding:var(--sp-2) var(--sp-3);background:rgba(255,214,10,.05);border-radius:0 var(--r-ctl) var(--r-ctl) 0;color:#ffe27a;font-size:var(--fs-caption);line-height:1.5;margin:0 0 var(--sp-4)}
+body.rd .iso .rule b{display:block;font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);text-transform:uppercase;margin-bottom:3px;color:var(--gold)}
+body.rd .iso .f{margin-bottom:var(--sp-4)}
+body.rd .iso .f label{display:block;font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);text-transform:uppercase;color:var(--slate);font-weight:700;margin-bottom:6px}
+body.rd .iso .f label em{font-style:normal;color:var(--red);margin-left:3px}
+body.rd .iso .in{width:100%;min-height:var(--tap-m);display:flex;align-items:center;padding:0 var(--sp-3);border-radius:var(--r-ctl);background:var(--surf-2);border:var(--hud-card-edge);font-family:var(--mono);font-size:var(--fs-body);color:var(--white);letter-spacing:var(--hud-track-data);box-sizing:border-box;outline:none}
+body.rd .iso .in::placeholder{color:var(--slate-dim)}
+body.rd .iso .in:focus{border-color:var(--cyan-border-hi)}
+body.rd .iso textarea.in{min-height:72px;padding-top:10px;line-height:1.45;font-family:var(--ff-display);resize:vertical}
+body.rd .iso .srcwrap{position:relative}
+body.rd .iso .src{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:var(--fs-micro);color:var(--cyan);border:1px solid var(--cyan-border);padding:2px 6px;border-radius:var(--r-pill);pointer-events:none;background:rgba(4,7,11,.8)}
+body.rd .iso .chips{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+body.rd .iso .chip{min-height:var(--tap-s);padding:0 14px;display:flex;align-items:center;border-radius:var(--r-ctl);border:var(--hud-card-edge);background:var(--surf-1);color:var(--slate);font-size:var(--fs-body);font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+body.rd .iso .chip.on{color:var(--cyan);border-color:var(--cyan-border-hi);background:var(--cyan-surface);box-shadow:inset 0 0 14px -6px var(--cyan)}
+body.rd .iso .chip.on.red{color:var(--red);border-color:rgba(255,69,58,.45);background:rgba(255,69,58,.06);box-shadow:none}
+body.rd .iso .chip.on.ok{color:var(--ok);border-color:rgba(61,220,132,.45);background:rgba(61,220,132,.06);box-shadow:none}
+body.rd .iso .chip.on.gold{color:var(--gold);border-color:rgba(255,214,10,.45);background:rgba(255,214,10,.06);box-shadow:none}
+body.rd .iso .bar{position:sticky;bottom:0;margin:var(--sp-4) calc(-1*var(--sp-5)) 0;padding:var(--sp-3) var(--sp-5) var(--sp-4);display:flex;gap:var(--sp-2);background:linear-gradient(to top,rgba(4,7,11,1) 70%,rgba(4,7,11,0))}
+body.rd .iso .btn{flex:1;min-height:var(--tap-l);display:flex;align-items:center;justify-content:center;gap:8px;border-radius:var(--r-ctl);font-size:var(--fs-body);font-weight:700;letter-spacing:var(--hud-track-mid);text-transform:uppercase;border:var(--hud-card-edge);background:var(--surf-1);color:var(--slate);cursor:pointer;-webkit-tap-highlight-color:transparent}
+body.rd .iso .btn.pri{color:#04141a;background:var(--cyan);border-color:var(--cyan);box-shadow:var(--glow-cyan)}
+body.rd .iso .btn.gold{color:#1a1400;background:var(--gold);border-color:var(--gold);box-shadow:var(--glow-gold)}
+body.rd .iso .btn.ghost{flex:0 0 auto;padding:0 16px}
+body.rd .iso .btn[disabled]{opacity:.4;box-shadow:none;cursor:default}
+body.rd .iso .gate{border-radius:var(--r-sheet);border:1px solid rgba(255,214,10,.35);background:var(--surf-2);box-shadow:inset 0 1px 0 rgba(255,214,10,.15),0 30px 60px -20px #000;padding:var(--sp-5);margin-bottom:var(--sp-4)}
+body.rd .iso .gate .k{color:var(--gold);font-size:var(--fs-micro);letter-spacing:var(--hud-track-wide);text-transform:uppercase;font-weight:700}
+body.rd .iso .gate h3{margin:6px 0 8px;font-size:var(--fs-head);font-weight:700}
+body.rd .iso .gate p{color:var(--slate);line-height:1.5;margin:0}
+body.rd .iso .gate .fn{margin:var(--sp-3) 0 0;font-family:var(--mono);font-size:var(--fs-micro);color:var(--slate-dim)}
+body.rd .iso .tierbar{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:var(--sp-3) 0 var(--sp-4)}
+body.rd .iso .tierbar div{text-align:center;padding:8px 0;border-radius:2px;font-family:var(--mono);font-size:var(--fs-micro);border:var(--hud-card-edge);color:var(--slate-dim)}
+body.rd .iso .tierbar div.you{color:var(--cyan);border-color:var(--cyan-border-hi);background:var(--cyan-surface)}
+body.rd .iso .tierbar div.need{color:var(--gold);border-color:rgba(255,214,10,.45);background:rgba(255,214,10,.06)}
+body.rd .iso .tierbar div small{display:block;font-family:var(--ff-display);letter-spacing:var(--hud-track-data);margin-top:2px;color:inherit;opacity:.8}
+body.rd .iso .sentence{font-size:var(--fs-subhead);line-height:1.55;color:var(--white);margin:0}
+body.rd .iso .sentence mark{background:none;color:var(--cyan)}body.rd .iso .sentence mark.g{color:var(--gold)}
+body.rd .iso .kv{display:grid;grid-template-columns:84px 1fr;gap:6px 10px;font-size:var(--fs-caption);line-height:1.5}
+body.rd .iso .kv b{font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);text-transform:uppercase;color:var(--slate);padding-top:2px}
+body.rd .iso .kv span{font-family:var(--mono);color:var(--white);letter-spacing:var(--hud-track-data);word-break:break-word}
+body.rd .iso .kv span.dim{color:var(--slate-dim)}
+body.rd .iso .prov{display:flex;gap:6px;flex-wrap:wrap;margin-top:var(--sp-3)}
+body.rd .iso .prov i{font-style:normal;font-family:var(--mono);font-size:var(--fs-micro);padding:3px 8px;border-radius:var(--r-pill);border:var(--hud-card-edge);color:var(--slate)}
+body.rd .iso .prov i.c{color:var(--cyan);border-color:var(--cyan-border)}
+body.rd .iso .trail{list-style:none;margin:0;padding:0}
+body.rd .iso .trail li{display:grid;grid-template-columns:54px 1fr;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:var(--fs-caption)}
+body.rd .iso .trail li b{font-family:var(--mono);color:var(--slate);font-weight:600}
+body.rd .iso .trail li span{color:var(--white)}body.rd .iso .trail li span.f{color:var(--gold)}
+body.rd .iso .empty{color:var(--slate);font-size:var(--fs-caption);padding:var(--sp-2) 0}
+/* R2 · OPS wall goes 5×2 at every breakpoint */
+
 /* v1.14.110 — deploy dashboard glass (New-UI only). Inline styles stay for legacy;
    these override the 4 surface props under body.rd so the dashboard cards match the
    glass recipe. Calm (no saturate) for data density. Accent banners keep their left spine. */
@@ -12981,7 +13064,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.468';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.469';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -14054,6 +14137,7 @@ if (typeof window !== 'undefined') {
             <button type="button" class="cs-tool" onclick="rd_openOpsTool('audits')" aria-label="Audits"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-audits-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Audits</span></button>
             <button type="button" class="cs-tool" onclick="rd_openOpsTool('blast')" aria-label="Blast"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-power-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Blast</span></button>
             <button type="button" class="cs-tool" onclick="rd_openOpsTool('optics')" aria-label="Optics"><span class="cs-tool-art" style="background-image:url(icons/phantom-ref-optics-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Optics</span></button>
+            <button type="button" class="cs-tool" onclick="rd_openOpsTool('isolate')" aria-label="Isolate"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-isolate-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Isolate</span></button>
             </div>
           </div>
           <div class="cs-card cs-dpanel" id="cs-ready">
@@ -22060,6 +22144,211 @@ function ops_init() {
   ops_restoreState();
 }
 
+// ━━━ ISOLATE TOOL (SHIP-ISOLATE-OPS-380) ━━━
+function iso_contextBlock(rackId) {
+  if (!rackId) return '';
+  var s = iso_load().sessions.filter(function(x){ return x.status !== 'closed' && x.rackId === rackId; })[0];
+  if (!s) return '';
+  var v = s.values;
+  return 'OPEN ISOLATION — down-link, rack ' + rackId + ' (step ' + (s.step+1) + '/8, tier ' + iso_tier() + '):\n' +
+    (v.endpoints ? '- endpoints: ' + v.endpoints + '\n' : '') +
+    (v.led ? '- as-found: ' + v.led + '\n' : '') +
+    s.trail.map(function(t){ return '- ' + t.text; }).join('\n');
+}
+
+function iso_render(c) {
+  var store = iso_load();
+  var html = '<div class="iso">';
+
+  // Tier chip row
+  html += '<div style="display:flex;gap:6px;margin-bottom:' + 'var(--sp-4)' + ';flex-wrap:wrap">';
+  ISO_TIERS.forEach(function(tier) {
+    var isActive = store.tier === tier.id;
+    html += '<button class="chip' + (isActive ? ' on' : '') + '" onclick="iso_setTier(\'' + tier.id + '\');iso_render(document.getElementById(\'ops-tool-host\'))" style="' + (isActive ? 'color:var(--cyan);border-color:var(--cyan-border-hi);background:var(--cyan-surface);box-shadow:inset 0 0 14px -6px var(--cyan)' : 'color:var(--slate);border:var(--hud-card-edge);background:var(--surf-1)') + ';">' + tier.id + ' · ' + tier.name + '</button>';
+  });
+  html += '</div>';
+
+  // Open sessions
+  var openSessions = store.sessions.filter(function(s){ return s.status !== 'closed'; });
+  html += '<div class="sec">Open Isolations</div>';
+  if (openSessions.length) {
+    openSessions.forEach(function(sess) {
+      var dotColor = sess.status === 'packet' ? 'background:var(--gold)' : 'background:var(--cyan)';
+      var ooda = ISO_OODA.find(function(g){ return g.steps.indexOf(sess.step) >= 0; });
+      var ooadaName = ooda ? ooda.k : '?';
+      var ts = new Date(sess.openedAt);
+      var hm = (ts.getHours() < 10 ? '0' : '') + ts.getHours() + ':' + (ts.getMinutes() < 10 ? '0' : '') + ts.getMinutes();
+      html += '<div class="row" onclick="iso_renderStep(document.getElementById(\'ops-tool-host\'), \'' + sess.id + '\')">';
+      html += '<div class="dot" style="' + dotColor + '"></div>';
+      html += '<div class="t"><b>Down-link · ' + (sess.values.location || sess.rackId || 'no location') + '</b><span>step ' + (sess.step+1) + '/8 · opened ' + hm + '</span></div>';
+      html += '<div class="st">' + ooadaName + '</div>';
+      html += '</div>';
+    });
+  } else {
+    html += '<div class="empty">No open isolations.</div>';
+  }
+
+  // Isolation flows
+  html += '<div class="sec">Isolation Flows</div>';
+  html += '<div class="grid">';
+  html += '<div class="tile" onclick="var s = iso_newSession(); iso_renderStep(document.getElementById(\'ops-tool-host\'), s.id)"><div class="art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h6M14 12h6"/><circle cx="12" cy="12" r="3"/></svg></div><div class="pill">OODA · 8</div><div class="nm">DOWN-LINK</div><div class="mt">Link will not come up</div></div>';
+
+  var soonTiles = [
+    {nm:'No-boot',title:'No boot · no heart',icon:'M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'},
+    {nm:'Layers',title:'Multiple layers',icon:'M3 9h18v2H3V9zm0 4h18v2H3v-2z'},
+    {nm:'Inspect·Clean',title:'Inspect · clean',icon:'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z'},
+    {nm:'Connect gate',title:'Connection gated',icon:'M19 11H5v2h14v-2z'},
+    {nm:'Packet',title:'Packet ready',icon:'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z'},
+  ];
+  var colors = ['gold','violet','teal','white','red'];
+  soonTiles.forEach(function(tile, i) {
+    html += '<div class="tile soon ' + colors[i] + '"><div class="art"><svg viewBox="0 0 24 24" fill="currentColor"><path d="' + tile.icon + '"/></svg></div><div class="pill">SOON</div><div class="nm">' + tile.nm + '</div><div class="mt">' + tile.title + '</div></div>';
+  });
+  html += '</div>';
+
+  // Doctrine
+  html += '<div class="card"><div class="k">One-variable rule</div><p style="margin:0;color:var(--slate);line-height:1.5">If you change several variables at once, you may restore service but you lose the evidence needed to prove the failed component.</p></div>';
+
+  html += '</div>';
+  c.innerHTML = html;
+}
+
+function iso_renderStep(c, id) {
+  var sess = iso_get(id);
+  if (!sess) { iso_render(c); return; }
+  var step = ISO_DOWNLINK_STEPS[sess.step];
+  var ooda = ISO_OODA.find(function(g){ return g.steps.indexOf(sess.step) >= 0; });
+  var html = '<div class="iso">';
+  html += '<div class="eyebrow">Down-link · step ' + (sess.step+1) + ' of 8</div>';
+  html += '<div class="title">' + step.title + '</div>';
+
+  // OODA rail
+  html += '<div class="ooda">';
+  ISO_OODA.forEach(function(rail) {
+    var state = rail.steps.indexOf(sess.step) >= 0 ? 'now' : (sess.step > rail.steps[rail.steps.length-1] ? 'done' : '');
+    var isDone = sess.step > rail.steps[rail.steps.length-1];
+    var gateClass = rail.p2 && !isDone ? ' gate' : '';
+    html += '<div class="' + state + gateClass + '"><small>' + rail.k + '</small></div>';
+  });
+  html += '</div>';
+
+  // Progress bar
+  html += '<div class="steps">';
+  for (var i = 0; i < 8; i++) {
+    var cls = i < sess.step ? 'd' : (i === sess.step ? 'n' : '');
+    var gateClass = (ISO_DOWNLINK_STEPS[i].p2 && iso_tierBlocksP2()) ? ' g' : '';
+    if (i === sess.step && ISO_DOWNLINK_STEPS[i].p2 && iso_tierBlocksP2()) cls = '';
+    html += '<i class="' + cls + gateClass + '"></i>';
+  }
+  html += '</div>';
+
+  html += '<div class="why">' + step.why + '</div>';
+  if (step.rule) html += '<div class="rule"><b>Rule</b> ' + step.rule + '</div>';
+
+  // P2 gate check
+  if (step.p2 && iso_tierBlocksP2()) {
+    html += '<div class="gate"><div class="k">Permission gate</div><h3>Loopback and DOM reads are P2 work.</h3><p>You do not have authorization to perform P2 steps. Skipping writes "P2 not performed — tier ' + iso_tier() + '" into the packet. That is a valid, honest answer.</p><div class="tierbar">';
+    ISO_TIERS.forEach(function(t) {
+      var cls = t.id === iso_tier() ? 'you' : (t.id === 'P2' ? 'need' : '');
+      html += '<div class="' + cls + '"><small>' + t.id + '</small></div>';
+    });
+    html += '</div><div style="display:flex;gap:6px;margin-top:var(--sp-3)">';
+    html += '<button class="chip on" onclick="sess=iso_get(\'' + id + '\');sess.values.auth=undefined;iso_put(sess);iso_renderStep(document.getElementById(\'ops-tool-host\'),\'' + id + '\')">Skip · record as not authorized</button>';
+    html += '<button class="chip" onclick="sess=iso_get(\'' + id + '\');sess.values.auth=\'Authorized on this site\';iso_put(sess);iso_renderStep(document.getElementById(\'ops-tool-host\'),\'' + id + '\')">Authorized on this site</button>';
+    html += '</div><div class="fn" style="margin-top:var(--sp-3)">Skipping writes "P2 not performed — tier ' + iso_tier() + '" into the packet. That is a valid, honest answer.</div></div>';
+  } else {
+    // Fields
+    step.fields.forEach(function(f) {
+      var val = sess.values[f.id] || '';
+      var src = sess.sources[f.id];
+      html += '<div class="f"><label>' + f.label + (f.req ? '<em>*</em>' : '') + '</label>';
+      if (f.kind === 'text') {
+        html += '<div class="srcwrap"><input class="in" type="text" placeholder="' + (f.ph||'') + '" value="' + val + '" onchange="s=iso_get(\'' + id + '\');s.values[' + JSON.stringify(f.id) + ']=this.value;s.sources[' + JSON.stringify(f.id) + ']=\'tech\';iso_put(s)" />';
+        if (src) html += '<span class="src">' + (src === 'jobstate' ? 'from JobState' : src === 'master' ? 'from Master' : src) + '</span>';
+        html += '</div>';
+      } else if (f.kind === 'textarea') {
+        html += '<textarea class="in" placeholder="' + (f.ph||'') + '" onchange="s=iso_get(\'' + id + '\');s.values[' + JSON.stringify(f.id) + ']=this.value;s.sources[' + JSON.stringify(f.id) + ']=\'tech\';iso_put(s)">' + val + '</textarea>';
+      } else if (f.kind === 'chips') {
+        html += '<div class="chips">';
+        f.opts.forEach(function(opt) {
+          var isOn = val === opt;
+          html += '<button class="chip' + (isOn ? ' on' : '') + '" onclick="s=iso_get(\'' + id + '\');s.values[' + JSON.stringify(f.id) + ']=\'' + opt.replace(/'/g, "\\'") + '\';s.sources[' + JSON.stringify(f.id) + ']=\'tech\';iso_put(s);iso_renderStep(document.getElementById(\'ops-tool-host\'),\'' + id + '\')">' + opt + '</button>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+  }
+
+  // Trail (if step > 0)
+  if (sess.step > 0) {
+    html += '<div class="card"><div class="k">Trail · this session</div><ul class="trail">';
+    sess.trail.forEach(function(entry) {
+      var ts = new Date(entry.t);
+      var hm = (ts.getHours() < 10 ? '0' : '') + ts.getHours() + ':' + (ts.getMinutes() < 10 ? '0' : '') + ts.getMinutes();
+      var isFault = entry.text.indexOf('Fault behavior') >= 0 || entry.text.indexOf('fault ') >= 0;
+      html += '<li><b>' + hm + '</b><span class="' + (isFault ? 'f' : '') + '">' + entry.text + '</span></li>';
+    });
+    html += '</ul></div>';
+  }
+
+  // Photo chip
+  html += '<div class="f"><label>Photos</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0"><input type="file" accept="image/*" capture="environment" style="display:none" onchange="s=iso_get(\'' + id + '\');if(!s.photos)s.photos=[];s.photos.push({t:Date.now(),name:this.files[0].name});iso_put(s);iso_renderStep(document.getElementById(\'ops-tool-host\'),\'' + id + '\')" /><span class="chip" style="flex:0">📷 ' + (sess.photos.length > 0 ? sess.photos.length + ' photos' : 'Add photo') + '</span></label></div>';
+
+  // Action bar
+  html += '<div class="bar"><button class="btn ghost" onclick="iso_render(document.getElementById(\'ops-tool-host\'))">Park</button>';
+  var nextDisabled = step.fields.filter(function(f){ return f.req; }).some(function(f){ return !sess.values[f.id]; });
+  if (sess.step === 7) {
+    html += '<button class="btn pri"' + (nextDisabled ? ' disabled' : '') + ' onclick="if(!this.disabled) { s=iso_get(\'' + id + '\');s.trail.push({t:Date.now(),step:' + sess.step + ',text:' + JSON.stringify(step.trailLine(sess.values)) + '});s.status=\'packet\';iso_put(s);iso_renderPacket(document.getElementById(\'ops-tool-host\'),\'' + id + '\'); }">Build packet →</button>';
+  } else {
+    html += '<button class="btn pri"' + (nextDisabled ? ' disabled' : '') + ' onclick="if(!this.disabled) { s=iso_get(\'' + id + '\');s.trail.push({t:Date.now(),step:' + sess.step + ',text:' + JSON.stringify(step.trailLine(sess.values)) + '});s.step++;iso_put(s);iso_renderStep(document.getElementById(\'ops-tool-host\'),\'' + id + '\'); }">Next · ' + (ISO_OODA.find(function(g){ return g.steps.indexOf(sess.step+1) >= 0; }) || {k:'Done'}).k + ' →</button>';
+  }
+  html += '</div>';
+  html += '</div>';
+  c.innerHTML = html;
+}
+
+function iso_renderPacket(c, id) {
+  var sess = iso_get(id);
+  if (!sess) { iso_render(c); return; }
+  var html = '<div class="iso">';
+  html += '<div class="eyebrow">Down-link · packet</div>';
+  html += '<div class="title">One sentence, then evidence</div>';
+
+  // SAY THIS
+  var sent = iso_sentence(sess);
+  var marked = sent.replace(/(Location unset|endpoints unset|state not recorded|fault [a-z]+)/g, '<mark>$1</mark>')
+    .replace(/P2 not performed[^.]*\./g, '<mark class="g">$&</mark>');
+  html += '<div class="card glow"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)"><div class="k">Say this</div></div><p class="sentence">' + marked + '</p>';
+  var ts = new Date(sess.openedAt);
+  var hm = (ts.getHours() < 10 ? '0' : '') + ts.getHours() + ':' + (ts.getMinutes() < 10 ? '0' : '') + ts.getMinutes();
+  html += '<div class="prov"><i class="c">source: isolate/down-link</i><i>session ' + hm + '</i><i>' + sess.trail.length + ' steps · ' + sess.photos.length + ' photos</i>' + (sess.values.tech ? '<i>' + sess.values.tech + '</i>' : '') + '</div></div>';
+
+  // ASK field
+  html += '<div class="card"><div class="k">Ask</div><textarea class="in" placeholder="Request network-side port/lane review · IB-LEAF-03 P41" onchange="s=iso_get(\'' + id + '\');s.values.ask=this.value;iso_put(s);iso_renderPacket(document.getElementById(\'ops-tool-host\'),\'' + id + '\')">' + (sess.values.ask||'') + '</textarea></div>';
+
+  // PACKET
+  html += '<div class="card"><div class="k">Packet · 10.8 fields</div><div class="kv">';
+  var pkt = iso_packet(sess).split('\n\n')[0];
+  pkt.split('\n').forEach(function(line) {
+    var m = line.match(/^([^:]+):\s*(.*)/);
+    if (m) html += '<b>' + m[1] + '</b><span' + (m[2] === '—' ? ' class="dim"' : '') + '>' + m[2] + '</span>';
+  });
+  html += '</div></div>';
+
+  // ROUTE
+  html += '<div class="card"><div class="k">Route</div>';
+  html += '<div class="row" onclick="navigator.clipboard.writeText(iso_packet(iso_get(\'' + id + '\')));phantomToast(\'Packet copied\',\'ok\')"><div style="flex:1">Copy packet</div><div style="font-family:var(--mono);font-size:var(--fs-micro);color:var(--slate-dim)">⌘C</div></div>';
+  html += '<div class="row soon"><div style="flex:1">Add to shift handoff →</div><div style="font-size:var(--fs-micro);color:var(--slate-dim)">Blocked</div></div>';
+  html += '<div class="row soon"><div>Log defect on rack</div></div>';
+  html += '<div class="row soon"><div>Ask AI · tighten the sentence</div></div>';
+  html += '</div>';
+
+  html += '<div class="bar"><button class="btn ghost" onclick="s=iso_get(\'' + id + '\');s.status=\'closed\';s.closedAt=Date.now();iso_put(s);iso_render(document.getElementById(\'ops-tool-host\'))">Close session</button><button class="btn pri" onclick="navigator.clipboard.writeText(iso_sentence(iso_get(\'' + id + '\')));phantomToast(\'Sentence copied\',\'ok\')">Copy sentence</button></div>';
+  html += '</div>';
+  c.innerHTML = html;
+}
+
 function bw_render() {
   var host = document.getElementById('bw-shell');
   if (!host) {
@@ -24846,7 +25135,8 @@ const OPS_TABS = {
     //   phantom_deploy_assign_v1  → [ { id, deploymentId, techName, phaseType, rackIds } ]  (Stage 4+)
     deploy_showList(c);
   },
-  manifest: function(c) { manifest_render(c); }
+  manifest: function(c) { manifest_render(c); },
+  isolate:  function(c) { iso_render(c); }
   // v1.14.248: the `crashcart` key is REMOVED. Crash-Cart Mode was RETIRED by owner
   // decision (PHASE0-CENSUS). Its OPS_TABS launch card and the #ops-tab-strip pill were
   // its ONLY doors — crashcart_toggle() had no other caller — so the key and the pill go
@@ -24911,6 +25201,124 @@ const DEPLOY_OPTICS_KEY = 'phantom_deploy_optics_v1';
 const DEPLOY_AUDIT_KEY  = 'phantom_deploy_audit_v1';
 const SITE_PROFILE_KEY  = 'phantom_site_profile_v1';
 const HANDOFF_KEY       = 'phantom_handoff_v1';
+const ISOLATE_KEY = 'phantom_isolate_v1';
+
+// Permission tiers — Ground Game §3 (reference). Displayed on the gate and the tier chip row.
+const ISO_TIERS = [
+  { id:'P0', name:'Observe',   rule:'No state change.' },
+  { id:'P1', name:'Physical',  rule:'Follow EDP/MOP/vendor procedure. One change at a time.' },
+  { id:'P2', name:'Test',      rule:'Only when trained and explicitly authorized. Record before/after.' },
+  { id:'P3', name:'Configure', rule:'Engineering / authorized ops unless your site role grants it.' },
+  { id:'P4', name:'Energized', rule:'Qualified personnel only under the site electrical/facilities program.' }
+];
+
+// OODA rail groups — index ranges into ISO_DOWNLINK_STEPS
+const ISO_OODA = [
+  { k:'Observe', steps:[0,1] },
+  { k:'Orient',  steps:[2,3,4] },
+  { k:'Decide',  steps:[5] },
+  { k:'Act',     steps:[6,7], p2:true }
+];
+
+// Field kinds: 'text' | 'textarea' | 'chips'. `req` = required to advance.
+// `prefill` = which store to try at open: 'jobstate' | 'master'. Absent = tech types.
+const ISO_DOWNLINK_STEPS = [
+  { id:'observe', title:'Freeze as-found',
+    why:'Before you touch anything: identity, LED state, any telemetry you can see, photos. Timestamp it. Everything after this is compared to this.',
+    rule:'OODA + one-variable rule. If you change several variables at once, you may restore service but you lose the evidence needed to prove the failed component.',
+    fields:[
+      { id:'location',  label:'Hall / row / rack / RU', kind:'text', req:true, prefill:'jobstate', ph:'HALL-07 / ROW-C / R-C02 / U14' },
+      { id:'endpoints', label:'Endpoints A → B',        kind:'text', req:true, prefill:'master',   ph:'HGX-02 NIC2 → IB-LEAF-03 P41' },
+      { id:'media',     label:'Cable ID · type · optic', kind:'text', prefill:'master',            ph:'CBL-RC02-IB-014 · MPO-12 APC · OSFP-800' },
+      { id:'led',       label:'LED / link state',       kind:'chips', opts:['Down · no light','Flapping','Up · errors','Amber / other','Unknown'] },
+      { id:'error',     label:'Error text / DOM if visible', kind:'textarea', ph:'Low Rx, FEC errors, admin down…' }
+    ],
+    trailLine: v => 'As-found: ' + (v.led || 'state not recorded') },
+
+  { id:'orient', title:'Expected state',
+    why:'Confirm the link should be up now. Verify source/destination, port mode, lane/breakout, cable ID, engineered media/optic, and any configuration dependency.',
+    fields:[
+      { id:'shouldUp', label:'Should this link be up now?', kind:'chips', req:true, opts:['Yes','No — not in this window','Unknown — stop and check EDP'] },
+      { id:'mode',     label:'Port mode', kind:'chips', opts:['Native','Breakout 1:2','Breakout 1:4','Unknown'] },
+      { id:'edp',      label:'Source / dest / rail match EDP?', kind:'chips', opts:['Yes','No — discrepancy','Need port map'] },
+      { id:'orientNotes', label:'Notes', kind:'textarea' }
+    ],
+    trailLine: v => 'Should be up: ' + (v.shouldUp||'?') + ' · ' + (v.mode||'mode ?') + ' · EDP ' + (v.edp||'?') },
+
+  { id:'seat', title:'Physical seating',
+    why:'Both endpoints and any patch points. Connector fully latched; optic fully seated.',
+    fields:[
+      { id:'seatA', label:'Endpoint A latched / optic seated', kind:'chips', opts:['Pass','Reseated','Damaged latch','Cannot access'] },
+      { id:'seatB', label:'Endpoint B latched / optic seated', kind:'chips', opts:['Pass','Reseated','Damaged latch','Cannot access'] },
+      { id:'patch', label:'Patch / panel points', kind:'chips', opts:['N/A','Checked','Issue found'] }
+    ],
+    trailLine: v => 'Seat A ' + (v.seatA||'?') + ' · Seat B ' + (v.seatB||'?') + (v.patch ? ' · patch ' + v.patch : '') },
+
+  { id:'clean', title:'Inspect · clean · inspect',
+    why:'Inspect-clean-inspect both mating surfaces. Contamination on one side can leave the same loss after you clean the other.',
+    rule:'Never look into a fiber or transceiver aperture. Assume the link may be active even with no visible light.',
+    fields:[
+      { id:'inspectA', label:'End A inspect-clean-inspect', kind:'chips', opts:['Pass','Cleaned then pass','Quarantined','Not required by work package'] },
+      { id:'inspectB', label:'End B inspect-clean-inspect', kind:'chips', opts:['Pass','Cleaned then pass','Quarantined','Not required by work package'] },
+      { id:'damage',   label:'Crushed / kink / bend / stressed breakout', kind:'chips', opts:['None','Found — see notes'] },
+      { id:'damageNotes', label:'Damage notes', kind:'textarea' }
+    ],
+    trailLine: v => 'I-C-I A ' + (v.inspectA||'?') + ' · B ' + (v.inspectB||'?') + (v.damage==='Found — see notes' ? ' · DAMAGE' : '') },
+
+  { id:'compat', title:'Compatibility',
+    why:'Optic/cable SKU, media, wavelength/reach, port speed, FEC/breakout expectations, platform qualification. A cable that physically seats can still be wrong.',
+    fields:[
+      { id:'form',  label:'Form factor / media / APC-UPC match BOM', kind:'chips', opts:['Match','Mismatch — stop','Need BOM'] },
+      { id:'reach', label:'Reach / loss budget plausible', kind:'chips', opts:['Yes','No','Unknown'] },
+      { id:'compatNotes', label:'SKU / polarity / lane notes', kind:'textarea' }
+    ],
+    trailLine: v => 'Compat: ' + (v.form||'?') + ' · reach ' + (v.reach||'?') },
+
+  { id:'onevar', title:'One variable',
+    why:'Pick the lowest-risk variable you are authorized to change. Change only that. Then record where the fault went — that line is the evidence.',
+    rule:'Cleaning, reseating and one known-good swap are isolation steps, not proof — until the fault behavior is written down.',
+    fields:[
+      { id:'variable', label:'Variable changed', kind:'chips', req:true, opts:['None yet','Cable only','Optic A','Optic B','Port / cage','Endpoint'] },
+      { id:'followed', label:'Fault behavior',   kind:'chips', req:true, opts:['Stayed on port','Followed optic','Followed cable','Restored','Still down — no change'] },
+      { id:'onevarNotes', label:'What you did', kind:'textarea', ph:'Known-good 3 m MPO substituted; fault stayed with leaf port.' }
+    ],
+    trailLine: v => (v.variable||'?') + ' → ' + (v.followed||'?') },
+
+  { id:'local', title:'Local test', p2:true,
+    why:'Loopback, power meter, VFL, or platform self-test only if trained and authorized. Record readings and setup.',
+    rule:'Passing loopback largely clears the local port and optic; it proves nothing about the end-to-end path.',
+    fields:[
+      { id:'auth',  label:'P2 authorization for this site', kind:'chips', opts:['Skip · record as not authorized','Authorized on this site'] },
+      { id:'loopA', label:'Loopback A', kind:'chips', opts:['Not run','Pass','Fail'] },
+      { id:'loopB', label:'Loopback B', kind:'chips', opts:['Not run','Pass','Fail'] },
+      { id:'readings', label:'Readings (power / VFL / DOM)', kind:'textarea' }
+    ],
+    trailLine: v => v.auth==='Authorized on this site' ? ('Loopback A ' + (v.loopA||'not run') + ' · B ' + (v.loopB||'not run')) : 'P2 local test skipped' },
+
+  { id:'telemetry', title:'Telemetry', p2:true,
+    why:'With the network/platform owner (or via mlxlink/ibstat if your tier allows): link state, DOM/optical levels, FEC/errors, lane status, admin state, logs.',
+    fields:[
+      { id:'dom',   label:'DOM / counters', kind:'textarea', ph:'Rx / Tx, FEC, admin state…' },
+      { id:'owner', label:'Network / platform owner engaged?', kind:'chips', opts:['Yes','Not yet','N/A'] }
+    ],
+    trailLine: v => 'Telemetry: ' + (v.dom ? 'recorded' : 'none') + ' · owner ' + (v.owner||'?') }
+];
+
+// Escalation packet — Ground Game §10.8. Order is the packet order.
+const ISO_PACKET_FIELDS = ['Location','Endpoints','Media','Expected','Observed','Actions','Result','Evidence','P2','Ask'];
+
+function iso_defaultStore() { return { v:1, tier:'P1', sessions:[] }; }
+function iso_load()  { var s = safeGet(ISOLATE_KEY, null); return (s && s.v === 1 && Array.isArray(s.sessions)) ? s : iso_defaultStore(); }
+function iso_save(s) { safeStore(ISOLATE_KEY, JSON.stringify(s)); }
+function iso_get(id) { return iso_load().sessions.filter(function(x){ return x.id === id; })[0] || null; }
+function iso_put(sess) {
+  var s = iso_load(); sess.updatedAt = Date.now();
+  s.sessions = [sess].concat(s.sessions.filter(function(x){ return x.id !== sess.id; }));
+  iso_save(s);
+}
+function iso_setTier(t) { var s = iso_load(); if (ISO_TIERS.some(function(x){ return x.id===t; })) { s.tier = t; iso_save(s); } }
+function iso_tier() { return iso_load().tier || 'P1'; }
+function iso_tierBlocksP2() { var t = iso_tier(); return t === 'P0' || t === 'P1'; }
 
 // ━━━ STABILITY & SCALE CAP (Stage 1 — added to protect storage layer) ━━━
 // Hard ceiling: 600 racks per deployment. Derived from localStorage headroom math:
@@ -28720,6 +29128,52 @@ var JOBSTATE_FIELDS = [
   }
 ];
 
+function iso_newSession() {
+  var rackId = ''; try { rackId = _ctx_activeRackId() || ''; } catch(_) {}
+  var sess = { id:'iso_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6), kind:'down-link',
+    status:'open', step:0, rackId:rackId, openedAt:Date.now(), updatedAt:Date.now(), closedAt:null, tech:'',
+    values:{}, sources:{}, trail:[], photos:[] };
+  // Prefill — READ ONLY from real stores. Mark source. Never guess.
+  try {
+    var js = (typeof jobState_snapshot === 'function') ? jobState_snapshot(rackId) : '';
+    // D10 decides the exact fields. Rule: if JobState exposes hall/row/rack, compose
+    // location as 'HALL / ROW / RACK' and set sources.location = 'jobstate'. If it does not, leave blank.
+  } catch(_) {}
+  // Endpoints/media from Master: ONLY if a single down link is already identified for rackId
+  // (Phase 2 elevation hook passes it in). Phase 1: leave blank. No keyword guessing.
+  iso_put(sess); return sess;
+}
+
+function iso_sentence(sess) {
+  var v = sess.values;
+  var loc = (v.location||'').trim() || 'Location unset';
+  var ends = (v.endpoints||'').trim() || 'endpoints unset';
+  var obs = (v.led||'').trim() || 'state not recorded';
+  var acts = [];
+  if (v.seatA||v.seatB) acts.push('seated both ends');
+  if (v.inspectA||v.inspectB) acts.push('I-C-I both ends');
+  if (v.variable && v.variable!=='None yet') acts.push('known-good ' + v.variable.toLowerCase() + ' substituted');
+  var res = v.followed ? ('fault ' + v.followed.toLowerCase()) : 'fault behavior not recorded';
+  var p2 = (v.auth==='Authorized on this site') ? '' : 'P2 not performed (tier ' + iso_tier() + '). ';
+  var ask = (v.ask||'').trim() || 'Request next action.';
+  return (loc + ', ' + ends + ' remains ' + obs.toLowerCase() + '. ' + (acts.length ? acts.join(', ') + '; ' : '') + res + '. No port moves. ' + p2 + ask).replace(/\s+/g,' ').trim();
+}
+
+function iso_packet(sess) {
+  var v = sess.values, t = iso_tier();
+  var rows = {
+    Location: v.location||'—', Endpoints: v.endpoints||'—', Media: v.media||'—',
+    Expected: [v.shouldUp, v.mode, v.edp ? 'EDP ' + v.edp : ''].filter(Boolean).join(' · ') || '—',
+    Observed: [v.led, v.error].filter(Boolean).join(' · ') || '—',
+    Actions: [v.seatA?'Seat A '+v.seatA:'', v.seatB?'Seat B '+v.seatB:'', v.inspectA?'I-C-I A '+v.inspectA:'', v.inspectB?'I-C-I B '+v.inspectB:'', v.variable?'Variable '+v.variable:''].filter(Boolean).join(' · ') || '—',
+    Result: [v.followed, v.onevarNotes].filter(Boolean).join(' · ') || '—',
+    Evidence: ((sess.photos||[]).length + ' photos') + ' · trail ' + sess.trail.length + ' entries',
+    P2: (v.auth==='Authorized on this site') ? ([v.loopA?'Loop A '+v.loopA:'', v.loopB?'Loop B '+v.loopB:'', v.readings].filter(Boolean).join(' · ') || 'authorized, nothing recorded') : ('not performed — tier ' + t),
+    Ask: v.ask||'—'
+  };
+  return ISO_PACKET_FIELDS.map(function(k){ return k + ': ' + rows[k]; }).join('\n') + '\n\n' + iso_sentence(sess);
+}
+
 function jobState_snapshot(rackId) {
   var lines = [];
   JOBSTATE_FIELDS.forEach(function (f) {
@@ -28806,6 +29260,10 @@ function buildContext(opts) {
   var budget = 2200 - ctx_tokens(parts.join('\n\n'));
   var tail = [];
   if (job) { var jt = ctx_capTokens(job, 400); if (ctx_tokens(jt) <= budget) { tail.push(jt); budget -= ctx_tokens(jt); } }
+  // SHIP-ISOLATE-OPS-380 — open down-link isolation for this rack, if any. Deterministic: matches rackId only.
+  var iso = '';
+  try { iso = iso_contextBlock(rackId || _ctx_activeRackId()); } catch (e) { console.warn('[context] isolate block failed', e); }
+  if (iso) { var it = ctx_capTokens(iso, 400); if (ctx_tokens(it) <= budget) { tail.push(it); budget -= ctx_tokens(it); } }
   if (master) { var mt = ctx_capTokens(master, Math.min(1000, budget)); if (mt && budget > 0) { tail.push(mt); budget -= ctx_tokens(mt); } }
   if (extra && budget > 0) { var et = ctx_capTokens(extra, budget); if (et) tail.push(et); }
 
@@ -32581,7 +33039,8 @@ var DEPLOY_TOOLS = [
   // Registry-only addition: nothing ITERATES DEPLOY_TOOLS any more (deploy_showTools was
   // deleted in .179; the Ref platform picker at :20015 renders RD_PLATFORMS, not this), so
   // this adds a title lookup and paints no new card anywhere.
-  { tab:'optics',    name:'OPTICS',     meta:'FIBER · MPO', ac:'#1fffd0', img:'icons/phantom-ref-optics-768.webp', icon:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>' }
+  { tab:'optics',    name:'OPTICS',     meta:'FIBER · MPO', ac:'#1fffd0', img:'icons/phantom-ref-optics-768.webp', icon:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>' },
+  { tab:'isolate',   name:'ISOLATE',    meta:'DOWN-LINK',  ac:'#5cf2ff', img:'icons/phantom-tool-isolate-768.webp', icon:'<path d="M4 12h6M14 12h6"/><circle cx="12" cy="12" r="3"/>' }
 ];
 function _deploy_toolsBackHdr(title, backOnclick) {
   return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">' +
@@ -55195,7 +55654,7 @@ var PHANTOM_BACKUP_PREFIXES = ['phantom_scaffold_v1::'];
 var PHANTOM_BACKUP_NAMED_KEYS = ['dct_sops_v1','dct_racks_v1','dct_burndown_v1','phantom_rack_history',
   'phantom_optic_inventory','phantom_deployments_v1','phantom_deploy_racks_v1','phantom_deploy_phases_v1',
   'phantom_deploy_optics_v1','phantom_deploy_audit_v1','phantom_site_profile_v1','phantom_handoff_v1',
-  'phantom_edp_cache_v1','phantom_master_v1','phantom_jobsnap_v1','phantom_ghost_echo_v1'];
+  'phantom_isolate_v1','phantom_edp_cache_v1','phantom_master_v1','phantom_jobsnap_v1','phantom_ghost_echo_v1'];
 // Keys deliberately NOT backed up — see the block comment above for the reasoning on each.
 var PHANTOM_BACKUP_EXCLUDED_KEYS = ['_cc_probe','__phantom_health','phantom_legacy','phantom_seen_boot',
   'phantom_freeze_v1','phantom_session_state_v1','phantom_tab_presence_v1','phantom_pin_lockout_v1',
@@ -59421,7 +59880,7 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   /* §9.15 Field Tools - three columns, two rows, 95px tiles, 9px gap. The art is
      the SAME approved 768 tool set the OPS wall uses, and every tile routes through
      rd_openOpsTool(), the one canonical door. */
-  body.rd.cshell .cs-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  body.rd.cshell .cs-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
   body.rd.cshell .cs-tool {
     font-size: var(--fs-body);
     position: relative; height: 95px; border-radius: var(--r-card); overflow: hidden; cursor: pointer;
