@@ -8915,14 +8915,18 @@ body.rd .iso .card.glow{box-shadow:inset 0 1px 0 rgba(210,234,244,.12),inset 0 0
 body.rd .iso .card .k{font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);text-transform:uppercase;color:var(--slate);font-weight:700;margin-bottom:6px}
 body.rd .iso .card p{margin:0;color:var(--slate);line-height:1.45}
 body.rd .iso .grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)}
-body.rd .iso .tile{--rfac:var(--cyan);position:relative;aspect-ratio:1/1;border-radius:var(--r-card);border:1px solid color-mix(in srgb,var(--rfac) 36%,transparent);background:radial-gradient(circle at 82% 16%,color-mix(in srgb,var(--rfac) 22%,transparent),transparent 50%),linear-gradient(158deg,#050506 0%,#010102 46%,#000 76%,#030304 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 26px -14px rgba(0,0,0,.9);display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 14px 15px;cursor:pointer;transition:transform .14s;-webkit-tap-highlight-color:transparent}
-body.rd .iso .tile:active{transform:scale(.97)}
-body.rd .iso .tile.soon{opacity:.45;cursor:default;pointer-events:none}
-body.rd .iso .tile.gold{--rfac:var(--gold)}body.rd .iso .tile.violet{--rfac:var(--violet)}body.rd .iso .tile.teal{--rfac:var(--teal)}body.rd .iso .tile.red{--rfac:var(--red)}body.rd .iso .tile.white{--rfac:#cfe3ee}
-body.rd .iso .tile .art{position:absolute;inset:0;display:grid;place-items:center}
-body.rd .iso .tile .art svg{width:54%;height:54%;filter:drop-shadow(0 0 10px color-mix(in srgb,var(--rfac) 55%,transparent))}
-body.rd .iso .tile .nm{position:relative;font-size:var(--fs-body);letter-spacing:var(--hud-track-mid);text-transform:uppercase;font-weight:700}
-body.rd .iso .tile .mt{position:relative;font-size:var(--fs-micro);letter-spacing:var(--hud-track-data);color:var(--slate);padding-top:2px}
+body.rd .iso .tile{padding:0;overflow:hidden;border:1px solid color-mix(in srgb,var(--rfac) 36%,transparent);background:#000;text-align:left;font:inherit;color:var(--white);position:relative;aspect-ratio:1/1;border-radius:var(--r-card);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 26px -14px rgba(0,0,0,.9);cursor:pointer;transition:transform .14s;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;justify-content:flex-end}
+body.rd .iso .tile:active .art{transform:scale(1.03)}
+body.rd .iso .tile.soon{opacity:1}
+body.rd .iso .tile.soon .art{filter:saturate(.35) brightness(.55)}
+body.rd .iso .tile.soon .nm,body.rd .iso .tile.soon .mt{color:var(--slate)}
+body.rd .iso .tile.soon .pill{color:var(--slate);border-color:rgba(255,255,255,.14)}
+body.rd .iso .tile.gold{--rfac:var(--gold)}body.rd .iso .tile.violet{--rfac:var(--violet)}body.rd .iso .tile.teal{--rfac:var(--teal)}body.rd .iso .tile.red{--rfac:var(--red)}
+body.rd .iso .tile .art{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform .18s}
+body.rd .iso .tile .scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.55) 34%,rgba(0,0,0,0) 62%)}
+body.rd .iso .tile .nm,body.rd .iso .tile .mt{position:absolute;left:15px;right:12px}
+body.rd .iso .tile .nm{bottom:26px;font-size:var(--fs-body);letter-spacing:var(--hud-track-mid);text-transform:uppercase;font-weight:700}
+body.rd .iso .tile .mt{bottom:12px;font-size:var(--fs-micro);letter-spacing:var(--hud-track-data);color:var(--slate)}
 body.rd .iso .tile .pill{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:var(--fs-micro);padding:3px 7px;border-radius:var(--r-pill);background:rgba(0,0,0,.6);border:1px solid color-mix(in srgb,var(--rfac) 50%,transparent);color:var(--rfac)}
 body.rd .iso .row{display:flex;align-items:center;gap:var(--sp-3);min-height:var(--tap-m);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-ctl);background:var(--surf-1);border:var(--hud-card-edge);margin-bottom:var(--sp-2);cursor:pointer}
 body.rd .iso .row.soon{opacity:.4;cursor:default;pointer-events:none}
@@ -22189,20 +22193,23 @@ function iso_render(c) {
   }
 
   // Isolation flows
+  _isoHost = c;
   html += '<div class="sec">Isolation Flows</div>';
   html += '<div class="grid">';
-  html += '<div class="tile" onclick="var s = iso_newSession(); iso_renderStep(document.getElementById(\'ops-tool-host\'), s.id)"><div class="art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h6M14 12h6"/><circle cx="12" cy="12" r="3"/></svg></div><div class="pill">OODA · 8</div><div class="nm">DOWN-LINK</div><div class="mt">Link will not come up</div></div>';
-
-  var soonTiles = [
-    {nm:'No-boot',title:'No boot · no heart',icon:'M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'},
-    {nm:'Layers',title:'Multiple layers',icon:'M3 9h18v2H3V9zm0 4h18v2H3v-2z'},
-    {nm:'Inspect·Clean',title:'Inspect · clean',icon:'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z'},
-    {nm:'Connect gate',title:'Connection gated',icon:'M19 11H5v2h14v-2z'},
-    {nm:'Packet',title:'Packet ready',icon:'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z'},
-  ];
-  var colors = ['gold','violet','teal','white','red'];
-  soonTiles.forEach(function(tile, i) {
-    html += '<div class="tile soon ' + colors[i] + '"><div class="art"><svg viewBox="0 0 24 24" fill="currentColor"><path d="' + tile.icon + '"/></svg></div><div class="pill">SOON</div><div class="nm">' + tile.nm + '</div><div class="mt">' + tile.title + '</div></div>';
+  ISO_FLOWS.forEach(function(flow) {
+    var classList = 'tile';
+    if (flow.ac === 'red') classList += ' red';
+    else if (flow.ac === 'violet') classList += ' violet';
+    else if (flow.ac === 'teal') classList += ' teal';
+    else if (flow.ac === 'gold') classList += ' gold';
+    if (!flow.live) classList += ' soon';
+    html += '<button type="button" class="' + classList + '"' + (flow.live ? ' onclick="iso_startDownlink()"' : ' disabled') + ' aria-label="' + flow.name + '">';
+    html += '<span class="art" style="background-image:url(' + flow.img + ')" aria-hidden="true"></span>';
+    html += '<span class="scrim" aria-hidden="true"></span>';
+    html += '<span class="pill">' + flow.pill + '</span>';
+    html += '<span class="nm">' + flow.name + '</span>';
+    html += '<span class="mt">' + flow.mt + '</span>';
+    html += '</button>';
   });
   html += '</div>';
 
@@ -25306,6 +25313,21 @@ const ISO_DOWNLINK_STEPS = [
 
 // Escalation packet — Ground Game §10.8. Order is the packet order.
 const ISO_PACKET_FIELDS = ['Location','Endpoints','Media','Expected','Observed','Actions','Result','Evidence','P2','Ask'];
+
+const ISO_FLOWS = [
+  { id:'downlink', name:'Down-link',      mt:'Link will not come up',        img:'icons/phantom-iso-downlink-768.webp', ac:'cyan',   pill:'OODA · 8', live:true },
+  { id:'noboot',   name:'No-boot',        mt:'No POST · cycling · dead',     img:'icons/phantom-iso-noboot-768.webp',   ac:'red',    pill:'SOON' },
+  { id:'layers',   name:'Layers',         mt:'Name the layer, name the owner', img:'icons/phantom-iso-layers-768.webp', ac:'violet', pill:'SOON' },
+  { id:'inspect',  name:'Inspect · Clean', mt:'Both ends of every mate',     img:'icons/phantom-iso-inspect-768.webp',  ac:'teal',   pill:'SOON' },
+  { id:'connect',  name:'Connect gate',   mt:'Know before you mate',         img:'icons/phantom-iso-connect-768.webp',  ac:'cyan',   pill:'SOON' },
+  { id:'packet',   name:'Packet',         mt:'Escalate with evidence',       img:'icons/phantom-iso-packet-768.webp',   ac:'gold',   pill:'SOON' }
+];
+
+var _isoHost = null;
+function iso_startDownlink() {
+  var s = iso_newSession();
+  iso_renderStep(_isoHost, s.id);
+}
 
 function iso_defaultStore() { return { v:1, tier:'P1', sessions:[] }; }
 function iso_load()  { var s = safeGet(ISOLATE_KEY, null); return (s && s.v === 1 && Array.isArray(s.sessions)) ? s : iso_defaultStore(); }

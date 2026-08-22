@@ -110,6 +110,12 @@ const PRECACHE_URLS = [
   'icons/phantom-tool-burndown-768.webp',
   'icons/phantom-tool-audits-768.webp',
   'icons/phantom-tool-isolate-768.webp',
+  'icons/phantom-iso-downlink-768.webp',
+  'icons/phantom-iso-noboot-768.webp',
+  'icons/phantom-iso-layers-768.webp',
+  'icons/phantom-iso-inspect-768.webp',
+  'icons/phantom-iso-connect-768.webp',
+  'icons/phantom-iso-packet-768.webp',
 // v1.14.175: R-3b platform-first icon batch (5 GPU platforms + SHARED)
   'icons/phantom-plat-h100-256.webp',
   'icons/phantom-plat-h200-256.webp',

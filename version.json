@@ -2,5 +2,5 @@
   "version": "phantom-v1.14.469",
   "released": "2026-08-21",
   "prevVersion": "phantom-v1.14.468",
-  "notes": "v1.14.469 - SHIP-ISOLATE-OPS-380: ISOLATE OPS tool. Down-link isolation wizard (8-step OODA, one-variable rule, P2 tier gate, evidence trail) + deterministic escalation packet (10.8 fields + one sentence). New key phantom_isolate_v1 (backed up). Open session joins buildContext() as a capped block. OPS wall 9→10 cells, 5x2 (R2). Legacy byte-identical. Three-stamp lockstep enforced by phantom-guard."
+  "notes": "v1.14.469 - SHIP-ISOLATE-OPS-380: ISOLATE OPS tool. Down-link isolation wizard (8-step OODA, one-variable rule, P2 tier gate, evidence trail) + deterministic escalation packet (10.8 fields + one sentence). New key phantom_isolate_v1 (backed up). Open session joins buildContext() as a capped block. OPS wall 9→10 cells, 5x2 (R2). Isolate-home tiles are art (6 new icons, precached). Legacy byte-identical. Three-stamp lockstep enforced by phantom-guard."
 }
