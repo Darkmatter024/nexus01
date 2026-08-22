@@ -13068,7 +13068,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.471';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.473';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -19675,7 +19675,10 @@ function showMode(mode) {
   if (mode === 'command' && typeof cmd_render === 'function') { try { cmd_render(); } catch (_) {} }
   // v1.14.385: BUILD resolves a real build context instead of landing on the static
   // launcher. Redesign-gated inside bw_render(); ?legacy=1 never reaches it.
-  if (mode === 'work' && typeof bw_render === 'function') { try { bw_render(); if (typeof ops_init === 'function') ops_init(); } catch (e) { phantom_logErr('showMode:bw_render', e); } }
+  if (mode === 'work' && typeof bw_render === 'function') { try { bw_render(); } catch (e) { phantom_logErr('showMode:bw_render', e); } }
+  // ⛔ GATE: ops_init() disabled at boot time due to phone-webkit test failures.
+  // The OPS banner insertion during boot causes phantom-api CORS errors and layout
+  // cascade failures on phone-webkit. Re-enable when ops_renderPanels is deferred.
   ['command', 'work', 'ref'].forEach(function(m) {
     var el = document.getElementById('mode-' + m);
     if (el) el.classList.toggle('active', m === mode);
@@ -22144,6 +22147,11 @@ function ops_ensureContainer() {
   return true;
 }
 function ops_init() {
+  // ⛔ GATE: Only initialize OPS if Build workspace has fully rendered.
+  // Inserting the OPS banner too early (during bw_render) causes WebGL/layout
+  // cascade failures on phone-webkit. Let the Build workspace settle first.
+  var bwShell = document.getElementById('bw-shell');
+  if (!bwShell || !document.body.contains(bwShell)) return;
   if (!ops_ensureContainer()) return;
   ops_restoreState();
 }

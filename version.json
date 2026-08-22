@@ -1,5 +1,5 @@
 {
-  "version": "phantom-v1.14.471",
+  "version": "phantom-v1.14.473",
   "released": "2026-08-21",
   "prevVersion": "phantom-v1.14.469",
   "notes": "v1.14.471 - FIX: Remove duplicate ops_init() call in bw_render() (phone-webkit phantom-api CORS errors)"
