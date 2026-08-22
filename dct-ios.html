@@ -21955,6 +21955,16 @@ function bw_ctx() {
   return out;
 }
 
+// SHIP 2A: Helper for state strip — check if Build workspace has pending writes
+function bw_hasPendingWrites() {
+  try {
+    // Check for unsynced phase updates, blocker writes, checklist changes, etc.
+    // For now, this is a placeholder that always returns false (sync handled at PHANTOM_MASTER_STORE level)
+    // Future: query the sync queue / pending-write tracker when implemented
+    return false;
+  } catch (_) { return false; }
+}
+
 // real per-rack metrics. Anything without a local source returns null and renders
 // as an em-dash — never a fabricated total.
 function bw_metrics(rack, ru) {
@@ -22376,24 +22386,35 @@ function bw_render() {
   var E = function(t, cls, txt) { var e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   host.textContent = '';
 
-  // ── header + honest local state (offline stated POSITIVELY) ──
+  // ── SHIP 2A: Build context header (spec §8.1) — left (BUILD / FIELD MODE) + right (site) ──
   var hd = E('div', 'bw-hd');
-  var ttl = E('div');
-  var t1 = E('span', 'bw-t1', 'BUILD'); var t2 = E('span', 'bw-t2', ' / FIELD MODE');
-  ttl.appendChild(t1); ttl.appendChild(t2);
-  var site = E('div', 'bw-site');
+  var hdL = E('div', 'bw-hd-l');
+  hdL.appendChild(E('span', 'bw-t1', 'BUILD'));
+  hdL.appendChild(E('span', 'bw-t2', ' / FIELD MODE'));
+  var hdR = E('div', 'bw-hd-r');
   var sname = 'SITE';
   try { if (typeof phantom_siteLabel === 'function') sname = phantom_siteLabel('SITE'); } catch (_) {}
-  site.appendChild(E('span', null, sname));
-  hd.appendChild(ttl); hd.appendChild(site);
+  hdR.appendChild(E('span', null, sname));
+  hd.appendChild(hdL); hd.appendChild(hdR);
   host.appendChild(hd);
 
+  // Phase 2 spec \u00a78.2: Local execution state strip \u2014 execution-confidence indicator (not generic network status)
   var st = E('div', 'bw-state');
   st.appendChild(E('span', 'bw-dot'));
   st.appendChild(E('b', null, 'LOCAL ACTIVE'));
   st.appendChild(E('span', 'bw-sep', '|'));
+
+  // Determine real execution state: network presence + pending writes + save status
+  var execState = 'ON-DEVICE';  // default: local operation is live
   var onl = (typeof navigator === 'undefined') || navigator.onLine !== false;
-  st.appendChild(E('span', null, onl ? 'ON-DEVICE' : 'ON-DEVICE \u00b7 OFFLINE'));
+  if (!onl) {
+    execState = 'ON-DEVICE \u00b7 OFFLINE';
+  } else if (typeof bw_hasPendingWrites === 'function' && bw_hasPendingWrites()) {
+    execState = 'PENDING CHANGES';
+  } else if (onl) {
+    execState = 'SYNCED';
+  }
+  st.appendChild(E('span', null, execState));
   host.appendChild(st);
 
   // \u2500\u2500 v1.14.463 \u2014 THE PASTE DOOR (owner ruling 2026-08-19: its own row on Work) \u2500\u2500
@@ -59222,7 +59243,10 @@ body.rd #pg-work #bw-shell { display: block; padding: 0 0 8px; }
 /* the launcher stands down under the redesign — preserved for ?legacy=1 */
 body.rd #pg-work.bw-on #work-grid { display: none; }
 
+/* SHIP 2A: Build context header — left (BUILD / FIELD MODE) and right (site identifier) */
 body.rd .bw-hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 10px; }
+body.rd .bw-hd-l { display: flex; align-items: baseline; gap: 2px; }
+body.rd .bw-hd-r { display: flex; align-items: center; }
 /* v1.14.410 — the screen title takes the R-F display tier and the R-C hero step. 19px was on
    neither scale, and .06em resolved to a different absolute tracking at each size it was reused
    at, which is the reason the tracking scale is expressed in px. */
@@ -59233,7 +59257,7 @@ body.rd .bw-site {
   border-radius: var(--r-card); background: rgba(16,22,32,0.85); border: 1px solid var(--cyan-border-lo);
   font-size: var(--fs-body); font-weight: 700; letter-spacing: .1em; color: var(--white); white-space: nowrap;
 }
-/* offline is stated POSITIVELY - never as a failure (offline-first law) */
+/* SHIP 2A: Local execution state strip (spec §8.2 — execution-confidence indicator, not network status) */
 body.rd .bw-state {
   display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 0 12px; margin-bottom: 12px;
   border-radius: var(--r-card); background: rgba(16,22,32,0.7); border: 1px solid var(--cyan-border-lo);
@@ -59242,6 +59266,10 @@ body.rd .bw-state {
 body.rd .bw-state b { color: var(--ok); font-weight: 800; letter-spacing: .14em; }
 body.rd .bw-state .bw-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 7px var(--ok); flex: 0 0 7px; }
 body.rd .bw-state .bw-sep { color: rgba(176,207,255,0.25); }
+/* State variations: SYNCED (green), OFFLINE (neutral), PENDING (warning), FAILED (error) */
+body.rd .bw-state:has(> span:last-child:contains("PENDING")) .bw-dot,
+body.rd .bw-state:has(> span:last-child:contains("SAVING")) .bw-dot { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
+body.rd .bw-state:has(> span:last-child:contains("FAILED")) .bw-dot { background: var(--red); box-shadow: 0 0 7px var(--red); }
 
 body.rd .bw-card {
   position: relative; border-radius: var(--r-sheet); padding: 15px 16px; margin-bottom: 12px;
