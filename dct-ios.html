@@ -13069,7 +13069,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.479';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.480';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -24286,7 +24286,7 @@ function cmd_masterAgeInfo() {
 function cmd_renderZ0(site, loaded) {
   var pg = document.getElementById('pg-cmd');
   if (pg) pg.setAttribute('data-master', loaded ? '1' : '0');
-  var s = document.getElementById('cc-z0-site'); if (s) s.textContent = site || 'SITE';
+  var s = document.getElementById('cc-z0-site'); if (s) s.textContent = loaded ? (site || 'SITE') : '—';
   var chip = document.getElementById('cc-agechip');
   if (chip) {
     if (loaded) { var a = cmd_masterAgeInfo(); chip.textContent = a.text; chip.className = 'cc-agechip' + (a.cls ? ' ' + a.cls : ''); chip.style.display = ''; }
@@ -28686,15 +28686,13 @@ function firstRun_show() {
     inner.innerHTML =
       '<div style="padding:26px 0 4px">'
       +   '<p class="fr-crumb"><b>PHANTOM</b> // SET UP THIS DEVICE</p>'
-      +   '<h1 class="fr-h1">' + (_fid ? escHtml(_fid) : 'New device') + '</h1>'
-      +   '<p class="fr-lede">PHANTOM runs your rack build from Master to handoff. Two things to start.</p>'
+      +   '<h1 class="fr-h1">You</h1>'
+      +   '<p class="fr-lede">PHANTOM runs your rack build from Master to handoff. Identify yourself.</p>'
       + '</div>'
       + '<div class="fr-sec">YOUR NAME</div>'
       + frMach('fr-operator', 'e.g. J. Hamilton', 'autocapitalize="words" autocomplete="name" spellcheck="false"', p.operator)
       + '<p class="fr-hint">Used on your sign-offs and handoffs.</p>'
-      + '<div class="fr-sec">SITE</div>'
-      + frMach('fr-facilityId', 'Site code (e.g. AUS-01)', 'autocapitalize="characters" spellcheck="false"', _fid)
-      + (_mv ? '<p class="fr-hint">Pre-filled from the loaded Master — check it, correct anything wrong.</p>' : '')
+      + '<p class="fr-hint" style="margin-top:16px">Site is read from your Master file.</p>'
       + '<div id="fr-error" role="alert" style="display:none;margin-top:18px;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,69,58,0.5);background:rgba(255,69,58,0.10);color:#ffb3ad;font-family:var(--mono);font-size:12px;line-height:1.5"></div>'
       + '<button id="fr-confirm" class="fr-go" style="--angle:0deg" onclick="firstRun_confirm()"><span class="fr-go-plate"></span><span class="fr-go-spot"></span><b>START</b></button>';
     // touch-following spotlight (mock verbatim; passive — never blocks scroll)
@@ -28747,19 +28745,12 @@ function firstRun_confirm() {
     if (nameEl) nameEl.focus();
     return;
   }
-  var siteEl = document.getElementById('fr-facilityId');
-  var site   = siteEl ? siteEl.value.trim() : '';
-  if (!site) {
-    if (typeof phantomToast === 'function') phantomToast('Enter your site first', 'error');
-    if (siteEl) siteEl.focus();
-    return;
-  }
   var facNameEl = document.getElementById('fr-facilityName');
   var rackEl = document.getElementById('fr-rackNaming');
   var pduEl  = document.getElementById('fr-pdu');
   var p = siteProfile_load();
-  p.operator   = name;
-  p.facilityId = site;
+  p.operator = name;
+  // v1.14.480: facilityId is Master-sourced only. Do not accept user input for site identity.
   // v1.14.432 — SITE LEAD. ⚠ GUARDED ON THE ELEMENT EXISTING, not on the house: this function is
   // SHARED by both branches of firstRun_show and the legacy branch has no such field. A bare read
   // would throw there; writing a default would change legacy behaviour. Absent element ⇒ this
@@ -36219,59 +36210,35 @@ window.master_loadFromPicker = function master_loadFromPicker(opts) {
                 if (typeof haptic === 'function') haptic([40, 30, 40]);
               } catch (_) {}
             } else {
-              // v1.14.478 BUG-FIX: Multi-site confirm sheet. If Master's site differs from profile, ask user to SWITCH or KEEP.
+              // v1.14.480: Master is the ONLY writer for facilityId. On successful parse, write site from Master.
               try {
-                var _activeM = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.active() : null;
-                var _masterSite = '';
-                if (_activeM) {
-                  var _vars = (typeof master_siteVars === 'function') ? master_siteVars() : null;
-                  _masterSite = (_vars && (_vars.locode || _vars.site)) || '';
-                  if (!_masterSite && _activeM.racksByCab) {
-                    var _firstRack = Object.values(_activeM.racksByCab)[0];
-                    var _locs = (_firstRack && _firstRack.hosts) ? _firstRack.hosts.map(function(h) { return (h.locode || '').split(':')[0]; }) : [];
-                    var _counts = {};
-                    _locs.forEach(function(l) { if (l) _counts[l] = (_counts[l] || 0) + 1; });
-                    _masterSite = Object.keys(_counts).sort(function(a, b) { return _counts[b] - _counts[a]; })[0] || '';
+                if (typeof siteProfile_load === 'function' && typeof siteProfile_save === 'function') {
+                  var _activeM = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.active() : null;
+                  var _masterSite = '';
+                  if (_activeM) {
+                    var _vars = (typeof master_siteVars === 'function') ? master_siteVars() : null;
+                    _masterSite = (_vars && (_vars.locode || _vars.site)) || '';
+                    if (!_masterSite && _activeM.racksByCab) {
+                      var _firstRack = Object.values(_activeM.racksByCab)[0];
+                      var _locs = (_firstRack && _firstRack.hosts) ? _firstRack.hosts.map(function(h) { return (h.locode || '').split(':')[0]; }) : [];
+                      var _counts = {};
+                      _locs.forEach(function(l) { if (l) _counts[l] = (_counts[l] || 0) + 1; });
+                      _masterSite = Object.keys(_counts).sort(function(a, b) { return _counts[b] - _counts[a]; })[0] || '';
+                    }
+                  }
+                  if (_masterSite) {
+                    var _p = siteProfile_load();
+                    if (_p) {
+                      _p.facilityId = _masterSite;
+                      if (!_p.sources) _p.sources = {};
+                      _p.sources.facilityId = 'master';
+                      siteProfile_save(_p);
+                    }
                   }
                 }
-                var _curProf = (typeof siteProfile_load === 'function') ? siteProfile_load() : null;
-                var _curFacility = (_curProf && _curProf.facilityId) || '';
-                if (_masterSite && _curFacility && _masterSite !== _curFacility) {
-                  var _switchDone = false;
-                  (async function() {
-                    var _doSwitch = await phantomConfirmAsk({
-                      title: 'Site mismatch',
-                      body: 'Master says <strong>' + escHtml(_masterSite) + '</strong> — your profile says <strong>' + escHtml(_curFacility) + '</strong>. Switch?',
-                      confirmLabel: 'SWITCH SITE',
-                      cancelLabel: 'KEEP ' + escHtml(_curFacility)
-                    });
-                    if (_doSwitch) {
-                      try {
-                        if (typeof siteProfile_load === 'function' && typeof siteProfile_save === 'function') {
-                          var _p = siteProfile_load();
-                          if (_p) {
-                            _p.facilityId = _masterSite;
-                            if (!_p.sources) _p.sources = {};
-                            _p.sources.facilityId = 'master';
-                            siteProfile_save(_p);
-                            if (typeof cmd_render === 'function') cmd_render();
-                          }
-                        }
-                      } catch (_) {}
-                    } else {
-                      try {
-                        var _hash = _activeM.sourceFileHash || '';
-                        if (_hash && typeof localStorage !== 'undefined') localStorage.setItem('phantom_site_dismiss_' + _hash, '1');
-                      } catch (_) {}
-                    }
-                  })();
-                } else {
-                  try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
-                  try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (_) {}
-                }
+                try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
               } catch (_) {
                 try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (__) {}
-                try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (__) {}
               }
             }
           } else {

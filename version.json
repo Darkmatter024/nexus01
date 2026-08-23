@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.479",
+  "version": "phantom-v1.14.480",
   "released": "2026-08-23",
-  "prevVersion": "phantom-v1.14.478",
-  "notes": "v1.14.479 - BUG-FIX: Multi-site Master ingest. If loaded Master's site (locode) differs from current profile facilityId, show confirm sheet: SWITCH SITE (updates profile, sets source to 'master') or KEEP current site (dismisses for this Master hash)"
+  "prevVersion": "phantom-v1.14.479",
+  "notes": "v1.14.480 - OWNER RULING: Master is single writer for site identity. Setup card removes SITE field (identity only). facilityId written from Master locode on parse, never from user input. Badge shows '—' when no Master. Profile editor shows facilityId read-only under FROM MASTER."
 }
