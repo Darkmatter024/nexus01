@@ -11270,14 +11270,6 @@ body.rd .reh-3d-loading { padding: 24px 12px; font-family: var(--mono); font-siz
 /* ─── Crash-Cart Mode ─── */
 /* 4-foot UI: massive monospace text for hands-full racking work.
    Hides all chrome. Single non-trappable exit bar. Reads from active context. */
-.crashcart-active .app-header,
-.crashcart-active .bot-nav,
-.crashcart-active #netbar,
-.crashcart-active .deploy-banner,
-.crashcart-active .action-stripe { display: none !important; }
-.crashcart-active { overflow: hidden; }
-.crashcart-active body { overflow: hidden; }
-
 #crashcart-layer {
   display: none;
   position: fixed; inset: 0;
@@ -11288,7 +11280,6 @@ body.rd .reh-3d-loading { padding: 24px 12px; font-family: var(--mono); font-siz
   justify-content: space-between;
   padding: 0;
 }
-.crashcart-active #crashcart-layer { display: flex; }
 
 .crashcart-content {
   flex: 1;
@@ -13075,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.482';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.483';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -48803,25 +48794,6 @@ async function _edp_runChunkedInternal(raw, docHint, onProgress) {
 // Boot-time interrupt detector. If a chunked parse was running when Safari
 // died, surface a one-time toast so the operator knows progress was lost
 // and where to retry. Auto-clears stale (>24h) checkpoints.
-(function _edp_checkpointBootCheck() {
-  function check() {
-    try {
-      var cp = (typeof edp_getInterruptedCheckpoint === 'function') ? edp_getInterruptedCheckpoint() : null;
-      if (!cp) return;
-      var done = cp._settled;
-      var total = cp._total;
-      if (typeof phantomToast === 'function') {
-        phantomToast('EDP parse interrupted at ' + done + '/' + total + ' sections — re-run from BOM/EDP tab', 'warn');
-      }
-    } catch (_) {}
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(check, 2500); }, { once: true });
-  } else {
-    setTimeout(check, 2500);
-  }
-})();
-
 function bomSetType(type) {
   _bomDocType = type;
   document.querySelectorAll('[id^="bom-type-"]').forEach(b => b.classList.remove('bom-type-active'));

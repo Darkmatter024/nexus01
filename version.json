@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.482",
+  "version": "phantom-v1.14.483",
   "released": "2026-08-23",
-  "prevVersion": "phantom-v1.14.481",
-  "notes": "v1.14.482 — Quality pass: LAYERS card single-line subtitle (no overlap), location required guard (down-link wizard step 0), motion audit (0.5s→150ms, bare ease→ease-out, transition:all scoped)"
+  "prevVersion": "phantom-v1.14.482",
+  "notes": "v1.14.483 — CLEAN window: orphan function removed (_edp_checkpointBootCheck), dead Crash-Cart guard rules removed (.crashcart-active), Crash-Cart structural code routed to R1 deletion pass (hide-not-delete per rule 7)"
 }
