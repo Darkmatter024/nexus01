@@ -13069,7 +13069,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.476';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.477';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -23773,7 +23773,7 @@ function cmd_render() {
     sw.innerHTML = '<div class="sig-empty">No signals — you&rsquo;re clear.</div>';
   }
   cmd_telemetry(activeDep, activePct, handoffDraft);
-  cs_renderHero(activeDep, activePct, rackCount, blockerCount);
+  cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba);
   cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, online, storageOk, site, masterLoaded, handoffDraft);
   cmd_setSiteLabel();
   cmd_clock();
@@ -23992,7 +23992,7 @@ function cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handof
 // textContent, never interpolated into innerHTML, so a deployment name can never
 // become markup. The CTA reuses cmd_route('work','deploy') — the same door the
 // NBA's "continue deployment" uses. One door per feature.
-function cs_renderHero(activeDep, activePct, rackCount, blockerCount) {
+function cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba) {
   var host = document.getElementById('cs-hero');
   if (!host) {
     try { console.warn('[PHANTOM] cs_renderHero: #cs-hero is missing from #pg-cmd — the Command Shell hero cannot render'); } catch (_) {}
@@ -24015,7 +24015,9 @@ function cs_renderHero(activeDep, activePct, rackCount, blockerCount) {
   var bcell = E('cs-kpi-block-cell');
   if (blockerCount > 0) bcell.classList.add('hot'); else bcell.classList.remove('hot');
 
-  E('cs-hero-cta').textContent = live ? 'Continue deployment' : 'Start a deployment';
+  // v1.14.476: use NBA-emitted label so hero button matches NBA state
+  var btnLabel = (nba && nba.label) ? nba.label : (live ? 'Continue deployment' : 'Start a deployment');
+  E('cs-hero-cta').textContent = btnLabel;
 }
 
 function cmd_telemetry(activeDep, activePct, handoffDraft) {
@@ -31270,15 +31272,17 @@ function siteProfile_showEditor(container) {
 function siteProfile_resetDevice() {
   if (!window.confirm('This wipes everything on this device — site profile, Master, deployments, racks, handoffs. Export a backup first if you need it. Continue?')) return;
   try {
-    var i, k, covered = {};
+    var i, k, covered = {}, keysToRemove = [];
     // Mark all keys that are accounted for (not to be cleared)
     for (i = 0; i < PHANTOM_BACKUP_EXCLUDED_KEYS.length; i++) covered[PHANTOM_BACKUP_EXCLUDED_KEYS[i]] = 1;
-    // Clear all localStorage keys except those in EXCLUDED_KEYS
-    for (i = localStorage.length - 1; i >= 0; i--) {
+    // Collect all keys to remove (don't modify storage while iterating)
+    for (i = 0; i < localStorage.length; i++) {
       k = localStorage.key(i);
-      if (k && !covered[k]) {
-        try { localStorage.removeItem(k); } catch (_) {}
-      }
+      if (k && !covered[k]) keysToRemove.push(k);
+    }
+    // Remove collected keys
+    for (i = 0; i < keysToRemove.length; i++) {
+      try { localStorage.removeItem(keysToRemove[i]); } catch (_) {}
     }
     // Clear IndexedDB if it exists (Master/images may be stored there)
     if (typeof indexedDB !== 'undefined') {
