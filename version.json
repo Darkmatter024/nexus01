@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.479",
+  "version": "phantom-v1.14.478",
   "released": "2026-08-22",
-  "prevVersion": "phantom-v1.14.478",
-  "notes": "v1.14.479 - DIAGNOSTIC: added mount dimension logging to bw_mount3D() to debug BUILD preview blank issue"
+  "prevVersion": "phantom-v1.14.477",
+  "notes": "v1.14.478 - FIX: hero button onclick now binds to nba.act (rung-canonical door), not hard-coded cmd_continueWork — label and action now pair correctly per Rule #14"
 }

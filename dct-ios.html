@@ -13069,7 +13069,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.479';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.478';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -22861,8 +22861,6 @@ function bw_mount3D(rack, mount) {
   // the host never measures it SAYS SO on the card - there is no console in a cold aisle.
   var TRIES = 40;   // ~40 frames ≈ 0.7s; longer than any page transition in this app
   var announced = false;
-  // v1.14.478 diagnostic: log mount dimensions at start
-  try { console.log('[BW-MOUNT-DIAG] entry', { clientW: mount.clientWidth, clientH: mount.clientHeight, inDOM: document.body.contains(mount), shell: !!document.getElementById('bw-shell') }); } catch (_) {}
   var say = function(msg, why) {
     try { console.warn('[PHANTOM] bw_mount3D: ' + why); } catch (_) {}
     if (!announced) { announced = true; try { if (typeof phantomToast === 'function') phantomToast(msg, 'error'); } catch (_) {} }
