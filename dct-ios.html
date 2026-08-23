@@ -10029,6 +10029,7 @@ body.rd #shiftend-sheet .se-clear { border-radius: var(--r-ctl); font-size: var(
 #pg-cmd .stat.cc-tap:active{transform:scale(.97);filter:brightness(1.18)}
 #pg-cmd .nba{margin:0 16px 14px;filter:none;border:1px solid color-mix(in srgb,var(--violet) 16%,transparent);border-radius:16px;background:var(--rd-cardfill);box-shadow:inset 0 1px 0 rgba(210,234,244,.14),0 8px 20px -14px rgba(0,0,0,.85);padding:16px;position:relative}
 #pg-cmd .nba .nlabel{font-family:var(--mono);font-size:12px;letter-spacing:3px;color:#b98bff}
+#pg-cmd .nba .cc-nbastep{font-family:var(--raj);font-size:11px;letter-spacing:.26em;color:var(--cyan);margin:8px 0 4px;text-transform:uppercase}
 #pg-cmd .nba h2{font-size:23px;font-weight:700;margin:8px 0 6px;line-height:1.1}
 #pg-cmd .nba p{color:var(--slate);font-size:13px;line-height:1.4;margin:0 0 12px}
 #pg-cmd .nba .route{display:flex;width:100%;box-sizing:border-box;align-items:center;justify-content:center;gap:8px;min-height:52px;margin-top:4px;font-family:var(--raj);font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:#c9a9ff;border:1px solid rgba(155,89,255,0.45);border-radius:14px;padding:9px 16px;background:rgba(155,89,255,0.10);cursor:pointer;-webkit-tap-highlight-color:transparent}   /* v1.14.335 Command v2 Z4: NBA is the one violet action button — full-width, >=52pt gloved target */
@@ -13068,7 +13069,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.473';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.474';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13632,6 +13633,17 @@ if (typeof window !== 'undefined') {
 
   // whole-frame tap. The catcher is a <button>, so Enter/Space activate it for free.
   tap.addEventListener('click', fire);
+
+  // v1.14.474: return-visit skip. If this device has seen boot before AND not in calibration mode,
+  // auto-fire after 400ms (or 120ms if prefers-reduced-motion).
+  var _cal = (typeof window !== 'undefined' && window.location && window.location.search) ? window.location.search.indexOf('cal=1') >= 0 : false;
+  if (!_cal && typeof localStorage !== 'undefined') {
+    try {
+      if (localStorage.getItem('phantom_seen_boot') === '1') {
+        setTimeout(fire, reduce ? 120 : 400);
+      }
+    } catch (_) {}
+  }
 })();
 
 /* ━━━ PHANTOM ghost-boot effects — void motes + GPU-code sensor eyes ━━━
@@ -14185,6 +14197,7 @@ if (typeof window !== 'undefined') {
       </div>
       <div class="nba">
         <div class="nlabel">NEXT BEST ACTION</div>
+        <div id="cc-nbastep" class="cc-nbastep" style="display:none"></div>
         <h2 id="cc-nbah">&mdash;</h2>
         <p id="cc-nbap">&mdash;</p>
         <span class="route" id="cc-nbar" role="button" tabindex="0"></span>
@@ -23699,7 +23712,7 @@ function cmd_render() {
   if (_asum) {
     var _s1, _s2;
     if (rung === 'A') { _s1 = 'Set up your site profile to begin.'; _s2 = ''; }
-    else if (!masterLoaded) { _s1 = 'No Master loaded in ' + escHtml(site) + '.'; _s2 = 'Ingest your Master to start the shift.'; }
+    else if (rung === 'B') { _s1 = 'Profile set for ' + escHtml(site) + '.'; _s2 = ''; }
     else {
       _s1 = (blockerCount === 0) ? ('All clear in ' + escHtml(site) + ' — no open blockers.') : (blockerCount + ' open blocker' + (blockerCount === 1 ? '' : 's') + ' in ' + escHtml(site) + '.');
       if (handoffDraft) _s2 = 'A handoff draft is open — finish it before shift end.';
@@ -23743,6 +23756,8 @@ function cmd_render() {
 
   // ── Next Best Action (§3.3 routing tree, honest state) ──
   var nba = cmd_nba(rung, { confirmed: confirmed, masterLoaded: masterLoaded, blockerCount: blockerCount, handoffDraft: handoffDraft, activeDep: activeDep, activePct: activePct, rackCount: rackCount });
+  // v1.14.474: step counter for first-run flow (B1/B2/B3)
+  var _step = E('cc-nbastep'); if (_step) { if (nba.step) { _step.textContent = nba.step; _step.style.display = ''; } else { _step.style.display = 'none'; _step.textContent = ''; } }
   E('cc-nbah').textContent = nba.h; E('cc-nbap').textContent = nba.p;
   var nbar = E('cc-nbar'); nbar.innerHTML = nba.label + ' &rarr;'; nbar.onclick = nba.act;
 
@@ -24044,7 +24059,10 @@ function cmd_nba(rung, st) {
   // "set up site" means the DEPLOY FLOW (ruling 2026-07-16), and this door opens the site-profile
   // editor. Same defect as MASTER DOC→SITE PROFILE; hard rule "names say what the door opens".
   if (rung === 'A' || !st.confirmed) return { h: 'Set up your site profile.', p: 'PHANTOM needs your facility, switches, and rack naming before it can help.', label: 'SET UP PROFILE', act: function() { cmd_route('profile'); } };
-  if (rung === 'B' && !st.masterLoaded) return { h: 'Load your Master to start the shift.', p: 'PHANTOM reads cabinets and host assignments from your Master file. Load it to begin scoping and scanning.', label: 'LOAD MASTER', act: function() { cmd_loadMaster(); } };
+  // v1.14.474: B1/B2/B3 step sequence with counter (first-run flow)
+  if (rung === 'B' && !st.masterLoaded) return { h: 'Load your<br>Master.', p: 'PHANTOM reads cabinets and host assignments from your Master file.', step: 'Step 1 of 3', label: 'LOAD MASTER', act: function() { cmd_loadMaster(); } };
+  if (rung === 'B' && st.masterLoaded && st.deployCount === 0) return { h: 'Start a<br>deployment.', p: 'Master loaded. Scope cabinets into a deployment to begin.', step: 'Step 2 of 3', label: 'START DEPLOYMENT', act: function() { if (typeof mscope_open === 'function') { if (document.getElementById('pg-work')) { mscope_open(); } else { setTimeout(function() { try { if (typeof mscope_open === 'function') mscope_open(); } catch(_) {} }, 0); } } } };
+  if (rung === 'B' && st.deployCount > 0 && st.rackCount === 0) return { h: 'Capture your<br>first rack.', p: 'Deployment ready. Start your rack trace with a scan.', step: 'Step 3 of 3', label: 'GO TO SCAN', act: function() { cmd_route('work', 'scan'); } };
   if (st.blockerCount >= 1) return { h: 'Resolve ' + st.blockerCount + ' open blocker' + (st.blockerCount !== 1 ? 's' : '') + '.', p: 'A blocker bites the next shift first. Capture the proof note and route it into a handoff.', label: 'GO TO HANDOFF', act: function() { cmd_route('work', 'handoff'); } };
   if (st.handoffDraft) return { h: 'Finish your shift handoff.', p: 'A handoff draft is open. Complete the summary before your shift ends.', label: 'GO TO HANDOFF', act: function() { cmd_route('work', 'handoff'); } };
   if (st.activeDep && st.activePct < 100) return { h: 'Continue ' + (st.activeDep.name || 'your deployment') + ' — ' + st.activePct + '% deployed.', p: 'Pick up where the build left off.', label: 'GO TO DEPLOY', act: function() { cmd_continueWork(); } };
@@ -28664,37 +28682,17 @@ function firstRun_show() {
       '<div style="padding:26px 0 4px">'
       +   '<p class="fr-crumb"><b>PHANTOM</b> // SET UP THIS DEVICE</p>'
       +   '<h1 class="fr-h1">' + (_fid ? escHtml(_fid) : 'New device') + '</h1>'
-      +   '<p class="fr-lede">' + escHtml(p.facilityName || 'Tell PHANTOM where this device is working.') + '</p>'
+      +   '<p class="fr-lede">PHANTOM runs your rack build from Master to handoff. Two things to start.</p>'
       + '</div>'
       + '<div class="fr-sec">YOUR NAME</div>'
       + frMach('fr-operator', 'e.g. J. Hamilton', 'autocapitalize="words" autocomplete="name" spellcheck="false"', p.operator)
       + '<p class="fr-hint">Used on your sign-offs and handoffs.</p>'
       + '<div class="fr-sec">SITE</div>'
-      + frMach('fr-facilityId', 'Site code (e.g. DFW-07)', 'autocapitalize="characters" spellcheck="false"', _fid)
+      + frMach('fr-facilityId', 'Site code (e.g. AUS-01)', 'autocapitalize="characters" spellcheck="false"', _fid)
       + frMach('fr-facilityName', 'Facility name (e.g. CoreWeave Dallas)', 'autocapitalize="words" spellcheck="false"', p.facilityName)
       + (_mv ? '<p class="fr-hint">Pre-filled from the loaded Master — check it, correct anything wrong.</p>' : '')
-      // v1.14.432 — SITE LEAD (spec §2 / §4.1). This gate predates the .417/.418 identity split
-      // and collected an operator only, so the AUTHORITY half of the model had no first-run home
-      // and every new device started with siteLead empty. Defaults to the name above — a value
-      // WRITTEN once and then editable, never a read-time coalesce: .418 removed exactly that
-      // fallback because it silently granted lead-only RBAC to whoever held a device with an
-      // empty field.
-      + '<div class="fr-sec">SITE LEAD</div>'
-      + frMach('fr-siteLead', 'Full name', 'autocapitalize="words" spellcheck="false"', p.siteLead)
-      + '<p class="fr-hint">Authority for this site. Leave blank to use your name. Work is always credited to whoever is working — never to the Site Lead automatically.</p>'
-      // v1.14.432 — THE MASTER STEP (spec §4.1). The gate could pre-fill FROM a Master but never
-      // load one, so a genuinely new device had to confirm, land on Home, and go find the importer.
-      // ⛔ It imports nothing itself — master_loadFromPicker is the ONE door (§4.2: "no second
-      // write path to Master state anywhere in the file").
-      + '<div class="fr-sec">MASTER FILE</div>'
-      + '<div id="fr-master-state" class="fr-hint">' + firstRun_masterLine() + '</div>'
-      + '<button id="fr-master" class="fr-go fr-go-alt" style="--angle:0deg" onclick="firstRun_loadMaster()"><b>LOAD MASTER FILE</b></button>'
-      + '<p class="fr-hint">You will see its counts and confirm before anything becomes active. You can also do this later from SYSTEM.</p>'
-      + '<div class="fr-sec fr-sec-opt">FLOOR DETAILS <span>— optional, fill when you are on the floor</span></div>'
-      + frMach('fr-rackNaming', 'Rack naming convention', 'autocapitalize="characters" spellcheck="false"', _pf('rackNamingConvention', 'rack-naming'))
-      + frMach('fr-pdu', 'PDU type', 'autocapitalize="characters" spellcheck="false"', _pf('pduType', 'pdu-type'))
       + '<div id="fr-error" role="alert" style="display:none;margin-top:18px;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,69,58,0.5);background:rgba(255,69,58,0.10);color:#ffb3ad;font-family:var(--mono);font-size:12px;line-height:1.5"></div>'
-      + '<button id="fr-confirm" class="fr-go" style="--angle:0deg" onclick="firstRun_confirm()"><span class="fr-go-plate"></span><span class="fr-go-spot"></span><b>CONFIRM &amp; ENTER</b></button>';
+      + '<button id="fr-confirm" class="fr-go" style="--angle:0deg" onclick="firstRun_confirm()"><span class="fr-go-plate"></span><span class="fr-go-spot"></span><b>START</b></button>';
     // touch-following spotlight (mock verbatim; passive — never blocks scroll)
     try {
       var g = document.getElementById('fr-confirm');
@@ -28774,6 +28772,7 @@ function firstRun_confirm() {
   p.confirmedAt = Date.now();
   if (siteProfile_save(p)) {            // siteProfile_save stamps lastUpdated + schemaVersion
     if (typeof haptic === 'function') haptic([10, 30, 10]);
+    try { localStorage.setItem('phantom_seen_boot', '1'); } catch (_) {}
     var ov = document.getElementById('fr-overlay');
     if (ov) ov.classList.remove('show');
     try {
@@ -31257,10 +31256,32 @@ function siteProfile_showEditor(container) {
     html += '<div style="margin-top:18px;font-family:var(--mono);font-size:10px;color:var(--gold)">CONTEXT PREVIEW unavailable \u2014 see console.</div>';
   }
 
+  // v1.14.474 \u2014 Reset Device button (danger styling, bottom of profile)
+  html += '<div style="margin-top:26px;padding-top:18px;border-top:1px solid rgba(255,69,58,0.20)">';
+  html += '<button class="pt-btn" style="width:100%;padding:14px;background:rgba(255,69,58,0.15);border:1px solid rgba(255,69,58,0.40);color:var(--gold);font-weight:700" onclick="siteProfile_resetDevice()">RESET THIS DEVICE</button>';
+  html += '</div>';
+
   c.innerHTML = html;
 
   // Populate gas gauge immediately — interval picks up from here
   try { if (typeof phantomStorageCheck === 'function') phantomStorageCheck(); } catch(_) {}
+}
+
+// v1.14.474 — Reset this device: clears site profile + phantom_seen_boot, but leaves Master/deployments/racks intact
+function siteProfile_resetDevice() {
+  if (!window.confirm('This clears the site profile and first-run state. Deployments, racks and Master stay. Continue?')) return;
+  try {
+    var p = siteProfile_load();
+    delete p.confirmedAt;
+    delete p.operator;
+    delete p.facilityId;
+    delete p.siteLead;
+    siteProfile_save(p);
+    localStorage.removeItem('phantom_seen_boot');
+    location.reload();
+  } catch (_) {
+    if (typeof phantomToast === 'function') phantomToast('Reset failed — see console', 'error');
+  }
 }
 
 // Editor draft state for the platforms array — held outside the DOM so
