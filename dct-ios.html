@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.484';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.485';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -24348,6 +24348,37 @@ function cmd_heroAux(elev) {
     rv.style.display = '';
   }
   var ob = document.getElementById('cc-openbay'); if (ob) ob.style.display = '';   // v1.14.338: OPEN BAY rides WITH the rack vitals (spec §2.5) — one door, shown only when a rack is live
+  // v1.14.485 — Site context footer: show optics, platforms, PDU from profile
+  try {
+    if (typeof siteProfile_load === 'function') {
+      var prof = siteProfile_load();
+      if (prof && (prof.facilityId || prof.standardOptics || prof.pduType)) {
+        var siteCtx = [];
+        if (prof.facilityId) siteCtx.push(escHtml(prof.facilityId));
+        if (prof.standardOptics) siteCtx.push('Optics: ' + escHtml(prof.standardOptics));
+        if (prof.pduType) siteCtx.push('PDU: ' + escHtml(prof.pduType));
+        if (Array.isArray(prof.platforms) && prof.platforms.length > 0) {
+          var roles = {};
+          prof.platforms.forEach(function(p) { var r = p.role || 'other'; if (!roles[r]) roles[r] = 0; roles[r]++; });
+          var roleStr = Object.keys(roles).map(function(r) { return roles[r] + ' ' + r; }).join(', ');
+          siteCtx.push('Platforms: ' + escHtml(roleStr));
+        }
+        if (siteCtx.length > 0) {
+          var scf = document.getElementById('cc-sitectx');
+          if (!scf) {
+            scf = document.createElement('div');
+            scf.id = 'cc-sitectx';
+            var ccHero = document.getElementById('cc-hero');
+            if (ccHero) ccHero.appendChild(scf);
+          }
+          if (scf) {
+            scf.style.cssText = 'margin-top:12px;padding-top:10px;border-top:1px solid rgba(92,242,255,0.16);font-family:var(--mono);font-size:11px;color:var(--slate);line-height:1.4';
+            scf.innerHTML = siteCtx.join(' · ');
+          }
+        }
+      }
+    }
+  } catch (_) {}
 }
 // D5 — rack switch picker: a minimal self-contained overlay listing every Master rack; pick → re-mount
 // the hero to that rack. Reuses the Master (racksByCab) order; the blocker picker's list philosophy.

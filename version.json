@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.484",
+  "version": "phantom-v1.14.485",
   "released": "2026-08-23",
-  "prevVersion": "phantom-v1.14.483",
-  "notes": "v1.14.484 — PHASE NEXT-1: Master-derived asset pipeline integration. Wire site_prefillProfileFromMaster() into Master acceptance path (after site_derivePlatformsFromMaster). Enables automatic site context injection (locode, PDU, optics, naming) from Master's SITE-VARS sheet into siteProfile at acceptance/boot. No merge-discipline violation, first-run gate preserved, idempotent."
+  "prevVersion": "phantom-v1.14.484",
+  "notes": "v1.14.485 — PHASE NEXT-2.1: Site context injection — Command Center hero. Display site profile (facilityId, optics, PDU, platforms) in hero footer beneath rack vitals. Provides situational awareness: tech sees their site's constraints at a glance. Pure display addition, no new data structures. Enables Phase Next-2.2+ form pre-fill pipeline."
 }
