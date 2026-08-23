@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.474",
+  "version": "phantom-v1.14.475",
   "released": "2026-08-22",
-  "prevVersion": "phantom-v1.14.473",
-  "notes": "v1.14.474 - FIRST-RUN: boot return-skip, 2-field setup, Site Lead to SYSTEM, NBA deployment step + counter, Reset device"
+  "prevVersion": "phantom-v1.14.474",
+  "notes": "v1.14.475 - FIX: reset-device must remove the profile key, not save an emptied one (lastUpdated backfill re-confirmed it)"
 }
