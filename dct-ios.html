@@ -13069,7 +13069,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.475';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.476';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -31266,12 +31266,40 @@ function siteProfile_showEditor(container) {
   try { if (typeof phantomStorageCheck === 'function') phantomStorageCheck(); } catch(_) {}
 }
 
-// v1.14.474 — Reset this device: clears site profile + phantom_seen_boot, but leaves Master/deployments/racks intact
+// v1.14.476 — Factory reset: wipes everything on this device (site profile, Master, deployments, racks, handoffs, all work state)
 function siteProfile_resetDevice() {
-  if (!window.confirm('This clears the site profile and first-run state. Deployments, racks and Master stay. Continue?')) return;
+  if (!window.confirm('This wipes everything on this device — site profile, Master, deployments, racks, handoffs. Export a backup first if you need it. Continue?')) return;
   try {
-    localStorage.removeItem('phantom_site_profile_v1');
-    localStorage.removeItem('phantom_seen_boot');
+    var i, k, covered = {};
+    // Mark all keys that are accounted for (not to be cleared)
+    for (i = 0; i < PHANTOM_BACKUP_EXCLUDED_KEYS.length; i++) covered[PHANTOM_BACKUP_EXCLUDED_KEYS[i]] = 1;
+    // Clear all localStorage keys except those in EXCLUDED_KEYS
+    for (i = localStorage.length - 1; i >= 0; i--) {
+      k = localStorage.key(i);
+      if (k && !covered[k]) {
+        try { localStorage.removeItem(k); } catch (_) {}
+      }
+    }
+    // Clear IndexedDB if it exists (Master/images may be stored there)
+    if (typeof indexedDB !== 'undefined') {
+      try {
+        if (typeof indexedDB.databases === 'function') {
+          indexedDB.databases().then(function(dbs) {
+            for (var j = 0; j < dbs.length; j++) {
+              try { indexedDB.deleteDatabase(dbs[j].name); } catch (_) {}
+            }
+          });
+        }
+      } catch (_) {}
+    }
+    // Clear Cache API (Service Worker caches)
+    if (typeof caches !== 'undefined') {
+      try {
+        caches.keys().then(function(names) {
+          names.forEach(function(name) { try { caches.delete(name); } catch (_) {} });
+        });
+      } catch (_) {}
+    }
     location.reload();
   } catch (_) {
     if (typeof phantomToast === 'function') phantomToast('Reset failed — see console', 'error');

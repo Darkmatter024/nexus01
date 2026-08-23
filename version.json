@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.475",
+  "version": "phantom-v1.14.476",
   "released": "2026-08-22",
-  "prevVersion": "phantom-v1.14.474",
-  "notes": "v1.14.475 - FIX: reset-device must remove the profile key, not save an emptied one (lastUpdated backfill re-confirmed it)"
+  "prevVersion": "phantom-v1.14.475",
+  "notes": "v1.14.476 - RESET DEVICE upgraded to factory reset: clears all localStorage (except ephemeral/session keys), IndexedDB, and Cache API"
 }
