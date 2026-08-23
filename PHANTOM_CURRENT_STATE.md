@@ -26,7 +26,8 @@ doc is stale — fix the doc, do not fork the fact.
 | Status | ⏳ **AWAITING DEVICE VERIFY OF v1.14.483** (v1.14.484 wiring complete, not yet device tested) |
 | Phase Next-1 | ✅ **Technical deep dive shipped** — `PHASE-NEXT-1-TECHNICAL-DEEP-DIVE.md` — comprehensive analysis of Master→Profile pipeline, integration gaps (solved), edge cases, contracts, atomic save requirements, testing strategy, implementation plan (one surgical edit + three-stamp, ✅ shipped in v1.14.484) |
 | Phase Next-2 | ✅ **Discovery complete** — `PHASE-NEXT-2-DISCOVERY.md` — site context injection audit. Finds: AI features ✅ (already use profile), hero ❌ (no site display), forms ❌ (no pre-fill), search ❌ (not ranked by site), reference ❌ (not filtered by site). Recommends 2.1 (hero LOW), 2.2 (forms LOW-MEDIUM), 2.3 (search MEDIUM), 2.4 (reference MEDIUM) as sequence. |
-| Next Ship | **DEVICE VERIFY v1.14.483** (pending John's iPhone) → **Then Phase Next-1 device verify v1.14.484** → **Phase Next-2 implementation** (hero → forms → search → reference) → Phase Next-3, -4 |
+| Phase Next-3 | ✅ **Discovery complete** — `PHASE-NEXT-3-DISCOVERY.md` — Shift handoff storage & device transfer audit. Finds: Current usage 1.36 MB (27% of 5 MB quota), multi-shift approaches wall (50KB–6MB per shift), no pruning strategy, no device transfer flow. 5 gaps: no volume measurement, no pruning, no photo storage policy, no device transfer UX, no IndexedDB migration. Recommends 3.1 (measurement LOW), 3.2 (export LOW-MEDIUM), 3.3 (pruning MEDIUM), 3.4 (device transfer HIGH), 3.5 (IndexedDB MEDIUM) sequence. |
+| Next Ship | **DEVICE VERIFY v1.14.483** (pending John's iPhone) → **Then Phase Next-1 device verify v1.14.484** → **Phase Next campaigns begin** (2.1+3.1 parallel, then 2.2+3.2+3.3, then 2.3+2.4+3.4+3.5) |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
