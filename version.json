@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.485",
+  "version": "phantom-v1.14.486",
   "released": "2026-08-23",
-  "prevVersion": "phantom-v1.14.484",
-  "notes": "v1.14.485 — PHASE NEXT-2.1: Site context injection — Command Center hero. Display site profile (facilityId, optics, PDU, platforms) in hero footer beneath rack vitals. Provides situational awareness: tech sees their site's constraints at a glance. Pure display addition, no new data structures. Enables Phase Next-2.2+ form pre-fill pipeline."
+  "prevVersion": "phantom-v1.14.485",
+  "notes": "v1.14.486 — PHASE NEXT-2.2: Form pre-fill with site defaults. Pre-fill deployment creation form BUILD LEAD field from site profile. Reduces manual entry friction: operator sees their buildLead pre-populated when staging a new deployment scope. Idempotent: user can override at any time. Enables Phase Next-2.3+ search/reference scoping."
 }

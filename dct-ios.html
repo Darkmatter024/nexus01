@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.485';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.486';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -36683,10 +36683,12 @@ function mscope_renderStaged(c, snapshot) {
   html += '<div style="color:var(--slate);margin-top:6px">Staged ' + mscope_escHtml(snapshot.stagedAt) + '</div>';
   html += '</div></div>';
   html += '<div style="font-family:var(--mono);font-size:11px;color:var(--slate);line-height:1.6;margin-bottom:16px">Frozen offline. Working racks seed FROM THIS SNAPSHOT — the live Master can be absent or replaced and this scope will not change.</div>';
+  // v1.14.485 — Phase Next-2.2: Pre-fill deployment form from site profile
+  var prof = (typeof siteProfile_load === 'function') ? siteProfile_load() : null;
   html += '<label style="font-family:var(--mono);font-size:var(--fs-micro);letter-spacing:1.5px;color:var(--slate);display:block;margin-bottom:5px">DEPLOYMENT NAME</label>';
   html += '<input class="sop-input" id="msc-dep-name" type="text" placeholder="' + mscope_escAttr((snapshot.siteCode || 'SITE') + ' Master scope') + '" autocomplete="off" value="' + mscope_escAttr(snapshot.siteName || snapshot.siteCode || '') + '">';
   html += '<label style="font-family:var(--mono);font-size:var(--fs-micro);letter-spacing:1.5px;color:var(--slate);display:block;margin-bottom:5px;margin-top:12px">BUILD LEAD <span style="opacity:0.6">· optional</span></label>';
-  html += '<input class="sop-input" id="msc-dep-lead" type="text" placeholder="Lead DCT Operator" autocomplete="off">';
+  html += '<input class="sop-input" id="msc-dep-lead" type="text" placeholder="Lead DCT Operator" autocomplete="off" value="' + mscope_escAttr((prof && prof.buildLead) ? prof.buildLead : '') + '">';
   html += '<div style="display:flex;gap:8px;margin-top:16px">';
   html += '<button class="pt-btn pt-btn-ghost" style="flex:0 0 auto;width:auto;padding:14px 16px" onclick="mscope_discardStaged()">Discard</button>';
   html += '<button class="pt-btn pt-btn-primary" style="flex:1 1 0%;width:0;min-width:0;padding:14px 12px;white-space:nowrap" onclick="mscope_createDeployment()">CREATE DEPLOYMENT</button>';
