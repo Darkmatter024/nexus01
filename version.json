@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.481",
+  "version": "phantom-v1.14.482",
   "released": "2026-08-23",
-  "prevVersion": "phantom-v1.14.480",
-  "notes": "v1.14.481 — UI hardening: haptic constants (PASS/WARN/FAIL), view transitions (page nav smooth cross-fade), fat ACK bar (gate completions), badge honesty (—/dimmed when Master absent)"
+  "prevVersion": "phantom-v1.14.481",
+  "notes": "v1.14.482 — Quality pass: LAYERS card single-line subtitle (no overlap), location required guard (down-link wizard step 0), motion audit (0.5s→150ms, bare ease→ease-out, transition:all scoped)"
 }

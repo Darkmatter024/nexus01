@@ -428,7 +428,7 @@ body {
   display: flex; flex-direction: column;
   align-items: center; justify-content: flex-start;
   padding: 0 24px 0;
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition: opacity 150ms ease-out, transform 150ms ease-out;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-gutter: stable;
@@ -8507,12 +8507,12 @@ textarea.hud-input {
 .pp-build { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; color:var(--white); font-weight:600; }
 .pp-row { position:relative; display:flex; }
 .pp-track { position:absolute; left:10%; right:10%; top:18px; height:3px; background:rgba(255,255,255,0.07); border-radius:3px; }
-.pp-fill { position:absolute; left:0; top:0; height:100%; border-radius:3px; background:linear-gradient(90deg,rgba(31,255,208,0.45),var(--teal)); box-shadow:0 0 10px rgba(31,255,208,0.7); transition:width 0.5s ease; }
+.pp-fill { position:absolute; left:0; top:0; height:100%; border-radius:3px; background:linear-gradient(90deg,rgba(31,255,208,0.45),var(--teal)); box-shadow:0 0 10px rgba(31,255,208,0.7); transition:width 150ms ease-out; }
 .pp-track.is-act .pp-fill { background:linear-gradient(90deg,rgba(92,242,255,0.45),var(--cyan)); box-shadow:0 0 10px rgba(92,242,255,0.7); }
 .pp-track.is-blk .pp-fill { background:#ff2bd6; box-shadow:0 0 10px rgba(255,43,214,0.7); }
 .pp-node { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:9px; z-index:1; }
-.pp-dot { position:relative; width:38px; height:38px; border-radius:50%; border:2px solid rgba(255,255,255,0.16); background:radial-gradient(circle at 50% 32%, #1a2030, #0b0f1c); display:flex; align-items:center; justify-content:center; font-family:var(--orb); font-weight:700; font-size:14px; color:var(--slate); transition:all 0.3s ease; }
-.pp-lbl { font-family:var(--mono); font-size:8.5px; letter-spacing:0.04em; color:var(--slate); text-align:center; line-height:1.1; transition:color 0.3s ease; }
+.pp-dot { position:relative; width:38px; height:38px; border-radius:50%; border:2px solid rgba(255,255,255,0.16); background:radial-gradient(circle at 50% 32%, #1a2030, #0b0f1c); display:flex; align-items:center; justify-content:center; font-family:var(--orb); font-weight:700; font-size:14px; color:var(--slate); transition: opacity 150ms ease-out, color 150ms ease-out, background 150ms ease-out; }
+.pp-lbl { font-family:var(--mono); font-size:8.5px; letter-spacing:0.04em; color:var(--slate); text-align:center; line-height:1.1; transition:color 150ms ease-out; }
 .pp-node.is-done .pp-dot { border-color:var(--teal); color:#04140a; background:radial-gradient(circle at 50% 32%, #5bf0a0, var(--teal)); box-shadow:0 0 14px rgba(31,255,208,0.5), inset 0 0 6px rgba(255,255,255,0.3); }
 .pp-node.is-done .pp-lbl { color:#a8e8c4; }
 .pp-node.is-active .pp-dot { border-color:var(--cyan); color:var(--cyan); background:radial-gradient(circle at 50% 32%, #16384a, #0b1c26); animation:pp-pulse 1.7s ease-in-out infinite; }
@@ -8547,7 +8547,7 @@ textarea.hud-input {
 .tile { position:relative; aspect-ratio:1 / 1.6; min-height:var(--tap-xl); background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.10); border-radius:6px; padding:6px; cursor:pointer; -webkit-appearance:none; display:flex; flex-direction:column; overflow:hidden; -webkit-tap-highlight-color:transparent; }
 .tile-hdr { font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:0.5px; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .tile-body { position:relative; flex:1; margin:5px 0; border:1px solid #2b2e39; border-radius:3px; background:linear-gradient(180deg,#16171e,#0e0f15); overflow:hidden; box-shadow:inset 0 1px 0 rgba(255,255,255,0.04); }
-.tile-fill { width:100%; transition:height 0.5s ease; }
+.tile-fill { width:100%; transition:height 150ms ease-out; }
 .tile.is-done .tile-fill { background:var(--teal); box-shadow:0 0 8px rgba(31,255,208,0.4); }
 .tile.is-active .tile-fill { background:var(--cyan); }
 .tile.is-pending .tile-fill { background:rgba(180,194,208,0.15); }
@@ -8932,7 +8932,7 @@ body.rd .iso .tile .art{position:absolute;inset:0;background-size:cover;backgrou
 body.rd .iso .tile .scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.55) 34%,rgba(0,0,0,0) 62%)}
 body.rd .iso .tile .nm,body.rd .iso .tile .mt{position:absolute;left:15px;right:12px}
 body.rd .iso .tile .nm{bottom:26px;font-size:var(--fs-body);letter-spacing:var(--hud-track-mid);text-transform:uppercase;font-weight:700}
-body.rd .iso .tile .mt{bottom:12px;font-size:var(--fs-micro);letter-spacing:var(--hud-track-data);color:var(--slate)}
+body.rd .iso .tile .mt{bottom:12px;font-size:var(--fs-micro);letter-spacing:var(--hud-track-data);color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body.rd .iso .tile .pill{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:var(--fs-micro);padding:3px 7px;border-radius:var(--r-pill);background:rgba(0,0,0,.6);border:1px solid color-mix(in srgb,var(--rfac) 50%,transparent);color:var(--rfac)}
 body.rd .iso .row{display:flex;align-items:center;gap:var(--sp-3);min-height:var(--tap-m);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-ctl);background:var(--surf-1);border:var(--hud-card-edge);margin-bottom:var(--sp-2);cursor:pointer}
 body.rd .iso .row.soon{opacity:.4;cursor:default;pointer-events:none}
@@ -13075,7 +13075,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.481';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.482';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -22350,7 +22350,7 @@ function iso_renderStep(c, id) {
   if (sess.step === 7) {
     html += '<button class="btn pri"' + (nextDisabled ? ' disabled' : '') + ' onclick="if(!this.disabled) { s=iso_get(\'' + id + '\');s.trail.push({t:Date.now(),step:' + sess.step + ',text:' + JSON.stringify(step.trailLine(sess.values)) + '});s.status=\'packet\';iso_put(s);iso_renderPacket(document.getElementById(\'ops-tool-host\'),\'' + id + '\'); }">Build packet →</button>';
   } else {
-    html += '<button class="btn pri"' + (nextDisabled ? ' disabled' : '') + ' onclick="if(!this.disabled) { s=iso_get(\'' + id + '\');s.trail.push({t:Date.now(),step:' + sess.step + ',text:' + JSON.stringify(step.trailLine(sess.values)) + '});s.step++;iso_put(s);iso_renderStep(document.getElementById(\'ops-tool-host\'),\'' + id + '\'); }">Next · ' + (ISO_OODA.find(function(g){ return g.steps.indexOf(sess.step+1) >= 0; }) || {k:'Done'}).k + ' →</button>';
+    html += '<button class="btn pri"' + (nextDisabled ? ' disabled' : '') + ' onclick="if(!this.disabled) { s=iso_get(\'' + id + '\'); if(s.step===0 && !(s.values.location||' + '\'\').trim()' + ') { if(typeof phantom_fatAck===\'function\') phantom_fatAck(\'blocked\',\'LOCATION REQUIRED\'); else if(typeof phantomToast===\'function\') phantomToast(\'Location required before advancing\',\'warn\'); return; } s.trail.push({t:Date.now(),step:' + sess.step + ',text:' + JSON.stringify(step.trailLine(sess.values)) + '});s.step++;iso_put(s);iso_renderStep(document.getElementById(\'ops-tool-host\'),\'' + id + '\'); }">Next · ' + (ISO_OODA.find(function(g){ return g.steps.indexOf(sess.step+1) >= 0; }) || {k:'Done'}).k + ' →</button>';
   }
   html += '</div>';
   html += '</div>';
