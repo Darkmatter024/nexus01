@@ -13069,7 +13069,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.478';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.479';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -36219,8 +36219,60 @@ window.master_loadFromPicker = function master_loadFromPicker(opts) {
                 if (typeof haptic === 'function') haptic([40, 30, 40]);
               } catch (_) {}
             } else {
-              try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
-              try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (_) {}
+              // v1.14.478 BUG-FIX: Multi-site confirm sheet. If Master's site differs from profile, ask user to SWITCH or KEEP.
+              try {
+                var _activeM = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.active() : null;
+                var _masterSite = '';
+                if (_activeM) {
+                  var _vars = (typeof master_siteVars === 'function') ? master_siteVars() : null;
+                  _masterSite = (_vars && (_vars.locode || _vars.site)) || '';
+                  if (!_masterSite && _activeM.racksByCab) {
+                    var _firstRack = Object.values(_activeM.racksByCab)[0];
+                    var _locs = (_firstRack && _firstRack.hosts) ? _firstRack.hosts.map(function(h) { return (h.locode || '').split(':')[0]; }) : [];
+                    var _counts = {};
+                    _locs.forEach(function(l) { if (l) _counts[l] = (_counts[l] || 0) + 1; });
+                    _masterSite = Object.keys(_counts).sort(function(a, b) { return _counts[b] - _counts[a]; })[0] || '';
+                  }
+                }
+                var _curProf = (typeof siteProfile_load === 'function') ? siteProfile_load() : null;
+                var _curFacility = (_curProf && _curProf.facilityId) || '';
+                if (_masterSite && _curFacility && _masterSite !== _curFacility) {
+                  var _switchDone = false;
+                  (async function() {
+                    var _doSwitch = await phantomConfirmAsk({
+                      title: 'Site mismatch',
+                      body: 'Master says <strong>' + escHtml(_masterSite) + '</strong> — your profile says <strong>' + escHtml(_curFacility) + '</strong>. Switch?',
+                      confirmLabel: 'SWITCH SITE',
+                      cancelLabel: 'KEEP ' + escHtml(_curFacility)
+                    });
+                    if (_doSwitch) {
+                      try {
+                        if (typeof siteProfile_load === 'function' && typeof siteProfile_save === 'function') {
+                          var _p = siteProfile_load();
+                          if (_p) {
+                            _p.facilityId = _masterSite;
+                            if (!_p.sources) _p.sources = {};
+                            _p.sources.facilityId = 'master';
+                            siteProfile_save(_p);
+                            if (typeof cmd_render === 'function') cmd_render();
+                          }
+                        }
+                      } catch (_) {}
+                    } else {
+                      try {
+                        var _hash = _activeM.sourceFileHash || '';
+                        if (_hash && typeof localStorage !== 'undefined') localStorage.setItem('phantom_site_dismiss_' + _hash, '1');
+                      } catch (_) {}
+                    }
+                  })();
+                } else {
+                  try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (_) {}
+                  try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (_) {}
+                }
+              } catch (_) {
+                try { if (typeof site_derivePlatformsFromMaster === 'function') site_derivePlatformsFromMaster(); } catch (__) {}
+                try { if (typeof site_prefillProfileFromMaster === 'function') site_prefillProfileFromMaster(); } catch (__) {}
+              }
             }
           } else {
             PHANTOM_MASTER.discardStaged();
