@@ -5,8 +5,8 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-23, after `v1.14.483` — CLEAN window complete.
-⏳ AWAITING DEVICE VERIFY. Next: Phase Next campaign (Master asset pipeline, site context, Shift Handoff).**
+**Last updated: 2026-08-23, after `v1.14.484` — Phase Next-1 wiring complete.
+⏳ AWAITING DEVICE VERIFY OF v1.14.483. Phase Next-1 technical deep dive (Master asset pipeline integration) shipped. Next: John's iPhone verify, then Phase Next campaign.**
 
 ---
 
@@ -14,17 +14,18 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.483`** |
-| Commits | `.481` UI hardening · `.482` quality pass · `.483` CLEAN window (all 2026-08-23) |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.483` |
-| Shipped | ✅ **v1.14.483 CLEAN WINDOW** — orphan function removed, dead CSS guards removed, Crash-Cart code routed to R1 |
+| **Version** | **`phantom-v1.14.484`** (latest) / **`.483`** (live on device verify) |
+| Commits | `.481` UI hardening · `.482` quality pass · `.483` CLEAN window · `.484` Phase Next-1 wiring (all 2026-08-23) |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.484` |
+| Shipped | ✅ **v1.14.484 PHASE NEXT-1** — Master asset pipeline integration wiring: wire site_prefillProfileFromMaster() into Master acceptance path, auto-hydrate site context (locode, PDU, optics, naming) from Master's SITE-VARS into siteProfile on acceptance and boot |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 | Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
 | Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact** |
-| Status | ⏳ **AWAITING DEVICE VERIFY** — Reports: `CLEAN-WINDOW-DISCOVERY.md`, `PHANTOM-CLEAN-WINDOW-COMPLETE.md` |
-| Next Ship | **PHASE NEXT CAMPAIGN** — Master asset pipeline, site context injection, Shift Handoff data transfer |
+| Status | ⏳ **AWAITING DEVICE VERIFY OF v1.14.483** (v1.14.484 wiring complete, not yet device tested) |
+| Phase Next-1 | ✅ **Technical deep dive shipped** — `PHASE-NEXT-1-TECHNICAL-DEEP-DIVE.md` — comprehensive analysis of Master→Profile pipeline, integration gaps (solved), edge cases, contracts, atomic save requirements, testing strategy, implementation plan (one surgical edit + three-stamp, ✅ shipped in v1.14.484) |
+| Next Ship | **DEVICE VERIFY v1.14.483** (pending John's iPhone) → **Then Phase Next-1 device verify v1.14.484** → **Phase Next campaign** (site context injection, Shift Handoff data transfer) |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
