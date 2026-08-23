@@ -5,8 +5,8 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-13, after `v1.14.455` — LOCKED RACK MODE is now a canonical front elevation.
-Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453`) is cleared.**
+**Last updated: 2026-08-23, after `v1.14.482` — UI hardening + quality pass complete.
+⏳ CLEAN window discovery phase underway. Next ship: CLEAN (tombstones, dead CSS, orphan functions, red/green residue absorbed).**
 
 ---
 
@@ -14,16 +14,15 @@ Proven by automation; ⏳ AWAITING HARDWARE. The batch before it (`.438`–`.453
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.464`** |
-| Commits | `.416`–`.453` shipped 2026-08-08/12 · `.454`–`.459` shipped 2026-08-13 · `.460`–`.462` shipped 2026-08-14 |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.462` |
+| **Version** | **`phantom-v1.14.482`** |
+| Commits | `.481` UI hardening (2026-08-23) · `.482` quality pass (2026-08-23) |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.482` |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 | Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
 | Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact** |
-| ⏳ Open | **`.460`–`.462` — CALL 0 cap 3 of 6.** ✅ `.460` SHIFT door passed 2026-08-14 (§1i) · ✅ `.462` Home card art passed 2026-08-19, §23 with it (§1k) · ⏳ **`.461` CONTINUE is the only leg still open** (§1j) |
-| ⏳ Open | **`.463` PASTE ANYTHING — SHIPPED 2026-08-19** (§1l), takes the batch to **4 of 6**. Served bytes verified **byte-identical to the git blob**, carrying `paste_classify`, `paste_route`, `rd_openPaste` and the `pasterow` builder. 60 tests green on **phone-webkit**. ⏳ Device check 4/4b owed |
+| Next Ship | **CLEAN WINDOW** — R3 BOM tombstones · null-lookup tombstones · dead CSS families · orphan functions · ~343 red/green residue refs (absorbed, not separate ship). Discovery phase underway. |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
