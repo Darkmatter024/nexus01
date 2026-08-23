@@ -28689,7 +28689,6 @@ function firstRun_show() {
       + '<p class="fr-hint">Used on your sign-offs and handoffs.</p>'
       + '<div class="fr-sec">SITE</div>'
       + frMach('fr-facilityId', 'Site code (e.g. AUS-01)', 'autocapitalize="characters" spellcheck="false"', _fid)
-      + frMach('fr-facilityName', 'Facility name (e.g. CoreWeave Dallas)', 'autocapitalize="words" spellcheck="false"', p.facilityName)
       + (_mv ? '<p class="fr-hint">Pre-filled from the loaded Master — check it, correct anything wrong.</p>' : '')
       + '<div id="fr-error" role="alert" style="display:none;margin-top:18px;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,69,58,0.5);background:rgba(255,69,58,0.10);color:#ffb3ad;font-family:var(--mono);font-size:12px;line-height:1.5"></div>'
       + '<button id="fr-confirm" class="fr-go" style="--angle:0deg" onclick="firstRun_confirm()"><span class="fr-go-plate"></span><span class="fr-go-spot"></span><b>START</b></button>';
