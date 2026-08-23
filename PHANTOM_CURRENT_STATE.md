@@ -5,8 +5,8 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-23, after `v1.14.484` — Phase Next-1 wiring complete.
-⏳ AWAITING DEVICE VERIFY OF v1.14.483. Phase Next-1 technical deep dive (Master asset pipeline integration) shipped. Next: John's iPhone verify, then Phase Next campaign.**
+**Last updated: 2026-08-23, after `v1.14.485` — Phase Next-2.1 hero shipped.
+⏳ AWAITING DEVICE VERIFY OF v1.14.483 & v1.14.484. v1.14.485 (Phase Next-2.1: hero site context) ready for device test. Next: John's iPhone verify (three ships), then Phase Next-2.2 + 3.1 parallel.**
 
 ---
 
@@ -14,10 +14,10 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.484`** (latest) / **`.483`** (live on device verify) |
-| Commits | `.481` UI hardening · `.482` quality pass · `.483` CLEAN window · `.484` Phase Next-1 wiring (all 2026-08-23) |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.484` |
-| Shipped | ✅ **v1.14.484 PHASE NEXT-1** — Master asset pipeline integration wiring: wire site_prefillProfileFromMaster() into Master acceptance path, auto-hydrate site context (locode, PDU, optics, naming) from Master's SITE-VARS into siteProfile on acceptance and boot |
+| **Version** | **`phantom-v1.14.485`** (latest) / **`.483`** (baseline) |
+| Commits | `.481` UI hardening · `.482` quality pass · `.483` CLEAN window · `.484` Phase Next-1 wiring · `.485` Phase Next-2.1 hero (all 2026-08-23) |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.485` |
+| Shipped | ✅ **v1.14.485 PHASE NEXT-2.1** — Site context injection into Command Center hero. Display site profile (facilityId, optics, PDU, platforms) in hero footer beneath rack vitals. Pure display addition, no new data structures. Enables Phase Next-2.2 form pre-fill. |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
