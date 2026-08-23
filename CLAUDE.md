@@ -157,3 +157,37 @@ Do not create a permanent behavioral rule after every correction. Correct the is
 automated enforcement. Add a permanent rule only when the same meaningful failure **recurs**, or
 when the mistake could cause data loss, architectural corruption, or a critical release regression.
 **Architecture and product rulings are exempt — they are recorded on first statement.**
+
+---
+
+## PHANTOM DESIGN SYSTEM — LOCKED (Claude Code reads this before any UI work)
+
+PHANTOM is a vanilla JS/HTML/CSS single-file PWA (`dct-ios.html`). The design system is LOCKED. Design skill recommendations inform decisions but PHANTOM's own tokens are the authority.
+
+### Locked design tokens (never override these)
+```
+--bg:    #04060a   (deep space black — the floor)
+--cyan:  #28e0ff   (primary — HUD, active state, links)
+--vio:   #8a4bff   (secondary — permission tiers, elevated UI)
+--mag:   #ff2bd6   (alert — fail states, critical)
+--teal:  #1fffd0   (success — pass states, completed)
+--gold:  #ffcb45   (warning — blocked, hold, caution)
+```
+
+### Locked fonts
+Orbitron (display/headings) · Chakra Petch (UI labels) · Rajdhani (body)
+No new font imports. No Inter, no system-ui, no "just a quick Google Fonts."
+
+### Locked architecture
+Single file: `dct-ios.html` (~52k lines). No build system, no npm, no React.
+str_replace edits only. Three-stamp lockstep: dct-ios.html / sw.js / version.json.
+
+### How to use the design skills with PHANTOM
+- **UI UX Pro Max**: run `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "field tool dark UI" --domain style` to find relevant style guidance. Use it to inform motion, spacing, and layout decisions — not color or font choices.
+- **Taste Skill**: use to audit any new surface before shipping. "Does this look like AI slop?" is the question. If yes, fix it.
+- **Design Motion Principles**: use when adding CSS transitions, animations, or the View Transitions spec. Lean Emil Kowalski (restraint, speed, purpose) — PHANTOM is a field tool, not a portfolio.
+- **Awesome Claude Design**: if you need a reference aesthetic, check `.claude/references/awesome-claude-design/` — Linear, Vercel, and Raycast are the closest matches to PHANTOM's sensibility.
+- **Frontend Design**: Anthropic's own skill. Activates automatically for UI/UX work. Defers to the locked tokens above when it conflicts.
+
+### Cold Aisle Filter (never violated)
+44pt minimum tap targets. Gloved hands. No tiny controls for floor actions. Data hall is loud.
