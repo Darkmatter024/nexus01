@@ -13069,7 +13069,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.477';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.478';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -24018,6 +24018,9 @@ function cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba) {
   // v1.14.476: use NBA-emitted label so hero button matches NBA state
   var btnLabel = (nba && nba.label) ? nba.label : (live ? 'Continue deployment' : 'Start a deployment');
   E('cs-hero-cta').textContent = btnLabel;
+  // v1.14.478: bind onclick to nba.act (the rung-canonical door), not hard-coded cmd_continueWork.
+  // Mirrors cc-nbar (:23762) and cs-intel (:23822) pattern — label and action must pair.
+  E('cs-hero-cta').onclick = (nba && nba.act) ? nba.act : cmd_continueWork;
 }
 
 function cmd_telemetry(activeDep, activePct, handoffDraft) {
