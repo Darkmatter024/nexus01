@@ -25,7 +25,8 @@ doc is stale — fix the doc, do not fork the fact.
 | Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact** |
 | Status | ⏳ **AWAITING DEVICE VERIFY OF v1.14.483** (v1.14.484 wiring complete, not yet device tested) |
 | Phase Next-1 | ✅ **Technical deep dive shipped** — `PHASE-NEXT-1-TECHNICAL-DEEP-DIVE.md` — comprehensive analysis of Master→Profile pipeline, integration gaps (solved), edge cases, contracts, atomic save requirements, testing strategy, implementation plan (one surgical edit + three-stamp, ✅ shipped in v1.14.484) |
-| Next Ship | **DEVICE VERIFY v1.14.483** (pending John's iPhone) → **Then Phase Next-1 device verify v1.14.484** → **Phase Next campaign** (site context injection, Shift Handoff data transfer) |
+| Phase Next-2 | ✅ **Discovery complete** — `PHASE-NEXT-2-DISCOVERY.md` — site context injection audit. Finds: AI features ✅ (already use profile), hero ❌ (no site display), forms ❌ (no pre-fill), search ❌ (not ranked by site), reference ❌ (not filtered by site). Recommends 2.1 (hero LOW), 2.2 (forms LOW-MEDIUM), 2.3 (search MEDIUM), 2.4 (reference MEDIUM) as sequence. |
+| Next Ship | **DEVICE VERIFY v1.14.483** (pending John's iPhone) → **Then Phase Next-1 device verify v1.14.484** → **Phase Next-2 implementation** (hero → forms → search → reference) → Phase Next-3, -4 |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 
