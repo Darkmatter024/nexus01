@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.480",
+  "version": "phantom-v1.14.481",
   "released": "2026-08-23",
-  "prevVersion": "phantom-v1.14.479",
-  "notes": "v1.14.480 - OWNER RULING: Master is single writer for site identity. Setup card removes SITE field (identity only). facilityId written from Master locode on parse, never from user input. Badge shows '—' when no Master. Profile editor shows facilityId read-only under FROM MASTER."
+  "prevVersion": "phantom-v1.14.480",
+  "notes": "v1.14.481 — UI hardening: haptic constants (PASS/WARN/FAIL), view transitions (page nav smooth cross-fade), fat ACK bar (gate completions), badge honesty (—/dimmed when Master absent)"
 }

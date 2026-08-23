@@ -1142,6 +1142,12 @@ body {
    #ph-dock phase strip anchors to the SAME var so it sits ABOVE the nav, not behind it. ━━━ */
 body.rd { --rd-navclear: calc(96px + var(--safe-bottom)); --rd-dockclear: 51px; }
 body.rd .page { padding-bottom: calc(var(--rd-navclear) + 20px); }
+body.rd ::view-transition-old(root) { animation: 120ms ease-out both _pfa-fade-out; }
+body.rd ::view-transition-new(root) { animation: 120ms ease-in  both _pfa-fade-in;  }
+@keyframes _pfa-fade-out { to   { opacity: 0; } }
+@keyframes _pfa-fade-in  { from { opacity: 0; } }
+@keyframes _pfa-slide-in { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+@keyframes _pfa-slide-out { from { transform: translateY(0); } to { transform: translateY(-100%); } }
 /* ━━━ v1.14.351 — SECOND STRIP, SECOND CLEARANCE. #ph-dock is a second fixed strip stacked ABOVE the nav
    on rack detail, and nothing was paying for its height: .page cleared the nav ONLY, so at max scroll the
    last ~51px of a rack detail (LOG NOTE / ASSIGNED TO / QR) stayed buried behind the dock. Reported as a
@@ -13069,7 +13075,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.480';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.481';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -17254,6 +17260,11 @@ function haptic(pattern) {
   if (navigator.vibrate) navigator.vibrate(pattern);
 }
 
+// Haptic feedback constants — semantic patterns for common interactions
+var HAPTIC_PASS    = [30, 20, 30]; // two short pulses — confirmation, done
+var HAPTIC_WARN    = [60];          // one medium — hold, blocked, caution
+var HAPTIC_FAIL    = [100];         // one long — error, escalation needed
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // DATA LAYER — All reference data and lookup tables
 // Edit content here. Do not mix data with engine logic.
@@ -17895,7 +17906,7 @@ function phantom_quarantine(key, raw, err) {
         if (typeof phantomToast === 'function') {
           phantomToast('Damaged data in "' + key + '" — quarantined, not deleted. Export a backup.', 'error');
         }
-        if (typeof haptic === 'function') haptic([40, 30, 40]);
+        if (typeof haptic === 'function') haptic(HAPTIC_PASS);
       } catch (_) {}
     }
   } catch (_) { /* quarantine must never throw into a read path */ }
@@ -17963,7 +17974,7 @@ function safeStore(key, value) {
           if (typeof phantomToast === 'function') {
             phantomToast('Storage full — export backup and prune to continue', 'error');
           }
-          if (typeof haptic === 'function') haptic([40, 30, 40]);
+          if (typeof haptic === 'function') haptic(HAPTIC_PASS);
         } catch(_) {}
       }
       try { window.__phantomStorageFull = true; } catch(_) {}
@@ -18082,7 +18093,7 @@ function phantomPinpadAsk(opts) {
     function press(digit) {
       if (buf.length >= length) return;
       buf += digit;
-      if (typeof haptic === 'function') haptic([8]);
+      if (typeof haptic === 'function') haptic(HAPTIC_PASS);
       repaint();
       if (buf.length === length && autosubmit) {
         // Brief delay so the operator sees the final dot fill before the sheet closes.
@@ -18092,7 +18103,7 @@ function phantomPinpadAsk(opts) {
     function backspace() {
       if (!buf.length) return;
       buf = buf.slice(0, -1);
-      if (typeof haptic === 'function') haptic([6]);
+      if (typeof haptic === 'function') haptic(HAPTIC_PASS);
       repaint();
     }
     overlay.addEventListener('click', function(e) {
@@ -18181,7 +18192,7 @@ function phantomPromptAsk(opts) {
     function submit() {
       var v = input.value;
       if (!allowEmpty && v.trim().length === 0) return; // OK should be disabled but defend anyway
-      if (typeof haptic === 'function') haptic([8]);
+      if (typeof haptic === 'function') haptic(HAPTIC_PASS);
       cleanup(v);
     }
     overlay.addEventListener('click', function(e) {
@@ -18456,7 +18467,7 @@ function phantomViewCrashLog() {
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text); didCopy = true; }
   } catch (_) { didCopy = false; }
-  if (typeof haptic === 'function') { try { haptic([8]); } catch(_) {} }
+  if (typeof haptic === 'function') { try { haptic(HAPTIC_PASS); } catch(_) {} }
   var msg = (didCopy ? 'Copied ' + entries.length + ' entries to clipboard.\n\n' : 'Copy failed (read below / screenshot).\n\n')
           + text.slice(0, 1400)
           + (text.length > 1400 ? '\n\n…(' + (text.length - 1400) + ' more chars copied to clipboard)' : '');
@@ -18929,7 +18940,7 @@ function shiftReport_generate() {
   win.document.open();
   win.document.write(html);
   win.document.close();
-  haptic([8, 40, 8]);
+  haptic(HAPTIC_PASS);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -18984,7 +18995,7 @@ function omni_submit() {
   try {
     deploy_logAudit(dep.id, 'OMNI_NOTE', 'deployment', dep.id, text);
     input.value = '';
-    haptic([6]);
+    haptic(HAPTIC_PASS);
     phantomToast('Logged · ' + dep.name, 'ok');
   } catch (e) {
     phantomToast('Log failed', 'error');
@@ -19036,7 +19047,7 @@ function logSheet_send() {
   if (text.length > 500) text = text.substring(0, 500);
   try {
     deploy_logAudit(dest.id, 'OMNI_NOTE', 'deployment', dest.id, text);
-    if (typeof haptic === 'function') haptic([6]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     if (typeof phantomToast === 'function') phantomToast('Logged - ' + dest.name, 'ok');
     closeLogSheet();
   } catch (e) {
@@ -19600,7 +19611,7 @@ function rd_holdGesture(el, armClass, onDone){
   function start(e){ if(e && e.cancelable) e.preventDefault(); armed=true; el.classList.add(armClass);
     if(typeof haptic==='function') haptic(4);
     timer=setTimeout(function(){ if(armed){ armed=false; el.classList.remove(armClass);
-      if(typeof haptic==='function') haptic([6,30,6]); onDone(); } }, RD_HOLD_MS); }
+      if(typeof haptic==='function') haptic(HAPTIC_PASS); onDone(); } }, RD_HOLD_MS); }
   function cancel(){ armed=false; el.classList.remove(armClass); if(timer) clearTimeout(timer); }
   el.addEventListener('touchstart', start, {passive:false});
   el.addEventListener('mousedown', start);
@@ -20006,7 +20017,7 @@ function errors_copyAll() {
   var didCopy = false;
   try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text); didCopy = true; } } catch (_) { didCopy = false; }
   if (!didCopy) { try { window.prompt('Copy the error log below:', text); didCopy = true; } catch (_) {} }
-  if (typeof haptic === 'function') { try { haptic([8]); } catch (_) {} }
+  if (typeof haptic === 'function') { try { haptic(HAPTIC_PASS); } catch (_) {} }
   phantomToast(didCopy ? 'Copied ' + entries.length + ' entries' : 'Copy failed', didCopy ? 'success' : 'error');
 }
 function errors_clear() {
@@ -21510,7 +21521,7 @@ function forge3d_render(mount) {
         lockPoseFor(near, { pos: lockPos, at: lockAt });
         lockReady = true;
       }
-      if (typeof haptic === 'function') haptic([6]);
+      if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     }
   }
   on(document.getElementById('walkBtn'), 'click', function () { setWalkMode(!walkMode); });
@@ -24286,7 +24297,11 @@ function cmd_masterAgeInfo() {
 function cmd_renderZ0(site, loaded) {
   var pg = document.getElementById('pg-cmd');
   if (pg) pg.setAttribute('data-master', loaded ? '1' : '0');
-  var s = document.getElementById('cc-z0-site'); if (s) s.textContent = loaded ? (site || 'SITE') : '—';
+  var s = document.getElementById('cc-z0-site');
+  if (s) {
+    if (!site) { s.textContent = '—'; s.style.opacity = '0.45'; }
+    else { s.textContent = site; s.style.opacity = '1'; }
+  }
   var chip = document.getElementById('cc-agechip');
   if (chip) {
     if (loaded) { var a = cmd_masterAgeInfo(); chip.textContent = a.text; chip.className = 'cc-agechip' + (a.cls ? ' ' + a.cls : ''); chip.style.display = ''; }
@@ -24609,7 +24624,7 @@ function shift_setPreset(kind) {
   else if (kind === '12h') end = Date.now() + 12 * 60 * 60 * 1000;
   else return;
   shift_end_write(end);
-  if (typeof haptic === 'function') haptic([6]);
+  if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   shift_renderHero();
   shift_closeSheet();
 }
@@ -24620,13 +24635,13 @@ function shift_setCustom(val) {
   var d = new Date(); d.setHours(hh, mm, 0, 0);
   if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
   shift_end_write(d.getTime());
-  if (typeof haptic === 'function') haptic([6]);
+  if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   shift_renderHero();
   shift_closeSheet();
 }
 function shift_clear() {
   shift_end_clear();
-  if (typeof haptic === 'function') haptic([6]);
+  if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   shift_renderHero();
   shift_closeSheet();
 }
@@ -24724,24 +24739,33 @@ function showPage(id, tnEl, opsTab) {
     return;
   }
   if (typeof nowDot_update === 'function') { try { nowDot_update(); } catch(_){} }
-  wakeLock_release();
-  PhantomScanner.close();
-  document.querySelectorAll('.page').forEach(p => {
-    p.classList.remove('active');
-    p.scrollTop = 0;
-  });
 
-  document.querySelectorAll('.tn-item').forEach(t => t.classList.remove('active'));
+  var _pageSwitch = function() {
+    wakeLock_release();
+    PhantomScanner.close();
+    document.querySelectorAll('.page').forEach(p => {
+      p.classList.remove('active');
+      p.scrollTop = 0;
+    });
 
-  const target = document.getElementById('pg-' + id);
-  if (target) {
-    target.classList.add('active');
-    target.scrollTop = 0;
+    document.querySelectorAll('.tn-item').forEach(t => t.classList.remove('active'));
+
+    const target = document.getElementById('pg-' + id);
+    if (target) {
+      target.classList.add('active');
+      target.scrollTop = 0;
+    }
+
+    if (tnEl) tnEl.classList.add('active');
+    document.getElementById('srch').value = '';
+    hideSearch();
+  };
+
+  if (document.startViewTransition) {
+    document.startViewTransition(_pageSwitch);
+  } else {
+    _pageSwitch();
   }
-
-  if (tnEl) tnEl.classList.add('active');
-  document.getElementById('srch').value = '';
-  hideSearch();
 
   if (id === 'fiber') initSubtab('fiber-sub', 'fs-fiber', '#pg-fiber .subtab-strip .stab');
   if (id === 'cli')   initSubtab('cli-sub',   'cs-ib', '#pg-cli .subtab-strip .stab');
@@ -25451,7 +25475,7 @@ function identity_promptUser() {
     identity_setUser(name);
     identity_refreshOverflowLabels();
     triage_renderDeployCard();
-    haptic([8]);
+    haptic(HAPTIC_PASS);
     var saved = identity_getUser();
     phantomToast(saved ? 'Identity set: ' + saved : 'Identity cleared', 'ok');
   })();
@@ -27883,7 +27907,7 @@ async function rbac_enterLeadMode(deploymentId) {
         } catch(_) { /* upgrade failure is non-fatal — unlock still succeeds */ }
       }
       rbac_setLeadSession(deploymentId);
-      haptic([10, 40, 10]);
+      haptic(HAPTIC_PASS);
       phantomToast('Lead Mode active — full access granted', 'ok');
       deploy_showDetail(deploymentId);
     } else {
@@ -27896,12 +27920,12 @@ async function rbac_enterLeadMode(deploymentId) {
         phantomToast('Incorrect PIN — ' + (5 - attempts.count) + ' attempt' + (5 - attempts.count !== 1 ? 's' : '') + ' remaining', 'error');
       }
       _pinAttempts_set(deploymentId, attempts);
-      haptic([20, 60, 20]);
+      haptic(HAPTIC_WARN);
     }
   } catch (err) {
     // Crypto subtle or runtime failure — do NOT silently drop; surface and preserve attempt state
     phantomToast('PIN verification failed: ' + (err.message || 'crypto unavailable') + ' — try again', 'error');
-    haptic([20, 60, 20]);
+    haptic(HAPTIC_WARN);
     // Note: do not increment attempts here — the failure was infrastructure, not a wrong PIN
   }
 }
@@ -27909,7 +27933,7 @@ async function rbac_enterLeadMode(deploymentId) {
 // Lead taps EXIT — clears session, returns to floor tech view.
 function rbac_exitLeadMode(deploymentId) {
   rbac_clearLeadSession(deploymentId);
-  haptic([8]);
+  haptic(HAPTIC_PASS);
   phantomToast('Returned to Floor Tech mode', 'ok');
   deploy_showDetail(deploymentId);
 }
@@ -27939,7 +27963,7 @@ async function rbac_promptSetPin(deploymentId) {
   if (!deploy_saveAll(deploys)) { phantomToast('Save failed', 'error'); return; }
   _pinAttempts_clear(deploymentId);
   rbac_setLeadSession(deploymentId);
-  haptic([10, 40, 10]);
+  haptic(HAPTIC_PASS);
   phantomToast('Lead PIN set — Lead Mode active', 'ok');
   deploy_showDetail(deploymentId);
 }
@@ -27978,7 +28002,7 @@ async function deviceLead_enterMode() {
         try { var ns = rbac_generateSalt(); var nh = await rbac_hashPin_v2(pin, ns); safeStore(DEVICE_LEAD_PIN_KEY, JSON.stringify({ v: 2, salt: ns, hash: nh })); } catch (_) {}
       }
       rbac_setLeadSession(DEVICE_LEAD_ID);
-      haptic([10, 40, 10]);
+      haptic(HAPTIC_PASS);
       phantomToast('Device Lead Mode active', 'ok');
       return true;
     }
@@ -27986,11 +28010,11 @@ async function deviceLead_enterMode() {
     if (attempts.count >= 5) { attempts.lockedUntil = Date.now() + 60000; attempts.count = 0; phantomToast('Too many failed attempts — PIN locked for 60s', 'error'); }
     else { phantomToast('Incorrect PIN — ' + (5 - attempts.count) + ' attempt' + (5 - attempts.count !== 1 ? 's' : '') + ' remaining', 'error'); }
     _pinAttempts_set(DEVICE_LEAD_ID, attempts);
-    haptic([20, 60, 20]);
+    haptic(HAPTIC_WARN);
     return false;
   } catch (err) {
     phantomToast('PIN verification failed: ' + (err.message || 'crypto unavailable') + ' — try again', 'error');
-    haptic([20, 60, 20]);
+    haptic(HAPTIC_WARN);
     return false;
   }
 }
@@ -28010,7 +28034,7 @@ async function deviceLead_promptSetPin() {
   if (!safeStore(DEVICE_LEAD_PIN_KEY, JSON.stringify({ v: 2, salt: salt, hash: hash }))) { phantomToast('Save failed — storage may be full', 'error'); return false; }
   _pinAttempts_clear(DEVICE_LEAD_ID);
   rbac_setLeadSession(DEVICE_LEAD_ID);
-  haptic([10, 40, 10]);
+  haptic(HAPTIC_PASS);
   phantomToast('Device Lead PIN set — Lead Mode active', 'ok');
   return true;
 }
@@ -28169,7 +28193,7 @@ async function deploy_assignRack(deployId, rackId, surface) {
   racks[idx].assignedTo = name.trim();
   if (!deploy_saveAllRacks(racks)) { phantomToast('Save failed', 'error'); return; }
   deploy_logAudit(deployId, 'RACK_ASSIGNED', 'rack', rackId, name.trim() ? 'Assigned to: ' + name.trim() : 'Unassigned');
-  haptic([8]);
+  haptic(HAPTIC_PASS);
   phantomToast(name.trim() ? 'Assigned to ' + name.trim() : 'Assignment cleared', 'ok');
   phase_refreshSurface(surface, deployId, rackId);
 }
@@ -28304,7 +28328,7 @@ function va_showLogButton(intent) {
 function va_confirmAuditLog(depId, type, rack, note) {
   var action = type === 'blocker' ? 'VA_BLOCKER_NOTE' : 'VA_PHASE_NOTE';
   deploy_logAudit(depId, action, 'rack', rack, note);
-  haptic([8]);
+  haptic(HAPTIC_PASS);
   phantomToast('Logged to audit trail', 'ok');
   var wrap = document.getElementById('va-log-btn-wrap');
   if (wrap) wrap.remove();
@@ -28352,7 +28376,7 @@ function deploy_generateRackQR(deployId, rackId) {
   win.document.write('<script>if(typeof QRCode==="undefined"){document.body.innerHTML+=\'<div style="color:#ff4d8d;font:14px monospace;padding:16px;text-align:center;">QR library unavailable — reinstall the app while online once to cache it.</div>\';}else{new QRCode(document.getElementById("qr"),{text:"' + qrData + '",width:180,height:180,colorDark:"#000",colorLight:"#fff"});}<\/script>');
   win.document.write('</body></html>');
   win.document.close();
-  haptic([8]);
+  haptic(HAPTIC_PASS);
 }
 
 // ━━━ STAGE 7: SITE PROFILE ━━━
@@ -28766,7 +28790,7 @@ function firstRun_confirm() {
   if (pduEl  && pduEl.value.trim())  p.pduType              = pduEl.value.trim();
   p.confirmedAt = Date.now();
   if (siteProfile_save(p)) {            // siteProfile_save stamps lastUpdated + schemaVersion
-    if (typeof haptic === 'function') haptic([10, 30, 10]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     try { localStorage.setItem('phantom_seen_boot', '1'); } catch (_) {}
     var ov = document.getElementById('fr-overlay');
     if (ov) ov.classList.remove('show');
@@ -31410,7 +31434,7 @@ function siteProfile_saveFromEditor() {
   profile.sources = _srcs;
 
   if (siteProfile_save(profile)) {
-    haptic([10, 30, 10]);
+    haptic(HAPTIC_PASS);
     _spEditorDraft = null; // clear draft so next open reads fresh from storage
     phantomToast('Site profile saved \u2014 AI features updated', 'ok');
     siteProfile_showEditor();
@@ -31425,7 +31449,7 @@ function siteProfile_resetToDefaults() {
   if (!confirm('Reset site profile? This clears all site fields — you will re-enter or re-derive them.')) return;
   localStorage.removeItem(SITE_PROFILE_KEY);
   _spEditorDraft = null; // force re-init from defaults on next render
-  haptic([8]);
+  haptic(HAPTIC_PASS);
   phantomToast('Site profile reset to defaults', 'ok');
   siteProfile_showEditor();
 }
@@ -32819,7 +32843,7 @@ function deploy_overrideGate(phaseId, deployId) {
   deploy_logAudit(deployId, 'GATE_OVERRIDE', 'phase', phaseId,
     (DEPLOY_PHASE_LABELS_FULL[phaseType] || phaseType) + ': gate bypassed (' + rackDisplayName + ')');
 
-  haptic([10, 30, 10, 30, 10]);
+  haptic(HAPTIC_PASS);
   phantomToast('Phase gate overridden', 'warn');
   return true;
 }
@@ -34864,7 +34888,7 @@ var PHANTOM_MASTER_STORE = {
             if (typeof phantomToast === 'function') {
               phantomToast('Imported Master has no hosts — kept your saved Master. New one works this session.', 'warn');
             }
-            if (typeof haptic === 'function') haptic([40, 30, 40]);
+            if (typeof haptic === 'function') haptic(HAPTIC_PASS);
           } catch (_) {}
           try { window.__phantomMasterOverwriteRefused = true; } catch (_) {}
           return false;
@@ -34935,7 +34959,7 @@ var PHANTOM_MASTER_STORE = {
           if (typeof phantomToast === 'function') {
             phantomToast('Master too large to save — works this session, re-import after restart', 'error');
           }
-          if (typeof haptic === 'function') haptic([40, 30, 40]);
+          if (typeof haptic === 'function') haptic(HAPTIC_PASS);
         } catch (_) {}
         try { window.__phantomStorageFull = true; } catch (_) {}
         return false;
@@ -34945,7 +34969,7 @@ var PHANTOM_MASTER_STORE = {
         if (typeof phantomToast === 'function') {
           phantomToast('Master could not be saved — works this session, re-import after restart', 'error');
         }
-        if (typeof haptic === 'function') haptic([40, 30, 40]);
+        if (typeof haptic === 'function') haptic(HAPTIC_PASS);
       } catch (_) {}
       return false;
     }
@@ -36161,7 +36185,7 @@ window.master_loadFromPicker = function master_loadFromPicker(opts) {
           if (_empty.length && typeof phantomToast === 'function') {
             phantomToast(_empty.join(' + ') + ' parsed but contributed no rows — '
               + site.stats.totalCabinets + ' cabs, ' + site.stats.totalHosts + ' hosts', 'warn');
-            if (typeof haptic === 'function') haptic([40, 30, 40]);
+            if (typeof haptic === 'function') haptic(HAPTIC_PASS);
           }
         } catch (_) {}
         // v1.14.415 — THE CANDIDATE DOES NOT BECOME ACTIVE UNTIL IT IS ACCEPTED.
@@ -36189,7 +36213,7 @@ window.master_loadFromPicker = function master_loadFromPicker(opts) {
           PHANTOM_MASTER.discardStaged();
           try {
             if (typeof phantomToast === 'function') phantomToast('Master not usable — your current site has not been changed', 'error');
-            if (typeof haptic === 'function') haptic([40, 30, 40]);
+            if (typeof haptic === 'function') haptic(HAPTIC_PASS);
           } catch (_) {}
         } else {
           var _go = false;
@@ -36207,7 +36231,7 @@ window.master_loadFromPicker = function master_loadFromPicker(opts) {
             if (!_accepted) {
               try {
                 if (typeof phantomToast === 'function') phantomToast('Could not be saved — your existing Master is still active', 'warn');
-                if (typeof haptic === 'function') haptic([40, 30, 40]);
+                if (typeof haptic === 'function') haptic(HAPTIC_PASS);
               } catch (_) {}
             } else {
               // v1.14.480: Master is the ONLY writer for facilityId. On successful parse, write site from Master.
@@ -36609,7 +36633,7 @@ function mscope_confirm() {
     phantomToast('Snapshot too large or storage full — narrow scope or export backup', 'error');
     return;
   }
-  if (typeof haptic === 'function') haptic([10, 40, 10]);
+  if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   phantomToast('Scope staged · ' + capturedIds.length + ' cab' + (capturedIds.length === 1 ? '' : 's') + ' snapshotted', 'ok');
   mscope_renderStaged(deploy_opsHost(), snapshot);
 
@@ -36852,13 +36876,13 @@ function phantomConfirmAsk(opts) {
     overlay.addEventListener('click', function(e) {
       var t = e.target;
       if (!t || done) return;
-      if (t.dataset && t.dataset.ok)     { if (typeof haptic === 'function') haptic([8]); cleanup(true);  return; }
+      if (t.dataset && t.dataset.ok)     { if (typeof haptic === 'function') haptic(HAPTIC_PASS); cleanup(true);  return; }
       if (t.dataset && t.dataset.cancel) { cleanup(false); return; }
     });
     function onKey(e) {
       if (done) return;
       if (e.key === 'Escape') { e.preventDefault(); cleanup(false); return; }
-      if (e.key === 'Enter')  { e.preventDefault(); if (typeof haptic === 'function') haptic([8]); cleanup(true); return; }
+      if (e.key === 'Enter')  { e.preventDefault(); if (typeof haptic === 'function') haptic(HAPTIC_PASS); cleanup(true); return; }
     }
     document.addEventListener('keydown', onKey);
   });
@@ -37928,7 +37952,7 @@ function master_onHostnameTap(hostname) {
       didCopy = true;
     }
   } catch (_) { didCopy = false; }
-  if (typeof haptic === 'function') try { haptic([8]); } catch(_) {}
+  if (typeof haptic === 'function') try { haptic(HAPTIC_PASS); } catch(_) {}
   if (typeof phantomToast === 'function') {
     if (didCopy) {
       phantomToast('Copied: ' + name, 'ok');
@@ -38300,7 +38324,7 @@ async function _deploy_create_postIntake(_results, name, lead, raw, precomputedH
   _deployIngestResults = null;
   // Creator is the build lead — activate lead session and prompt for PIN setup
   rbac_setLeadSession(deployment.id);
-  haptic([10, 50, 10]);
+  haptic(HAPTIC_WARN);
   phantomToast('Deployment created: ' + name, 'ok');
   deploy_showDetail(deployment.id);
 }
@@ -38665,7 +38689,7 @@ function deploy_togglePause(id, pause) {
   dep.status = pause ? 'paused' : 'active';
   dep.updated = Date.now();
   if (!deploy_saveAll(deploys)) { phantomToast('Storage full — status not saved', 'error'); return; }
-  haptic([10, 30, 10]);
+  haptic(HAPTIC_PASS);
   phantomToast(pause ? 'Deployment paused' : 'Deployment resumed', 'ok');
   deploy_showDetail(id);
 }
@@ -39274,7 +39298,7 @@ function rackLookup_setFilter(filterId) {
   _rackLookupState.filter = filterId;
   // Filter changes always show the results list (even when query is empty)
   rackLookup_render();
-  haptic([4]);
+  haptic(HAPTIC_PASS);
 }
 
 function rackLookup_openRack(deployId, rackId) {
@@ -41049,7 +41073,7 @@ function rackElevation_render3D(rack, mountEl) {
           cablesVisible = !cablesVisible;
           for (var ci = 0; ci < cableMeshes.length; ci++) cableMeshes[ci].visible = cablesVisible;
           if (cablesVisible) _cablesBtn.classList.add('is-on'); else _cablesBtn.classList.remove('is-on');
-          if (typeof haptic === 'function') haptic([8]);
+          if (typeof haptic === 'function') haptic(HAPTIC_PASS);
         };
       } else if (_cabRows) {
         // Rows exist but every endpoint pair leaves this rack — nothing to draw in-rack, and a
@@ -41099,7 +41123,7 @@ function rackElevation_render3D(rack, mountEl) {
       _explodeBtn.setAttribute('aria-label', _explodeBtn.title);
       _explodeBtn.onclick = function () {
         setExplode(!exploded);
-        if (typeof haptic === 'function') haptic([8]);
+        if (typeof haptic === 'function') haptic(HAPTIC_PASS);
         // "Service mode" is the WORK word; EXPLODE is the graphics word. The rack is in a state, the
         // app is not in a rendering mode.
         if (typeof phantomToast === 'function') phantomToast(exploded ? 'Service mode — trays extended' : 'Service mode — trays stowed', 'info');
@@ -41498,7 +41522,7 @@ function rackElevation_render3D(rack, mountEl) {
     camera = v.ortho ? camO : camP;
     _viewLock = (name === 'iso') ? null : name;
     if (_railBtns) for (var k in _railBtns) { if (_railBtns[k]) _railBtns[k].classList.toggle('is-on', k === name); }
-    if (typeof haptic === 'function') haptic([8]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   }
   // ── EXPLODE (v1.14.271, RULING R4) ───────────────────────────────────────────────────────────
   // The highest value-per-line in the pack: the Bay trays ALREADY carry real internals (OSFP cages,
@@ -41559,7 +41583,7 @@ function rackElevation_render3D(rack, mountEl) {
             ? { id: rack.rackId || rack.id, hosts: _mh.hosts, cablesOut: _mh.cablesOut, cablesIn: _mh.cablesIn, source: _mh.source }
             : { id: rack.rackId || rack.id };
         } catch (e) {}
-        if (typeof haptic === 'function') haptic([6]);
+        if (typeof haptic === 'function') haptic(HAPTIC_PASS);
         _rail3dSetSel(dev.uStart, dev.uEnd);   // N-06 Stage 2: light the rail compass for the tapped unit (after the setExplode(false) above, so it survives the stow)
         openRmDevice(dev);
       }
@@ -42768,7 +42792,7 @@ function deploy_confirmDelete(id) {
   // Purge all per-deployment heavy data via the shared helper
   deploy_purgeHeavyData(id);
 
-  haptic([10, 30, 10]);
+  haptic(HAPTIC_PASS);
   phantomToast('Deployment deleted', 'ok');
   deploy_showList(deploy_opsHost());
 }
@@ -42867,7 +42891,7 @@ function handoff_saveRecord(deploymentId) {
     return;
   }
   _handoffDraft = null;
-  haptic([10, 40, 10]);
+  haptic(HAPTIC_PASS);
   phantomToast('Handoff saved for ' + (draft.incomingTech || 'incoming tech'), 'ok');
   deploy_showDetail(deploymentId);
 }
@@ -43242,7 +43266,7 @@ function deploy_opticTap(opticId, field, delta, deploymentId) {
   setTimeout(function() { _opticTapping = false; }, 250);
   var _dep = deploy_getById(deploymentId);
   if (_dep && _dep.status === 'complete') { phantomToast('Deployment is complete — optics are locked', 'warn'); return; }
-  haptic([8]);
+  haptic(HAPTIC_PASS);
   deploy_updateOpticCount(opticId, field, delta);
   deploy_showOpticLedger(deploymentId);
 }
@@ -43404,7 +43428,7 @@ function deploy_renderReviewTriage(deploymentId) {
 
 // Tap handler — toggle triage state and re-render the container in place.
 function deploy_triageTap(deploymentId, issueId, triage) {
-  haptic([8]);
+  haptic(HAPTIC_PASS);
   deploy_triageIssue(deploymentId, issueId, triage);
   var container = document.getElementById('deploy-ai-review-results');
   if (container) container.innerHTML = deploy_renderReviewTriage(deploymentId);
@@ -43491,7 +43515,7 @@ function deploy_markAcceptance(deploymentId, criterionId) {
   // Stage 6: Audit log
   deploy_logAudit(deploymentId, wasReset ? 'CRITERION_RESET' : 'CRITERION_MET', 'criterion', criterionId,
     (wasReset ? 'Reset' : 'Met') + ': ' + escHtml(c.description));
-  haptic([8]);
+  haptic(HAPTIC_PASS);
   deploy_showAcceptance(deploymentId);
 }
 
@@ -43619,7 +43643,7 @@ function deploy_completeDeployment(deploymentId) {
   deploy_logAudit(deploymentId, 'DEPLOYMENT_COMPLETE', 'deployment', deploymentId,
     'Deployment signed off by ' + escHtml(dep.buildLead || 'Tech'));
 
-  haptic([10, 50, 10, 50, 30]);
+  haptic(HAPTIC_FAIL);
   phantomToast('Deployment complete — ' + dep.name, 'ok');
   deploy_showList(deploy_opsHost());
 }
@@ -44091,7 +44115,7 @@ function deploy_closeOut(deploymentId, exportFormat, exportFilenames) {
   // Tombstone is safely saved. NOW purge the heavy data.
   deploy_purgeHeavyData(deploymentId);
 
-  haptic([10, 50, 10, 50, 30]);
+  haptic(HAPTIC_FAIL);
   phantomToast('Deployment closed out — ' + original.name, 'ok');
   return true;
 }
@@ -44487,7 +44511,7 @@ function closeOut_doExport() {
     }
     s.exportFilenames = filenames;
     s.exported = true;
-    haptic([8, 30, 8]);
+    haptic(HAPTIC_PASS);
     phantomToast('Export generated — confirm it saved', 'ok');
   } catch (e) {
     phantomToast('Export failed: ' + ((e && e.message) ? e.message : String(e)), 'error');
@@ -46433,7 +46457,7 @@ async function _bomMigration_confirm() {
     await bom_dep_linkToDeployment(s.bomDepId, phantomId);
     bomIngest_closeMigrationLink();
     if (typeof phantomToast === 'function') phantomToast('BOM linked', 'ok');
-    if (typeof haptic === 'function') { try { haptic([20, 30, 20]); } catch (e) {} }
+    if (typeof haptic === 'function') { try { haptic(HAPTIC_PASS); } catch (e) {} }
     // Refresh banner
     _bomIngest_renderMigrationBanner();
   } catch (e) {
@@ -47187,7 +47211,7 @@ async function bomIngest_commit() {
       phantomToast(successCount + '/' + selected.length + ' sheets ingested · ' + totalItems + ' items', 'ok');
     }
     if (typeof haptic === 'function') {
-      try { haptic([20, 40, 20]); } catch (e) {}
+      try { haptic(HAPTIC_PASS); } catch (e) {}
     }
     return;
   }
@@ -47223,7 +47247,7 @@ async function bomIngest_commit() {
       phantomToast('BOM ingested: ' + result.item_count + ' items', 'ok');
     }
     if (typeof haptic === 'function') {
-      try { haptic([20, 40, 20]); } catch (e) {}
+      try { haptic(HAPTIC_PASS); } catch (e) {}
     }
   } catch (e) {
     s.error = 'Commit failed: ' + (e && e.message || String(e));
@@ -48115,7 +48139,7 @@ function bomLookup_open(query) {
       // Haptic + toast on result
       if (typeof haptic === 'function') {
         try {
-          if (out.status === 'matched') haptic([20, 30, 20]);
+          if (out.status === 'matched') haptic(HAPTIC_PASS);
           else if (out.status === 'no-match') haptic(40);
         } catch (e) {}
       }
@@ -48660,7 +48684,7 @@ function edp_finalizeChunked() {
   if (results) bomRenderResults(_bomResults, results);
   var btn = document.getElementById('bom-analyze-btn');
   if (btn) { btn.disabled = false; btn.textContent = '▶  ANALYZE'; }
-  haptic([10, 40, 10]);
+  haptic(HAPTIC_PASS);
 }
 
 // Main entry point — chunked EDP analysis with parallel section parsers.
@@ -48845,7 +48869,7 @@ async function bomAnalyze() {
     // BOM analyzer is read-only — no rack cap enforcement (that's deploy's concern)
     _bomResults = parse.result;
     bomRenderResults(parse.result, results);
-    haptic([10, 40, 10]);
+    haptic(HAPTIC_PASS);
 
     // Source-specific feedback
     if (parse.source === 'cache') {
@@ -49052,7 +49076,7 @@ function bomPushToApp() {
 
   if (pushed.length) {
     phantomToast('Pushed: ' + pushed.join(', '), 'ok');
-    haptic([10, 30, 10, 30, 10]);
+    haptic(HAPTIC_PASS);
   } else {
     phantomToast('No categories selected', 'warn');
   }
@@ -49070,7 +49094,7 @@ async function runPortMapDirect() {
     await renderPortMapValidator(raw, res);
   } catch(e) {
     res.innerHTML = `<div class="pf warn"><div class="pf-sev">ERROR</div><div class="pf-title">Validation failed — ${escHtml(e.message)}</div><div class="pf-detail">${e.message.includes('API')||e.message.includes('fetch')?'Check API key (⚙ KEY button) and network connection.':''}</div><button onclick="runPortMapDirect()" style="margin-top:8px;background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.3);color:#ffd60a;font-family:var(--mono);font-size: var(--fs-caption);letter-spacing:1px;padding:6px 14px;border-radius:6px;cursor:pointer">↺ RETRY</button></div>`;
-    haptic([20, 100, 20]);
+    haptic(HAPTIC_FAIL);
     phantomToast('API call failed: ' + e.message, 'error');
   }
   btn.disabled = false; btn.textContent = '▶  VALIDATE PORT MAP';
@@ -49099,7 +49123,7 @@ async function runParser2() {
     const isApiErr = e.message && (e.message.includes('API') || e.message.includes('fetch') || e.message.includes('network'));
     const hint = isApiErr ? 'Check your API key (⚙ KEY button) and network connection.' : '';
     res.innerHTML = `<div class="pf warn"><div class="pf-sev">ERROR</div><div class="pf-title">Parse failed — ${escHtml(e.message)}</div><div class="pf-detail">${hint}</div><button onclick="runParser2()" style="margin-top:8px;background:rgba(255,214,10,0.1);border:1px solid rgba(255,214,10,0.3);color:#ffd60a;font-family:var(--mono);font-size: var(--fs-caption);letter-spacing:1px;padding:6px 14px;border-radius:6px;cursor:pointer">↺ RETRY</button></div>`;
-    haptic([20, 100, 20]);
+    haptic(HAPTIC_FAIL);
     phantomToast('AI call failed: ' + e.message, 'error');
   }
   btn.disabled = false; btn.textContent = '▶  ANALYZE';
@@ -49705,7 +49729,7 @@ function _rackResolve(rawQuery, silent, opts) {
       if (legend) legend.style.display = 'flex';
       try { if (typeof RACK_VIEWER_LAST_KEY !== 'undefined') safeStore(RACK_VIEWER_LAST_KEY, String(mHit.id)); } catch (_) {}
       if (input) input.value = '';
-      if (typeof haptic === 'function') haptic([8]);
+      if (typeof haptic === 'function') haptic(HAPTIC_PASS);
       var lbl = kind === 'cabling' ? ' \u00b7 Cabling' : kind === 'nodata' ? ' \u00b7 Cabling (no data)' : ' \u00b7 Master';
       if (typeof phantomToast === 'function') phantomToast('Loaded ' + mHit.id + lbl, 'ok');
       return;
@@ -49746,7 +49770,7 @@ function _rackResolve(rawQuery, silent, opts) {
       try { var _lk = (rack.name && String(rack.name).trim()) || (rack.rackId && String(rack.rackId).trim()) || rack.id; if (_lk) safeStore(RACK_VIEWER_LAST_KEY, String(_lk)); } catch(_){}
       if (input) input.value = '';
       if (!silent) {
-        if (typeof haptic === 'function') haptic([8]);
+        if (typeof haptic === 'function') haptic(HAPTIC_PASS);
         if (typeof phantomToast === 'function') phantomToast('Loaded ' + _mHit.id + ' \u00b7 Master truth', 'ok');
       }
       return;
@@ -49776,7 +49800,7 @@ function _rackResolve(rawQuery, silent, opts) {
 
   if (input) input.value = '';
   if (!silent) {
-    if (typeof haptic === 'function') haptic([8]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     if (typeof phantomToast === 'function') phantomToast('Loaded ' + opts.toastName(rack), 'ok');
   }
 }
@@ -49980,7 +50004,7 @@ function rackViewer_softFail(rackId) {
       '<div class="rack-viewer-soft-fail-title">' + escHtml(rackId) + '</div>' +
       '<div class="rack-viewer-soft-fail-detail">That rack doesn\'t exist in any loaded EDP or Master.</div>' +
     '</div>';
-  if (typeof haptic === 'function') haptic([10, 30, 10]);
+  if (typeof haptic === 'function') haptic(HAPTIC_PASS);
 }
 
 const RM_KEY = 'dct_racks_v1';
@@ -50223,7 +50247,7 @@ function rmActive_select(deployId) {
   if (!deployId) return;
   if (typeof deploy_setActive === 'function') deploy_setActive(deployId);
   rmActive_closePicker();
-  if (typeof haptic === 'function') haptic([8, 12]);
+  if (typeof haptic === 'function') haptic(HAPTIC_PASS);
 }
 
 // ── Cross-Deployment Confirm — surfaces when typed rack is in another EDP ──
@@ -50240,7 +50264,7 @@ function rmConfirm_show(query, foundRack, foundDep, activeDep, retriggerFn) {
     'Not in <strong>' + escHtml(rmActive_displayName(activeDep)) + '</strong>.<br>' +
     'Found in <strong>' + escHtml(rmActive_displayName(foundDep)) + '</strong>.';
   overlay.classList.add('show');
-  if (typeof haptic === 'function') haptic([12]);
+  if (typeof haptic === 'function') haptic(HAPTIC_PASS);
 }
 
 function rmConfirm_cancel() {
@@ -50425,7 +50449,7 @@ function auditMode_mark(status) {
   if (status === 'flag' && typeof blocker_quick === 'function') { try { blocker_quick(); } catch(_){} }
   _auditWalk.cursor++;
   _auditWalk_focusCursor();
-  if (typeof haptic === 'function') { try { haptic([6]); } catch(_){} }
+  if (typeof haptic === 'function') { try { haptic(HAPTIC_PASS); } catch(_){} }
 }
 
 function auditMode_exit() {
@@ -50501,7 +50525,7 @@ function rmSearch_softFail(query) {
       '<div class="rack-viewer-soft-fail-detail">No saved rack matches that ID, and it doesn\'t exist in any loaded EDP or Master.</div>' +
     '</div>';
   if (legend) legend.style.display = 'none';
-  if (typeof haptic === 'function') haptic([10, 30, 10]);
+  if (typeof haptic === 'function') haptic(HAPTIC_PASS);
 }
 
 // Kept for backwards compatibility — older code paths may call selectRack(id).
@@ -51105,7 +51129,7 @@ function saveSOP() {
   saveSOPs(sops);
   closeSopSheet();
   renderSOPList();
-  haptic([10, 50, 10]);
+  haptic(HAPTIC_WARN);
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -52878,7 +52902,7 @@ function clearOpticInventory() {
   localStorage.removeItem(OPTIC_INV_KEY);
   renderOpticInventoryList();
   document.getElementById('optic-scan-result').innerHTML = '';
-  haptic([20, 80, 20]);
+  haptic(HAPTIC_FAIL);
 }
 
 function exportOpticInventory() {
@@ -53762,7 +53786,7 @@ const PhantomScanner = (() => {
   // ── Show scanned result in overlay ──
   function _showResult(val) {
     _lastVal = val;
-    haptic([10, 50, 10]);
+    haptic(HAPTIC_WARN);
     if (_raf) { clearTimeout(_raf); _raf = null; }
     const resultVal = $resultVal();
     if (resultVal) resultVal.textContent = val;
@@ -53786,7 +53810,7 @@ const PhantomScanner = (() => {
     if (cb && val) {
       setTimeout(() => cb(val), 100);
     }
-    haptic([10, 50, 10]);
+    haptic(HAPTIC_WARN);
   }
 
   // ── Find: deep-link search from scanned value ──
@@ -54180,7 +54204,7 @@ function reconcile_logDiscrepancy(idx){
     if (typeof discLog_saveAll === 'function') discLog_saveAll(all);
     if (typeof deploy_logAudit === 'function') deploy_logAudit(depId, 'DISCREPANCY_LOGGED', 'discrepancy', rec.id, f.message);
     if (typeof phantomToast === 'function') phantomToast('Logged to discrepancies', 'ok');
-    if (typeof haptic === 'function') haptic([8,30,8]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     f._logged = true;
     var panel = document.getElementById('reconcile-panel'); if (panel) reconcile_render(panel);
   } catch(e){ if (typeof phantomToast === 'function') phantomToast('Log failed: ' + (e.message||e), 'error'); }
@@ -54296,7 +54320,7 @@ function vendorEdp_attach(depId){
   if (typeof deploy_setActive === 'function') deploy_setActive(depId);                  // reconcile_run reads deploy_getActive()
   if (typeof activeContext_setDeployment === 'function') activeContext_setDeployment(depId);
   if (typeof deploy_logAudit === 'function') deploy_logAudit(depId, 'VENDOR_EDP_ATTACHED', 'deployment', depId, parsed.racks.length + ' vendor racks');
-  if (typeof haptic === 'function') haptic([10,40,10]);
+  if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   phantomToast('Vendor EDP attached · running cross-check', 'ok');
   // UX (locked decision): jump to the Reconcile panel and run the cross-check.
   if (typeof showOpsTab === 'function') showOpsTab('audits');
@@ -54445,7 +54469,7 @@ function preflight_logDiscrepancy(idx){
     if (typeof discLog_saveAll === 'function') discLog_saveAll(all);
     if (typeof deploy_logAudit === 'function') deploy_logAudit(depId, 'DISCREPANCY_LOGGED', 'discrepancy', rec.id, f.message);
     if (typeof phantomToast === 'function') phantomToast('Logged to discrepancies', 'ok');
-    if (typeof haptic === 'function') haptic([8, 30, 8]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     f._logged = true;
     var panel = document.getElementById('preflight-panel'); if (panel) preflight_render(panel);
   } catch(e){ if (typeof phantomToast === 'function') phantomToast('Log failed: ' + (e.message || e), 'error'); }
@@ -54588,7 +54612,7 @@ const AUDIT = (() => {
     audits.unshift(audit);
     save(audits);
     currentAuditId = audit.id;
-    haptic([10,50,10]);
+    haptic(HAPTIC_WARN);
     showOpsTab('audits');
     setTimeout(() => openAudit(audit.id), 80);
   }
@@ -54762,7 +54786,7 @@ const AUDIT = (() => {
     audit.entries.push(entry);
     audit.updated = Date.now();
     save(audits);
-    haptic([10,50,10]);
+    haptic(HAPTIC_WARN);
     phantomToast(serial + ' added as ' + _selectedType, 'ok');
     openAudit(currentAuditId);
   }
@@ -54782,7 +54806,7 @@ const AUDIT = (() => {
     a.entries.push(entry);
     a.updated = Date.now();
     save(audits);
-    haptic([10,50,10]);
+    haptic(HAPTIC_WARN);
     phantomToast(serial + ' added as ' + _selectedType, 'ok');
     openAudit(currentAuditId);
   }
@@ -54905,7 +54929,7 @@ const AUDIT = (() => {
     a.download = (audit.name || 'audit').replace(/[^a-zA-Z0-9-_ ]/g,'') + '.csv';
     a.click();
     URL.revokeObjectURL(url);
-    haptic([10,50,10]);
+    haptic(HAPTIC_WARN);
     phantomToast('CSV exported', 'ok');
   }
 
@@ -55029,7 +55053,7 @@ const AUDIT = (() => {
     setTimeout(() => input.classList.remove('rapid-flash'), 300);
 
     rapidBeep(true);
-    haptic([10,50,10]);
+    haptic(HAPTIC_WARN);
 
     const log = document.getElementById('rapid-log');
     const placeholder = log.querySelector('div[style*="text-align:center"]');
@@ -55553,13 +55577,13 @@ function initRackDrag() {
               rack.slots[dstIdx] = { ...s, ...dU };
               saveRacks(racks);
               phantomRackLog(rackId, 'Slot swap', 'U' + sU.uStart + '↔U' + dU.uStart + ' (' + (s.name||'?') + ' ↔ ' + (d.name||'?') + ')');
-              haptic([10, 50, 10]);
+              haptic(HAPTIC_WARN);
               cleanUp();
               renderRackMap();
               return;
             } else {
               // Different sizes — reject with error haptic
-              haptic([20, 80, 20]);
+              haptic(HAPTIC_FAIL);
               if (ghost) { ghost.style.color = 'var(--red)'; ghost.textContent = 'Same size only'; }
               setTimeout(cleanUp, 700);
               return;
@@ -55968,6 +55992,23 @@ function phantomToast(msg, type) {
   setTimeout(function() { toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 350); }, 4000);
 }
 
+function phantom_fatAck(type, label) {
+  var tokenMap = { pass: 'var(--cyan)', fail: 'var(--magenta)', blocked: 'var(--gold)' };
+  var bgColor = tokenMap[type] || tokenMap.pass;
+  var bar = document.createElement('div');
+  bar.className = 'pfa-bar pfa-' + type;
+  bar.style.cssText = 'position:fixed;top:0;left:0;right:0;width:100%;min-height:80px;display:flex;align-items:center;justify-content:center;background:' + bgColor + ';color:#000;font-family:\'Chakra Petch\',\'Rajdhani\',sans-serif;font-size:16px;font-weight:600;letter-spacing:1px;z-index:9999;transform:translateY(-100%);animation:_pfa-slide-in 150ms ease-out forwards;';
+  bar.textContent = label;
+  document.body.appendChild(bar);
+  setTimeout(function() { bar.style.animation = '_pfa-slide-out 150ms ease-in forwards'; }, 800);
+  setTimeout(function() { bar.remove(); }, 950);
+  if (typeof haptic === 'function') {
+    if (type === 'pass') haptic(HAPTIC_PASS);
+    else if (type === 'fail') haptic(HAPTIC_FAIL);
+    else if (type === 'blocked') haptic(HAPTIC_WARN);
+  }
+}
+
 // ━━━ DCT-05: HEALTH STATUS BAR ENGINE ━━━
 const HS_LABELS = { net:'Network', api:'API', sw:'Service Worker', store:'Storage' };
 function hsDotTap(id) {
@@ -56052,7 +56093,7 @@ function hdr_aggToggle(e) {
   var isOpen = panel.style.display === 'block';
   panel.style.display = isOpen ? 'none' : 'block';
   pill.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
-  if (!isOpen) { try { haptic([6]); } catch(_) {} try { if (typeof redesign_isOn === 'function' && redesign_isOn() && typeof errors_refreshCount === 'function') errors_refreshCount(); } catch(_) {} }
+  if (!isOpen) { try { haptic(HAPTIC_PASS); } catch(_) {} try { if (typeof redesign_isOn === 'function' && redesign_isOn() && typeof errors_refreshCount === 'function') errors_refreshCount(); } catch(_) {} }
 }
 
 // Close detail panel on any outside tap
@@ -56179,11 +56220,11 @@ function phantomStorageCheck() {
     if (pct >= 0.95 && (now - _phantomStorageToast95) > 60000) {
       _phantomStorageToast95 = now;
       if (typeof phantomToast === 'function') phantomToast('CRITICAL: Storage ' + pctRound + '% — export backup NOW', 'error');
-      if (typeof haptic === 'function') haptic([40, 30, 40, 30, 40]);
+      if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     } else if (pct >= 0.85 && pct < 0.95 && (now - _phantomStorageToast85) > 300000) {
       _phantomStorageToast85 = now;
       if (typeof phantomToast === 'function') phantomToast('Storage ' + pctRound + '% full — export backup soon', 'warn');
-      if (typeof haptic === 'function') haptic([20, 20, 20]);
+      if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     }
   }).catch(function(_) { /* storage API unavailable — silent */ });
 }
@@ -56227,7 +56268,7 @@ setInterval(phantomStorageCheck, 300000);
     badge.addEventListener('click', function(e) { e.stopPropagation(); dismiss(); });
     badge.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dismiss(); } });
     bootList.appendChild(row);
-    if (typeof haptic === 'function') haptic([40, 30, 40]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   }
 
   function announce(type) {
@@ -56300,7 +56341,7 @@ setInterval(phantomStorageCheck, 300000);
       if (typeof phantomToast === 'function') phantomToast(m, 'warn');
       else alert('[PHANTOM] ' + m);
     } catch (_) { try { alert('[PHANTOM] ' + m); } catch (__) {} }
-    if (typeof haptic === 'function') haptic([40, 30, 40]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   };
   // Heartbeat prune: live tabs re-announce every 30s; anything silent past
   // TAB_TTL is dropped and the chip refreshed, so a closed tab never leaves a
@@ -56759,7 +56800,7 @@ async function drift_record(rawText) {
     if (existing.readings.length > 30) existing.readings = existing.readings.slice(-30);
   });
   if (drift_save(all)) {
-    haptic([8, 30, 8]);
+    haptic(HAPTIC_PASS);
     phantomToast(readings.length + ' port' + (readings.length !== 1 ? 's' : '') + ' saved to Drift Ledger', 'ok');
   } else {
     phantomToast('Drift Ledger save failed — storage may be full', 'error');
@@ -56881,7 +56922,7 @@ async function stripeRack_logNote(deployId, rackId) {
     _promptOpts.onChipHold = function(label) {
       try {
         deploy_logAudit(deployId, 'RACK_NOTE', 'rack', rackId, String(label).slice(0, 500));
-        if (typeof haptic === 'function') haptic([8, 30, 8]);
+        if (typeof haptic === 'function') haptic(HAPTIC_PASS);
         phantomToast('Note logged to ' + rackLabel, 'ok');
       } catch (e) { phantomToast('Failed to log note', 'error'); }
     };
@@ -56892,7 +56933,7 @@ async function stripeRack_logNote(deployId, rackId) {
   if (!note) return;
   try {
     deploy_logAudit(deployId, 'RACK_NOTE', 'rack', rackId, note.slice(0, 500));
-    if (typeof haptic === 'function') haptic([8, 30, 8]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     phantomToast('Note logged to ' + rackLabel, 'ok');
   } catch (e) {
     phantomToast('Failed to log note', 'error');
@@ -57221,14 +57262,14 @@ function brCsvImport() {
   if (!parsed.topo) {
     resultBox.className = 'br-csv-result err';
     resultBox.textContent = 'Parse failed:\n' + parsed.errors.join('\n');
-    if (typeof haptic === 'function') haptic([20, 60, 20]);
+    if (typeof haptic === 'function') haptic(HAPTIC_WARN);
     return;
   }
   var saved = power_saveTopology(dep.id, parsed.topo);
   if (!saved) {
     resultBox.className = 'br-csv-result err';
     resultBox.textContent = 'Storage error — topology not saved. Export backup and prune storage.';
-    if (typeof haptic === 'function') haptic([40, 30, 40]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     return;
   }
   if (parsed.errors.length) {
@@ -57238,7 +57279,7 @@ function brCsvImport() {
     resultBox.className = 'br-csv-result ok';
     resultBox.textContent = 'Saved · ' + parsed.topo.racks.length + ' rack' + (parsed.topo.racks.length === 1 ? '' : 's') + ' mapped';
   }
-  if (typeof haptic === 'function') haptic([10, 40, 10]);
+  if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   if (typeof phantomToast === 'function') phantomToast('Topology saved · ' + parsed.topo.racks.length + ' racks', 'ok');
   // Re-render grid after save
   setTimeout(renderBlastRadius, 350);
@@ -57367,7 +57408,7 @@ function brSimNode(nodeId, side) {
   };
   brCloseDrawer();
   renderBlastRadius();
-  if (typeof haptic === 'function') haptic([10, 40, 10]);
+  if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   if (typeof phantomToast === 'function') {
     var n = affected.length;
     var word = (n === 1) ? 'rack' : 'racks';
@@ -57567,7 +57608,7 @@ function compass_setStartU(delta) {
   next = compass_clampStartU(next, compassState.chassisH);
   if (next === compassState.startU) {
     // Already at boundary — error haptic
-    if (typeof haptic === 'function') haptic([8, 40, 8]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     return;
   }
   compassState.startU = next;
@@ -58263,10 +58304,10 @@ var OpticScore = (function() {
     _setState('result');
     // Haptic by severity
     if (typeof haptic === 'function') {
-      if (verdict.verdict === 'green' || verdict.verdict === 'green-partial') haptic([10]);
-      else if (verdict.verdict === 'yellow') haptic([10, 50, 10]);
-      else if (verdict.verdict === 'red') haptic([60, 40, 60, 40, 60]);
-      else haptic([20]);
+      if (verdict.verdict === 'green' || verdict.verdict === 'green-partial') haptic(HAPTIC_PASS);
+      else if (verdict.verdict === 'yellow') haptic(HAPTIC_WARN);
+      else if (verdict.verdict === 'red') haptic(HAPTIC_FAIL);
+      else haptic(HAPTIC_PASS);
     }
     // Auto-log green to history; yellow/red wait for override decision
     if (verdict.verdict === 'green' || verdict.verdict === 'green-partial') {
@@ -58384,7 +58425,7 @@ var OpticScore = (function() {
       verdict: _lastVerdict.verdict, overridden: true, reason: reason
     });
     if (typeof phantomToast === 'function') phantomToast('Override logged: ' + reason, 'ok');
-    if (typeof haptic === 'function') haptic([8, 30, 8]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
     // Return to port grid for next port
     _activePort = null;
     _activePortExpected = null;
@@ -58757,7 +58798,7 @@ var ScanDispatch = (function() {
       var label = (tag || 'unknown').toUpperCase();
       phantomToast('Collected: ' + label + ' · ' + String(value).slice(0, 30), 'ok');
     }
-    if (typeof haptic === 'function') haptic([8]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   }
 
   // ── Gate 27: SCAN tab is now a collection bench, not a router ──
@@ -58875,7 +58916,7 @@ var ScanDispatch = (function() {
     entries = entries.filter(function(e) { return e.id !== entryId; });
     _saveCollection(entries);
     renderCollection();
-    if (typeof haptic === 'function') haptic([6]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   }
 
   // ── Export: append to active deployment audit log + CSV download ──
@@ -58975,7 +59016,7 @@ var ScanDispatch = (function() {
       if (auditAppended > 0) msg += ' · ' + auditAppended + ' to audit log';
       phantomToast(msg, 'ok');
     }
-    if (typeof haptic === 'function') haptic([10, 30, 10]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   }
 
   function clearCollection() {
@@ -58988,7 +59029,7 @@ var ScanDispatch = (function() {
     _saveCollection([]);
     renderCollection();
     if (typeof phantomToast === 'function') phantomToast('Collection cleared', 'ok');
-    if (typeof haptic === 'function') haptic([8]);
+    if (typeof haptic === 'function') haptic(HAPTIC_PASS);
   }
 
   function refreshContext() {
