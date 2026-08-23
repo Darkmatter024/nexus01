@@ -31272,6 +31272,7 @@ function siteProfile_resetDevice() {
   try {
     var p = siteProfile_load();
     delete p.confirmedAt;
+    delete p.lastUpdated;
     delete p.operator;
     delete p.facilityId;
     delete p.siteLead;
