@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.494';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.495';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -24067,7 +24067,7 @@ function cmd_nba(rung, st) {
   if (rung === 'A' || !st.confirmed) return { h: 'Set up your site profile.', p: 'PHANTOM needs your facility, switches, and rack naming before it can help.', label: 'SET UP PROFILE', act: function() { cmd_route('profile'); } };
   // v1.14.474: B1/B2/B3 step sequence with counter (first-run flow)
   if (rung === 'B' && !st.masterLoaded) return { h: 'Load your<br>Master.', p: 'Your Master is the site spreadsheet — get it from your lead or load one you already have.', step: 'Step 1 of 3', label: 'LOAD MASTER', act: function() { cmd_loadMaster(); } };
-  if (rung === 'B' && st.masterLoaded && st.deployCount === 0) return { h: 'Start a<br>deployment.', p: 'Master loaded. Scope cabinets into a deployment to begin.', step: 'Step 2 of 3', label: 'START DEPLOYMENT', act: function() { if (typeof mscope_open === 'function') { if (document.getElementById('pg-work')) { mscope_open(); } else { setTimeout(function() { try { if (typeof mscope_open === 'function') mscope_open(); } catch(_) {} }, 0); } } } };
+  if (rung === 'B' && st.masterLoaded && st.deployCount === 0) return { h: 'Start a<br>deployment.', p: 'Master loaded. Scope cabinets into a deployment to begin.', step: 'Step 2 of 3', label: 'SELECT RACKS', act: function() { if (typeof mscope_open === 'function') { if (document.getElementById('pg-work')) { mscope_open(); } else { setTimeout(function() { try { if (typeof mscope_open === 'function') mscope_open(); } catch(_) {} }, 0); } } } };
   if (rung === 'B' && st.deployCount > 0 && st.rackCount === 0) return { h: 'Capture your<br>first rack.', p: 'Deployment ready. Start your rack trace with a scan.', step: 'Step 3 of 3', label: 'GO TO SCAN', act: function() { cmd_route('work', 'scan'); } };
   if (st.blockerCount >= 1) return { h: 'Resolve ' + st.blockerCount + ' open blocker' + (st.blockerCount !== 1 ? 's' : '') + '.', p: 'A blocker bites the next shift first. Capture the proof note and route it into a handoff.', label: 'GO TO HANDOFF', act: function() { cmd_route('work', 'handoff'); } };
   if (st.handoffDraft) return { h: 'Finish your shift handoff.', p: 'A handoff draft is open. Complete the summary before your shift ends.', label: 'GO TO HANDOFF', act: function() { cmd_route('work', 'handoff'); } };

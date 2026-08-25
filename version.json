@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.494",
+  "version": "phantom-v1.14.495",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.493",
-  "notes": "v1.14.494 — Fix 8 (BUILD page): Changed 'deployment' jargon to 'job' in no-deployment message."
+  "prevVersion": "phantom-v1.14.494",
+  "notes": "v1.14.495 — Fix 9 (NBA): Button label changed from 'START DEPLOYMENT' to 'SELECT RACKS'."
 }
