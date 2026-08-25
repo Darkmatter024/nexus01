@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.488",
+  "version": "phantom-v1.14.489",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.487",
-  "notes": "v1.14.488 — Fix 2 (first-run): Added preview text below START button explaining next step."
+  "prevVersion": "phantom-v1.14.488",
+  "notes": "v1.14.489 — Fix 3 (Command page): NBA description for LOAD MASTER explains what a Master is and where to get it."
 }
