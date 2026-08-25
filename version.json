@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.486",
-  "released": "2026-08-23",
-  "prevVersion": "phantom-v1.14.485",
-  "notes": "v1.14.486 — PHASE NEXT-2.2: Form pre-fill with site defaults. Pre-fill deployment creation form BUILD LEAD field from site profile. Reduces manual entry friction: operator sees their buildLead pre-populated when staging a new deployment scope. Idempotent: user can override at any time. Enables Phase Next-2.3+ search/reference scoping."
+  "version": "phantom-v1.14.487",
+  "released": "2026-08-24",
+  "prevVersion": "phantom-v1.14.486",
+  "notes": "v1.14.487 — Fix 1 (first-run): First-run heading changed from 'You' to 'Your name' for clarity."
 }
