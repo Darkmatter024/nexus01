@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.497",
+  "version": "phantom-v1.14.498",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.496",
-  "notes": "v1.14.497 — Fix 11 (header): Changed SYS button label to '•••' for clarity."
+  "prevVersion": "phantom-v1.14.497",
+  "notes": "v1.14.498 — Fix 12 (nav): Changed Command Shell nav label from 'Command' to 'Home'."
 }
