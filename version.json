@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.495",
+  "version": "phantom-v1.14.496",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.494",
-  "notes": "v1.14.495 — Fix 9 (NBA): Button label changed from 'START DEPLOYMENT' to 'SELECT RACKS'."
+  "prevVersion": "phantom-v1.14.495",
+  "notes": "v1.14.496 — Fix 10 (BUILD page): Added explanatory hint to PASTE ANYTHING card."
 }
