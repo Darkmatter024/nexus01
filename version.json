@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.507",
+  "version": "phantom-v1.14.508",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.506",
-  "notes": "v1.14.507 — Deep-dive fix #12 (copy): Removed stale 'Master tab' reference from veteran state message."
+  "prevVersion": "phantom-v1.14.507",
+  "notes": "v1.14.508 — Deep-dive fix #22 (copy): Standardized all Master-load buttons to 'LOAD MASTER'."
 }

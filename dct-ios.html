@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.507';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.508';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -16840,7 +16840,7 @@ if (typeof window !== 'undefined') {
         <button type="button" class="cs-navitem" id="cs-nav-dep" onclick="cmd_route('work','deploy')" aria-label="Deploy" title="Deploy"><span class="cs-navdot" aria-hidden="true">DP</span><span class="cs-lbl">Deploy</span></button>
         <button type="button" class="cs-navitem" id="cs-nav-scn" onclick="cmd_route('work','scan')" aria-label="Scan" title="Scan"><span class="cs-navdot" aria-hidden="true">SC</span><span class="cs-lbl">Scan</span></button>
         <button type="button" class="cs-navitem" id="cs-nav-hof" onclick="cmd_route('work','handoff')" aria-label="Handoff" title="Handoff"><span class="cs-navdot" aria-hidden="true">HO</span><span class="cs-lbl">Handoff</span></button>
-        <button type="button" class="cs-navitem" id="cs-nav-mst" onclick="cmd_loadMaster()" aria-label="Load Master" title="Load Master"><span class="cs-navdot" aria-hidden="true">MA</span><span class="cs-lbl">Load Master</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-mst" onclick="cmd_loadMaster()" aria-label="Load Master" title="Load Master"><span class="cs-navdot" aria-hidden="true">MA</span><span class="cs-lbl">LOAD MASTER</span></button>
     <div class="cs-sfoot">
       <button type="button" class="cs-navitem" id="cs-nav-prf" onclick="rd_openProfile()" aria-label="Site profile" title="Site profile" style="margin:0 0 4px;width:100%;padding:0">
         <span class="cs-navdot" aria-hidden="true">PR</span><span class="cs-lbl">Profile</span>
@@ -22472,7 +22472,7 @@ function bw_render() {
     var z = E('div', 'bw-card bw-zero');
     z.appendChild(E('div', 'bw-zero-t', 'No Master loaded'));
     z.appendChild(E('div', 'bw-zero-p', 'PHANTOM reads cabinets, hosts and rack structure from your Master file. Load it to start a build.'));
-    var lb = E('button', 'bw-cta', 'Load Master file'); lb.type = 'button';
+    var lb = E('button', 'bw-cta', 'LOAD MASTER'); lb.type = 'button';
     lb.onclick = function() { try { cmd_loadMaster(); } catch (e) { phantom_logErr('bw:loadMaster', e); } };
     z.appendChild(lb);
     host.appendChild(z);
