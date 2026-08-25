@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.505';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.506';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -27368,9 +27368,9 @@ function today_render() {
     } else if (_allDeploys.length === 0 && _masterLoaded && !guided_scopeDismissed()) {
       // STATE 3 — Master loaded, zero deployments ever. Dismissible spotlight on SCOPE A JOB.
       _nudge =
-        '<div style="font-family:var(--raj);font-size: var(--fs-body);color:var(--white);margin-bottom:10px">Master loaded — scope your first job?</div>' +
+        '<div style="font-family:var(--raj);font-size: var(--fs-body);color:var(--white);margin-bottom:10px">Master loaded — start your first build?</div>' +
         '<div style="display:flex;gap:10px;align-items:center">' +
-          '<button class="pt-btn pt-btn-primary" style="width:auto;padding:11px 18px;clip-path:none" onclick="mscope_open()" aria-label="Scope your first deployment job">SCOPE A JOB →</button>' +
+          '<button class="pt-btn pt-btn-primary" style="width:auto;padding:11px 18px;clip-path:none" onclick="mscope_open()" aria-label="Start your first build">START BUILD →</button>' +
           '<button type="button" onclick="guided_dismissScope()" style="background:none;border:none;color:var(--slate);font-family:var(--mono);font-size:var(--fs-caption);letter-spacing:1px;cursor:pointer;padding:8px;min-height:var(--tap-m)" aria-label="Dismiss this prompt">DISMISS</button>' +
         '</div>';
     } else {

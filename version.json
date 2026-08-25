@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.505",
+  "version": "phantom-v1.14.506",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.504",
-  "notes": "v1.14.505 — Deep-dive fix #6 (copy): 'INGEST MASTER' renamed to 'LOAD MASTER' with clearer subtitle."
+  "prevVersion": "phantom-v1.14.505",
+  "notes": "v1.14.506 — Deep-dive fix #11 (copy): 'SCOPE A JOB' renamed to 'START BUILD'."
 }
