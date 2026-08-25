@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.490",
+  "version": "phantom-v1.14.491",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.489",
-  "notes": "v1.14.490 — Fix 4 (Command page): Added format hint below LOAD MASTER button: '.xlsx from your lead'."
+  "prevVersion": "phantom-v1.14.490",
+  "notes": "v1.14.491 — Fix 5 (header): Shows 'NO MASTER' instead of '—' when profile confirmed but Master not loaded."
 }

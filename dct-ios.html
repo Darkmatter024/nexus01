@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.490';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.491';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -24679,8 +24679,9 @@ function cmd_setSiteLabel() {
     try { console.warn('[PHANTOM] cmd_setSiteLabel: siteProfile_isConfirmed is missing - the site label cannot reflect real state'); } catch (_) {}
   }
   var confirmed = (typeof siteProfile_isConfirmed === 'function') && siteProfile_isConfirmed();
+  var masterLoaded = (typeof master_hasMaster === 'function') ? master_hasMaster() : false;
   var label = confirmed
-    ? ((typeof phantom_siteLabel === 'function') ? phantom_siteLabel('SITE') : 'SITE')
+    ? (masterLoaded ? ((typeof phantom_siteLabel === 'function') ? phantom_siteLabel('SITE') : 'SITE') : 'NO MASTER')
     : 'SET UP PROFILE';
   var el = document.getElementById('rd-site');
   if (el) {
