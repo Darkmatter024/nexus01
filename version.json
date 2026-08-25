@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.513",
+  "version": "phantom-v1.14.514",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.512",
-  "notes": "v1.14.513 — iOS Safari fix: Added skipWaiting() to install event for reliable SW activation."
+  "prevVersion": "phantom-v1.14.513",
+  "notes": "v1.14.514 — iOS Safari fix: Added updateViaCache: 'none' to prevent CDN caching of sw.js updates."
 }
