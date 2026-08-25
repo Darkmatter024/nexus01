@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.514",
-  "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.513",
-  "notes": "v1.14.514 — iOS Safari fix: Added updateViaCache: 'none' to prevent CDN caching of sw.js updates."
+  "version": "phantom-v1.14.515",
+  "released": "2026-08-25",
+  "prevVersion": "phantom-v1.14.514",
+  "notes": "v1.14.515 — iOS Safari fix: Added self-heal detection to unregister and reload on version mismatch."
 }
