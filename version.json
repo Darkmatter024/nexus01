@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.504",
+  "version": "phantom-v1.14.505",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.503",
-  "notes": "v1.14.504 — Deep-dive fix #16 (BUG): 'Start deployment' button now calls mscope_open() for new tech."
+  "prevVersion": "phantom-v1.14.504",
+  "notes": "v1.14.505 — Deep-dive fix #6 (copy): 'INGEST MASTER' renamed to 'LOAD MASTER' with clearer subtitle."
 }

@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.504';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.505';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -14240,10 +14240,10 @@ if (typeof window !== 'undefined') {
       <!-- v1.14.338 FINAL-LOOK: OPEN BAY full-width (spec §2.5). Same door as the hero tap → cmd_openHeroBay(mount). JS-shown WITH the rack (cmd_heroAux), hidden in S0 / no-rack (cmd_heroHideAux) — one door, two affordances. -->
       <button class="cc-openbay" id="cc-openbay" type="button" style="display:none" onclick="cmd_openHeroBay(document.getElementById('cc-rackhero-mount'))" aria-label="Open the rack bay detail">OPEN BAY <span class="cc-ob-ar" aria-hidden="true">&#10230;</span></button>
       <!-- v1.14.335 Command v2 S0 — no-Master ingest zone (D10): full-height tap target, shown only when #pg-cmd[data-master="0"]. Single door → cmd_loadMaster() (D11). -->
-      <div class="cc-ingest-zone" id="cc-ingest-zone" role="button" tabindex="0" onclick="cmd_loadMaster()" aria-label="Ingest Master file — arrives by email">
+      <div class="cc-ingest-zone" id="cc-ingest-zone" role="button" tabindex="0" onclick="cmd_loadMaster()" aria-label="Load your Master file">
         <div class="ciz-mark" aria-hidden="true">&#9672;</div>
-        <div class="ciz-title">INGEST MASTER</div>
-        <div class="ciz-sub">Master arrives by email &mdash; tap to ingest</div>
+        <div class="ciz-title">LOAD MASTER</div>
+        <div class="ciz-sub">Your Master file &mdash; tap to load</div>
       </div>
       <div class="lens">
         <div class="clock"><div class="t" id="cc-clock">--:--</div><div class="l">LOCAL</div></div>
