@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.509",
+  "version": "phantom-v1.14.510",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.508",
-  "notes": "v1.14.509 — Deep-dive fix #14 (polish): Changed 'cabinets' to 'racks' for consistency."
+  "prevVersion": "phantom-v1.14.509",
+  "notes": "v1.14.510 — Deep-dive fix #18 (polish): Added 'hold' hint to EXIT button."
 }
