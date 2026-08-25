@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.501",
+  "version": "phantom-v1.14.502",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.500",
-  "notes": "v1.14.501 — Fix 15 (NBA): Step 2 description now includes navigation to BUILD page."
+  "prevVersion": "phantom-v1.14.501",
+  "notes": "v1.14.502 — Deep-dive fix #4 (BUG): Toast now says operator name instead of false site claim."
 }
