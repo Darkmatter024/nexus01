@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.503",
+  "version": "phantom-v1.14.504",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.502",
-  "notes": "v1.14.503 — Deep-dive fix #8 (BUG): Removed permanent 'floor details pending' message from profile chip."
+  "prevVersion": "phantom-v1.14.503",
+  "notes": "v1.14.504 — Deep-dive fix #16 (BUG): 'Start deployment' button now calls mscope_open() for new tech."
 }
