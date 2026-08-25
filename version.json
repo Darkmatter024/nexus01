@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.493",
+  "version": "phantom-v1.14.494",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.492",
-  "notes": "v1.14.493 — Fix 7 (BUILD page): Removed 'FIELD MODE' label from BUILD page header."
+  "prevVersion": "phantom-v1.14.493",
+  "notes": "v1.14.494 — Fix 8 (BUILD page): Changed 'deployment' jargon to 'job' in no-deployment message."
 }
