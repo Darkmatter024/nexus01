@@ -34,7 +34,7 @@
 // a clean v1.13.3 — dropping the prior -N cache-iteration suffix — so this real
 // version bump busts every client's cache and the three stamps (app const /
 // version.json / this key) line up again. Patch bumps continue from here.
-const CACHE_VERSION = 'phantom-v1.14.512';
+const CACHE_VERSION = 'phantom-v1.14.513';
 
 // Assets to precache on install. Keep this minimal — single-file PWA means
 // most of PHANTOM is in dct-ios.html itself.
@@ -176,6 +176,7 @@ self.addEventListener('install', (event) => {
     // null — so the message was never sent, and this file had no listener to receive it anyway.
     // The result was an UPDATE badge whose tap had nothing to activate and degraded to a bare
     // reload. A worker must WAIT so the badge means something and one tap can promote it.
+    self.skipWaiting();
   })());
 });
 

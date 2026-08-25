@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.512",
+  "version": "phantom-v1.14.513",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.511",
-  "notes": "v1.14.512 — Deep-dive fix #21 (polish): Expanded 'IB' acronym to 'InfiniBand' for clarity."
+  "prevVersion": "phantom-v1.14.512",
+  "notes": "v1.14.513 — iOS Safari fix: Added skipWaiting() to install event for reliable SW activation."
 }
