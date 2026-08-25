@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.498",
+  "version": "phantom-v1.14.499",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.497",
-  "notes": "v1.14.498 — Fix 12 (nav): Changed Command Shell nav label from 'Command' to 'Home'."
+  "prevVersion": "phantom-v1.14.498",
+  "notes": "v1.14.499 — Fix 13 (Command page): Added help text for techs without a Master file."
 }
