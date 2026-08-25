@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.506",
+  "version": "phantom-v1.14.507",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.505",
-  "notes": "v1.14.506 — Deep-dive fix #11 (copy): 'SCOPE A JOB' renamed to 'START BUILD'."
+  "prevVersion": "phantom-v1.14.506",
+  "notes": "v1.14.507 — Deep-dive fix #12 (copy): Removed stale 'Master tab' reference from veteran state message."
 }
