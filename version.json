@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.515",
+  "version": "phantom-v1.14.516",
   "released": "2026-08-25",
-  "prevVersion": "phantom-v1.14.514",
-  "notes": "v1.14.515 — iOS Safari fix: Added self-heal detection to unregister and reload on version mismatch."
+  "prevVersion": "phantom-v1.14.515",
+  "notes": "v1.14.516 — iOS Safari fix: Immediate version check on page load forces reload if HTML is stale."
 }
