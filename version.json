@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.492",
+  "version": "phantom-v1.14.493",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.491",
-  "notes": "v1.14.492 — Fix 6 (header): Call cmd_setSiteLabel() after firstRun_confirm() to update header subtitle."
+  "prevVersion": "phantom-v1.14.492",
+  "notes": "v1.14.493 — Fix 7 (BUILD page): Removed 'FIELD MODE' label from BUILD page header."
 }
