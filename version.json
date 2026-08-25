@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.500",
+  "version": "phantom-v1.14.501",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.499",
-  "notes": "v1.14.500 — Fix 14 (first-run): Added haptic feedback on save failure."
+  "prevVersion": "phantom-v1.14.500",
+  "notes": "v1.14.501 — Fix 15 (NBA): Step 2 description now includes navigation to BUILD page."
 }
