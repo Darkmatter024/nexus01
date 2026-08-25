@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.489';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.490';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -27361,7 +27361,8 @@ function today_render() {
       // STATE 2 — profile set, no Master loaded. Route to the MASTER tab's picker.
       _nudge =
         '<div style="font-family:var(--raj);font-size: var(--fs-body);color:var(--white);margin-bottom:10px">Load your Master to begin.</div>' +
-        '<button class="pt-btn pt-btn-primary" style="width:auto;padding:11px 18px;clip-path:none" onclick="showPage(\'master\'); if(typeof master_loadFile===\'function\') master_loadFile();" aria-label="Load your Master file to begin">LOAD MASTER →</button>';
+        '<button class="pt-btn pt-btn-primary" style="width:auto;padding:11px 18px;clip-path:none" onclick="showPage(\'master\'); if(typeof master_loadFile===\'function\') master_loadFile();" aria-label="Load your Master file to begin">LOAD MASTER →</button>' +
+        '<div style="font-family:var(--raj);font-size:12px;color:rgba(255,255,255,0.6);margin-top:8px">.xlsx from your lead</div>';
     } else if (_allDeploys.length === 0 && _masterLoaded && !guided_scopeDismissed()) {
       // STATE 3 — Master loaded, zero deployments ever. Dismissible spotlight on SCOPE A JOB.
       _nudge =
