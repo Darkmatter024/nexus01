@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.496';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.497';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -13746,7 +13746,7 @@ if (typeof window !== 'undefined') {
           <!-- Aggregate status pill — quiet when healthy, shouts when not -->
           <button class="hdr-agg-pill" id="hdr-agg-pill" onclick="hdr_aggToggle(event)" aria-label="System status — tap for details" aria-expanded="false" data-state="checking">
             <svg class="hdr-agg-ekg" id="hdr-agg-ekg" viewBox="0 0 44 16" aria-hidden="true"><polyline class="hdr-agg-trace" points="0,8 9,8 13,8 16,2 20,14 24,5 28,8 44,8"/></svg>
-            <span class="hdr-agg-label" id="hdr-agg-label">SYS</span><span class="hdr-agg-sweep" aria-hidden="true"></span>
+            <span class="hdr-agg-label" id="hdr-agg-label">•••</span><span class="hdr-agg-sweep" aria-hidden="true"></span>
           </button>
           <!-- Expandable detail panel — 4 subsystems with tap-to-recheck -->
           <div class="hdr-agg-panel" id="hdr-agg-panel" style="display:none" role="region" aria-label="Subsystem health details">

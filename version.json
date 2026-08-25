@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.496",
+  "version": "phantom-v1.14.497",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.495",
-  "notes": "v1.14.496 — Fix 10 (BUILD page): Added explanatory hint to PASTE ANYTHING card."
+  "prevVersion": "phantom-v1.14.496",
+  "notes": "v1.14.497 — Fix 11 (header): Changed SYS button label to '•••' for clarity."
 }
