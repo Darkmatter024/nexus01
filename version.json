@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.511",
+  "version": "phantom-v1.14.512",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.510",
-  "notes": "v1.14.511 — Deep-dive fix #20 (polish): Updated KNOW card subtitle with clearer content description."
+  "prevVersion": "phantom-v1.14.511",
+  "notes": "v1.14.512 — Deep-dive fix #21 (polish): Expanded 'IB' acronym to 'InfiniBand' for clarity."
 }
