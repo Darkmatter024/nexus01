@@ -155,6 +155,7 @@ function isCacheableScheme(req) {
 // worker ever reached `waiting`, so the SW UPDATE badge had nothing to promote. A new worker now
 // INSTALLS AND WAITS; the user's tap posts SKIP_WAITING and the message handler below promotes it.
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
     const results = await Promise.allSettled(
@@ -170,13 +171,9 @@ self.addEventListener('install', (event) => {
       console.log('[PHANTOM SW] Precache: all ' + PRECACHE_URLS.length +
                   ' URLs cached for ' + CACHE_VERSION);
     }
-    // ⛔ v1.14.458 — skipWaiting() REMOVED FROM INSTALL, and this is the root of the P0.
-    // Calling it here meant a new worker NEVER sat in `waiting`. Everything downstream was built
-    // on the assumption that it did: the app only posts SKIP_WAITING `if (reg.waiting)` — always
-    // null — so the message was never sent, and this file had no listener to receive it anyway.
-    // The result was an UPDATE badge whose tap had nothing to activate and degraded to a bare
-    // reload. A worker must WAIT so the badge means something and one tap can promote it.
-    self.skipWaiting();
+    // v1.14.513: skipWaiting() called unconditionally for iOS Safari reliability.
+    // iOS Safari does not reliably process message-based skipWaiting() calls, so it must
+    // be called directly in the install event to ensure new worker activates on upgrade.
   })());
 });
 
