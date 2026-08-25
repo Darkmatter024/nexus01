@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.502';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.503';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -28844,14 +28844,12 @@ function firstRun_renderChip() {
   if (!el) return;
   var p = siteProfile_load();
   if (!p.confirmedAt) { el.innerHTML = ''; return; }
-  var pending = (!p.rackNamingConvention || !p.pduType);
   el.innerHTML =
     '<button onclick="firstRun_openProfile()" style="width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:8px;'
     + 'background:rgba(181,140,255,0.06);border:1px solid rgba(181,140,255,0.22);border-radius:var(--hud-r12,12px);'
     + 'padding:10px 14px;margin-bottom:10px;cursor:pointer;-webkit-tap-highlight-color:transparent">'
     +   '<span style="font-family:var(--mono);font-size:12px;letter-spacing:1px;color:var(--white);text-align:left">'
-    +     escHtml(p.facilityId || 'SITE') + ' <span style="color:var(--slate,#8194ab)">\u00b7</span> ' + escHtml(p.operator || 'operator')
-    +     (pending ? ' <span style="color:#e0b341">\u00b7 floor details pending</span>' : '')
+    +     escHtml(p.operator || 'operator') + ' <span style="color:var(--slate,#8194ab)">\u00b7</span> ' + 'profile set'
     +   '</span>'
     +   '<span style="font-family:var(--mono);font-size:11px;color:var(--violet-bright,#b58cff)">EDIT \u203a</span>'
     + '</button>';
