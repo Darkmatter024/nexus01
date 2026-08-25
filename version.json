@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.491",
+  "version": "phantom-v1.14.492",
   "released": "2026-08-24",
-  "prevVersion": "phantom-v1.14.490",
-  "notes": "v1.14.491 — Fix 5 (header): Shows 'NO MASTER' instead of '—' when profile confirmed but Master not loaded."
+  "prevVersion": "phantom-v1.14.491",
+  "notes": "v1.14.492 — Fix 6 (header): Call cmd_setSiteLabel() after firstRun_confirm() to update header subtitle."
 }
