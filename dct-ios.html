@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.487';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.488';
 // v1.14.226 — persistent build badge (§10): mirror the canonical running-version const into the
 // top-right #ver-stamp (redesign-only via CSS) so device-verify always shows the ACTUAL loaded build.
 // Reusing the const (not a version.json fetch) is deliberate: a stale SW → stale const → stale badge,
@@ -28740,7 +28740,8 @@ function firstRun_show() {
       + '<p class="fr-hint">Used on your sign-offs and handoffs.</p>'
       + '<p class="fr-hint" style="margin-top:16px">Site is read from your Master file.</p>'
       + '<div id="fr-error" role="alert" style="display:none;margin-top:18px;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,69,58,0.5);background:rgba(255,69,58,0.10);color:#ffb3ad;font-family:var(--mono);font-size:12px;line-height:1.5"></div>'
-      + '<button id="fr-confirm" class="fr-go" style="--angle:0deg" onclick="firstRun_confirm()"><span class="fr-go-plate"></span><span class="fr-go-spot"></span><b>START</b></button>';
+      + '<button id="fr-confirm" class="fr-go" style="--angle:0deg" onclick="firstRun_confirm()"><span class="fr-go-plate"></span><span class="fr-go-spot"></span><b>START</b></button>'
+      + '<p class="fr-hint" style="margin-top:12px;text-align:center">Next: load your Master file — the rack list for this site.</p>';
     // touch-following spotlight (mock verbatim; passive — never blocks scroll)
     try {
       var g = document.getElementById('fr-confirm');
