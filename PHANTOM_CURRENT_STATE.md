@@ -5,8 +5,8 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-27, after `v1.14.517` — Phase 1.1 export manifest shipped.
-⏳ AWAITING DEVICE VERIFY OF v1.14.483–.517. .517 adds export manifest (Phase 1.1); Phase 1.2–.6 pending. Next: John's device verify per SHIP-HANDOFF-GAP-516 programme.**
+**Last updated: 2026-08-27, after `v1.14.518` — Phase 1.2 export discrepancies + photos shipped.
+⏳ AWAITING DEVICE VERIFY OF v1.14.483–.518. .517 export manifest; .518 adds discrepancies + extracted photos. Phase 1.3–.6 pending. Next: John's device verify per SHIP-HANDOFF-GAP-516 programme.**
 
 ---
 
@@ -14,10 +14,10 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.517`** (latest) / **`.483`** (baseline) |
+| **Version** | **`phantom-v1.14.518`** (latest) / **`.483`** (baseline) |
 | Commits | `.481–.486` Phase Next work (2026-08-23) · `.487–.516` iOS SW lifecycle + cache hardening (2026-08-24 through 2026-08-27, **unverified on hardware**) |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.517` |
-| Shipped | ✅ **v1.14.517 PHASE 1.1 EXPORT MANIFEST** — Backup bundle now includes `manifest` array (store name, included flag, record count, byte size) for every localStorage key, IndexedDB store, and extra-keys registry entry. Import (Phase 1.4) will use this to warn loudly for anything missing rather than silently degrading. schemaVersion stays 1 (manifest is additive/optional). **Ready for Phase 1.2–1.6 slices.** |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.518` |
+| Shipped | ✅ **v1.14.518 PHASE 1.2 EXPORT DISCREPANCIES + PHOTOS** — Discrepancies now explicit bundle section (was only in extra-keys). Base64 photos extracted from discrepancy records → separate array. On import (Phase 1.4), photos restore to IndexedDB store ('phantom-photos'), fixing B13 violation. Manifest documents both. **Ready for Phase 1.3–1.6 slices.** |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
