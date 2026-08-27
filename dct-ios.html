@@ -9696,6 +9696,7 @@ body.rd #ver-stamp { display: inline-flex; align-items: center; align-self: cent
    It also declared no font-family, so the glyph fell through to the UA default (measured as
    MS Shell Dlg in the harness) instead of the app stack. All four consumers are redesign sheets
    (phases, profile, errors, Forge), so ?legacy=1 is untouched. */
+.rd-sheet { position: fixed; bottom: 0; left: 0; right: 0; top: 0; z-index: var(--z-sheet); display: none; flex-direction: column; background: rgba(5,7,11,0.95); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
 .rd-sheet-close { width: var(--tap-s); height: var(--tap-s); border-radius: var(--r-ctl); border: 1px solid rgba(120,150,200,0.18); background: rgba(16,22,34,0.55); color: var(--white); font-family: var(--raj); font-size: var(--fs-head); line-height: 1; cursor: pointer; flex: 0 0 auto; -webkit-tap-highlight-color: transparent; }
 .rd-sheet-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 18px 28px; }
 
@@ -13066,7 +13067,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.521';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.522';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -57111,10 +57112,15 @@ async function stripeRack_logNote(deployId, rackId) {
   }
 }
 
-// Photo capture (v1.14.519 Phase B): Rack-scoped photo evidence
-function photo_captureForRack(deployId, rackId) {
-  var input = document.getElementById('photo-capture-input');
-  if (input) input.click();
+// Photo capture (v1.14.522 Phase B): Rack-scoped photo evidence + gallery
+async function photo_captureForRack(deployId, rackId) {
+  var count = await photo_getCountForRack(rackId);
+  if (count > 0) {
+    photo_galleryOpen(deployId, rackId);
+  } else {
+    var input = document.getElementById('photo-capture-input');
+    if (input) input.click();
+  }
 }
 
 async function photo_handleCapture(input, deployId, rackId) {
@@ -57191,6 +57197,197 @@ function photo_getDB() {
     };
     req.onsuccess = function() { _photoDB = req.result; resolve(_photoDB); };
     req.onerror = reject;
+  });
+}
+
+async function photo_getCountForRack(rackId) {
+  var db = await photo_getDB();
+  var siteId = rackId.split(':')[0] || 'unknown';
+  var tx = db.transaction('photos', 'readonly');
+  var store = tx.objectStore('photos');
+  var idx = store.index('byRack');
+  var range = IDBKeyRange.bound([siteId, rackId], [siteId, rackId]);
+  return new Promise(function(resolve, reject) {
+    var count = 0;
+    var cursorReq = idx.openCursor(range);
+    cursorReq.onsuccess = function() {
+      var c = cursorReq.result;
+      if (c) { count++; c.continue(); }
+      else { resolve(count); }
+    };
+    cursorReq.onerror = reject;
+  });
+}
+
+async function photo_getAllForRack(rackId) {
+  var db = await photo_getDB();
+  var siteId = rackId.split(':')[0] || 'unknown';
+  var tx = db.transaction('photos', 'readonly');
+  var store = tx.objectStore('photos');
+  var idx = store.index('byRack');
+  var range = IDBKeyRange.bound([siteId, rackId], [siteId, rackId]);
+  var photos = [];
+  return new Promise(function(resolve, reject) {
+    var cursorReq = idx.openCursor(range, 'prev');
+    cursorReq.onsuccess = function() {
+      var c = cursorReq.result;
+      if (c) { photos.push(c.value); c.continue(); }
+      else { resolve(photos); }
+    };
+    cursorReq.onerror = reject;
+  });
+}
+
+function photo_galleryOpen(deployId, rackId) {
+  var sheet = document.getElementById('photo-gallery-sheet');
+  if (!sheet) {
+    sheet = document.createElement('div');
+    sheet.id = 'photo-gallery-sheet';
+    sheet.className = 'rd-sheet';
+    document.body.appendChild(sheet);
+  }
+  sheet.innerHTML = '';
+  sheet.style.display = 'flex';
+  var hd = document.createElement('div');
+  hd.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(92,242,255,0.12);flex:0 0 auto';
+  var title = document.createElement('div');
+  title.style.cssText = 'font-family:var(--mono);font-size:var(--fs-caption);color:var(--slate);letter-spacing:1px;flex:1';
+  var closeBtn = document.createElement('button');
+  closeBtn.className = 'rd-sheet-close';
+  closeBtn.textContent = '×';
+  closeBtn.type = 'button';
+  closeBtn.onclick = function() { sheet.style.display = 'none'; };
+  hd.appendChild(title);
+  hd.appendChild(closeBtn);
+  sheet.appendChild(hd);
+  var body = document.createElement('div');
+  body.className = 'rd-sheet-body';
+  body.style.flex = '1';
+  photo_getAllForRack(rackId).then(function(photos) {
+    var totalBytes = photos.reduce(function(sum, p) { return sum + (p.bytes || 0); }, 0);
+    var totalMB = (totalBytes / 1024 / 1024).toFixed(1);
+    title.textContent = 'PHOTOS · ' + rackId + ' · ' + photos.length + ' · ' + totalMB + ' MB';
+    var grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px';
+    var newBtn = document.createElement('button');
+    newBtn.type = 'button';
+    newBtn.style.cssText = 'aspect-ratio:1/1;border:1px solid rgba(92,242,255,0.3);background:rgba(5,7,11,0.6);color:var(--cyan);font-size:28px;border-radius:var(--r-card);cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent';
+    newBtn.textContent = '+';
+    newBtn.onclick = function() { sheet.style.display = 'none'; var input = document.getElementById('photo-capture-input'); if (input) input.click(); };
+    grid.appendChild(newBtn);
+    photos.forEach(function(p) {
+      var cell = document.createElement('div');
+      cell.style.cssText = 'aspect-ratio:1/1;border-radius:var(--r-card);overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent';
+      cell.onclick = function() { photo_viewerOpen(p.id, deployId, rackId); };
+      var url = URL.createObjectURL(p.blob);
+      var img = document.createElement('img');
+      img.src = url;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+      cell.appendChild(img);
+      grid.appendChild(cell);
+    });
+    body.appendChild(grid);
+  }).catch(function(e) {
+    body.innerHTML = '<div style="padding:20px;color:var(--slate)">Error loading photos</div>';
+  });
+  sheet.appendChild(body);
+}
+
+function photo_viewerOpen(photoId, deployId, rackId) {
+  var viewer = document.getElementById('photo-viewer-sheet');
+  if (!viewer) {
+    viewer = document.createElement('div');
+    viewer.id = 'photo-viewer-sheet';
+    viewer.className = 'rd-sheet';
+    document.body.appendChild(viewer);
+  }
+  viewer.innerHTML = '';
+  viewer.style.display = 'flex';
+  photo_getDB().then(function(db) {
+    var tx = db.transaction('photos', 'readonly');
+    var store = tx.objectStore('photos');
+    var getReq = store.get(photoId);
+    getReq.onsuccess = function() {
+      var p = getReq.result;
+      if (!p) { viewer.innerHTML = '<div style="padding:20px;color:var(--slate)">Photo not found</div>'; return; }
+      var hd = document.createElement('div');
+      hd.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(92,242,255,0.12);flex:0 0 auto';
+      var info = document.createElement('div');
+      info.style.cssText = 'font-family:var(--mono);font-size:var(--fs-micro);color:var(--slate);letter-spacing:1px';
+      var ts = new Date(p.capturedAt);
+      var dateStr = ts.getFullYear() + '-' + (ts.getMonth()+1).toString().padStart(2,'0') + '-' + ts.getDate().toString().padStart(2,'0');
+      var timeStr = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
+      info.textContent = dateStr + ' ' + timeStr;
+      var closeBtn = document.createElement('button');
+      closeBtn.className = 'rd-sheet-close';
+      closeBtn.textContent = '×';
+      closeBtn.type = 'button';
+      closeBtn.onclick = function() { viewer.style.display = 'none'; };
+      hd.appendChild(info);
+      hd.appendChild(closeBtn);
+      viewer.appendChild(hd);
+      var body = document.createElement('div');
+      body.className = 'rd-sheet-body';
+      body.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center';
+      var url = URL.createObjectURL(p.blob);
+      var img = document.createElement('img');
+      img.src = url;
+      img.style.cssText = 'max-width:100%;max-height:60vh;object-fit:contain;border-radius:var(--r-card)';
+      body.appendChild(img);
+      if (p.caption) {
+        var caption = document.createElement('div');
+        caption.style.cssText = 'margin-top:12px;font-family:var(--raj);font-size:var(--fs-body);color:var(--slate);text-align:center;padding:0 16px;line-height:1.5';
+        caption.textContent = p.caption;
+        body.appendChild(caption);
+      }
+      viewer.appendChild(body);
+      var acts = document.createElement('div');
+      acts.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px 16px calc(env(safe-area-inset-bottom) + 14px);border-top:1px solid rgba(92,242,255,0.12);flex:0 0 auto';
+      var closeAct = document.createElement('button');
+      closeAct.type = 'button';
+      closeAct.className = 'rd-btn';
+      closeAct.textContent = 'CLOSE';
+      closeAct.onclick = function() { viewer.style.display = 'none'; };
+      var delAct = document.createElement('button');
+      delAct.type = 'button';
+      delAct.className = 'rd-btn';
+      delAct.textContent = 'DELETE';
+      delAct.onclick = function() {
+        if (!delAct.dataset.confirm) {
+          delAct.dataset.confirm = '1';
+          delAct.textContent = 'CONFIRM?';
+          setTimeout(function() { delete delAct.dataset.confirm; delAct.textContent = 'DELETE'; }, 2000);
+          return;
+        }
+        photo_deletePhoto(photoId).then(function() {
+          phantomToast('Photo deleted', 'ok');
+          viewer.style.display = 'none';
+          var gallery = document.getElementById('photo-gallery-sheet');
+          if (gallery && gallery.style.display === 'flex') {
+            photo_galleryOpen(deployId, rackId);
+          }
+        }).catch(function(e) {
+          phantomToast('Failed to delete photo', 'error');
+        });
+      };
+      acts.appendChild(closeAct);
+      acts.appendChild(delAct);
+      viewer.appendChild(acts);
+    };
+  }).catch(function(e) {
+    viewer.innerHTML = '<div style="padding:20px;color:var(--slate)">Error loading photo</div>';
+  });
+}
+
+function photo_deletePhoto(photoId) {
+  return photo_getDB().then(function(db) {
+    var tx = db.transaction('photos', 'readwrite');
+    var store = tx.objectStore('photos');
+    store.delete(photoId);
+    return new Promise(function(resolve, reject) {
+      tx.oncomplete = resolve;
+      tx.onerror = reject;
+    });
   });
 }
 

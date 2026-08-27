@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.521",
+  "version": "phantom-v1.14.522",
   "released": "2026-08-27",
-  "prevVersion": "phantom-v1.14.520",
-  "notes": "v1.14.521 — Remove ISO Session photo chip: Removes the broken file-input-only UI that recorded filenames without persisting images. Escalation packet still displays photo count from old session data (harmless, never contained real images). Safe fallback added for undefined sess.photos."
+  "prevVersion": "phantom-v1.14.521",
+  "notes": "v1.14.522 — PHOTO GALLERY PHASE B: Badge shows count when > 0; tapping badged PHOTO opens gallery sheet with grid (newest-first, 2-column). Gallery includes +NEW first cell (opens capture). Viewer shows full-size image, caption (view-only), timestamp. DELETE with two-tap confirm. Unbadged PHOTO still goes direct to capture."
 }
