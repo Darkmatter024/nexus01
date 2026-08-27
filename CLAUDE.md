@@ -95,6 +95,15 @@ A commit that bumps `version.json` is blocked by hook unless John has verified t
 
 **Live serves from `release` branch.** A push to `main` changes nothing on the iPhone until John promotes.
 
+### The mechanical ship loop
+
+1. **OODA against served bytes.** `curl` live `version.json` from `release` branch (what the iPhone has). If it ≠ your baseline, STOP and re-anchor.
+2. **One visible change to `main`.** Edit, test, commit. The hook enforces three-stamp lockstep and VERIFIED gate.
+3. **Report:** what changed, what proves it, what is phone-only (device verify needed). Close the loop: show `git log -1 --oneline` and `git status`.
+4. **STOP.** Hand John the checklist. Next ship is impossible until John (a) verifies on device, (b) updates `VERIFIED` with the version you shipped, (c) promotes `release` when he chooses. A version does not exist until John's phone clears it.
+5. **"Start Phase N" from John means:** ship the **next single slice** of Phase N, then stop. A phase name is never authorization for multiple ships.
+6. **At ≥70% context:** write current state to `PHANTOM_CURRENT_STATE.md`, tell John, recommend `/clear` before the next slice.
+
 ---
 
 ## Ship discipline
