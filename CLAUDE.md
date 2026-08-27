@@ -218,3 +218,23 @@ str_replace edits only. Three-stamp lockstep: dct-ios.html / sw.js / version.jso
 
 ### Cold Aisle Filter (never violated)
 44pt minimum tap targets. Gloved hands. No tiny controls for floor actions. Data hall is loud.
+
+---
+
+### REVIEW MATRIX (mandatory, intelligence-core era)
+
+Before ANY commit, the diff must pass every agent its row demands. A missing review = do not commit.
+
+| Change touches… | Required reviews |
+|---|---|
+| Any ship (always) | lockstep-auditor · surgical-edit-reviewer |
+| Any user-visible UI | cold-aisle-qa · data-honesty-auditor |
+| Assembler, adapter, or registry | adapter-reviewer (census must exist first — see below) |
+| Any Record renderer (report, composer, gallery, mission chip, coverage display) | report-fidelity-auditor · data-honesty-auditor |
+| Storage shape questions, before writing any adapter | storage-archaeologist census covering that data class |
+
+Rules:
+1. **storage-archaeologist is read-only recon.** Its census output goes to John before any adapter that depends on it is written. No adapter may read a field the census does not document.
+2. **Reviewer agents render verdicts, never edits.** A FAIL is fixed by a new surgical diff, re-reviewed from scratch.
+3. **Agent PASS is advisory.** It is never a substitute for John's device verify, which remains the only ship gate. No agent, and no combination of agents, authorizes a deploy.
+4. One extracted handoff at a time; agents operate only within the active handoff's scope. An agent finding outside scope is REPORTED to John, never acted on.
