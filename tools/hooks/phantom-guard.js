@@ -15,6 +15,7 @@
  *   2. Three-stamp lockstep                       — dct-ios.html + sw.js + version.json or no ship
  *   3. Inline <script> compile + CSS brace balance — a syntax error ships a blank app
  *   4. No backticks in a git commit body           — they run as a subshell and eat the message
+ *   5. VERIFIED token gate                        — version.json bumps blocked until VERIFIED is stamped
  *
  * DESIGN NOTES, so a later reader does not "simplify" this into a footgun:
  *   - Scoped to the PHANTOM repo. Any other project passes straight through untouched.
@@ -97,6 +98,52 @@ function checkSwCompile() {
   return null;
 }
 
+/** VERIFIED token gate: version.json bumps are blocked until owner stamps the old version. */
+function checkVerifiedGate(cmd) {
+  if (!/git\s+commit/.test(cmd)) return null;
+
+  const VERIFIED_FILE = path.join(REPO, 'VERIFIED');
+  const { execSync } = require('child_process');
+
+  try {
+    // Check what files are staged
+    const staged = execSync('git diff --cached --name-only', { cwd: REPO, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim().split('\n').filter(Boolean);
+
+    // Block any attempt to commit changes to VERIFIED
+    if (staged.includes('VERIFIED')) {
+      return 'GATE: VERIFIED is owner-only. Never commit changes to this file.';
+    }
+
+    // If version.json is being modified, check that VERIFIED matches the old version
+    if (staged.includes('version.json')) {
+      let oldVersion = null;
+      try {
+        const oldVerJson = execSync('git show HEAD:version.json', { cwd: REPO, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
+        oldVersion = JSON.parse(oldVerJson).version;
+      } catch (e) {
+        // If HEAD doesn't have version.json yet (first commit scenario), proceed
+        if (e.toString().includes('exists on disk, but not in')) return null;
+        return `GATE: Could not read old version from HEAD: ${e.message}`;
+      }
+
+      // Read VERIFIED file
+      let verified = null;
+      if (fs.existsSync(VERIFIED_FILE)) {
+        verified = read(VERIFIED_FILE).trim();
+      }
+
+      if (verified !== oldVersion) {
+        return `GATE: ${oldVersion} not stamped in VERIFIED. Owner must verify on device and update VERIFIED before the next ship.`;
+      }
+    }
+  } catch (e) {
+    // Fail open on internal errors
+    process.stderr.write(`[phantom-guard] VERIFIED gate check skipped (error): ${e.message}\n`);
+  }
+
+  return null;
+}
+
 /** Backticks inside a commit body run as a subshell and silently eat the snippet. */
 function checkCommitMessage(cmd) {
   if (!/git\s+commit/.test(cmd)) return null;
@@ -137,6 +184,10 @@ process.stdin.on('end', () => {
 
       // PRE-COMMIT: the full mechanical gate, but only when a commit would include the app.
       if (/git\s+commit/.test(cmd) && fs.existsSync(APP)) {
+        // VERIFIED token gate runs first (blocks before other checks)
+        const verifiedGate = checkVerifiedGate(cmd);
+        if (verifiedGate) problems.push(verifiedGate);
+
         for (const fn of [checkStamps, checkCompile, checkSwCompile]) {
           const r = fn();
           if (r) problems.push(r);
