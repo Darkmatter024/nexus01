@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.516",
-  "released": "2026-08-25",
-  "prevVersion": "phantom-v1.14.515",
-  "notes": "v1.14.516 — iOS Safari fix: Immediate version check on page load forces reload if HTML is stale."
+  "version": "phantom-v1.14.517",
+  "released": "2026-08-27",
+  "prevVersion": "phantom-v1.14.516",
+  "notes": "v1.14.517 — Export manifest (Phase 1.1): backup bundle now includes manifest array documenting every store, record count, byte size, and included/excluded status for import-time honesty checks."
 }
