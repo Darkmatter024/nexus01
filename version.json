@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.522",
+  "version": "phantom-v1.14.523",
   "released": "2026-08-27",
-  "prevVersion": "phantom-v1.14.521",
-  "notes": "v1.14.522 — PHOTO GALLERY PHASE B: Badge shows count when > 0; tapping badged PHOTO opens gallery sheet with grid (newest-first, 2-column). Gallery includes +NEW first cell (opens capture). Viewer shows full-size image, caption (view-only), timestamp. DELETE with two-tap confirm. Unbadged PHOTO still goes direct to capture."
+  "prevVersion": "phantom-v1.14.522",
+  "notes": "v1.14.523 — CRITICAL FIX: Missing closing brace in photo_viewerOpen from .522. Caused SyntaxError on device: 'Unexpected token }'. Surgical one-brace fix; three-stamp lockstep."
 }

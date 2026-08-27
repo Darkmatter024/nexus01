@@ -13067,7 +13067,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.522';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.523';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -57374,7 +57374,8 @@ function photo_viewerOpen(photoId, deployId, rackId) {
       acts.appendChild(delAct);
       viewer.appendChild(acts);
     };
-  }).catch(function(e) {
+  }
+}).catch(function(e) {
     viewer.innerHTML = '<div style="padding:20px;color:var(--slate)">Error loading photo</div>';
   });
 }
