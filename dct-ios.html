@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.519';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.520';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -22692,7 +22692,7 @@ function bw_render() {
     // v1.14.439 — the third element is the SURFACE the door refreshes when it finishes. Only
     // ASSIGN has a refresh tail; QR and LOG NOTE end without re-rendering anything, so they are
     // called at their declared arity rather than handed an argument they never read.
-    [['Assign', 'deploy_assignRack', 'build'], ['QR', 'deploy_generateRackQR', null], ['Log note', 'stripeRack_logNote', null]]
+    [['Assign', 'deploy_assignRack', 'build'], ['QR', 'deploy_generateRackQR', null], ['Log note', 'stripeRack_logNote', null], ['Photo', 'photo_captureForRack', null]]
       .forEach(function (t) {
         A.push([t[0], function () {
           try {
@@ -22709,6 +22709,14 @@ function bw_render() {
     var b = E('button', 'bw-act' + a[2], a[0]); b.type = 'button'; b.onclick = a[1]; acts.appendChild(b);
   });
   host.appendChild(acts);
+  var photoInput = document.createElement('input');
+  photoInput.type = 'file';
+  photoInput.id = 'photo-capture-input';
+  photoInput.accept = 'image/*';
+  photoInput.capture = 'environment';
+  photoInput.style.display = 'none';
+  photoInput.onchange = function() { if (c.dep && c.rack) photo_handleCapture(this, c.dep.id, c.rack.id); };
+  host.appendChild(photoInput);
 
   // ── contextual tool tabs. Each opens the CANONICAL tool through
   //    rd_openOpsTool(tab, backAction) with a back action that returns to BUILD, so
@@ -42811,8 +42819,6 @@ function deploy_showRackDetail(deployId, rackId) {
   //    onclick fires it exactly as the legacy stripe did (fire-and-forget; it awaits its own prompt).
   if (typeof redesign_isOn === 'function' && redesign_isOn()) {
     html += '<button class="pt-btn pt-btn-ghost" style="width:100%;box-sizing:border-box;margin-top:10px;color:var(--cyan);border-color:rgba(92,242,255,0.25)" onclick="stripeRack_logNote(\'' + deployId + '\',\'' + rackId + '\')">' + _ico.file('#5cf2ff', 13) + ' &nbsp;LOG NOTE</button>';
-    html += '<button class="pt-btn pt-btn-ghost" style="width:100%;box-sizing:border-box;margin-top:10px;color:var(--cyan);border-color:rgba(92,242,255,0.25)" onclick="photo_captureForRack(\'' + deployId + '\',\'' + rackId + '\')">' + _ico.camera('#5cf2ff', 13) + ' &nbsp;PHOTO</button>';
-    html += '<input type="file" id="photo-capture-input" accept="image/*" capture="environment" style="display:none" onchange="photo_handleCapture(this,\'' + deployId + '\',\'' + rackId + '\')" />';
   }
 
   // ── Anomaly Detection ── v1.14.353 (B4.4): the standalone "PHASE RUNNING LONG" card was REMOVED

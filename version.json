@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.519",
+  "version": "phantom-v1.14.520",
   "released": "2026-08-27",
-  "prevVersion": "phantom-v1.14.518",
-  "notes": "v1.14.519 — PHOTO tile + capture + persist (Phase B.1): Rack detail action grid gains PHOTO button. Native iOS camera capture via <input type='file' capture>. Client-side compression (canvas resize to 1280px, JPEG q0.70). IDB persistence in phantom-attachments database. Toasts on save/fail. No gallery, no badge—Phase B.1 scope only. Verify: capture offline, kill Safari, reopen, persist survives."
+  "prevVersion": "phantom-v1.14.519",
+  "notes": "v1.14.520 — PHOTO relocation: Move PHOTO from rack-detail panel to Build workspace action grid where it belongs (singleton capture path serves both surfaces). Removes deploy_showRackDetail's gated PHOTO button—tech captures from Build, not drill-in detail."
 }
