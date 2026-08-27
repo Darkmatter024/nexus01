@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.518",
+  "version": "phantom-v1.14.519",
   "released": "2026-08-27",
-  "prevVersion": "phantom-v1.14.517",
-  "notes": "v1.14.518 — Export discrepancies + photos (Phase 1.2): Discrepancies now explicit bundle section; base64 photos extracted from records, bundled separately for import-side IDB storage. B13 violation fixed (photos no longer in localStorage on export)."
+  "prevVersion": "phantom-v1.14.518",
+  "notes": "v1.14.519 — PHOTO tile + capture + persist (Phase B.1): Rack detail action grid gains PHOTO button. Native iOS camera capture via <input type='file' capture>. Client-side compression (canvas resize to 1280px, JPEG q0.70). IDB persistence in phantom-attachments database. Toasts on save/fail. No gallery, no badge—Phase B.1 scope only. Verify: capture offline, kill Safari, reopen, persist survives."
 }

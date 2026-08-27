@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.518';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.519';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -42811,6 +42811,8 @@ function deploy_showRackDetail(deployId, rackId) {
   //    onclick fires it exactly as the legacy stripe did (fire-and-forget; it awaits its own prompt).
   if (typeof redesign_isOn === 'function' && redesign_isOn()) {
     html += '<button class="pt-btn pt-btn-ghost" style="width:100%;box-sizing:border-box;margin-top:10px;color:var(--cyan);border-color:rgba(92,242,255,0.25)" onclick="stripeRack_logNote(\'' + deployId + '\',\'' + rackId + '\')">' + _ico.file('#5cf2ff', 13) + ' &nbsp;LOG NOTE</button>';
+    html += '<button class="pt-btn pt-btn-ghost" style="width:100%;box-sizing:border-box;margin-top:10px;color:var(--cyan);border-color:rgba(92,242,255,0.25)" onclick="photo_captureForRack(\'' + deployId + '\',\'' + rackId + '\')">' + _ico.camera('#5cf2ff', 13) + ' &nbsp;PHOTO</button>';
+    html += '<input type="file" id="photo-capture-input" accept="image/*" capture="environment" style="display:none" onchange="photo_handleCapture(this,\'' + deployId + '\',\'' + rackId + '\')" />';
   }
 
   // ── Anomaly Detection ── v1.14.353 (B4.4): the standalone "PHASE RUNNING LONG" card was REMOVED
@@ -57104,6 +57106,89 @@ async function stripeRack_logNote(deployId, rackId) {
   } catch (e) {
     phantomToast('Failed to log note', 'error');
   }
+}
+
+// Photo capture (v1.14.519 Phase B): Rack-scoped photo evidence
+function photo_captureForRack(deployId, rackId) {
+  var input = document.getElementById('photo-capture-input');
+  if (input) input.click();
+}
+
+async function photo_handleCapture(input, deployId, rackId) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  if (!file.type.startsWith('image/')) { phantomToast('Not an image', 'error'); return; }
+  try {
+    var blob = await photo_compress(file);
+    await photo_persist(deployId, rackId, blob);
+    phantomToast('PHOTO SAVED · Rack ' + rackId, 'ok');
+  } catch (e) {
+    phantomToast('PHOTO NOT SAVED — ' + (e.name === 'QuotaExceededError' ? 'STORAGE' : 'ERROR'), 'error');
+  }
+  input.value = '';
+}
+
+async function photo_compress(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+        var maxSide = 1280;
+        var scale = Math.min(maxSide / img.width, maxSide / img.height, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', 0.70);
+      };
+      img.onerror = function() { reject(new Error('Image load failed')); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function() { reject(new Error('File read failed')); };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function photo_persist(deployId, rackId, blob) {
+  var db = await photo_getDB();
+  var tx = db.transaction('photos', 'readwrite');
+  var store = tx.objectStore('photos');
+  var photoId = 'ph_' + Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
+  var record = {
+    id: photoId,
+    siteId: rackId.split(':')[0] || 'unknown',
+    rackId: rackId,
+    capturedAt: Date.now(),
+    caption: '',
+    bytes: blob.size,
+    w: 0, h: 0,
+    blob: blob
+  };
+  store.add(record);
+  return new Promise(function(resolve, reject) {
+    tx.oncomplete = resolve;
+    tx.onerror = reject;
+  });
+}
+
+var _photoDB = null;
+function photo_getDB() {
+  return new Promise(function(resolve, reject) {
+    if (_photoDB) { resolve(_photoDB); return; }
+    var req = indexedDB.open('phantom-attachments', 1);
+    req.onupgradeneeded = function(e) {
+      var db = e.target.result;
+      if (!db.objectStoreNames.contains('photos')) {
+        var store = db.createObjectStore('photos', { keyPath: 'id' });
+        store.createIndex('bySite', 'siteId');
+        store.createIndex('byRack', ['siteId', 'rackId']);
+      }
+    };
+    req.onsuccess = function() { _photoDB = req.result; resolve(_photoDB); };
+    req.onerror = reject;
+  });
 }
 
 // Renders the entity-mode contextual toolbar for a rack.
