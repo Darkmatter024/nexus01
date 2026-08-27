@@ -79,6 +79,24 @@ behavioral-rule test. Changing one requires an owner ruling.
 
 ---
 
+## Branch topology — SHIP-GATE-LOCKDOWN (owner ruling 2026-08-27)
+
+**Two branches, one gate.**
+
+- **`main`** — where Claude Code works. All edits, all commits, all merges.
+- **`release`** — what GitHub Pages serves. Only John advances it.
+
+Claude Code NEVER commits to, merges to, pushes to, or fast-forwards `release`. Promotion is John's alone:
+```
+git checkout release && git merge --ff-only main && git push
+```
+
+A commit that bumps `version.json` is blocked by hook unless John has verified the old version on device and stamped it in the `VERIFIED` file. The gate is mechanical, not a promise. 
+
+**Live serves from `release` branch.** A push to `main` changes nothing on the iPhone until John promotes.
+
+---
+
 ## Ship discipline
 
 0. **Batching (CALL 0, owner-delegated).** Ships may stack; device verification is one consolidated
