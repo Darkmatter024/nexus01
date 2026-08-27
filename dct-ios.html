@@ -13066,7 +13066,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.520';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.521';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -22360,9 +22360,6 @@ function iso_renderStep(c, id) {
     html += '</ul></div>';
   }
 
-  // Photo chip
-  html += '<div class="f"><label>Photos</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0"><input type="file" accept="image/*" capture="environment" style="display:none" onchange="s=iso_get(\'' + id + '\');if(!s.photos)s.photos=[];s.photos.push({t:Date.now(),name:this.files[0].name});iso_put(s);iso_renderStep(document.getElementById(\'ops-tool-host\'),\'' + id + '\')" /><span class="chip" style="flex:0">📷 ' + (sess.photos.length > 0 ? sess.photos.length + ' photos' : 'Add photo') + '</span></label></div>';
-
   // Action bar
   html += '<div class="bar"><button class="btn ghost" onclick="iso_render(document.getElementById(\'ops-tool-host\'))">Park</button>';
   var nextDisabled = step.fields.filter(function(f){ return f.req; }).some(function(f){ return !sess.values[f.id]; });
@@ -22390,7 +22387,7 @@ function iso_renderPacket(c, id) {
   html += '<div class="card glow"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)"><div class="k">Say this</div></div><p class="sentence">' + marked + '</p>';
   var ts = new Date(sess.openedAt);
   var hm = (ts.getHours() < 10 ? '0' : '') + ts.getHours() + ':' + (ts.getMinutes() < 10 ? '0' : '') + ts.getMinutes();
-  html += '<div class="prov"><i class="c">source: isolate/down-link</i><i>session ' + hm + '</i><i>' + sess.trail.length + ' steps · ' + sess.photos.length + ' photos</i>' + (sess.values.tech ? '<i>' + sess.values.tech + '</i>' : '') + '</div></div>';
+  html += '<div class="prov"><i class="c">source: isolate/down-link</i><i>session ' + hm + '</i><i>' + sess.trail.length + ' steps · ' + (sess.photos||[]).length + ' photos</i>' + (sess.values.tech ? '<i>' + sess.values.tech + '</i>' : '') + '</div></div>';
 
   // ASK field
   html += '<div class="card"><div class="k">Ask</div><textarea class="in" placeholder="Request network-side port/lane review · IB-LEAF-03 P41" onchange="s=iso_get(\'' + id + '\');s.values.ask=this.value;iso_put(s);iso_renderPacket(document.getElementById(\'ops-tool-host\'),\'' + id + '\')">' + (sess.values.ask||'') + '</textarea></div>';

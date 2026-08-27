@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.520",
+  "version": "phantom-v1.14.521",
   "released": "2026-08-27",
-  "prevVersion": "phantom-v1.14.519",
-  "notes": "v1.14.520 — PHOTO relocation: Move PHOTO from rack-detail panel to Build workspace action grid where it belongs (singleton capture path serves both surfaces). Removes deploy_showRackDetail's gated PHOTO button—tech captures from Build, not drill-in detail."
+  "prevVersion": "phantom-v1.14.520",
+  "notes": "v1.14.521 — Remove ISO Session photo chip: Removes the broken file-input-only UI that recorded filenames without persisting images. Escalation packet still displays photo count from old session data (harmless, never contained real images). Safe fallback added for undefined sess.photos."
 }
