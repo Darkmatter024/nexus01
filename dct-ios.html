@@ -55912,38 +55912,82 @@ function exportAllData() {
   const req = indexedDB.open(dbName);
 
   function buildBundle(ghosts) {
-    return {
+    // v1.14.517 (Phase 1.1): manifest documents every store in the bundle for import-time honesty checks
+    var manifestEntries = [];
+    function _addManifest(storeName, included, count, bytes) {
+      manifestEntries.push({ store: storeName, included: included, recordCount: count, bytes: bytes });
+    }
+    function _estBytes(obj) { try { return JSON.stringify(obj).length; } catch (_) { return 0; } }
+    // Named sections — these carry integrity filtering and merge semantics
+    _addManifest('dct_sops_v1', true, Array.isArray(sops) ? sops.length : 0, _estBytes(sops));
+    _addManifest('dct_racks_v1', true, Array.isArray(racks) ? racks.length : 0, _estBytes(racks));
+    _addManifest('dct_burndown_v1', true, Array.isArray(burndown) ? burndown.length : 0, _estBytes(burndown));
+    var rackHistory = safeGet('phantom_rack_history', {});
+    _addManifest('phantom_rack_history', true, Object.keys(rackHistory).length, _estBytes(rackHistory));
+    var opticInv = loadOpticInventory();
+    _addManifest('phantom_optic_inventory', true, Array.isArray(opticInv) ? opticInv.length : 0, _estBytes(opticInv));
+    var deps = safeGet('phantom_deployments_v1', []);
+    _addManifest('phantom_deployments_v1', true, Array.isArray(deps) ? deps.length : 0, _estBytes(deps));
+    var depRacks = safeGet('phantom_deploy_racks_v1', []);
+    _addManifest('phantom_deploy_racks_v1', true, Array.isArray(depRacks) ? depRacks.length : 0, _estBytes(depRacks));
+    var depPhases = safeGet('phantom_deploy_phases_v1', []);
+    _addManifest('phantom_deploy_phases_v1', true, Array.isArray(depPhases) ? depPhases.length : 0, _estBytes(depPhases));
+    var depOptics = safeGet('phantom_deploy_optics_v1', []);
+    _addManifest('phantom_deploy_optics_v1', true, Array.isArray(depOptics) ? depOptics.length : 0, _estBytes(depOptics));
+    var depAudit = safeGet('phantom_deploy_audit_v1', []);
+    _addManifest('phantom_deploy_audit_v1', true, Array.isArray(depAudit) ? depAudit.length : 0, _estBytes(depAudit));
+    var siteProf = safeGet('phantom_site_profile_v1', null);
+    _addManifest('phantom_site_profile_v1', true, siteProf ? 1 : 0, _estBytes(siteProf));
+    var handoff = safeGet('phantom_handoff_v1', []);
+    _addManifest('phantom_handoff_v1', true, Array.isArray(handoff) ? handoff.length : 0, _estBytes(handoff));
+    var edp = safeGet('phantom_edp_cache_v1', {});
+    _addManifest('phantom_edp_cache_v1', true, Object.keys(edp).length, _estBytes(edp));
+    var master = localStorage.getItem('phantom_master_v1') || null;
+    _addManifest('phantom_master_v1', true, master ? 1 : 0, _estBytes(master));
+    var jobsnap = localStorage.getItem('phantom_jobsnap_v1') || null;
+    _addManifest('phantom_jobsnap_v1', true, jobsnap ? 1 : 0, _estBytes(jobsnap));
+    // GhostEchoDB: separate from quirks
+    _addManifest('GhostEchoDB:ghosts', true, Array.isArray(ghosts) ? ghosts.length : 0, _estBytes(ghosts));
+    // Ghost Echo quirks (tribal knowledge layer)
+    var quirks = (typeof ge_load === 'function') ? ge_load() : null;
+    _addManifest('phantom_ghost_echo_v1', true, quirks ? ((quirks.outgoing || []).length + (quirks.incoming || []).length) : 0, _estBytes(quirks));
+    // Extra keys registry
+    var extraKeys = phantom_collectExtraKeys();
+    _addManifest('[extra-keys-registry]', true, Object.keys(extraKeys).length, _estBytes(extraKeys));
+    var bundle = {
       exported: new Date().toISOString(),
       app: 'PHANTOM — Field Intelligence System',
       version: '1.0',
       schemaVersion: PHANTOM_BACKUP_SCHEMA,
+      manifest: manifestEntries,
       sops: sops,
       ghostEcho: ghosts,
-      ghostQuirks: (typeof ge_load === 'function') ? ge_load() : null,
-      master: localStorage.getItem('phantom_master_v1') || null,
-      jobsnap: localStorage.getItem('phantom_jobsnap_v1') || null,
+      ghostQuirks: quirks,
+      master: master,
+      jobsnap: jobsnap,
       rackMaps: racks,
       burndown: burndown,
-      rackHistory: safeGet('phantom_rack_history', {}),
-      opticInventory: loadOpticInventory(),
-      deployments: safeGet('phantom_deployments_v1', []),
-      deployRacks: safeGet('phantom_deploy_racks_v1', []),
-      deployPhases: safeGet('phantom_deploy_phases_v1', []),
-      deployOptics: safeGet('phantom_deploy_optics_v1', []),
-      deployAudit: safeGet('phantom_deploy_audit_v1', []),
-      siteProfile: safeGet('phantom_site_profile_v1', null),
-      handoffs: safeGet('phantom_handoff_v1', []),
-      edpCache: safeGet('phantom_edp_cache_v1', {}),
+      rackHistory: rackHistory,
+      opticInventory: opticInv,
+      deployments: deps,
+      deployRacks: depRacks,
+      deployPhases: depPhases,
+      deployOptics: depOptics,
+      deployAudit: depAudit,
+      siteProfile: siteProf,
+      handoffs: handoff,
+      edpCache: edp,
       // v1.14.397 (M1-a): every remaining key, verbatim, derived from the registry above.
       // Additive and ignorable, so PHANTOM_BACKUP_SCHEMA deliberately stays 1 — bumping it would
       // make an older cached build REFUSE this bundle outright (see the _bs guard in the restore)
       // instead of best-effort restoring the named sections. A degraded restore beats a refusal.
-      keys: phantom_collectExtraKeys(),
+      keys: extraKeys,
       // v1.14.398: keys present in storage that NOBODY has classified. Normally empty. Recorded
       // in the bundle rather than dropped silently, so a backup can never quietly under-report
       // its own coverage — and so the gap is visible in the file itself, not only in a console.
       unclassifiedKeys: phantom_backupCoverage()
     };
+    return bundle;
   }
 
   req.onsuccess = function(e) {
