@@ -5,8 +5,8 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-27, after `v1.14.516` — iOS Safari delivery fixes shipped.
-⏳ AWAITING DEVICE VERIFY OF v1.14.483–.516 iOS SW lifecycle + cache control hardening. v1.14.516 ready for Phase 1 entry (export completeness). Next: John's iPhone verify per SHIP-HANDOFF-GAP-516 programme.**
+**Last updated: 2026-08-27, after `v1.14.517` — Phase 1.1 export manifest shipped.
+⏳ AWAITING DEVICE VERIFY OF v1.14.483–.517. .517 adds export manifest (Phase 1.1); Phase 1.2–.6 pending. Next: John's device verify per SHIP-HANDOFF-GAP-516 programme.**
 
 ---
 
@@ -14,16 +14,16 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.516`** (latest) / **`.483`** (baseline) |
+| **Version** | **`phantom-v1.14.517`** (latest) / **`.483`** (baseline) |
 | Commits | `.481–.486` Phase Next work (2026-08-23) · `.487–.516` iOS SW lifecycle + cache hardening (2026-08-24 through 2026-08-27, **unverified on hardware**) |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.516` |
-| Shipped | ✅ **v1.14.516 iOS DELIVERY HARDENING** — Service worker lifecycle reliability: skipWaiting in install · updateViaCache='none' to defeat CDN caching · immediate version check on page load forces reload if HTML stale · self-heal detection for stale SW. **Unverified on hardware — requires device walk per Gap-516 Phase 1.** |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.517` |
+| Shipped | ✅ **v1.14.517 PHASE 1.1 EXPORT MANIFEST** — Backup bundle now includes `manifest` array (store name, included flag, record count, byte size) for every localStorage key, IndexedDB store, and extra-keys registry entry. Import (Phase 1.4) will use this to warn loudly for anything missing rather than silently degrading. schemaVersion stays 1 (manifest is additive/optional). **Ready for Phase 1.2–1.6 slices.** |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 | Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
 | Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact** |
-| Status | ⏳ **PHASE 0 RECON COMPLETE (Gap-516 Census). AWAITING PHASE 1 ENTRY — Export completeness audit.** |
+| Status | 🔄 **PHASE 1 IN PROGRESS — Export completeness.** .517 ships 1.1 (manifest); 1.2–1.6 pending (discrepancies, Ghost Echo, restore honesty, IDB tolerance, merge rules). |
 | Phase Next-1 | ✅ **Technical deep dive shipped** — `PHASE-NEXT-1-TECHNICAL-DEEP-DIVE.md` — comprehensive analysis of Master→Profile pipeline, integration gaps (solved), edge cases, contracts, atomic save requirements, testing strategy, implementation plan (one surgical edit + three-stamp, ✅ shipped in v1.14.484) |
 | Phase Next-2 | ✅ **Discovery complete** — `PHASE-NEXT-2-DISCOVERY.md` — site context injection audit. Finds: AI features ✅ (already use profile), hero ❌ (no site display), forms ❌ (no pre-fill), search ❌ (not ranked by site), reference ❌ (not filtered by site). Recommends 2.1 (hero LOW), 2.2 (forms LOW-MEDIUM), 2.3 (search MEDIUM), 2.4 (reference MEDIUM) as sequence. |
 | Phase Next-3 | ✅ **Discovery complete** — `PHASE-NEXT-3-DISCOVERY.md` — Shift handoff storage & device transfer audit. Finds: Current usage 1.36 MB (27% of 5 MB quota), multi-shift approaches wall (50KB–6MB per shift), no pruning strategy, no device transfer flow. 5 gaps: no volume measurement, no pruning, no photo storage policy, no device transfer UX, no IndexedDB migration. Recommends 3.1 (measurement LOW), 3.2 (export LOW-MEDIUM), 3.3 (pruning MEDIUM), 3.4 (device transfer HIGH), 3.5 (IndexedDB MEDIUM) sequence. |
