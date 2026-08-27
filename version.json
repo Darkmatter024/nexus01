@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.517",
+  "version": "phantom-v1.14.518",
   "released": "2026-08-27",
-  "prevVersion": "phantom-v1.14.516",
-  "notes": "v1.14.517 — Export manifest (Phase 1.1): backup bundle now includes manifest array documenting every store, record count, byte size, and included/excluded status for import-time honesty checks."
+  "prevVersion": "phantom-v1.14.517",
+  "notes": "v1.14.518 — Export discrepancies + photos (Phase 1.2): Discrepancies now explicit bundle section; base64 photos extracted from records, bundled separately for import-side IDB storage. B13 violation fixed (photos no longer in localStorage on export)."
 }
