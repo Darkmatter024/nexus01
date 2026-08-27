@@ -33886,6 +33886,77 @@ function discLog_saveAll(arr) {
   try { return safeStore(DISCREPANCY_KEY, JSON.stringify(arr)); } catch(e) { return false; }
 }
 
+// v1.14.517 (Phase 1.2): Photo storage layer — move base64 photos OUT of localStorage
+// Photos stored in IndexedDB ('phantom-photos' store), discrepancy records reference by ID
+var PHOTO_DB_NAME = 'phantom-photos';
+var PHOTO_STORE_NAME = 'photos';
+function photoStore_extractFromDiscrepancies(discrepancies) {
+  // Extract base64 photos from discrepancy records, store in IDB, return updated records + photos array
+  var photos = [];
+  var updated = [];
+  var photoId = 1;
+  try {
+    discrepancies.forEach(function(d) {
+      if (d && d.photo && typeof d.photo === 'string' && d.photo.indexOf('data:') === 0) {
+        // Found a base64 photo — move it to IDB and replace with ID
+        var photoRec = { id: photoId, discId: d.id, data: d.photo, photoMeta: d.photoMeta, extractedAt: new Date().toISOString() };
+        photos.push(photoRec);
+        var rec = Object.assign({}, d);
+        rec.photoId = photoId;
+        rec.photo = null;
+        rec.photoMeta = null;
+        updated.push(rec);
+        photoId++;
+      } else {
+        updated.push(d);
+      }
+    });
+  } catch (_) {}
+  return { discrepancies: updated, photos: photos };
+}
+function photoStore_save(photos, callback) {
+  // Write photos array to IndexedDB, call callback(success) when done
+  if (!Array.isArray(photos) || !photos.length) { if (callback) callback(true); return; }
+  var req = indexedDB.open(PHOTO_DB_NAME, 1);
+  req.onupgradeneeded = function(e) {
+    var db = e.target.result;
+    if (!db.objectStoreNames.contains(PHOTO_STORE_NAME)) {
+      db.createObjectStore(PHOTO_STORE_NAME, { keyPath: 'id' });
+    }
+  };
+  req.onsuccess = function(e) {
+    var db = e.target.result;
+    try {
+      var tx = db.transaction(PHOTO_STORE_NAME, 'readwrite');
+      var store = tx.objectStore(PHOTO_STORE_NAME);
+      photos.forEach(function(p) { store.put(p); });
+      tx.oncomplete = function() { if (callback) callback(true); };
+      tx.onerror = function() { if (callback) callback(false); };
+    } catch (err) {
+      if (callback) callback(false);
+    }
+  };
+  req.onerror = function() { if (callback) callback(false); };
+}
+function photoStore_load(callback) {
+  // Load all photos from IndexedDB, call callback(photos array) when done
+  var req = indexedDB.open(PHOTO_DB_NAME, 1);
+  req.onsuccess = function(e) {
+    var db = e.target.result;
+    if (!db.objectStoreNames.contains(PHOTO_STORE_NAME)) { if (callback) callback([]); return; }
+    try {
+      var tx = db.transaction(PHOTO_STORE_NAME, 'readonly');
+      var store = tx.objectStore(PHOTO_STORE_NAME);
+      var getAll = store.getAll();
+      getAll.onsuccess = function() { if (callback) callback(getAll.result || []); };
+      getAll.onerror = function() { if (callback) callback([]); };
+    } catch (err) {
+      if (callback) callback([]);
+    }
+  };
+  req.onerror = function() { if (callback) callback([]); };
+}
+
 // ── Open / close ────────────────────────────────────────────
 function discLog_open(deployId) {
   var dep = (typeof deploy_getById === 'function') ? deploy_getById(deployId) : null;
@@ -55907,6 +55978,12 @@ function exportAllData() {
   const racks = safeGet('dct_racks_v1', []);
   const burndown = safeGet(BURNDOWN_KEY, []);
 
+  // v1.14.517 (Phase 1.2): Load and extract discrepancies + photos
+  var discrepancies = discLog_loadAll();
+  var photoExtract = photoStore_extractFromDiscrepancies(discrepancies);
+  var discrepanciesToExport = photoExtract.discrepancies;
+  var photosToExport = photoExtract.photos;
+
   const dbName = 'GhostEchoDB';
   const storeName = 'ghosts';
   const req = indexedDB.open(dbName);
@@ -55951,6 +56028,9 @@ function exportAllData() {
     // Ghost Echo quirks (tribal knowledge layer)
     var quirks = (typeof ge_load === 'function') ? ge_load() : null;
     _addManifest('phantom_ghost_echo_v1', true, quirks ? ((quirks.outgoing || []).length + (quirks.incoming || []).length) : 0, _estBytes(quirks));
+    // v1.14.517 (Phase 1.2): Discrepancies (explicit section) + extracted photos
+    _addManifest('phantom_discrepancies_v1', true, Array.isArray(discrepanciesToExport) ? discrepanciesToExport.length : 0, _estBytes(discrepanciesToExport));
+    _addManifest('phantom_discrepancy_photos', true, Array.isArray(photosToExport) ? photosToExport.length : 0, _estBytes(photosToExport));
     // Extra keys registry
     var extraKeys = phantom_collectExtraKeys();
     _addManifest('[extra-keys-registry]', true, Object.keys(extraKeys).length, _estBytes(extraKeys));
@@ -55977,6 +56057,9 @@ function exportAllData() {
       siteProfile: siteProf,
       handoffs: handoff,
       edpCache: edp,
+      // v1.14.517 (Phase 1.2): Discrepancies + extracted photos
+      discrepancies: discrepanciesToExport,
+      discrepancyPhotos: photosToExport,
       // v1.14.397 (M1-a): every remaining key, verbatim, derived from the registry above.
       // Additive and ignorable, so PHANTOM_BACKUP_SCHEMA deliberately stays 1 — bumping it would
       // make an older cached build REFUSE this bundle outright (see the _bs guard in the restore)
