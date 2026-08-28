@@ -1138,33 +1138,106 @@ concatenated into the deployment's dedupe hash (`'mscope_' + sourceFileHash + '_
 
 ## ADAPTER PREREQUISITES
 
+> **Corrected 2026-08-28 against live v1.14.524.** The previous list had five items that were false
+> as written (1, 2, 3, 7, 10) and one that was incomplete (4). Because this list is what an adapter
+> author is told to *do*, a wrong item here is more dangerous than a missing section. Every claim
+> below was executed or read against the file before being written; each carries its evidence.
+
 **Before writing any adapter that reconciles two data classes:**
 
-1. **Read the ATOMIC WRITERS.** PHANTOM_MASTER_STORE.save() is the only writer of both Master shapes. PHANTOM_BLOCKERS.create() is the only writer of blocker records. Map all writes.
+1. **KNOW EVERY WRITER, NOT JUST THE FRONT DOOR.** ~~PHANTOM_MASTER_STORE.save() is the only writer
+   of both Master shapes. PHANTOM_BLOCKERS.create() is the only writer of blocker records.~~
+   **Both halves of that were false.** Each class has a primary door plus known bypasses:
+   - **Master:** `PHANTOM_MASTER_STORE.save()` is the primary writer and carries the
+     refuse-to-overwrite guard (:35014). **The backup restore bypasses it** - :56644 pushes
+     `bundle.master` straight to `phantom_master_v1` as a raw compressed string, and the generic
+     `bundle.keys` passthrough (:56650-56659) can write arbitrary keys the same way. An adapter
+     must not assume `save()`'s invariants hold for a value it reads back.
+   - **Blockers:** `PHANTOM_BLOCKERS.create()` is one writer. **`PHANTOM_BLOCKERS.saveAll(list)`
+     (:25970) rewrites the entire array** via `safeStore` and is called at :26086; `clear()` mutates
+     at :32054.
+   - **Job snapshot:** `PHANTOM_JOBSNAP_STORE.save()` is the only producer, but restore writes the
+     key verbatim at :56645. See section 12.
 
-2. **Check the TIMESTAMP CONTRACTS.** All epoch ms; ISO strings only in Master payload. No mixed formats within a record.
+2. **TIMESTAMPS ARE MIXED. CHECK THE FIELD, NOT THE RULE.** ~~All epoch ms; ISO strings only in
+   Master payload.~~ **False.** Epoch ms is the majority, not the rule. Known string timestamps
+   outside the Master payload:
+   - `photoMeta.capturedAt` (:34072) - a **formatted string**, ISO sliced to 16 chars with the `T`
+     replaced by a middot and `Z` appended. **Not valid ISO-8601; will not survive `Date.parse`.**
+   - `extractedAt` (:33908) - a true ISO string.
+   - `stagedAt` on the job snapshot (:36755) - a true ISO string, and load-bearing: it is
+     concatenated into the deployment dedupe hash.
+   Normalize per field. Never assume a timestamp is a number because a sibling field is.
 
-3. **RACK-ID FORMS ARE NOT INTERCHANGEABLE:**
-   - Master: `s1:001` (cabinet:rack:unit form, regex `/^[a-z0-9]+:[0-9]+:[0-9]+/`)
-   - DEPLOY_RACKS_KEY: `rack_deploymentId_index` (composite key)
-   - Discrepancy: freeform (human-entered, may be empty)
-   - reconcile_run: uses Master racksByCab as source of truth. Matches deployId + rackId via EDP-supplied mapping.
+3. **RACK-ID FORMS ARE NOT INTERCHANGEABLE - AND THERE ARE TWO MASTER REGEXES.** The previous
+   revision paired the RACK example with the CAB regex, which rejects every real rack id.
+   Both constants are adjacent at :34927-34928:
+   - **Cab:** `_PHANTOM_MASTER_CAB_RE = /^[a-z0-9]+:[0-9]+:[0-9]+/` - three colon-separated parts.
+   - **Rack:** `_PHANTOM_MASTER_RACK_RE = /^([a-z0-9]+:[0-9]+)(?::|$)/` - two parts. This is the one
+     that matches `s1:001`, `s4:099`, `s1:010`.
+   - **Verified:** `s1:001` and `s4:099` **fail** the cab regex. Using it to validate a rack id
+     rejects everything.
+   - **DEPLOY_RACKS_KEY:** `rack_deploymentId_index` - a composite key, not a Master form.
+   - **Discrepancy `rackId`:** freeform - see item 8.
 
-4. **NO CACHE WITHOUT IDENTITY.** Every Master-derived cache (slot status, phase counts, etc.) must carry the Master's identity (sourceFileHash or fallback). Invalidate when Master changes.
+4. **A CACHE MUST CARRY MASTER IDENTITY *AND* BE CHECKED ON READ (contract A12).** Carrying it is
+   not enough, and two live caches prove it:
+   - **The hash lives in two places.** :35176-35181 documents the drift in the code itself: the
+     parser writes `stats.sourceFileHash`, the payload writes it top-level, and readers compensate
+     with `m.sourceFileHash || m.stats.sourceFileHash`. **That compensation IS the divergence.**
+     Read both locations or you will miss half the cases.
+   - **The job snapshot carries `sourceFileHash` and no reader ever compares it** to the active
+     Master (section 12, Oddity 2). It also has **no `normVersion`**, so a snapshot frozen under
+     normalizer 1 is indistinguishable from one frozen under 2 - the exact class of defect that
+     failed a device verify (:35700).
+   - `if (cache[id])` treats an empty array as a hit. Check identity, not truthiness.
 
-5. **NEVER OVERWRITE, MERGE.** site_prefillProfileFromMaster() only writes empty fields or fields marked source='master'. Hand-entered values are sacred.
+5. **NEVER OVERWRITE, MERGE - AND MAINTAIN THE `sources` MAP.** Verified accurate, with the
+   mechanism the prior text omitted. `site_prefillProfileFromMaster()` is gated on
+   `siteProfile_isConfirmed()` and applies three guards per field:
+   `if (!val) return;` (Master silent - leave empty, never guess), then
+   `if (cur && sources[m.field] !== 'master') return;` (hand-entered wins), then
+   `if (cur === val) return;`. Provenance lives in **`prof.sources[field]`**, set to `'master'` only
+   for fields the Master filled. **An adapter that writes a profile field without updating that map
+   will cause the next Master load to overwrite a hand-entered value.**
 
-6. **AUDIT LOG IS THE TRUTH FOR TIMING.** deploy_logAudit() records every state change. If you need to know "who changed phase X at what time," query the audit log, not the phase record's updatedAt field.
+6. **AUDIT LOG IS THE TRUTH FOR TIMING - AND FOR WHO.** Verified, and stronger than stated.
+   `deploy_logAudit()` writes to `DEPLOY_AUDIT_KEY` with `ts` (epoch ms), `actor`, `action`,
+   `entityType`, `entityId`, `summary`, `hashV: 2`, `siteProfileId` (binds to ACTIVE_SITE_PROFILE)
+   and the Master id. **Actor resolution is `identity_getUser() || dep.buildLead || 'System'`** -
+   that fallback chain is contract A9a (the ACTOR is credited, never the Site Lead by default), so
+   an adapter attributing work must read `actor` and not infer it from the deployment.
 
-7. **TWO IDENTITY SOURCES, ONE DOOR.** identity_getUser() is the ONLY reader. identity_setUser() is the ONLY writer. Do not read IDENTITY_USER_KEY or PHANTOM_SITE.operator() directly.
+7. **IDENTITY HAS ONE DOOR AND ONE KNOWN LEGACY READER.** ~~identity_getUser() is the ONLY reader.~~
+   **False as an absolute.** `identity_getUser()` (:25512) and `identity_setUser()` (:25520) are the
+   door and should be the only ones an adapter uses. But :35501 reads
+   `localStorage.getItem(IDENTITY_USER_KEY)` directly - a deliberate, commented legacy-identity
+   migration that **copies, never moves**, leaving the legacy key on disk. Consequence an adapter
+   must handle: **the legacy key survives and can disagree with the profile operator.** The code at
+   :35502-35505 handles that disagreement explicitly rather than silently picking one.
 
-8. **DISCREPANCY RACKID IS FREEFORM.** Reconcile via audit/operator context, not string match. Operator may type "R-01" or "r-1" or leave it empty.
+8. **DISCREPANCY RACKID IS FREEFORM.** Verified. `discLog_save()` :34198 writes
+   `rackId: (rackEl ? rackEl.value.trim().toUpperCase() : '')` - human-entered, uppercased, and
+   **empty string when the field is blank** (not null). Reconcile via audit/operator context, never
+   string match against a Master rack id.
 
-9. **PHOTOS ARE DUAL-STORED.** Blob in IndexedDB; data: URI in discrepancy record. Adapter must handle orphaned URIs (IndexedDB deleted externally).
+9. **PHOTOS ARE IN THREE PLACES, AND THE OLD DESCRIPTION WAS INVERTED.** See **section 8**, which
+   was rewritten from live code. Summary: `phantom-attachments` (LIVE,
+   Blobs, rack photos), `phantom-photos` (**DEAD** - its only openers have no callers), and a
+   **base64 data URL inline in localStorage** on the discrepancy record, which is a contract B13
+   violation. The prior claim of "blob in IndexedDB, data: URI in the discrepancy record" described
+   neither store correctly.
 
-10. **QUOTA IS REAL.** All writes go through safeStore(), which raises a user toast on failure. Adapter must handle false return; never assume success silently.
-
----
+10. **QUOTA IS REAL - BUT NOT EVERY WRITE GOES THROUGH `safeStore()`.** ~~All writes go through
+    safeStore(), which raises a user toast on failure.~~ **False on both clauses.**
+    - `PHANTOM_JOBSNAP_STORE.save()` calls `localStorage.setItem` **directly** with its own quota
+      branch, and that branch is `console.warn` only - **no toast** (section 12, Oddity 4).
+      `PHANTOM_MASTER_STORE.save()` likewise manages its own persistence.
+    - `safeStore()` returns `false` on **any** exception but **only toasts for quota errors**, and
+      that toast is throttled to one per 10 seconds. A non-quota failure returns `false` silently.
+    - **The rule that survives:** every write can fail, and the caller must handle a `false` return.
+      Ask what the caller does with `false` - a partial refusal that the caller ignores is how
+      split-brain state gets created.
 
 ## EXPORT / ARCHIVE RECOMMENDATIONS
 
