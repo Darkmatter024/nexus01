@@ -4,7 +4,76 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
-# 🟡 CURRENT BATCH — `.460`–`.464` (5 of 6) — OPEN, AWAITING HARDWARE
+# 🟡 CURRENT BATCH — `.519` + `.524` (2 of 6) — OPEN, AWAITING HARDWARE
+
+**Live on `main`: `v1.14.524`.** Last stamp: `VERIFIED = v1.14.518`. Two ships in the span —
+`.519` added photo capture / compress / persist (Phase B.1), `.524` added the gallery, viewer and
+delete, and fixed the orphaned brace `.523` shipped. `.520`–`.523` have no commits on any branch:
+burned numbers, not missing work.
+
+⚠ **Verify `.524`, not `.523`.** `.523` shipped a syntax error and is superseded by `.524`. The hook
+gate (`phantom-guard.js:136`) checks that the version being REPLACED is stamped, so the next ship
+needs **`.524`** in `VERIFIED`. Stamping `.523` leaves the gate shut and wastes the pass.
+
+**Already proven by machine — do NOT re-check these:**
+- Inline script: 3 blocks, all compile. Brace balance 14427 `{` / 14427 `}`. `sw.js` compiles.
+- Three-stamp lockstep confirmed at `.524` across `dct-ios.html` · `sw.js` · `version.json`.
+- Full e2e suite: **RED — 353/353 failed on phone-webkit.** Not a photo defect: **every** spec fails
+  because `00-boot` never gets past the splash (`fixtures.js:107` times out waiting for `#app.visible`).
+  Root cause established below. The suite proves nothing about `.519`/`.524` until boot is fixed.
+
+⛔ **THE SUITE IS BLOCKED BY A DEAD SPLASH TAP — and it may be a first-run field defect.**
+In the harness, at **every** viewport (390 / 834 / 1440), `document.elementFromPoint()` at the centre
+of `#pe-tapcatch` returns `<html>` — the tap target is not hit-testable, so a real click lands on
+nothing. The handler itself is fine: `dispatchEvent(new MouseEvent('click'))` on the button boots the
+app, and `launch()` called directly boots it. The button is `visible / opacity 1 / pointer-events auto
+/ 375x844` and no ancestor is `inert`, so nothing in the computed style explains it yet.
+
+**Why nobody has hit this in the aisle:** `v1.14.474` added a return-visit skip — if
+`phantom_seen_boot === '1'` the splash **auto-fires after 400ms with no tap at all**. Confirmed: seed
+that key and the app boots normally. Every device that has ever entered PHANTOM once is masked. A
+**fresh install has no such key and must rely on the tap.**
+
+⚠ **This is a HARNESS observation, not a proven iOS defect.** Chromium/WebKit-on-Windows hit-testing
+is not iOS Safari — this file's own header says so. Check 0 is the only thing that settles it.
+
+⛔ **Why this list is only five checks.** There is **no spec anywhere that touches a `photo_*`
+function** — the whole capture/gallery/viewer/delete surface has zero machine coverage. Most of it
+(gallery counts, viewer open/close, the two-tap delete, the IndexedDB round trip) **can** be proven
+in Playwright and should be, not by your thumb. The five below are the ones that genuinely need real
+iOS hardware. The rest is automation debt, logged below, not handed to you.
+
+⛔ **Install to Home Screen first. Use the REAR camera and a REAL photo.** Five checks.
+
+| # | Do this | PASS | FAIL |
+|---|---|---|---|
+| **0** | ⛔ **FIRST-RUN TAP — do this on a device that has NEVER run PHANTOM**, or delete the PWA, clear Safari website data for the site, then re-add to Home Screen. Open it and **tap the splash once**. | One tap moves you off **TAP TO ENTER** into the app | **The splash does not respond to tapping.** If it sits on TAP TO ENTER, or only enters after you wait without touching it, the tap target is dead and first-run users cannot get in |
+| **1** | Open the app from the **Home Screen icon** (not Safari). Read the version chip. | App loads and the chip reads **`.524`** | **Blank or white screen · frozen splash · any other version.** A broken brace kills the entire script block, so a dead app IS this check's failure — that is exactly what `.523` did |
+| **2** | Open **BUILD** → an active rack → tap the **photo / camera** control. | The **rear camera** opens straight away | The photo **library** opens instead · nothing happens on tap · the control is not there |
+| **3** | Take a photo holding the phone **UPRIGHT (portrait)**. Save it. Open that rack's **gallery**. | The thumbnail is **upright** — the same way up as you held the phone | **Rotated 90° or 180°, or squashed.** This is the check most likely to fail: orientation is not corrected anywhere in the capture path |
+| **4** | **Fully close** the app (swipe it away in the app switcher). Reopen from the Home Screen. Open that same rack's gallery. | The photo is **still there** | The gallery is **empty** — the photo did not survive a real app restart |
+| **5** | Open and close that same gallery **about ten times**, then take **one more** photo. | Still responsive, and the new photo saves | It **slows, blanks, or reloads itself.** Each thumbnail leaks a blob handle that is never released, so this degrades with use, not on first open |
+
+📌 **Checks 3 and 5 are the two worth your attention.** Both are defects found in review before you
+touched the phone (see below); both are invisible on the first photo and only show on a real device.
+Check 4 is the one iOS itself can break — it evicts storage for installed PWAs under pressure.
+
+⚠ **DEFECTS FOUND IN CODE REVIEW — real, not blockers for this pass:**
+- **Blob-handle leak (`.524`)** — `URL.createObjectURL` is called for every thumbnail and every
+  viewer image; `URL.revokeObjectURL` is called **zero** times in that path. Drives check 5.
+- **Orientation not corrected (`.519`)** — the compress path draws the image to a canvas with no
+  rotation handling, so a portrait capture can land sideways. Drives check 3.
+- **A third photo store exists.** `.519` opens IndexedDB **`phantom-attachments`**. The A.1 storage
+  census documents **`phantom-photos`**, which nothing in the app ever opens. Any adapter written
+  against that census would target a database that is never used.
+- **Compress can resolve empty.** If the canvas encode fails, the promise resolves with nothing and
+  the persist step stores it anyway — a save that reports success with no image behind it.
+
+**Rollback:** `.524` → `git revert 37c6626`; `.519` → `git revert 22f96a0`. Revert `.524` first.
+
+---
+
+# CURRENT BATCH — `.460`–`.464` (5 of 6) — SUPERSEDED, cleared by `VERIFIED = v1.14.518`
 
 **Live: `v1.14.464`** (shipped 2026-08-19, confirmed in the served bytes). Five ships: `.460` gave SHIFT a door that exists, `.461` made Build's
 CONTINUE incapable of failing silently, `.462` replaced the Home card art, `.463` added the PASTE
