@@ -98,9 +98,20 @@ const test = base.test.extend({
         await page.goto('/dct-ios.html' + query, { waitUntil: 'domcontentloaded' });
 
         // The splash is a tap-anywhere gate (:12900). #pe-tapcatch is a real <button>.
+        //
+        // 2026-08-28: this used to wait for 'attached' and click with { force: true }, and it
+        // failed EVERY spec in the suite. 'attached' means present in the DOM, not able to
+        // receive events, and dct-ios.html is a ~3.7MB single file: domcontentloaded fires well
+        // before the document is hit-testable. force:true then SKIPS the actionability wait that
+        // would have caught exactly that, so the click dispatched into a document where
+        // elementFromPoint still returned <html> and the splash handler never ran. The app was
+        // fine the whole time - it becomes hit-testable about a second later.
+        //
+        // Wait for 'visible' and let actionability do its job. Never re-add force:true here: it
+        // converts a timing failure into a silent no-op that looks like a dead tap target.
         const tap = page.locator('#pe-tapcatch');
-        await tap.waitFor({ state: 'attached', timeout: 20_000 });
-        await tap.click({ force: true });
+        await tap.waitFor({ state: 'visible', timeout: 20_000 });
+        await tap.click({ timeout: 15_000 });
 
         // launch() reveals #app then hides #boot on the next frame (:18383).
         // Wait on the end state, never on the animation duration.

@@ -18,24 +18,22 @@ needs **`.524`** in `VERIFIED`. Stamping `.523` leaves the gate shut and wastes 
 **Already proven by machine — do NOT re-check these:**
 - Inline script: 3 blocks, all compile. Brace balance 14427 `{` / 14427 `}`. `sw.js` compiles.
 - Three-stamp lockstep confirmed at `.524` across `dct-ios.html` · `sw.js` · `version.json`.
-- Full e2e suite: **RED — 353/353 failed on phone-webkit.** Not a photo defect: **every** spec fails
-  because `00-boot` never gets past the splash (`fixtures.js:107` times out waiting for `#app.visible`).
-  Root cause established below. The suite proves nothing about `.519`/`.524` until boot is fixed.
+- Full e2e suite: **was RED for a harness reason, now fixed.** 353/353 failed on phone-webkit because
+  `00-boot` never got past the splash. **The app was never at fault.** `fixtures.js` waited for
+  `#pe-tapcatch` to be `attached` - present in the DOM, not able to receive events - then clicked with
+  `force: true`, which SKIPS the actionability wait that would have caught it. On a ~3.7MB single file
+  the document is not hit-testable that early, so the click landed on `<html>` and the splash handler
+  never ran. Waiting for `visible` and dropping `force` boots the app in **both** Chromium and WebKit.
+  Fixture fixed the same day. **The suite has not been re-run end to end since** - the full matrix is
+  2.8-4.1h - so treat it as unproven, not green.
 
-⛔ **THE SUITE IS BLOCKED BY A DEAD SPLASH TAP — and it may be a first-run field defect.**
-In the harness, at **every** viewport (390 / 834 / 1440), `document.elementFromPoint()` at the centre
-of `#pe-tapcatch` returns `<html>` — the tap target is not hit-testable, so a real click lands on
-nothing. The handler itself is fine: `dispatchEvent(new MouseEvent('click'))` on the button boots the
-app, and `launch()` called directly boots it. The button is `visible / opacity 1 / pointer-events auto
-/ 375x844` and no ancestor is `inert`, so nothing in the computed style explains it yet.
-
-**Why nobody has hit this in the aisle:** `v1.14.474` added a return-visit skip — if
-`phantom_seen_boot === '1'` the splash **auto-fires after 400ms with no tap at all**. Confirmed: seed
-that key and the app boots normally. Every device that has ever entered PHANTOM once is masked. A
-**fresh install has no such key and must rely on the tap.**
-
-⚠ **This is a HARNESS observation, not a proven iOS defect.** Chromium/WebKit-on-Windows hit-testing
-is not iOS Safari — this file's own header says so. Check 0 is the only thing that settles it.
+📌 **CORRECTION, same day.** An earlier revision of this section reported the splash tap target as
+"not hit-testable at every viewport" and raised it as a possible first-run entry defect, with a
+**Check 0** to confirm it on a fresh install. **That was wrong, and Check 0 has been removed.** The
+measurement was real - `elementFromPoint` did return `<html>` - but the conclusion was not: the
+document simply was not hit-testable *yet*. It becomes so about a second later, and the same button
+then resolves normally. The fault was in the test fixture, not the product, and no device test was
+ever needed to settle it. **Nothing about first-run entry is in question.**
 
 ⛔ **Why this list is only five checks.** There is **no spec anywhere that touches a `photo_*`
 function** — the whole capture/gallery/viewer/delete surface has zero machine coverage. Most of it
@@ -47,7 +45,6 @@ iOS hardware. The rest is automation debt, logged below, not handed to you.
 
 | # | Do this | PASS | FAIL |
 |---|---|---|---|
-| **0** | ⛔ **FIRST-RUN TAP — do this on a device that has NEVER run PHANTOM**, or delete the PWA, clear Safari website data for the site, then re-add to Home Screen. Open it and **tap the splash once**. | One tap moves you off **TAP TO ENTER** into the app | **The splash does not respond to tapping.** If it sits on TAP TO ENTER, or only enters after you wait without touching it, the tap target is dead and first-run users cannot get in |
 | **1** | Open the app from the **Home Screen icon** (not Safari). Read the version chip. | App loads and the chip reads **`.524`** | **Blank or white screen · frozen splash · any other version.** A broken brace kills the entire script block, so a dead app IS this check's failure — that is exactly what `.523` did |
 | **2** | Open **BUILD** → an active rack → tap the **photo / camera** control. | The **rear camera** opens straight away | The photo **library** opens instead · nothing happens on tap · the control is not there |
 | **3** | Take a photo holding the phone **UPRIGHT (portrait)**. Save it. Open that rack's **gallery**. | The thumbnail is **upright** — the same way up as you held the phone | **Rotated 90° or 180°, or squashed.** This is the check most likely to fail: orientation is not corrected anywhere in the capture path |
