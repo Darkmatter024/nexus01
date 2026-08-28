@@ -167,6 +167,11 @@ A commit that bumps `version.json` is blocked by hook unless John has verified t
 
 ## Working rules
 
+- **Read the graph before any patch.** Run `/graphify . --update`, then read
+  `graphify-out/wiki/index.md` — community article first, then the god nodes for the surface you
+  are about to touch. The wiki is generated into a gitignored folder, so it never travels with the
+  repo: the REBUILD is the requirement, not the file. If graphify is not installed, say so in the
+  report and proceed — never skip this silently.
 - **Match process to task size.** Localized UI/CSS is your own work: inspect → implement →
   verify → finish. Reach for specialists only at architecture boundaries, data safety, WebGL
   lifecycle, offline/storage, or independent release verification.
