@@ -937,6 +937,113 @@ localStorage.getItem('phantom_current_user_v1')  // → "J. Hamilton"
 
 ---
 
+## 12. JOB SNAPSHOT (MASTER SCOPE FREEZE)
+**Archeological Status:** LIVE, SECOND SOURCE OF TRUTH - ABSENT FROM EVERY PRIOR REVISION OF THIS CENSUS
+
+> **Added 2026-08-28 against v1.14.524.** This data class was missing entirely. It is the frozen,
+> selection-scoped copy of Master data that the deployment seeder reads INSTEAD of the live Master,
+> so any adapter that reconciles deployment state against `PHANTOM_MASTER_STORE` alone is reading
+> the wrong source. It is a backed-up key (`PHANTOM_BACKUP_NAMED_KEYS` :55916).
+
+### Storage Location & Keys
+- **Key:** `phantom_jobsnap_v1` (`PHANTOM_JOBSNAP_STORE.KEY` :35625)
+- **Medium:** localStorage, **LZString `compressToUTF16`** (same encoding as `phantom_master_v1`)
+- **Store object:** `PHANTOM_JOBSNAP_STORE` :35624 - `save` / `load` / `clear`
+- **Console helper:** `window.phantom_clearJobSnap` :35679 - not wired to any UI
+
+### Exact Record Shape
+Built by `mscope_confirm()` :36713, persisted by `PHANTOM_JOBSNAP_STORE.save`:
+```javascript
+{
+  schemaVersion:   1,          // the ONLY field load() validates
+  stagedAt:        STRING,     // new Date().toISOString() - a true ISO string
+  siteCode:        STRING|null,
+  siteName:        STRING|null,
+  sourceFileHash:  STRING|null, // Master identity, carried - see Oddity 2
+  sourceRestored:  BOOLEAN,     // was the source Master itself restored from storage
+  selectedCabIds:  [STRING],    // capturedIds, NOT the raw selection - see Oddity 5
+  stats: { cabs: NUMBER, hosts: NUMBER, cables: NUMBER },
+  cabs: {                       // keyed by cabId
+    <cabId>: { cabId, locode, hosts: [...], cablesOut: [...], cablesIn: [...] }
+  }
+}
+```
+`save()` adds `schemaVersion: 1` itself via `Object.assign`, so a caller cannot override it.
+
+### Timestamp Formats Found
+- `stagedAt`: **ISO-8601 string**, not epoch ms.
+- `snapshotConsumedAt` (written onto the DEPLOYMENT record, not the snapshot): **epoch ms**.
+
+⛔ A second exception to the census-wide "epoch ms everywhere, ISO only inside the Master payload"
+claim. `stagedAt` is an ISO string outside the Master payload, and it is load-bearing: it is
+concatenated into the deployment's dedupe hash (`'mscope_' + sourceFileHash + '_' + stagedAt`).
+
+### Writers (Functions + Lines)
+- **`mscope_confirm()` :36713** - the only producer. Freezes the selected cabs out of the live Master.
+- **`PHANTOM_JOBSNAP_STORE.save(snapshot)` :35626** - refuses a falsy snapshot, a non-object `cabs`,
+  and a `cabs` with zero keys. Returns `true`/`false`.
+
+### Readers (Functions + Lines)
+- **`PHANTOM_JOBSNAP_STORE.load()` :35653** - validates `schemaVersion === 1` and nothing else.
+- **:33385** - resume banner; reads the snapshot to show a staged-scope summary.
+- **:36844** - the deployment creator; seeds racks from the snapshot via `mscope_buildRacksFromSnapshot`.
+- **:36890** - `mscope_resumeStaged`, re-opens the staged screen from the persisted snapshot.
+- **:36532** - existence probe only (`localStorage.getItem(KEY)`), warns that re-staging replaces it.
+
+### Deleters
+- **:36907** - cleared on the successful create path (snapshot consumed).
+- **:38457** - cleared on a second settle path.
+- On any create failure the snapshot **survives untouched**, which is deliberate and retry-safe.
+
+### Oddities
+1. **The header comment is stale.** :35652 reads "No Ship-1 caller - this is the designated read path
+   for the Ship-2 seeder." Ship 2 has landed: `load()` now has three callers (:33385, :36844, :36890).
+   The comment still describes the store as unread.
+2. ⛔ **Carries Master identity but never checks it (contract A12).** The snapshot stores
+   `sourceFileHash`, and the deployment record copies it forward, but **no reader ever compares it to
+   the active Master.** A12 requires that a Master-derived cache "carries the Master's identity and is
+   checked on read." A scope staged against Master A can be seeded after Master B has replaced it;
+   `mscope_confirm` guards that window at STAGE time via `PHANTOM_MASTER.idOf` (:36720, the v1.14.415
+   single-master fix) but nothing re-checks at CONSUME time.
+3. ⛔ **No `normVersion`, and `load()` cannot detect a stale normalizer.** The block at :35700 records
+   that derived caches must carry `MASTER_NORM_VERSION` (now 2) because a payload built by the old
+   normalizer restores verbatim and renders wrong counts - the exact defect that failed a device
+   verify, with `s4:099` showing 0 components / 68 cables. `phantom_master_v1` learned that lesson.
+   **The job snapshot did not:** it has no `normVersion` field at all, and `load()` validates only
+   `schemaVersion`. A snapshot frozen under normalizer 1 is indistinguishable from one frozen under 2.
+4. **`save()` bypasses `safeStore()` and reports quota only to the console.** It calls
+   `localStorage.setItem` directly and has its own quota branch, but that branch is
+   `console.warn` only - no `phantomToast`. The caller `mscope_confirm` does toast on a `false`
+   return, so the operator is warned in that path; any future caller that ignores the return value
+   would fail silently, which is a B14 exposure. Note this also **falsifies prerequisite 10** as
+   written ("All writes go through safeStore()").
+5. **`selectedCabIds` is the captured set, not the selection.** Cabs missing from the confirm-time
+   Master are silently skipped (`if (!src) return;`), so `selectedCabIds` and `stats` describe what was
+   actually frozen. This is deliberate and documented in-file; an adapter must not assume it matches
+   whatever the operator ticked.
+6. **Shallow copies in memory, deep copy on disk.** `hosts` / `cablesOut` / `cablesIn` are `.slice()`
+   copies that share element object references with the live Master; the PERSISTED form is a deep copy
+   via `JSON.stringify`. The in-file comment flags this as safe only while the Master is
+   replaced-not-mutated. **An adapter that mutates loaded host or cable objects in place breaks it.**
+7. **Backup restore writes this key verbatim.** :56645 pushes `bundle.jobsnap` straight to
+   `phantom_jobsnap_v1` as its raw compressed string, bypassing `save()` and its content-empty and
+   shape guards - the same bypass documented for `phantom_master_v1`.
+
+### Volume Estimate
+- Scoped to selected cabs, not the whole site - explicitly to stay under budget.
+- LZString UTF-16 compressed; `save()` logs the compressed size in KB on every write.
+- **Typical:** a handful of cabs, tens to low hundreds of KB compressed. A wide selection on a large
+  site is the quota risk, and it is the one case `save()` returns `false` for.
+
+### Status
+- **WRITTEN AND READ:** the whole record - staged by `mscope_confirm`, consumed by the deployment creator.
+- **WRITTEN NEVER READ:** `sourceRestored`, `siteName`, and `stats.hosts` / `stats.cables`
+  (`stats.cabs` is read at :33387 for the resume banner).
+- **CARRIED BUT NEVER CHECKED:** `sourceFileHash` - see Oddity 2.
+- **ABSENT AND NEEDED:** `normVersion` - see Oddity 3.
+
+---
+
 ## SUMMARY OF HAZARDS — RANKED BY RISK TO RACK RECORD TRUTHFULNESS
 
 ### CRITICAL (Data loss / split-brain)
