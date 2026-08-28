@@ -1044,6 +1044,219 @@ concatenated into the deployment's dedupe hash (`'mscope_' + sourceFileHash + '_
 
 ---
 
+## 13. DEPLOYMENTS
+**Archeological Status:** LIVE, ROOT RECORD - ABSENT FROM PRIOR REVISIONS
+
+> **Added 2026-08-28 against v1.14.524.** Every other deployment-scoped class keys off
+> `deployment.id`, so this is the parent record the census never documented.
+
+### Storage Location & Keys
+- **Key:** `phantom_deployments_v1` (`DEPLOY_KEY` :25336) - localStorage, plain JSON array.
+
+### Exact Record Shape
+```javascript
+{
+  id:         'dep_' + epochMs + '_' + base36,
+  name:       STRING,
+  edpHash:    STRING,      // content hash of the source EDP
+  status:     'active' | 'complete',
+  buildLead:  STRING,      // or 'Unassigned'
+  created:    NUMBER,      // epoch ms
+  updated:    NUMBER,      // epoch ms
+  edpRaw:     STRING,      // the ENTIRE raw EDP text, inline
+  edpParsed:  OBJECT,      // the ENTIRE parse result, inline
+  rackCount:  NUMBER,
+  phaseCount: 5,           // hardcoded literal
+  scope:      OBJECT|null  // set from a job snapshot when created via mscope
+}
+```
+
+### Writers / Readers
+- **`deploy_saveAll(arr)` :30667** - `safeStore`, and bumps `_deployRollupGen` only on success.
+- **`deploy_loadAll()` :30666** - `safeGet`, coerces a non-array to `[]`.
+- Restore writes the key as a named bundle section (:56635).
+
+### Oddities
+1. ⛔ **`edpRaw` and `edpParsed` are stored inline on every deployment.** The full source text AND its
+   full parse live inside the deployments array, which is loaded whole by `deploy_loadAll()` on every
+   read. This is the single largest per-record payload in localStorage and the main quota driver.
+   `deploy_validateStorageHeadroom(rackCount)` gates the *seed*, not this record.
+2. **`phaseCount` is a hardcoded `5`,** not derived. It agrees with `PHASE_MODEL` today by
+   coincidence of maintenance, not by construction.
+3. **`updated` is not touched by every mutation path** - treat the audit log as the timing truth
+   (prerequisite 6), not this field.
+
+---
+
+## 14. SHIFT HANDOFF
+**Archeological Status:** LIVE - ABSENT FROM PRIOR REVISIONS
+
+### Storage Location & Keys
+- **Key:** `phantom_handoff_v1` (`HANDOFF_KEY` :25342) - localStorage, plain JSON array.
+
+### Exact Record Shape
+Generated at :31831, then mutated and persisted by `handoff_saveRecord` :43006.
+```javascript
+{
+  id:              'hoff_' + epochMs + '_' + base36,
+  deploymentId:    STRING,
+  deploymentName:  STRING,
+  generatedAt:     NUMBER,   // epoch ms
+  shiftDate:       STRING,   // toLocaleDateString('en-US', ...) - see Oddity 1
+  outgoingTech:    STRING,   // seeded from dep.buildLead
+  incomingTech:    STRING,   // '' until saved
+  status:          'unread' | 'saved',
+  autoSummary:     STRING,
+  notes:           STRING,
+  completedItems:  ARRAY,
+  openItems:       ARRAY,
+  watchItems:      ARRAY,
+  opticSnapshot:   OBJECT,
+  rollup:          { racksTotal: NUMBER, racksBlocked: NUMBER },
+  shiftEventCount: NUMBER,
+  savedAt:         NUMBER    // epoch ms, added only by handoff_saveRecord
+}
+```
+
+### Writers / Readers
+- **`handoff_save(arr)` :31769** / **`handoff_loadAll()` :31766**.
+- **`handoff_loadForDeployment(id)` :31772**, **`handoff_purge(id)` :31775**.
+- **`handoff_saveRecord(deploymentId)` :43006** - the only producer of a persisted record.
+
+### Oddities
+1. ⛔ **`shiftDate` is a locale-formatted display string,** built with
+   `toLocaleDateString('en-US', { weekday, month, day })`. It is **not sortable, not parseable, and
+   locale-dependent**. Never key, sort, or range-filter on it - use `generatedAt`.
+2. **The draft lives only in memory.** `_handoffDraft` (:42935) is a module variable; a reload
+   mid-handoff loses it and the app says so ("Handoff draft lost - please regenerate"). Nothing
+   about an unsaved handoff is on disk.
+3. **Two status values, set in different places.** `'unread'` at generation, `'saved'` only via
+   `handoff_saveRecord`. A record read at :28149 filters on status, so an adapter writing this class
+   must set it explicitly.
+
+---
+
+## 15. OPTIC LEDGER (per-deployment)
+**Archeological Status:** LIVE - ABSENT FROM PRIOR REVISIONS. NOT THE SAME CLASS AS SECTION 17.
+
+### Storage Location & Keys
+- **Key:** `phantom_deploy_optics_v1` (`DEPLOY_OPTICS_KEY` :25339) - localStorage, flat JSON array
+  across ALL deployments, filtered by `deploymentId` on read.
+
+### Exact Record Shape
+Seeded by `deploy_seedOptics(deploymentId)`:
+```javascript
+{
+  id:           'optic_' + deploymentId + '_' + index + '_' + epochMs,
+  deploymentId: STRING,
+  opticType:    STRING,   // op.type, or 'Unknown'
+  required:     NUMBER,
+  dispensed:    0,
+  installed:    0,
+  remaining:    NUMBER,   // seeded EQUAL to required - see Oddity 2
+  notes:        ''
+}
+```
+
+### Writers / Readers
+- **`deploy_seedOptics(deploymentId)`** - seeds once; guarded by an `alreadySeeded` check so a
+  re-seed is a no-op rather than a duplicate.
+- **`deploy_saveAllOptics(arr)` :31191** - `safeStore`, bumps `_deployRollupGen` on success.
+- **`deploy_loadAllOptics()` :31183**, **`deploy_loadOpticsFor(deployId)` :31187** - the latter
+  refuses an empty id via `_deploy_loaderMisuse` and returns `[]` rather than the whole table.
+- **`optic_autoCreditLedger(entry, matches)`** - credits from a scan; requires `score >= 80`, an
+  active non-complete deployment, and exactly one normalized-type match. It **bumps `dispensed`
+  before `installed`** deliberately, to satisfy an ordering guard.
+
+### Oddities
+1. **One flat array for every deployment.** Always filter by `deploymentId`; never assume the array
+   is scoped.
+2. ⛔ **`remaining` is a stored derived value.** It duplicates `required - installed` and can drift
+   from it. An adapter must decide which is authoritative and must not update one without the other.
+3. **`opticType` matching is normalized, not literal.** The credit path compares
+   `String(x).toUpperCase().replace(/[^A-Z0-9]/g, '')`. String equality on the raw value will miss.
+
+---
+
+## 16. EDP PARSE CACHE
+**Archeological Status:** LIVE, DERIVED CACHE - ABSENT FROM PRIOR REVISIONS
+
+### Storage Location & Keys
+- **Key:** `phantom_edp_cache_v1` (`DEPLOY_EDP_CACHE_KEY` :33531). The in-file comment marks the name
+  as legacy - it now serves the vendor-reconcile parse cache - and says **do not rename**.
+
+### Exact Record Shape
+An object map, not an array:
+```javascript
+{
+  <contentHash>: { parsed: OBJECT, cachedAt: NUMBER /* epoch ms */ }
+}
+```
+
+### Writers / Readers
+- **`deploy_setCachedParse(hash, parsed)` :33536** - caps the map at **10 entries** and evicts the
+  oldest by `cachedAt` before inserting.
+- **`deploy_getCachedParse(hash)` :33532** - returns the **wrapper** `{parsed, cachedAt}`, not the
+  parse. The live consumer at :38194 correctly reads `cached.parsed`; any new caller must do the same.
+
+### Oddities
+1. ⛔ **`deploy_setCachedParse` ignores the `safeStore` return.** A quota failure is silent - no
+   toast, no warn, no branch. The cache simply does not update and the next call re-parses. Benign
+   for correctness, invisible for diagnosis, and a B14 exposure by the letter of the rule.
+2. **Keyed by content hash, carrying no Master identity.** This is acceptable *because* the key IS
+   the content identity of the parsed text - but it means the cache is not invalidated by a Master
+   swap, only by different input. Do not extend it to hold Master-derived data without adding
+   identity per contract A12.
+3. **Eviction is by `cachedAt`, not by last use.** It is oldest-written, not least-recently-used.
+
+---
+
+## 17. OPTIC SCAN INVENTORY (device-local)
+**Archeological Status:** LIVE - ABSENT FROM PRIOR REVISIONS. DISTINCT FROM SECTION 15.
+
+### Storage Location & Keys
+- **Key:** `phantom_optic_inventory` (`OPTIC_INV_KEY` :52674) - localStorage, plain JSON array.
+- Accessed through the generic **`DataStore(key)`** wrapper (`_opticStore` :52684), whose `save()`
+  toasts `'Storage full'` on a `false` return.
+
+### Exact Record Shape
+```javascript
+{
+  id:       'opt_' + epochMs,
+  scanned:  STRING,        // raw barcode text
+  ts:       NUMBER,        // epoch ms
+  rack:     STRING,        // hand-typed rack tag, uppercased, '' when blank
+  matched:  BOOLEAN,
+  topMatch: {              // null when matched === false
+    optic, platform, pn, fiber, connector, speed, cage, score
+  },
+  credit:   OBJECT|null    // NEVER PERSISTED - see Oddity 1
+}
+```
+
+### Writers / Readers
+- **`saveOpticInventory(inv)` :52686** / **`loadOpticInventory()` :52685**.
+- **`deleteOpticEntry(id)` :53010** - filter-and-resave.
+- **`clearOpticInventory()` :53017** - `localStorage.removeItem(OPTIC_INV_KEY)` **directly**,
+  bypassing the `DataStore` wrapper.
+- Read for the backup bundle at :56010 and for counts at :22162 / :23201.
+
+### Oddities
+1. ⛔ **`credit` is assigned AFTER the save and is never persisted.** The scan handler does
+   `saveOpticInventory(inv)` and only then sets `entry.credit = optic_autoCreditLedger(...)`. No
+   second save follows - the function ends with render and haptic. The credited state exists for the
+   current render only and is **gone on reload**, while the ledger side of the credit (section 15)
+   *was* persisted. **An adapter reconciling scans against the ledger cannot use `credit` as
+   evidence that a credit happened; it will read `undefined` for every stored entry.**
+   This is an ordering defect, not a shape defect: the fix is to save after the credit, not to add a field.
+2. **`clearOpticInventory` bypasses the wrapper** - it removes the key rather than saving `[]`, so a
+   subsequent `load()` relies on `safeGet`'s default.
+3. **Both destructive paths use `confirm()`** - a blocking browser modal.
+4. **`rack` is freeform**, uppercased, empty string when blank - the same reconciliation hazard as
+   the discrepancy `rackId` (prerequisite 8).
+
+---
+
 ## SUMMARY OF HAZARDS — RANKED BY RISK TO RACK RECORD TRUTHFULNESS
 
 ### CRITICAL (Data loss / split-brain)
