@@ -575,57 +575,123 @@
 ---
 
 ## 8. PHOTOS / IndexedDB
-**Archeological Status:** BLOB STORE, SEPARATE FROM MASTER/BOM
+**Archeological Status:** THREE STORES, NOT ONE - ONE LIVE, ONE DEAD, ONE IN localStorage
+
+> **Rewritten 2026-08-28 against v1.14.524.** The prior text named three functions that do not exist
+> in the file (`writePhotosToIndexedDB`, `loadPhotosFromIndexedDB`, `discLog_openCamera`), gave the
+> wrong object-store name, and inverted the blob/data-URI relationship. Every symbol and line number
+> below was read from `dct-ios.html` at v1.14.524 before being written here.
 
 ### Storage Location & Keys
-- **IndexedDB DB name:** `phantom-photos` (PHOTO_DB_NAME) [line 33891]
-- **DB version:** 1
-- **Store name:** `phantom-photos` (PHOTO_STORE_NAME) [line 33892]
-- **Key type:** Auto-incrementing (integer primary key)
+
+Photos live in **three** places. An adapter must know which one it is touching.
+
+| # | Where | Identifier | State |
+|---|---|---|---|
+| 1 | IndexedDB | DB `phantom-attachments`, store `photos`, keyPath `id` | **LIVE** - rack photos (v1.14.519+) |
+| 2 | IndexedDB | DB `phantom-photos` (`PHOTO_DB_NAME` :33897), store `photos` (`PHOTO_STORE_NAME` :33898) | **DEAD** - see Oddity 1 |
+| 3 | localStorage | `phantom_discrepancies_v1` (`DISCREPANCY_KEY` :33874), field `.photo` | **LIVE** - base64 data URL inline |
+
+Store 1 declares two indexes at upgrade (`photo_getDB`): `bySite` on `siteId`, and `byRack` on the
+compound `['siteId', 'rackId']`.
 
 ### Exact Record Shape
+
+**Store 1 - `phantom-attachments` / `photos`** (written verbatim by `photo_persist`):
 ```javascript
-// Photo record (inferred from write sites)
 {
-  // Primary key: auto-increment integer (0, 1, 2, ...)
-  id: NUMBER,                // auto-assigned by IndexedDB
-  photoId: STRING,           // references discrepancy.photo ID or audit photo ID
-  timestamp: NUMBER,         // epoch ms (Date.now())
-  blob: BLOB,                // raw WebP data (Uint8Array or Blob)
-  width: NUMBER,             // image dimensions
-  height: NUMBER,
-  size: NUMBER,              // bytes
-  metadata: OBJECT           // additional fields: { cameraUsed, orientation, ... }
+  id:         STRING,   // 'ph_' + base36 random + base36 Date.now()
+  siteId:     STRING,   // rackId.split(':')[0], or 'unknown'
+  rackId:     STRING,   // Master rack form, e.g. 's1:001'
+  capturedAt: NUMBER,   // epoch ms (Date.now())
+  caption:    STRING,   // always '' on write; no UI writes it yet
+  bytes:      NUMBER,   // blob.size
+  w:          NUMBER,   // ALWAYS 0 - see Oddity 2
+  h:          NUMBER,   // ALWAYS 0 - see Oddity 2
+  blob:       BLOB      // image/jpeg, quality 0.70, longest side <= 1280
+}
+```
+
+**Store 3 - the `.photo` field on a discrepancy record** (`discLog_save` :34191):
+```javascript
+{
+  id: 'disc_<epoch>_<base36>', deploymentId, ts: NUMBER /* epoch ms */,
+  loggedBy, category, severity, rackId, expected, actual, note,
+  photo:     STRING|null,   // FULL base64 data: URL, inline in localStorage
+  photoMeta: OBJECT|null,   // { capturedAt: formatted STRING, sizeKB: NUMBER }
+  status: 'open'|'resolved', resolution: OBJECT|null
 }
 ```
 
 ### Timestamp Formats Found
-- **timestamp:** epoch milliseconds (`Date.now()`)
+- Store 1 `capturedAt`: **epoch ms**.
+- Store 3 `ts`: **epoch ms**.
+- Store 3 `photoMeta.capturedAt` (:34072): a **formatted STRING**, not epoch ms. It is built by
+  slicing an ISO string to 16 chars, replacing the `T` with a middot, and appending `Z`. The result
+  is **not valid ISO-8601 and will not survive `Date.parse`**.
+- Store 2's extraction record uses `extractedAt: new Date().toISOString()` (:33908) - a true ISO string.
 
-### Writers (Functions + Approximate Lines)
-- **discLog_openCamera()** [line 34004]: Captures photo via PhantomScanner; encodes as WebP; stores in IndexedDB via writePhotosToIndexedDB() [line 33918].
-- **writePhotosToIndexedDB(photos, callback)** [line 33918]: Opens DB, creates txn, writes array of photo records via store.put().
+⛔ This contradicts the census-wide claim that timestamps are all epoch ms with ISO strings confined
+to the Master payload. Two of the four timestamps in this section are strings, and one is unparseable.
 
-### Readers (Functions + Approximate Lines)
-- **loadPhotosFromIndexedDB(callback)** [line 33942]: Opens DB, reads all photos via store.getAll(); returns via callback.
-- **disc_renderCard()** [line 34376]: References photo as data: URI (not reading from IndexedDB; uses pre-embedded blob URL).
+### Writers (Functions + Lines)
+- **`photo_captureForRack(deployId, rackId)`** - injects the hidden `#photo-capture-input`
+  (`accept="image/*" capture="environment"`), which is what opens the iOS camera.
+- **`photo_handleCapture(input, deployId, rackId)`** - guards on `file.type.startsWith('image/')`,
+  then compress -> persist -> toast. Quota failure is reported as `PHOTO NOT SAVED - STORAGE`.
+- **`photo_compress(file)`** - FileReader -> `Image` -> canvas -> `canvas.toBlob(cb, 'image/jpeg', 0.70)`,
+  longest side capped at 1280. **No EXIF orientation correction.**
+- **`photo_persist(deployId, rackId, blob)`** - builds the Store 1 record above and `store.add`s it.
+- **`discLog_save()` :34171** - writes `.photo` (base64) onto the discrepancy record, then
+  `discLog_saveAll` -> `safeStore(DISCREPANCY_KEY, ...)`.
+- **`photoStore_save(photos, callback)` :33923** - writes Store 2. **Never called.**
+
+### Readers (Functions + Lines)
+- **`photo_getAllForRack`**, **`photo_getCountForRack`** (v1.14.524) - read Store 1.
+- **`photo_galleryOpen`**, **`photo_viewerOpen`** (v1.14.524) - render Store 1 blobs via `URL.createObjectURL`.
+- **`photo_deletePhoto(photoId)`** - `store.delete(photoId)` on Store 1.
+- **`disc_renderCard()` :34376** - renders `rec.photo` **directly as a CSS background-image URL**.
+  It does not read IndexedDB at all.
+- **`photoStore_load(callback)` :33947** - reads Store 2. **Never called.**
 
 ### Oddities
-1. **Blob storage vs. data: URI:** Photos stored in IndexedDB as raw blobs; discrepancy records embed data: URIs for inline rendering. Two representations of same content.
-2. **No reference integrity:** Discrepancy record holds data: URI; deletion of IndexedDB photo does not cascade. Orphaned data possible.
-3. **Store created on-demand:** If DB does not exist, store is created on first write (lines 33923–33930).
-4. **Callback-based API:** Reads use callbacks (async); no Promise wrapper. Callers must chain operations.
-5. **No auto-cleanup:** Photos accumulate; no age-based or size-based pruning.
+1. **Store 2 is dead code.** `photoStore_save` and `photoStore_load` are the only functions that open
+   `phantom-photos`, and neither has a caller anywhere in the file. The one live member of that family
+   is `photoStore_extractFromDiscrepancies` (:33899), called once at **:55989** in the backup builder.
+   **An adapter written against `phantom-photos` would target a database the app never creates.**
+2. **`w` and `h` are always 0.** `photo_persist` hardcodes them and nothing updates them afterward.
+   Any consumer sizing a layout from these values gets zero.
+3. **`deployId` is accepted and discarded.** `photo_persist(deployId, rackId, blob)` takes a deployment
+   id and never stores it. Store 1 photos are scoped to site + rack only and **cannot be filtered by
+   deployment.**
+4. **The extraction is export-only; it migrates nothing.** `photoStore_extractFromDiscrepancies` returns
+   `{discrepancies, photos}` in memory and the caller places them in the bundle as `discrepancies` /
+   `discrepancyPhotos` (:56067-56068). The stripped copy is **never written back to localStorage** and
+   **never written to any IndexedDB store**. The on-device record keeps its base64.
+5. ⛔ **Contract B13 is violated on the live discrepancy path.** B13 reads "No base64 images in
+   localStorage. Ephemeral or IndexedDB only." A discrepancy photo is a full base64 data URL persisted
+   inside `phantom_discrepancies_v1`. Store 1 does this correctly with Blobs; the discrepancy path
+   never received the same treatment.
+6. **Blob URLs are never revoked.** The v1.14.524 gallery and viewer call `URL.createObjectURL` per
+   image with no matching `URL.revokeObjectURL` anywhere in that path.
+7. **`photo_compress` can resolve empty.** `canvas.toBlob` passes its result straight to `resolve` with
+   no null check, so a failed encode resolves undefined; `photo_persist` then stores `bytes: undefined`
+   and the caller still reports `PHOTO SAVED`.
+8. **No pruning in either store.** Nothing ages out or caps by size.
 
 ### Volume Estimate
-- **Typical count:** 5–50 photos per deployment
-- **Per photo:** 50–200 KB (WebP compressed)
-- **Total:** ~500 KB–10 MB per deployment
+- Store 1: JPEG q0.70, longest side 1280 - roughly **80-250 KB** per photo, in IndexedDB and therefore
+  outside the localStorage budget.
+- Store 3: base64 inflates by roughly a third and lands **inside** the ~5 MB localStorage budget. This
+  is the real quota risk. `discLog_save` already toasts "Storage write failed - discrepancy not saved"
+  when `safeStore` returns false.
 
 ### Status
-- **WRITTEN AND READ:** Yes; live throughout discrepancy lifecycle
-- **READS NEVER WRITTEN:** metadata (written with photo; rendered, not read for logic)
-- **WRITTEN NEVER READ:** Raw blobs stored; data: URIs derived at render time
+- **WRITTEN AND READ:** Store 1 (capture -> gallery / viewer / delete); Store 3 `.photo` (save -> card render).
+- **WRITTEN NEVER READ:** `caption`, `w`, `h` on Store 1.
+- **NEITHER WRITTEN NOR READ:** all of Store 2 (`phantom-photos`).
+- **DOCUMENTED BUT ABSENT:** the previous revision's `writePhotosToIndexedDB`,
+  `loadPhotosFromIndexedDB`, and `discLog_openCamera` exist at no line in the file.
 
 ---
 
