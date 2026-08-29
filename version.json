@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.525",
-  "released": "2026-08-28",
-  "prevVersion": "phantom-v1.14.524",
-  "notes": "v1.14.525 — NAV RELABEL + ART. Dock slot 1 relabels HOME to COMMAND (aria-label and .blabel); dock icons for Command/Build/Tools move to the re-cut -v3 art (reflections keyed out of the alpha, brightness matched across the set, transparent). Slot count, routing, #rd-exit and hold-to-freeze are untouched — the A8 five-pillar nav stays gated behind M3/M4 per D-1. #cs-side (desktop side nav) still renders the -v2 icons and still reads Home; that surface was out of scope."
+  "version": "phantom-v1.14.526",
+  "released": "2026-08-29",
+  "prevVersion": "phantom-v1.14.525",
+  "notes": "v1.14.526 — EXIT ART + HOLD HINT ORDER. The dock's EXIT slot moves to the re-cut -v3 icon, completing the set: reflection keyed out of the alpha, brightness pulled to 226 against the set's 223-234 band, longest side capped at 180/256 rather than the 226/256 its siblings use, because EXIT is the only portrait glyph in the row and matching their fit rendered it half again as tall as BUILD. The hold hint gains order:4 so it sits under the EXIT label instead of above the icon — it had no order property while .bicon/.btick/.blabel carry order 1/2/3, so it defaulted to 0 and sorted first. Slot count, routing and hold-to-freeze unchanged. #cs-side still draws exit-v2, so that precache entry stays."
 }
