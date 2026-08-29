@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.527",
+  "version": "phantom-v1.14.528",
   "released": "2026-08-29",
-  "prevVersion": "phantom-v1.14.526",
-  "notes": "v1.14.527 — DOCK ALIGNMENT + WRENCH ROTATION. Both nav-item rules move from justify-content:center to flex-start, and #rd-exit drops to the same gap:3px and padding:4px 4px its siblings use. EXIT carries a fourth flex child (the hold hint), so centring pushed its icon above the other three; starting every column at the same top puts all four icon boxes on one line. The wrench is re-cut as tools-v4 rotated 40 degrees and fit to 190/256: a 4.5:1 glyph cannot be given presence by scale, and the canvas ceiling was only +13.3%, so it was rotated instead. It now renders 40.1x35.4 at a 54px box, between BUILD 47.7x30.0 and EXIT 33.1x38.0, where flat it was 47.7x10.5. New -v4 filename because overwriting a precached asset in place serves the old bytes from cache. .bicon stays 54x54 with object-fit:contain; all four icons already shared that box, so it was not changed to 44."
+  "prevVersion": "phantom-v1.14.527",
+  "notes": "v1.14.528 — SIDE NAV MATCHES THE DOCK. #cs-side (desktop composition, >=1024) had been drifting from the bottom dock for three ships: it still read HOME and still drew the superseded -v2 art while the dock moved to -v3/-v4. Its four items now carry the same labels and the same icons as the dock — Command/Build/Tools/Exit on command-v3, build-v3, tools-v4, exit-v3 — and the aria-label on the first item moves from Home to Command with it. The four -v2 precache entries are purged: with the side nav switched over, nothing in any consumer references them. The files stay on disk, orphaned-but-retained per repo precedent. Routing is untouched; no behaviour changed on either surface."
 }

@@ -34,7 +34,7 @@
 // a clean v1.13.3 — dropping the prior -N cache-iteration suffix — so this real
 // version bump busts every client's cache and the three stamps (app const /
 // version.json / this key) line up again. Patch bumps continue from here.
-const CACHE_VERSION = 'phantom-v1.14.527';
+const CACHE_VERSION = 'phantom-v1.14.528';
 
 // Assets to precache on install. Keep this minimal — single-file PWA means
 // most of PHANTOM is in dct-ios.html itself.
@@ -71,17 +71,15 @@ const PRECACHE_URLS = [
   // blocker/issues-alert actions, and the four tiles the .359 banner rows orphaned.
   // Four of those FILES were deleted in the same commit (the .359 orphans); the rest stay
   // on disk, orphaned-but-retained per repo precedent — only their precache entry went.
-  // v1.14.323: glass WebP nav icons (pnav look) — Home/Build/Tools/Exit bottom nav
-  // v1.14.525: the -v2 four STAY — #cs-side (desktop side nav) still renders all four.
-  // The dock moved to the -v3 art below; only #rd-exit still draws exit-v2 in the dock.
-  'icons/phantom-nav-home-v2-256.webp',
-  'icons/phantom-nav-build-v2-256.webp',
-  'icons/phantom-nav-tools-v2-256.webp',
-  'icons/phantom-nav-exit-v2-256.webp',
+  // v1.14.323: glass WebP nav icons (pnav look) — Home/Build/Tools/Exit bottom nav.
+  // v1.14.528: the whole -v2 four are GONE from this list. .525 kept them because #cs-side
+  // (desktop side nav) was still drawing all four; that surface now draws the same art as the
+  // dock, so nothing in any consumer references them. Files stay on disk, orphaned-but-retained
+  // per repo precedent — only the precache entry goes, exactly as the .364 cleanup did.
   // v1.14.525 — re-cut nav art (reflections keyed out, brightness matched, transparent).
-  // Only the three the dock actually references are precached; scan/shift -v3 ship on disk
-  // for the M4 five-pillar nav but stay OUT of this list until a consumer draws them
-  // (the .364 cleanup purged 20 entries that were exactly that mistake).
+  // The dock AND the side nav both draw these now. scan/shift -v3 ship on disk for the M4
+  // five-pillar nav but stay OUT of this list until a consumer draws them (the .364 cleanup
+  // purged 20 entries that were exactly that mistake).
   'icons/phantom-nav-command-v3-256.webp',
   'icons/phantom-nav-build-v3-256.webp',
   'icons/phantom-nav-tools-v4-256.webp',   // v1.14.527: the wrench rotated 40deg. v3 is superseded and referenced by nothing; the rename is mandatory because overwriting a precached asset in place serves the old bytes from cache
@@ -89,7 +87,7 @@ const PRECACHE_URLS = [
   // pulled to 226 (the set runs 223-234). Longest side is capped at 180/256, NOT the 226/256 its
   // three siblings use: EXIT is the only portrait glyph in the row, so fitting it like the others
   // rendered it half again as tall as BUILD. 180 brings it to 38px against BUILD's 30px at a 54px
-  // box. exit-v2 above STAYS: #cs-side (desktop side nav) still draws it.
+  // box. (.526 noted exit-v2 stayed for #cs-side; .528 moved that surface across, so it went.)
   'icons/phantom-nav-exit-v3-256.webp',
   // v1.14.462 — HOME CARD ART (owner directive 2026-08-14). Both feature heroes replaced with the
   // approved photographic direction: a real technician, a real datacenter, rugged field hardware.

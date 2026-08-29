@@ -13067,7 +13067,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.527';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.528';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -16861,10 +16861,10 @@ if (typeof window !== 'undefined') {
       <div class="cs-ssite-v"><span class="cs-sitedot" id="cs-sdot" aria-hidden="true"></span><span id="cs-ssite">&mdash;</span></div>
     </div>
     <div class="cs-navlabel">Navigation</div>
-        <button type="button" class="cs-navitem" id="cs-nav-cmd" onclick="showMode('command')" aria-label="Home"><img src="icons/phantom-nav-home-v2-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Home</span></button>
-        <button type="button" class="cs-navitem" id="cs-nav-bld" onclick="showMode('work')" aria-label="Build"><img src="icons/phantom-nav-build-v2-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Build</span></button>
-        <button type="button" class="cs-navitem" id="cs-nav-tls" onclick="showMode('ref')" aria-label="Tools"><img src="icons/phantom-nav-tools-v2-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Tools</span></button>
-        <button type="button" class="cs-navitem" id="cs-nav-ext" onclick="showMode('command')" aria-label="Exit"><img src="icons/phantom-nav-exit-v2-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Exit</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-cmd" onclick="showMode('command')" aria-label="Command"><img src="icons/phantom-nav-command-v3-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Command</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-bld" onclick="showMode('work')" aria-label="Build"><img src="icons/phantom-nav-build-v3-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Build</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-tls" onclick="showMode('ref')" aria-label="Tools"><img src="icons/phantom-nav-tools-v4-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Tools</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-ext" onclick="showMode('command')" aria-label="Exit"><img src="icons/phantom-nav-exit-v3-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Exit</span></button>
     <div class="cs-navlabel" style="margin-top:12px">Operations</div>
         <button type="button" class="cs-navitem" id="cs-nav-dep" onclick="cmd_route('work','deploy')" aria-label="Deploy" title="Deploy"><span class="cs-navdot" aria-hidden="true">DP</span><span class="cs-lbl">Deploy</span></button>
         <button type="button" class="cs-navitem" id="cs-nav-scn" onclick="cmd_route('work','scan')" aria-label="Scan" title="Scan"><span class="cs-navdot" aria-hidden="true">SC</span><span class="cs-lbl">Scan</span></button>
