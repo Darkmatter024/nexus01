@@ -111,7 +111,11 @@ const test = base.test.extend({
         // converts a timing failure into a silent no-op that looks like a dead tap target.
         const tap = page.locator('#pe-tapcatch');
         await tap.waitFor({ state: 'visible', timeout: 20_000 });
-        await tap.click({ timeout: 15_000 });
+        // Best-effort: on a SECOND boot in the same page the v1.14.474 return-visit skip
+        // (phantom_seen_boot) auto-fires after 400ms and the splash is already dissolving, so a
+        // click that waits for actionability can never land. The click is not the gate - the
+        // boot condition below is. Try to tap, and let the auto-fire win the race if it does.
+        await tap.click({ timeout: 10_000 }).catch(() => {});
 
         // launch() reveals #app then hides #boot on the next frame (:18383).
         // Wait on the end state, never on the animation duration.
