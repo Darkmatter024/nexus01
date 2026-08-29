@@ -122,6 +122,80 @@ function checkBranchGate(cmd) {
   return null;
 }
 
+/** What this commit would ACTUALLY include.
+ *
+ *  This is a PreToolUse hook: it runs BEFORE the command, so the index is not yet what the
+ *  commit will contain. Three forms have to be told apart —
+ *    git commit           -> the index alone
+ *    git commit -a        -> the index PLUS every tracked modification (staged AT commit time)
+ *    git commit <paths>   -> the index PLUS the named paths
+ *
+ *  The original gate read `git diff --cached` alone, so on `git commit -am "..."` the index was
+ *  empty at inspection time, the version.json test was false, and the whole gate short-circuited.
+ *  That is how v1.14.524 bumped version.json over a .518 stamp with no --no-verify and no intent:
+ *  -am is simply the most common way to commit. Reproduced before this fix, and pinned below. */
+function filesInCommit(cmd) {
+  const { execSync } = require('child_process');
+  const run = (c) => execSync(c, { cwd: REPO, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] })
+    .trim().split('\n').filter(Boolean);
+
+  const set = new Set(run('git diff --cached --name-only'));
+
+  // Everything below reads the INVOCATION only. A commit body routinely quotes flags and
+  // filenames while explaining a change — this very file's history does — and prose must never
+  // be parsed as arguments.
+  const inv = commitInvocation(cmd);
+  if (!inv) return set;
+
+  // -a / --all, including short-flag clusters like -am. Long options must not match:
+  // /^-[a-zA-Z]+$/ rejects --amend because '-' is not in [a-zA-Z].
+  const auto = inv.split(/\s+/).some(
+    (t) => t === '--all' || (/^-[a-zA-Z]+$/.test(t) && t.includes('a')));
+  if (auto) for (const f of run('git diff --name-only HEAD')) set.add(f);
+
+  // Explicit pathspec form. This must parse ARGUMENTS, not scan the raw string: a commit whose
+  // MESSAGE merely mentions VERIFIED is not a commit OF VERIFIED. (The first cut of this function
+  // used cmd.includes() and promptly blocked its own commit, whose body explains the gate.)
+  for (const f of pathspecsOf(inv)) {
+    const base = f.replace(/^.*[/\\]/, '');
+    if (base === 'version.json' || base === 'VERIFIED') set.add(base);
+  }
+
+  return set;
+}
+
+/** The actual `git commit ...` invocation, or null. A command may be a heredoc whose BODY
+ *  discusses git commit in prose; only a line where the command starts — at the beginning of
+ *  a line or after a shell separator — is an invocation. */
+function commitInvocation(cmd) {
+  for (const line of String(cmd).split('\n')) {
+    const m = line.match(/(?:^|[;&|]\s*)\s*(git\s+commit\b.*)$/);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+/** Positional pathspecs of a `git commit` invocation, with option values skipped. */
+function pathspecsOf(inv) {
+  const toks = (String(inv).match(/[^\s"']+|"[^"]*"|'[^']*'/g) || [])
+    .map((t) => t.replace(/^["']|["']$/g, ''));
+  const start = toks.indexOf('commit');
+  if (start < 0) return [];
+  const takesValue = new Set(['-m', '--message', '-F', '--file', '-c', '-C', '--reuse-message',
+    '--author', '--date', '--cleanup', '-S', '--gpg-sign', '-t', '--template']);
+  const out = [];
+  let afterSep = false;
+  for (let i = start + 1; i < toks.length; i++) {
+    const t = toks[i];
+    if (afterSep) { out.push(t); continue; }
+    if (t === '--') { afterSep = true; continue; }
+    if (takesValue.has(t)) { i++; continue; }        // consume the option's value
+    if (t.startsWith('-')) continue;                 // flag, or --opt=value
+    out.push(t);
+  }
+  return out;
+}
+
 /** VERIFIED token gate: version.json bumps are blocked until owner stamps the old version. */
 function checkVerifiedGate(cmd) {
   if (!/git\s+commit/.test(cmd)) return null;
@@ -130,8 +204,8 @@ function checkVerifiedGate(cmd) {
   const { execSync } = require('child_process');
 
   try {
-    // Check what files are staged
-    const staged = execSync('git diff --cached --name-only', { cwd: REPO, encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim().split('\n').filter(Boolean);
+    // What this commit would include — not merely what happens to be staged right now.
+    const staged = [...filesInCommit(cmd)];
 
     // Block any attempt to commit changes to VERIFIED
     if (staged.includes('VERIFIED')) {
