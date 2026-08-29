@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.528",
+  "version": "phantom-v1.14.529",
   "released": "2026-08-29",
-  "prevVersion": "phantom-v1.14.527",
-  "notes": "v1.14.528 — SIDE NAV MATCHES THE DOCK. #cs-side (desktop composition, >=1024) had been drifting from the bottom dock for three ships: it still read HOME and still drew the superseded -v2 art while the dock moved to -v3/-v4. Its four items now carry the same labels and the same icons as the dock — Command/Build/Tools/Exit on command-v3, build-v3, tools-v4, exit-v3 — and the aria-label on the first item moves from Home to Command with it. The four -v2 precache entries are purged: with the side nav switched over, nothing in any consumer references them. The files stay on disk, orphaned-but-retained per repo precedent. Routing is untouched; no behaviour changed on either surface."
+  "prevVersion": "phantom-v1.14.528",
+  "notes": "v1.14.529 — SIDE NAV EXIT IS HOLD-TO-FREEZE. #cs-nav-ext was labelled Exit and called showMode('command') — an Exit that silently went Home, which is what 'names say what the door opens' forbids. .528 matched the two surfaces in appearance; this matches them in behaviour. The onclick is removed and the item is wired through rd_holdGesture to rd_freeze, the same canonical helper on the same canonical function the dock uses, per Contract A2. It gains a hold hint so the gesture is discoverable, an .arming gold state so a plain tap gives feedback rather than reading as a dead control (Contract 14), and the red label the dock EXIT already carries as an owner exception. The hint hides with the other labels in the 1024-1099 collapsed rail."
 }

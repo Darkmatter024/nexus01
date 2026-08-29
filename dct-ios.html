@@ -13067,7 +13067,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.528';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.529';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -16864,7 +16864,7 @@ if (typeof window !== 'undefined') {
         <button type="button" class="cs-navitem" id="cs-nav-cmd" onclick="showMode('command')" aria-label="Command"><img src="icons/phantom-nav-command-v3-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Command</span></button>
         <button type="button" class="cs-navitem" id="cs-nav-bld" onclick="showMode('work')" aria-label="Build"><img src="icons/phantom-nav-build-v3-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Build</span></button>
         <button type="button" class="cs-navitem" id="cs-nav-tls" onclick="showMode('ref')" aria-label="Tools"><img src="icons/phantom-nav-tools-v4-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Tools</span></button>
-        <button type="button" class="cs-navitem" id="cs-nav-ext" onclick="showMode('command')" aria-label="Exit"><img src="icons/phantom-nav-exit-v3-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Exit</span></button>
+        <button type="button" class="cs-navitem" id="cs-nav-ext" aria-label="Hold to exit and freeze the app"><img src="icons/phantom-nav-exit-v3-256.webp" alt="" width="256" height="256" loading="lazy"><span class="cs-lbl">Exit</span><span class="cs-hold">hold</span></button>
     <div class="cs-navlabel" style="margin-top:12px">Operations</div>
         <button type="button" class="cs-navitem" id="cs-nav-dep" onclick="cmd_route('work','deploy')" aria-label="Deploy" title="Deploy"><span class="cs-navdot" aria-hidden="true">DP</span><span class="cs-lbl">Deploy</span></button>
         <button type="button" class="cs-navitem" id="cs-nav-scn" onclick="cmd_route('work','scan')" aria-label="Scan" title="Scan"><span class="cs-navdot" aria-hidden="true">SC</span><span class="cs-lbl">Scan</span></button>
@@ -19660,6 +19660,12 @@ function rd_initExit(){
   var ex=document.getElementById('rd-exit'), wk=document.getElementById('rd-wake');
   if(ex && !ex._rdWired){ rd_holdGesture(ex, 'arming', rd_freeze); ex._rdWired=true; }
   if(wk && !wk._rdWired){ rd_holdGesture(wk, 'arming', rd_wake); wk._rdWired=true; }
+  // v1.14.529: the desktop side nav's EXIT is the SAME control as the dock's, so it calls the
+  // same canonical helper on the same canonical function (Contract A2 — one engine, one door).
+  // Its onclick was removed in the markup: it used to be showMode('command'), an "Exit" that
+  // silently went Home, which is exactly what "names say what the door opens" forbids.
+  var csx=document.getElementById('cs-nav-ext');
+  if(csx && !csx._rdWired){ rd_holdGesture(csx, 'arming', rd_freeze); csx._rdWired=true; }
 }
 if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', rd_initExit, {once:true}); } else { rd_initExit(); }
 // Freeze boot-restore (redesign-only; _session_bootRestore early-returns under redesign so it never
@@ -60279,6 +60285,19 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   body.rd.cshell .cs-navitem img { width: 21px; height: 21px; flex: 0 0 21px; object-fit: contain; }
   body.rd.cshell .cs-navitem .cs-navdot { width: 21px; flex: 0 0 21px; text-align: center; font-size: var(--fs-body); color: var(--slate); }
   body.rd.cshell .cs-navitem:hover { color: var(--white); background: rgba(92,242,255,0.05); }
+  /* v1.14.529 — #cs-nav-ext is hold-to-freeze, mirroring #rd-exit in the dock. It carries NO
+     onclick: it is not a landable tab, and a plain tap must not navigate. rd_holdGesture adds
+     .arming on press, so a tap still gives feedback rather than reading as a dead control
+     (Contract 14). Red on the label is the same owner exception the dock's EXIT carries — red
+     is off the ratified rd palette, where the house danger channel is magenta. */
+  body.rd.cshell #cs-nav-ext .cs-lbl { color: #ff5a4d; }
+  body.rd.cshell #cs-nav-ext .cs-hold {
+    margin-left: auto; font-size: var(--fs-micro); font-weight: 700; letter-spacing: .12em;
+    color: rgba(255,255,255,0.45); transition: color .2s;
+  }
+  body.rd.cshell #cs-nav-ext.arming .cs-lbl,
+  body.rd.cshell #cs-nav-ext.arming .cs-hold { color: var(--gold); }
+  body.rd.cshell #cs-nav-ext.arming img { filter: drop-shadow(0 0 6px var(--gold)); }
   /* §9.4 active nav: cyan edge, subtle cyan/violet wash, light text, NO oversized glow */
   body.rd.cshell .cs-navitem.on {
     color: var(--white);
@@ -60602,6 +60621,7 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
 @media (min-width: 1024px) and (max-width: 1099px) {
   body.rd.cshell #cs-side { width: 82px; padding-left: 0; padding-right: 0; align-items: stretch; }
   body.rd.cshell #cs-side .cs-lbl, body.rd.cshell .cs-navlabel,
+  body.rd.cshell #cs-nav-ext .cs-hold,
   body.rd.cshell .cs-ssite-k, body.rd.cshell .cs-sfoot-row span.cs-lbl { display: none; }
   body.rd.cshell .cs-sbrand { justify-content: center; padding: 0 0 16px; }
   body.rd.cshell .cs-sbrand .cs-sbrandtext { display: none; }
