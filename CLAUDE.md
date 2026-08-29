@@ -117,7 +117,20 @@ A commit that bumps `version.json` is blocked by hook unless John has verified t
 2. **Surgical edits only.** Unique anchors, no rewrites, no drive-by refactors.
 3. **Mechanical gates are enforced by hook, not by memory** — `tools/hooks/phantom-guard.js` blocks
    a commit on broken three-stamp lockstep, a non-compiling inline script, brace imbalance, damaged
-   CRLF, or a backtick in a commit body. Do not work around it; fix the cause.
+   CRLF, a backtick in a commit body, an unstamped `VERIFIED`, or `HEAD` sitting on `release`.
+   Do not work around it; fix the cause.
+   ⚡ **THE GATE RUNS IN TWO PLACES, AND A FRESH CLONE HAS ONLY ONE.** The guard is wired into
+   `~/.claude/settings.json` as a `PreToolUse` hook, which sees **agent tool calls only** — a
+   commit typed into a terminal never reaches it. `tools/githooks/pre-commit` covers every local
+   commit whoever types it, by driving the same guard so the two cannot drift. Git cannot wire
+   hooks automatically, so **each clone needs this once**:
+   ```
+   git config core.hooksPath tools/githooks
+   ```
+   Check with `git config --get core.hooksPath` → `tools/githooks`. Until that is run, terminal
+   commits are ungated. That gap is not hypothetical: `v1.14.520`–`.523` were committed straight
+   onto `release` and orphaned by a reset the next day, surviving only as `recovery-v1.14.52x`
+   tags. `--no-verify` still bypasses both layers, by design — a seatbelt, not an immobiliser.
    ⭐ **THE HOOK IS THE GATE** (owner ruling 2026-08-08). Spec §10 names four subagents —
    `lockstep-auditor`, `surgical-edit-reviewer`, `data-honesty-auditor`, `cold-aisle-qa` — which
    are **not loadable from this session's CWD** and have never once run; `BATCH-VERIFY` records
