@@ -98,6 +98,30 @@ function checkSwCompile() {
   return null;
 }
 
+/** Branch topology gate: work lands on main; release is promote-only.
+ *  v1.14.520 through .523 were committed straight onto release on 2026-08-27, bypassing
+ *  main, and were orphaned the next day by a reset to main. They survive only because they
+ *  were tagged after the fact (recovery-v1.14.520 .. .523). This refuses the commit that
+ *  would repeat it. Promotion is unaffected: git merge --ff-only creates no commit. */
+function checkBranchGate(cmd) {
+  if (!/git\s+commit/.test(cmd)) return null;
+
+  try {
+    const head = read(path.join(REPO, '.git', 'HEAD')).trim();
+    const m = /^ref:\s*refs\/heads\/(.+)$/.exec(head);
+    if (!m) return null;                    // detached HEAD is not the failure this guards
+    if (m[1].trim() === 'release') {
+      return 'GATE: HEAD is on release, which is promote-only. Commit to main, then promote with '
+        + 'git checkout release && git merge --ff-only main. (v1.14.520-.523 were committed here '
+        + 'and lost to a reset; see tags recovery-v1.14.520 through recovery-v1.14.523.)';
+    }
+  } catch (e) {
+    process.stderr.write(`[phantom-guard] branch gate check skipped (error): ${e.message}\n`);
+  }
+
+  return null;
+}
+
 /** VERIFIED token gate: version.json bumps are blocked until owner stamps the old version. */
 function checkVerifiedGate(cmd) {
   if (!/git\s+commit/.test(cmd)) return null;
@@ -184,7 +208,11 @@ process.stdin.on('end', () => {
 
       // PRE-COMMIT: the full mechanical gate, but only when a commit would include the app.
       if (/git\s+commit/.test(cmd) && fs.existsSync(APP)) {
-        // VERIFIED token gate runs first (blocks before other checks)
+        // Branch topology gate runs first: a commit on release is wrong whatever the stamps say.
+        const branchGate = checkBranchGate(cmd);
+        if (branchGate) problems.push(branchGate);
+
+        // VERIFIED token gate runs next (blocks before the mechanical checks)
         const verifiedGate = checkVerifiedGate(cmd);
         if (verifiedGate) problems.push(verifiedGate);
 
