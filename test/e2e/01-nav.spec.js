@@ -90,7 +90,9 @@ test.describe('bottom nav — structure', () => {
     }));
 
     expect(census.items.map((i) => i.id)).toEqual(['bn-command', 'bn-work', 'bn-ref']);
-    expect(census.items.map((i) => i.label)).toEqual(['Home', 'Build', 'Tools']);
+    // v1.14.525: slot 1 relabelled Home -> Command. The SLOT COUNT is still the pre-M4
+    // checkpoint (3 + EXIT) — only the label moved, not the IA. See Contract A8 / D-1.
+    expect(census.items.map((i) => i.label)).toEqual(['Command', 'Build', 'Tools']);
     expect(census.items.map((i) => i.onclick)).toEqual([
       "showMode('command')", "showMode('work')", "showMode('ref')",
     ]);

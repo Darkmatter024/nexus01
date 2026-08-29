@@ -34,7 +34,7 @@
 // a clean v1.13.3 — dropping the prior -N cache-iteration suffix — so this real
 // version bump busts every client's cache and the three stamps (app const /
 // version.json / this key) line up again. Patch bumps continue from here.
-const CACHE_VERSION = 'phantom-v1.14.524';
+const CACHE_VERSION = 'phantom-v1.14.525';
 
 // Assets to precache on install. Keep this minimal — single-file PWA means
 // most of PHANTOM is in dct-ios.html itself.
@@ -72,10 +72,19 @@ const PRECACHE_URLS = [
   // Four of those FILES were deleted in the same commit (the .359 orphans); the rest stay
   // on disk, orphaned-but-retained per repo precedent — only their precache entry went.
   // v1.14.323: glass WebP nav icons (pnav look) — Home/Build/Tools/Exit bottom nav
+  // v1.14.525: the -v2 four STAY — #cs-side (desktop side nav) still renders all four.
+  // The dock moved to the -v3 art below; only #rd-exit still draws exit-v2 in the dock.
   'icons/phantom-nav-home-v2-256.webp',
   'icons/phantom-nav-build-v2-256.webp',
   'icons/phantom-nav-tools-v2-256.webp',
   'icons/phantom-nav-exit-v2-256.webp',
+  // v1.14.525 — re-cut nav art (reflections keyed out, brightness matched, transparent).
+  // Only the three the dock actually references are precached; scan/shift -v3 ship on disk
+  // for the M4 five-pillar nav but stay OUT of this list until a consumer draws them
+  // (the .364 cleanup purged 20 entries that were exactly that mistake).
+  'icons/phantom-nav-command-v3-256.webp',
+  'icons/phantom-nav-build-v3-256.webp',
+  'icons/phantom-nav-tools-v3-256.webp',
   // v1.14.462 — HOME CARD ART (owner directive 2026-08-14). Both feature heroes replaced with the
   // approved photographic direction: a real technician, a real datacenter, rugged field hardware.
   // ⛔ NEITHER CARRIES READABLE TEXT. The handoff art they replace shipped baked SOURCE_SYNC 88% /

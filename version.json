@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.524",
+  "version": "phantom-v1.14.525",
   "released": "2026-08-28",
-  "prevVersion": "phantom-v1.14.523",
-  "notes": "v1.14.524 — CRITICAL SYNTAX FIX: Correct closing brace in photo_viewerOpen from .523. The .523 commit introduced a syntax error (orphaned } blocking .catch chaining). This version includes all photo gallery features from .523 with the brace error fixed. Three-stamp lockstep verified zero syntax errors."
+  "prevVersion": "phantom-v1.14.524",
+  "notes": "v1.14.525 — NAV RELABEL + ART. Dock slot 1 relabels HOME to COMMAND (aria-label and .blabel); dock icons for Command/Build/Tools move to the re-cut -v3 art (reflections keyed out of the alpha, brightness matched across the set, transparent). Slot count, routing, #rd-exit and hold-to-freeze are untouched — the A8 five-pillar nav stays gated behind M3/M4 per D-1. #cs-side (desktop side nav) still renders the -v2 icons and still reads Home; that surface was out of scope."
 }

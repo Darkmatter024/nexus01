@@ -13067,7 +13067,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.524';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.525';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -16896,16 +16896,16 @@ if (typeof window !== 'undefined') {
   <div class="botnav" id="rd-botnav">
     <div id="bn-rail">
       <span id="bn-core" aria-hidden="true"></span>
-      <div class="botitem active" id="bn-command" role="button" tabindex="0" onclick="showMode('command')" aria-label="Home" style="--tc:#61efff">
-        <img class="bicon" src="icons/phantom-nav-home-v2-256.webp" width="256" height="256" alt="" loading="eager">
-        <span class="blabel">Home</span><span class="btick"></span>
+      <div class="botitem active" id="bn-command" role="button" tabindex="0" onclick="showMode('command')" aria-label="Command" style="--tc:#61efff">
+        <img class="bicon" src="icons/phantom-nav-command-v3-256.webp" width="256" height="256" alt="" loading="eager">
+        <span class="blabel">Command</span><span class="btick"></span>
       </div>
       <div class="botitem" id="bn-work" role="button" tabindex="0" onclick="showMode('work')" aria-label="Build" style="--tc:#3d84ff">
-        <img class="bicon" src="icons/phantom-nav-build-v2-256.webp" width="256" height="256" alt="" loading="eager">
+        <img class="bicon" src="icons/phantom-nav-build-v3-256.webp" width="256" height="256" alt="" loading="eager">
         <span class="blabel">Build</span><span class="btick"></span>
       </div>
       <div class="botitem" id="bn-ref" role="button" tabindex="0" onclick="showMode('ref')" aria-label="Tools" style="--tc:#cfe3ee">
-        <img class="bicon" src="icons/phantom-nav-tools-v2-256.webp" width="256" height="256" alt="" loading="eager">
+        <img class="bicon" src="icons/phantom-nav-tools-v3-256.webp" width="256" height="256" alt="" loading="eager">
         <span class="blabel">Tools</span><span class="btick"></span>
       </div>
     </div>
