@@ -1,0 +1,12 @@
+# DELIBERATELY NARROW. Do not add `* text=auto` here.
+#
+# dct-ios.html and sw.js are CRLF in the working tree by long-standing repo
+# convention, and tools/hooks/phantom-guard.js actively checks that they stay
+# that way — a blanket renormalisation would rewrite ~48k line endings in the
+# app file and trip the very gate that exists to catch it.
+#
+# The one rule below exists because core.autocrlf is true on the build machine.
+# Without it, a fresh clone checks tools/githooks/pre-commit out with CRLF and
+# the shebang fails at runtime as: /bin/sh^M: bad interpreter. Shell scripts
+# must be LF regardless of platform.
+tools/githooks/* text eol=lf
