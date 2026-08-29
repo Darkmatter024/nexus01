@@ -34,7 +34,7 @@
 // a clean v1.13.3 — dropping the prior -N cache-iteration suffix — so this real
 // version bump busts every client's cache and the three stamps (app const /
 // version.json / this key) line up again. Patch bumps continue from here.
-const CACHE_VERSION = 'phantom-v1.14.526';
+const CACHE_VERSION = 'phantom-v1.14.527';
 
 // Assets to precache on install. Keep this minimal — single-file PWA means
 // most of PHANTOM is in dct-ios.html itself.
@@ -84,7 +84,7 @@ const PRECACHE_URLS = [
   // (the .364 cleanup purged 20 entries that were exactly that mistake).
   'icons/phantom-nav-command-v3-256.webp',
   'icons/phantom-nav-build-v3-256.webp',
-  'icons/phantom-nav-tools-v3-256.webp',
+  'icons/phantom-nav-tools-v4-256.webp',   // v1.14.527: the wrench rotated 40deg. v3 is superseded and referenced by nothing; the rename is mandatory because overwriting a precached asset in place serves the old bytes from cache
   // v1.14.526 — EXIT re-cut into the same set: reflection keyed out of the alpha, brightness
   // pulled to 226 (the set runs 223-234). Longest side is capped at 180/256, NOT the 226/256 its
   // three siblings use: EXIT is the only portrait glyph in the row, so fitting it like the others

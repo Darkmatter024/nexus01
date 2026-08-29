@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.526",
+  "version": "phantom-v1.14.527",
   "released": "2026-08-29",
-  "prevVersion": "phantom-v1.14.525",
-  "notes": "v1.14.526 — EXIT ART + HOLD HINT ORDER. The dock's EXIT slot moves to the re-cut -v3 icon, completing the set: reflection keyed out of the alpha, brightness pulled to 226 against the set's 223-234 band, longest side capped at 180/256 rather than the 226/256 its siblings use, because EXIT is the only portrait glyph in the row and matching their fit rendered it half again as tall as BUILD. The hold hint gains order:4 so it sits under the EXIT label instead of above the icon — it had no order property while .bicon/.btick/.blabel carry order 1/2/3, so it defaulted to 0 and sorted first. Slot count, routing and hold-to-freeze unchanged. #cs-side still draws exit-v2, so that precache entry stays."
+  "prevVersion": "phantom-v1.14.526",
+  "notes": "v1.14.527 — DOCK ALIGNMENT + WRENCH ROTATION. Both nav-item rules move from justify-content:center to flex-start, and #rd-exit drops to the same gap:3px and padding:4px 4px its siblings use. EXIT carries a fourth flex child (the hold hint), so centring pushed its icon above the other three; starting every column at the same top puts all four icon boxes on one line. The wrench is re-cut as tools-v4 rotated 40 degrees and fit to 190/256: a 4.5:1 glyph cannot be given presence by scale, and the canvas ceiling was only +13.3%, so it was rotated instead. It now renders 40.1x35.4 at a 54px box, between BUILD 47.7x30.0 and EXIT 33.1x38.0, where flat it was 47.7x10.5. New -v4 filename because overwriting a precached asset in place serves the old bytes from cache. .bicon stays 54x54 with object-fit:contain; all four icons already shared that box, so it was not changed to 44."
 }

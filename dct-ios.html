@@ -10099,7 +10099,7 @@ body.rd{--rd-cardfill:linear-gradient(158deg,#050506 0%,#010102 46%,#000000 76%,
 /* v1.14.323 — pnav look (owner lab-locked: flush·glass·underbar·large·always-labels·per-icon color·WebP icons)
    applied to the EXISTING #rd-botnav (keeps ids + showMode routing + hold-to-exit). Per-tab color = --tc (inline).
    Underbar = .btick (order:2 → sits under the icon, above the always-on label). Icons are precached WebP <img>. */
-#rd-botnav .botitem,#rd-botnav #rd-exit{position:relative;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px 4px;border:none;background:none;border-radius:0;margin:0;min-width:0;cursor:pointer;transition:opacity .2s}
+#rd-botnav .botitem,#rd-botnav #rd-exit{position:relative;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding:4px 4px;border:none;background:none;border-radius:0;margin:0;min-width:0;cursor:pointer;transition:opacity .2s}
 #rd-botnav .bicon{order:1;width:54px;height:54px;object-fit:contain;display:block;opacity:.82;transition:opacity .2s,filter .2s}   /* v1.14.339: +~17% (46→54) for the re-cut crisp-glass icons; nav-height cap +8px */
 #rd-botnav .btick{order:2;width:18px;height:3px;border-radius:2px;background:var(--tc,var(--cyan));opacity:0;transition:opacity .2s,width .2s,background .2s}
 #rd-botnav .blabel{order:3;font-family:var(--orb);font-weight:700;font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);text-transform:uppercase;color:#4a565f;white-space:nowrap;transition:color .2s,text-shadow .2s}
@@ -10117,7 +10117,7 @@ body.rd{--rd-cardfill:linear-gradient(158deg,#050506 0%,#010102 46%,#000000 76%,
    the nav items — reuses the nav's .blabel/.btick (dim slate Orbitron, no gold pill), lighting gold only
    as it arms. Curtain + wake-ring authored (no prototype). */
 /* v1.14.321: body.rd #bn-rail flex rule removed — Option C uses #bn-rail{display:contents}, so its 3 tabs are direct grid cells of #rd-botnav. Leaving this rule would out-specify display:contents and collapse the 4-cell grid to 2. */
-body.rd #rd-exit{position:relative;min-width:56px;min-height:56px;margin-left:6px;margin-right:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px 4px;border:none;background:none;border-radius:0;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;cursor:pointer}
+body.rd #rd-exit{position:relative;min-width:56px;min-height:56px;margin-left:6px;margin-right:48px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding:4px 4px;border:none;background:none;border-radius:0;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;cursor:pointer}
 /* At rest the .blabel/.btick inside #rd-exit inherit the exact nav-item look (#rd-botnav .blabel/.btick) — dim slate Orbitron, matching COMMAND/WORK/CRASH CART. The HOLD action shows only on touch: label + tick light GOLD (gold = exit/attention, distinct from the cyan tab-active) and a bottom charge bar fills over .85s. */
 body.rd #rd-exit .blabel{color:#ff5a4d;text-shadow:0 0 7px rgba(255,69,58,.85),0 0 16px rgba(255,69,58,.5)}   /* v1.14.317 — red glow on the EXIT letters (owner request). NOTE: red is off the ratified rd palette (the house danger channel is magenta #ff2bd6); kept as an explicit owner exception for the exit control. The .arming gold override still wins on hold. */
 body.rd #rd-exit.arming .blabel{color:var(--gold);letter-spacing:4.2px;text-shadow:0 0 14px rgba(244,196,48,.55)}
@@ -13067,7 +13067,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.526';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.527';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -16905,7 +16905,7 @@ if (typeof window !== 'undefined') {
         <span class="blabel">Build</span><span class="btick"></span>
       </div>
       <div class="botitem" id="bn-ref" role="button" tabindex="0" onclick="showMode('ref')" aria-label="Tools" style="--tc:#cfe3ee">
-        <img class="bicon" src="icons/phantom-nav-tools-v3-256.webp" width="256" height="256" alt="" loading="eager">
+        <img class="bicon" src="icons/phantom-nav-tools-v4-256.webp" width="256" height="256" alt="" loading="eager">
         <span class="blabel">Tools</span><span class="btick"></span>
       </div>
     </div>
