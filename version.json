@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.529",
+  "version": "phantom-v1.14.530",
   "released": "2026-08-29",
-  "prevVersion": "phantom-v1.14.528",
-  "notes": "v1.14.529 — SIDE NAV EXIT IS HOLD-TO-FREEZE. #cs-nav-ext was labelled Exit and called showMode('command') — an Exit that silently went Home, which is what 'names say what the door opens' forbids. .528 matched the two surfaces in appearance; this matches them in behaviour. The onclick is removed and the item is wired through rd_holdGesture to rd_freeze, the same canonical helper on the same canonical function the dock uses, per Contract A2. It gains a hold hint so the gesture is discoverable, an .arming gold state so a plain tap gives feedback rather than reading as a dead control (Contract 14), and the red label the dock EXIT already carries as an owner exception. The hint hides with the other labels in the 1024-1099 collapsed rail."
+  "prevVersion": "phantom-v1.14.529",
+  "notes": "v1.14.530 — COMMAND LABEL TRUNCATION. Reported from a real iPhone as COMMAN, the final D clipped. NOT reproducible in the harness, which measures the label at 65px inside a 95px cell at 390 and shows no clipping down to a 320 viewport — so this is fixed by construction, not by tuning to a measurement that could not be taken. The dock label drops from a fixed 10px with 1.6px tracking to clamp(8px,2.3vw,10px) with .06em tracking, so tracking now scales with the type instead of staying fixed as it shrinks. At 390 the label falls from 68% of its cell to 55%, leaving headroom for a device that renders it 83% wider than the harness does. The --hud-track-mid token is untouched: 46 other rules use it, and this is the dock own rule. Suspected trigger is iPhone Display Zoom, which reports a 320px viewport where the old label had only 12px of slack."
 }

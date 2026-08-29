@@ -10102,7 +10102,16 @@ body.rd{--rd-cardfill:linear-gradient(158deg,#050506 0%,#010102 46%,#000000 76%,
 #rd-botnav .botitem,#rd-botnav #rd-exit{position:relative;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding:4px 4px;border:none;background:none;border-radius:0;margin:0;min-width:0;cursor:pointer;transition:opacity .2s}
 #rd-botnav .bicon{order:1;width:54px;height:54px;object-fit:contain;display:block;opacity:.82;transition:opacity .2s,filter .2s}   /* v1.14.339: +~17% (46→54) for the re-cut crisp-glass icons; nav-height cap +8px */
 #rd-botnav .btick{order:2;width:18px;height:3px;border-radius:2px;background:var(--tc,var(--cyan));opacity:0;transition:opacity .2s,width .2s,background .2s}
-#rd-botnav .blabel{order:3;font-family:var(--orb);font-weight:700;font-size:var(--fs-micro);letter-spacing:var(--hud-track-mid);text-transform:uppercase;color:#4a565f;white-space:nowrap;transition:color .2s,text-shadow .2s}
+/* v1.14.530 — COMMAND truncated to COMMAN on a real iPhone. NOT reproducible in the harness,
+   which measures the label at 65px inside a 95px cell at 390 and shows no clipping down to 320.
+   The harness cannot be trusted on this: --orb resolves to -apple-system, so Windows WebKit
+   renders Helvetica/Arial where iOS renders San Francisco, and the two disagree. Fixed by
+   CONSTRUCTION rather than by tuning to a measurement I cannot take — the label is sized and
+   tracked so it fits with roughly half the cell to spare, and would still fit if the device
+   rendered it 50% wider than measured here. Tracking is set in em so it scales with the font
+   instead of staying a fixed 1.6px as the type shrinks. The token itself is untouched: 46 other
+   rules use --hud-track-mid, and this is the dock's own rule. */
+#rd-botnav .blabel{order:3;font-family:var(--orb);font-weight:700;font-size:clamp(8px,2.3vw,var(--fs-micro));letter-spacing:.06em;text-transform:uppercase;color:#4a565f;white-space:nowrap;max-width:100%;transition:color .2s,text-shadow .2s}
 #rd-botnav .botitem.active .bicon,#rd-botnav #rd-exit .bicon{opacity:1}
 #rd-botnav .botitem.active .btick{opacity:1;box-shadow:0 0 6px var(--tc)}
 #rd-botnav .botitem.active .blabel{color:var(--tc,#dffaff);text-shadow:0 0 10px var(--tc)}
@@ -13067,7 +13076,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.529';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.530';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
