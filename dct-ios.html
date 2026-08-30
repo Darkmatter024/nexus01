@@ -12956,7 +12956,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.537';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.538';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -35333,12 +35333,28 @@ var PHANTOM_SITE = {
    * straight into SITE SETUP, because no root record existed yet. Nothing here overwrites a value
    * a human set: every field is filled only when empty. Idempotent, so booting twice is a no-op.
    *
-   * SITE LEAD IS SEEDED FROM THE OPERATOR, NOT INVENTED. On an already-confirmed device the one
-   * name on record was entered by the person who set the site up — under the old single-identity
-   * model that person WAS the Site Lead. So siteLead takes that value and `operator` keeps it as
-   * the current actor: the same human, now correctly occupying both slots, which is exactly the
-   * state spec §2 describes as the common case. An unconfirmed profile gets nothing — it belongs
-   * in Site Setup, where a human states both.
+   * ⛔ SITE LEAD IS NO LONGER SEEDED HERE — removed v1.14.538, and this paragraph is kept as the
+   * record of WHY, because the original reasoning was correct and still reads as correct.
+   *
+   * It said: on an already-confirmed device the one name on record was entered by whoever set the
+   * site up, and under the old single-identity model that person WAS the Site Lead — so siteLead
+   * takes that value while `operator` keeps it as the current actor. Then the escape clause: "an
+   * unconfirmed profile gets nothing — it belongs in Site Setup, where a human states both."
+   *
+   * ⭐ THAT ESCAPE CLAUSE IS WHAT BROKE, and nothing here changed. v1.14.474's 2-field cold open
+   * removed Site Lead from Site Setup. The deferral now pointed at a door that no longer asked, so
+   * a seed written for PRE-SPLIT devices started firing for every NEW one — one boot after setup,
+   * since the gate stamps confirmedAt — and became the only writer of site authority in the app.
+   * A migration is only ever as good as the destination it defers to.
+   *
+   * v1.14.537 built that destination (SITE PROFILE → SITE LEAD (AUTHORITY), the SITE/SYSTEM door
+   * Contract 9a always named). With somewhere to state the value, inferring it is a guess — and
+   * .418 already ruled that guessing here silently grants authority to whoever holds the device.
+   *
+   * ⚠ EXISTING DEVICES KEEP WHAT THEY WERE ALREADY GIVEN. Nothing erases a stored siteLead
+   * (Contract 11), and a value seeded before this ship is indistinguishable from one a human typed
+   * — there is no provenance marker to tell them apart, and inventing one retroactively would be a
+   * fresh guess about the past. Correcting such a device is a one-time human edit in SITE/SYSTEM.
    */
   migrate: function() {
     try {
@@ -35390,10 +35406,15 @@ var PHANTOM_SITE = {
         }
       }
 
-      if (!String(p.siteLead || '').trim() && String(p.operator || '').trim()) {
-        p.siteLead = String(p.operator).trim();
-        filled.push('siteLead');
-      }
+      // v1.14.538 — THE SITE LEAD SEED IS GONE. It used to read:
+      //     if (!p.siteLead && p.operator) { p.siteLead = p.operator; filled.push('siteLead'); }
+      // ⛔ Do not restore it. See the note above this function for the full reasoning; the short
+      // version is that its precondition stopped being true. It seeded devices confirmed under the
+      // OLD single-identity model, and deferred everything else to Site Setup "where a human states
+      // both". v1.14.474 removed Site Lead from Site Setup, so that deferral pointed at a door that
+      // no longer asked — and this line quietly became the ONLY writer of site authority, granting
+      // it to whoever set the device up. v1.14.537 built the SITE/SYSTEM door Contract 9a names.
+      // With somewhere to state it, seeding it is a guess, and .418 already ruled on guesses here.
 
       if (!p.activeMasterId) {
         var live = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.active() : null;

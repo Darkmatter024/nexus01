@@ -148,6 +148,27 @@ test.describe('the first-run gate', () => {
     expect(src, 'the gate activates its own candidate — a second write path').not.toContain('activateStaged');
   });
 
+  // v1.14.538 — pins the removal of the migrate() seed. This is the assertion that did not exist
+  // when the seed silently became the only writer of site authority, which is why nobody noticed.
+  test('confirming a device NEVER grants it site authority — the migrate() seed is gone', async ({ phantom, page }) => {
+    await phantom.boot();
+    await firstRun(page);
+    await openGate(page);
+    await page.locator('#fr-operator').fill('R. Diaz');
+    await page.evaluate(() => firstRun_confirm());
+
+    // The seed fired on the boot AFTER confirmation, so run the migration explicitly rather than
+    // reloading and hoping — the runtime is the authority, and this drives the real function.
+    const p = await page.evaluate(() => {
+      try { PHANTOM_SITE.migrate(); } catch (_) {}
+      return siteProfile_load();
+    });
+
+    expect(p.operator, 'the actor was not recorded').toBe('R. Diaz');
+    expect(String(p.siteLead || ''), 'setting up a device silently made the operator the site authority')
+      .toBe('');
+  });
+
   test('the Master line is HONEST when nothing is loaded', async ({ phantom, page }) => {
     await phantom.boot();
     await page.evaluate(() => { try { PHANTOM_MASTER.clear(); } catch (_) {} });
