@@ -13076,7 +13076,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.530';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.531';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -42715,12 +42715,14 @@ function deploy_showRackDetail(deployId, rackId) {
       }
       rehHybridHtml += '<div class="rack-hybrid">';
       if (_rehRd) {
-        // #reh3dMount rejoins as a sibling of the flat wrap. Safe when FLAT: .reh-3d-mount is
-        // display:none until .rack-hybrid-canvas gets .is-3d, and #rehFlatWrap is
-        // display:contents, so the fitted elevation lays out byte-for-byte as it does today.
+        // v1.14.531 — #reh3dMount REMOVED. It was the dead half of a two-surface card: the flat
+        // elevation beside it renders, the 3D mount did not, and a technician got a control rail
+        // over an empty box. The flat wrap is now the single rack visual here and is no longer a
+        // fallback — with nothing adding .is-3d, the .is-3d rules at :11276-11277 never fire, so
+        // #rehFlatWrap simply stays visible. #reh3dCanvasHost KEEPS its id: rackElevation_ensure3D
+        // and the .390-.405 diagnostics both guard on it, and those paths are shared.
         rehHybridHtml += '<div class="rack-hybrid-canvas" id="reh3dCanvasHost">' +
                   '<div id="rehFlatWrap" class="reh-flat-wrap">' + rackElevation_buildHtml(rack) + '</div>' +
-                  '<div id="reh3dMount" class="reh-3d-mount"></div>' +
                 '</div>';
       } else {
         rehHybridHtml += '<div class="rack-hybrid-canvas">' + rackElevation_buildHtml(rack) + '</div>';
@@ -42731,11 +42733,15 @@ function deploy_showRackDetail(deployId, rackId) {
         rackHybrid_initSync(rack);
         rackFlat_applyFit(rack.totalU || 42);
       railSel_bindFlat();
-        // v1.14.353 — reh3d_restore() sets window._reh3dRack and unconditionally activates the 3D
-        // view (3D is THE view now — no pref, no toggle). It runs AFTER rackFlat_applyFit so the
-        // mount never races the flat fit that backs it as the no-WebGL fallback. rd-only: under
-        // ?legacy=1 no #reh3dCanvasHost is emitted, so activate is a safe no-op there.
-        if (_rehRd && typeof reh3d_restore === 'function') reh3d_restore(rack);
+        // v1.14.531 — the reh3d_restore(rack) call is GONE with the mount it fed. Leaving it would
+        // have been a silent no-op (rackElevation_ensure3D early-returns on a null mountEl) and,
+        // worse, reh3d_activate3D adds .is-3d BEFORE it looks for the mount — which would have
+        // hidden the flat elevation via :11276 and left the card genuinely empty. Removing the
+        // call is what keeps the elevation on screen, not merely tidier.
+        // reh3d_restore / reh3d_activate3D are now orphaned (window._reh3dRack had no other
+        // reader) and are left on disk per repo precedent. rackElevation_ensure3D/_render3D STAY
+        // LIVE — the Build preview (:23030), the Command hero (:24251) and the RackEngine
+        // re-acquire paths all still call them.
       }); });
     }
   } catch (rhErr) {
