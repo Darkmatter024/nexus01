@@ -9723,9 +9723,10 @@ body.rd #ver-stamp { display: inline-flex; align-items: center; align-self: cent
    deploy_showRackDetail's own card loop, unedited, is the ONE renderer for both houses.
    ⚠️ EVERYTHING here is body.rd-gated: the card renderer and the .hud-card CSS (:5253) are
    GLOBAL and keep firing under ?legacy=1, which must keep its inline cards byte-identical.
-   ⚠️ Bottom offset must NOT hard-assume the LOG bar exists: #omni-bar hides itself via
-   .omni-inactive (display:none) when no deployment is active, so the +--omni-h term is
-   :has()-gated on the bar being live. --omni-h is measured in JS (phdock_render), never guessed.
+   📌 HISTORICAL, both halves now deleted: the bottom offset once carried a +--omni-h term,
+   :has()-gated on #omni-bar being live because that bar hides itself (.omni-inactive) when no
+   deployment is active. The offset went in .282; the JS measurement that fed it went in .533.
+   The dock's bottom is --rd-navclear alone — see the rule below, and :1151 for why it MEASURES.
    Gated on .ops-detail TOO so every existing ops-detail clear (showMode / deploy_showList /
    deploy_showCommandCenter) kills the dock for free — belt; the explicit ph-dock-on clears in
    the sibling detail screens are the braces. */
@@ -9739,7 +9740,7 @@ body.rd.ops-detail.ph-dock-on #ph-dock {
   border-top: 1px solid rgba(92,242,255,0.12);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
 }
-/* v1.14.282: #omni-bar retired under redesign, so the phase dock sits directly above the nav (base #ph-dock bottom:var(--tabnav-h)); the +--omni-h :has() offset is removed. --omni-h measurement in phdock_render is now inert (returns 0 while hidden) and left as-is. */
+/* v1.14.282: #omni-bar retired under redesign, so the phase dock sits directly above the nav (base #ph-dock bottom:var(--tabnav-h)); the +--omni-h :has() offset is removed. ⛔ v1.14.533 corrects this note's last clause: the phdock_render measurement was described here as "inert and left as-is", which is how a dead write survived 251 versions of review. It is now DELETED: --omni-h is written by nothing and read by nothing, and the only occurrences left in this file are historical notes like this one. */
 #ph-dock .phd-count {
   flex: 0 0 auto; display: flex; flex-direction: column; justify-content: center;
   padding: 0 8px 0 2px; border-right: 1px solid rgba(120,150,200,0.14); margin-right: 3px;
@@ -13076,7 +13077,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.532';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.533';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -42322,13 +42323,10 @@ function phdock_render(deployId, rackId, rackPhases, cardsHtml, rack) {
   _phdock.deployId = deployId;
   _phdock.rackId = rackId;
 
-  // Measure the LOG bar rather than assume it: #omni-bar hides itself (.omni-inactive) when no
-  // deployment is active, and the :has() rule only adds this term while the bar is live.
-  var omni = document.getElementById('omni-bar');
-  if (omni && !omni.classList.contains('omni-inactive')) {
-    var oh = omni.getBoundingClientRect().height;
-    if (oh > 0) document.body.style.setProperty('--omni-h', Math.round(oh) + 'px');
-  }
+  // v1.14.533 (LEGACY-RETIRE Stage 1): the LOG-bar measurement that wrote --omni-h is GONE. Its
+  // only consumer, the :has()-gated dock offset, was deleted in .282; the write outlived it by 251
+  // versions, measuring a bar on every dock render to set a token nobody read. Do not re-add it —
+  // if the dock ever needs the bar's height again, measure it where it is USED.
 
   var done = rackPhases.filter(function(p) { return p.status === 'complete'; }).length;
   var h = '<div class="phd-count"><div class="n">' + done + '/' + rackPhases.length + '</div><div class="l">PHASES</div></div>';

@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.532",
-  "released": "2026-08-29",
-  "prevVersion": "phantom-v1.14.531",
-  "notes": "v1.14.532 — NAV CLEARANCE IS MEASURED (Ship B of RACK-DETAIL-CLEANUP). --rd-navclear was a hardcoded calc(96px + safe-bottom) while the real #rd-botnav footprint measures 122px at 390. Six rules read that token, so the stale value under-paid all of them; the visible symptom was the phase dock, anchored at bottom:108px under a 122px nav with its lowest 14px behind the nav. rd_syncNavClear now measures the nav and writes the token, re-running on a ResizeObserver over the nav box and on orientationchange. This is the second staleness of this kind — :1151 records --tabnav-h freezing at 72 while the nav grew to 96 — so the box writes the token rather than a constant describing the box. Redesign-only: legacy clears with --tabnav-h and never reads this token, and the function guards on redesign_isOn(), so ?legacy=1 is byte-identical."
+  "version": "phantom-v1.14.533",
+  "released": "2026-08-30",
+  "prevVersion": "phantom-v1.14.532",
+  "notes": "v1.14.533 — LEGACY-RETIRE STAGE 1: THE ZERO-CONSUMER TOKEN. --omni-h was written on every phase-dock render and read by nothing. Its only consumer, the :has()-gated dock offset, was deleted in v1.14.282; the write outlived it by 251 versions because the .282 note called the measurement 'inert and left as-is', which reads as a decision rather than as debt. phdock_render no longer looks up #omni-bar or measures it. A repo-wide sweep of all 217 custom properties found 26 with zero var() consumers, but --omni-h is the only LEGACY one — the other 25 are :root design-system palette and scale entries, which are PHANTOM_DESIGN_SYSTEM.md property and out of bounds under Contract 15's R-E. No visible change: nothing read the token, so nothing moves. Redesign and legacy are affected identically, since the write was dead in both houses."
 }
