@@ -1,6 +1,6 @@
 {
-  "version": "phantom-v1.14.531",
+  "version": "phantom-v1.14.532",
   "released": "2026-08-29",
-  "prevVersion": "phantom-v1.14.530",
-  "notes": "v1.14.531 — RACK DETAIL: DEAD 3D MOUNT REMOVED (Ship A of RACK-DETAIL-CLEANUP). The rack-detail elevation card carried two sibling surfaces inside #reh3dCanvasHost: #rehFlatWrap, which renders, and #reh3dMount, which did not — leaving a control rail over an empty box. The mount and the reh3d_restore(rack) call that fed it are both removed, so the flat U-rail elevation is the single rack visual on this page and is no longer a fallback. Removing the CALL is load-bearing, not tidying: reh3d_activate3D adds .is-3d before it looks for the mount, and .is-3d hides #rehFlatWrap at :11276, so leaving it would have emptied the card entirely. #reh3dCanvasHost keeps its id (shared guards read it). OPEN AISLE is untouched and still wired to forge3d_open(). rackElevation_render3D stays live for the Build preview, the Command hero and the RackEngine re-acquire paths."
+  "prevVersion": "phantom-v1.14.531",
+  "notes": "v1.14.532 — NAV CLEARANCE IS MEASURED (Ship B of RACK-DETAIL-CLEANUP). --rd-navclear was a hardcoded calc(96px + safe-bottom) while the real #rd-botnav footprint measures 122px at 390. Six rules read that token, so the stale value under-paid all of them; the visible symptom was the phase dock, anchored at bottom:108px under a 122px nav with its lowest 14px behind the nav. rd_syncNavClear now measures the nav and writes the token, re-running on a ResizeObserver over the nav box and on orientationchange. This is the second staleness of this kind — :1151 records --tabnav-h freezing at 72 while the nav grew to 96 — so the box writes the token rather than a constant describing the box. Redesign-only: legacy clears with --tabnav-h and never reads this token, and the function guards on redesign_isOn(), so ?legacy=1 is byte-identical."
 }

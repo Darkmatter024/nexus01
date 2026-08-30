@@ -13076,7 +13076,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.531';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.532';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -19677,6 +19677,48 @@ function rd_initExit(){
   if(csx && !csx._rdWired){ rd_holdGesture(csx, 'arming', rd_freeze); csx._rdWired=true; }
 }
 if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', rd_initExit, {once:true}); } else { rd_initExit(); }
+
+// ── v1.14.532 — --rd-navclear IS MEASURED, NOT DECLARED ──────────────────────────────────────
+// The token was a hardcoded calc(96px + var(--safe-bottom)) while the real #rd-botnav footprint
+// is 122px at 390. Six rules read it — .page padding (:1144), the phase-dock variant (:1162),
+// #ph-dock's own bottom anchor (:9734), #pg-cmd (:9999) and #pg-work (:12229) — so a stale value
+// silently under-pays every one of them. The visible symptom was the phase dock: anchored at
+// bottom:108px under a 122px nav, its lowest 14px sat behind the nav.
+// This is the SECOND time this token went stale. :1151 records the first — --tabnav-h froze at 72
+// while the nav grew to 96 — and draws the lesson: "A height and its clearance that read from one
+// token cannot drift apart." A constant that merely DESCRIBES a measured box will drift again, so
+// the box now writes the token itself.
+// getBoundingClientRect().height already includes the nav's padding-bottom of
+// calc(8px + var(--safe-bottom)), so the raw measurement is written — adding safe-bottom here
+// would double-count it.
+// REDESIGN-ONLY. Legacy clears its nav with --tabnav-h and never reads this token; the guard
+// below keeps ?legacy=1 byte-identical.
+function rd_syncNavClear() {
+  try {
+    if (typeof redesign_isOn === 'function' && !redesign_isOn()) return;
+    var nav = document.getElementById('rd-botnav');
+    if (!nav) return;
+    var h = Math.round(nav.getBoundingClientRect().height);
+    // 0 = the nav is display:none or not yet composed. Leave the CSS default standing rather than
+    // writing a clearance of 0 and collapsing every page's bottom padding; the ResizeObserver
+    // below fires again the moment it has a real box.
+    if (!h) return;
+    document.body.style.setProperty('--rd-navclear', h + 'px');
+  } catch (e) { if (typeof phantom_logErr === 'function') phantom_logErr('rd_syncNavClear', e); }
+}
+(function rd_navClearInit() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', rd_syncNavClear, { once: true });
+  } else { rd_syncNavClear(); }
+  try {
+    var nav = document.getElementById('rd-botnav');
+    // The nav's height changes with the icon box, the label size and the safe-area inset. An
+    // observer on the box itself catches all three without knowing about any of them.
+    if (nav && typeof ResizeObserver === 'function') new ResizeObserver(rd_syncNavClear).observe(nav);
+  } catch (_) {}
+  // Rotation changes the safe-area inset; the resize lands after the viewport settles.
+  try { window.addEventListener('orientationchange', function () { setTimeout(rd_syncNavClear, 200); }); } catch (_) {}
+})();
 // Freeze boot-restore (redesign-only; _session_bootRestore early-returns under redesign so it never
 // restores the redesign view). If a freeze marker survived a Safari kill, land back on the saved page.
 (function rd_freezeBootRestore(){
