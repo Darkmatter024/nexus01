@@ -12976,7 +12976,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.534';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.535';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -27471,35 +27471,14 @@ function today_render() {
     html += '</div>';
   }
 
-  // ── PULSE SECTION ──
-  var contextName = mostRecentDeploy ? (mostRecentDeploy.name || 'Deployment') : 'No active build';
-  var contextSite = (mostRecentDeploy && mostRecentDeploy.siteId) ? mostRecentDeploy.siteId : phantom_siteLabel('SITE');
-
-  html += '<div class="gsk-cy" style="background:rgba(92,242,255,0.04);border:1px solid rgba(92,242,255,0.15);border-radius:var(--hud-r12);padding:12px 14px;margin-bottom:10px">';
-  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
-  html += '<div style="font-family:var(--mono);font-size: var(--fs-micro);letter-spacing:var(--hud-track-wide);color:var(--cyan)">TODAY</div>';
-  html += '<div style="flex:1;height:1px;background:rgba(92,242,255,0.15)"></div>';
-  html += '<div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);letter-spacing:1px">' + escHtml(contextSite) + '</div>';
-  html += '</div>';
-
-  // Main pulse line
-  html += '<div style="font-family:var(--raj);font-weight:700;font-size:14px;color:var(--white);margin-bottom:4px">' + escHtml(contextName) + '</div>';
-
-  // Stats row
-  html += '<div style="display:flex;gap:12px;margin-top:8px;font-family:var(--mono);font-size: var(--fs-caption)">';
-  html += '<div><span style="color:var(--cyan);font-size:16px;font-weight:700;font-family:var(--orb)">' + totalRacks + '</span> <span style="color:var(--slate);letter-spacing:1px">RACKS</span></div>';
-  html += '<div><span style="color:var(--green);font-size:16px;font-weight:700;font-family:var(--orb)">' + racksComplete + '</span> <span style="color:var(--slate);letter-spacing:1px">DONE</span></div>';
-  html += '<div><span style="color:' + (racksInProgress > 0 ? 'var(--gold)' : 'var(--slate)') + ';font-size:16px;font-weight:700;font-family:var(--orb)">' + racksInProgress + '</span> <span style="color:var(--slate);letter-spacing:1px">ACTIVE</span></div>';
-  html += '<div><span style="color:' + (racksBlocked > 0 ? 'var(--red)' : 'var(--slate)') + ';font-size:16px;font-weight:700;font-family:var(--orb)">' + racksBlocked + '</span> <span style="color:var(--slate);letter-spacing:1px">BLOCKED</span></div>';
-  html += '</div>';
-
-  // Progress bar
-  html += '<div style="position:relative;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-top:10px">';
-  html += '<div style="position:absolute;left:0;top:0;bottom:0;width:' + pct + '%;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width 0.3s ease"></div>';
-  html += '</div>';
-  html += '<div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);letter-spacing:1px;margin-top:4px;text-align:right">' + pct + '% OVERALL</div>';
-
-  html += '</div>'; // end pulse card
+  // v1.14.535 (LEGACY-RETIRE Stage 2b): the TODAY PULSE card was here — a cyan panel with the
+  // site label, the deployment name, a four-stat row and an overall progress bar. It rendered
+  // ONLY under ?legacy=1, because this whole function paints into #today-dashboard inside
+  // pg-triage, and the redesign never shows that page. ⛔ Unlike Stage 2a's crash-cart, this was
+  // NOT dead code: it was live legacy UI, removed under the 2026-08-29 revocation of Contract 17.
+  // ⚠ AND THIS FUNCTION IS STILL LIVE. today_render has four callers, one of them at BOOT — so it
+  // runs in full on every launch and paints into a host the redesign never displays. Deleting the
+  // card did not change that; it is the deploy-dead-render-host shape and it outlives this stage.
 
   // ── RACK SKYLINE (v1.6.99) — replaces the completion ring. The deployment's racks
   // as bottom-up fill bars (left ~60%) + the one big % + readout (right ~40%). Same
