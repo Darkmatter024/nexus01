@@ -17,7 +17,32 @@ spec against `.535` with the Stage 3.1 changes stashed: **identical three failur
 **Contract 9a violation** — identity is two people, `siteLead` = authority and `currentOperator` =
 actor, landed `.417`/`.418` — and the authority half cannot be set at setup. The legacy-side test
 still passes, correctly asserting legacy has no such field, so the loss is on the **redesign** side.
-**Age unknown; not investigated.** Needs John's call: chase it now, or finish Stage 3 first.
+⭐ **ROOT-CAUSED 2026-08-30. The field is not "missing" — it was DELIBERATELY REMOVED, and the
+consequence was silent.** `v1.14.474` (`c43fe86`, 2026-08-22, *"Greenfield cold-open path … 2-field
+setup"*) deleted the `SITE LEAD` section and its `frMach('fr-siteLead', …)` input from the redesign
+first-run gate. **Nothing about that ship was wrong on its face.** What made it silent is the guard
+it left behind:
+
+- `firstRun_confirm` reads the field as `var leadEl = getElementById('fr-siteLead'); if (leadEl) {…}`.
+  `.432` wrote that guard **deliberately and correctly** — its own comment says *"GUARDED ON THE
+  ELEMENT EXISTING, not on the house … the legacy branch has no such field."* ⭐ **`.474` then
+  removed the field from the OTHER house too, so a guard designed to skip in one house now skips in
+  BOTH.** `p.siteLead` is never collected from anyone, anywhere. No error, no warning, no test run.
+- ⛔ **But the value is NOT empty — and that is the actual defect.** `:35378` backfills
+  `if (!p.siteLead && p.operator) p.siteLead = p.operator`. Written as a MIGRATION for existing
+  devices, it now fires on **every fresh install**, silently writing whoever set the device up in as
+  the site's authority. ⭐ **That is precisely the outcome `.417`/`.418` removed a read-time coalesce
+  to prevent** — `:35234` still says *"STRICT: NO FALLBACK TO siteLead … That was wrong"* — except
+  it is now a WRITE-time coalesce, so it persists and looks deliberate.
+- ⛔ **There is no way to set or correct it.** `siteLead` has exactly **two writers in the file**
+  (`:28705`, dead; `:35378`, the backfill). Neither is a user-facing editor. Contract 9a says
+  *"changed only in SITE/SYSTEM"* — **that door does not write this field.**
+- The 3 tests have been red for ~62 versions. `BATCH-VERIFY` had already warned the suite was
+  *"unproven, not green"*; this is what was hiding in it.
+
+⛔ **NOT FIXED — the decision is John's, not mine.** Re-adding the input reverses a shipped product
+decision (the 2-field cold open). The three options are in the session report: restore the field ·
+keep 2-field and make the authority honest · accept and re-point the tests.
 
 ⚠ **This file went 14 versions stale** (`.518` → `.532`, 2026-08-27 → 08-30) while it is the one
 document that claims to be state. The refresh rode along with Stage 0 because that ship touches no
