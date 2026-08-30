@@ -5,8 +5,15 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-27, after `v1.14.518` — Phase 1.2 export discrepancies + photos shipped.
-⏳ AWAITING DEVICE VERIFY OF v1.14.483–.518. .517 export manifest; .518 adds discrepancies + extracted photos. Phase 1.3–.6 pending. Next: John's device verify per SHIP-HANDOFF-GAP-516 programme.**
+**Last updated: 2026-08-30, at `v1.14.532` — LEGACY-RETIRE Stage 0 (docs only, no version bump).
+✅ NO VERIFY DEBT. `VERIFIED` = `.532`; the nine ships `.525`–`.532` were each verified and stamped
+one at a time on 2026-08-29/30, and the served bytes on `release` read `.532`. The next-ship gate is
+CLEAR. Next: LEGACY-RETIRE Stage 1, per `SHIP-HANDOFF-LEGACY-RETIRE-RULING.md` (in the repo).**
+
+⚠ **This file went 14 versions stale** (`.518` → `.532`, 2026-08-27 → 08-30) while it is the one
+document that claims to be state. The refresh rode along with Stage 0 because that ship touches no
+product source. **A stale state file is the failure this file exists to prevent** — update it in
+the ship that changes the fact, not in the one that happens to have room.
 
 ---
 
@@ -14,20 +21,23 @@ doc is stale — fix the doc, do not fork the fact.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.518`** (latest) / **`.483`** (baseline) |
-| Commits | `.481–.486` Phase Next work (2026-08-23) · `.487–.516` iOS SW lifecycle + cache hardening (2026-08-24 through 2026-08-27, **unverified on hardware**) |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.518` |
-| Shipped | ✅ **v1.14.518 PHASE 1.2 EXPORT DISCREPANCIES + PHOTOS** — Discrepancies now explicit bundle section (was only in extra-keys). Base64 photos extracted from discrepancy records → separate array. On import (Phase 1.4), photos restore to IndexedDB store ('phantom-photos'), fixing B13 violation. Manifest documents both. **Ready for Phase 1.3–1.6 slices.** |
+| **Version** | **`phantom-v1.14.532`** (latest, and the served bytes) / **`.532`** (baseline) |
+| Commits | `.481–.486` Phase Next work (2026-08-23) · `.487–.518` iOS SW lifecycle + cache hardening (2026-08-24 → 08-27) · `.519`+`.524` photo capture / gallery (`.520`–`.523` are **burned numbers**, committed straight onto `release` and orphaned by a reset — they survive only as `recovery-v1.14.52x` tags) · `.525`–`.532` nav, dock and rack-detail (2026-08-29) |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.532`, and `curl` of `release` agrees |
+| Shipped | ✅ **v1.14.532 NAV CLEARANCE IS MEASURED** — `--rd-navclear` was a hardcoded `calc(96px + safe-bottom)` while `#rd-botnav` measures **122px** at 390; six rules read that token, so one stale constant under-paid all of them (visible symptom: the phase dock's lowest 14px sat behind the nav). `rd_syncNavClear` now measures the box and writes the token, re-running on a `ResizeObserver` and `orientationchange`. ⭐ **Second occurrence of this exact class** — `:1151` records `--tabnav-h` freezing at 72 while the nav grew to 96. **The box writes the token; a constant that merely DESCRIBES a measured box drifts the moment the box changes.** |
+| Verified | ✅ **`.519`–`.532` CLEARED ON HARDWARE 2026-08-29/30** — verified one at a time, not as a batch: the campaign now in force forbids stacking. `VERIFIED` stamped `.532` at 01:01 on 08-30. **Verify debt is zero for the first time since `.483`.** |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
 | Branch | `main`, in sync with origin |
 | Held | `m2b-step1-hold` — M2-b step 1, built, unpushed, blocked on a colour ruling |
 | Verified | ✅ **`.454`–`.456` CLEARED ON HARDWARE 2026-08-13** — all six checks passed one at a time |
 | Verified | ✅ **`.457`–`.459` CLEARED ON HARDWARE 2026-08-14** — both passes. **The SW UPDATE P0 is closed: one tap, `.458` → `.459`, data intact** |
-| Status | 🔄 **PHASE 1 IN PROGRESS — Export completeness.** .517 ships 1.1 (manifest); 1.2–1.6 pending (discrepancies, Ghost Echo, restore honesty, IDB tolerance, merge rules). |
+| Status | 🔄 **LEGACY-RETIRE IS THE ACTIVE CAMPAIGN** (owner ruling 2026-08-29, `SHIP-HANDOFF-LEGACY-RETIRE-RULING.md`). Stage 0 landed 2026-08-30 — docs only. ⛔ **Contract 17's byte-identity guarantee is REVOKED**; `?legacy=1` may change and at Stage 7 stops existing. ⛔ **One ship per stage, phone verify between stages, no stacking — CALL 0 batching does not apply inside this campaign.** |
+| Parked | ⏸ **PHASE 1 export completeness** — `.517` shipped 1.1 (manifest), `.518` shipped 1.2 (discrepancies + extracted photos); **1.3–1.6 pending** (Ghost Echo, restore honesty, IDB tolerance, merge rules). Not abandoned, out-ranked. |
 | Phase Next-1 | ✅ **Technical deep dive shipped** — `PHASE-NEXT-1-TECHNICAL-DEEP-DIVE.md` — comprehensive analysis of Master→Profile pipeline, integration gaps (solved), edge cases, contracts, atomic save requirements, testing strategy, implementation plan (one surgical edit + three-stamp, ✅ shipped in v1.14.484) |
 | Phase Next-2 | ✅ **Discovery complete** — `PHASE-NEXT-2-DISCOVERY.md` — site context injection audit. Finds: AI features ✅ (already use profile), hero ❌ (no site display), forms ❌ (no pre-fill), search ❌ (not ranked by site), reference ❌ (not filtered by site). Recommends 2.1 (hero LOW), 2.2 (forms LOW-MEDIUM), 2.3 (search MEDIUM), 2.4 (reference MEDIUM) as sequence. |
 | Phase Next-3 | ✅ **Discovery complete** — `PHASE-NEXT-3-DISCOVERY.md` — Shift handoff storage & device transfer audit. Finds: Current usage 1.36 MB (27% of 5 MB quota), multi-shift approaches wall (50KB–6MB per shift), no pruning strategy, no device transfer flow. 5 gaps: no volume measurement, no pruning, no photo storage policy, no device transfer UX, no IndexedDB migration. Recommends 3.1 (measurement LOW), 3.2 (export LOW-MEDIUM), 3.3 (pruning MEDIUM), 3.4 (device transfer HIGH), 3.5 (IndexedDB MEDIUM) sequence. |
-| Next Ship | **DEVICE VERIFY v1.14.483** (pending John's iPhone) → **Then Phase Next-1 device verify v1.14.484** → **Phase Next campaigns begin** (2.1+3.1 parallel, then 2.2+3.2+3.3, then 2.3+2.4+3.4+3.5) |
+| Next Ship | **LEGACY-RETIRE Stage 1** — the first stage that touches `dct-ios.html`, so it re-anchors first: `/graphify . --update` (the graph is stale at 2026-08-28, pre-`.529`) then OODA against served bytes. Ships as `.533`, one visible change, then STOPS for John's phone. |
+| Open defects | ⚠ **Carried from `.519`/`.524`, found in review, none blocking:** blob-handle leak (`URL.createObjectURL` per thumbnail, `revokeObjectURL` called **zero** times) · photo orientation not corrected on the compress path, so a portrait capture can land sideways · **a third photo store** — `.519` opens IndexedDB `phantom-attachments` while the A.1 census documents `phantom-photos`, which nothing opens, so **any adapter written against that census targets a database that is never used** · compress can resolve empty and the persist step stores it anyway (a save that reports success with no image behind it). |
 
 Authoritative check: `curl -s https://darkmatter024.github.io/phantom/version.json`
 

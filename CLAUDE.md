@@ -73,9 +73,58 @@ behavioral-rule test. Changing one requires an owner ruling.
 16. **Intentional compositions per tier.** Phone / tablet / laptop / desktop are designed, not
     stretched. Desktop composition is automatic at ≥1024 via media query. Rule 1: nothing pushes
     the viewport past 100vw, ever.
-17. **No legacy UI leakage.** `?legacy=1` is byte-identical behavior. Nothing under `body.rd` may
-    `nav_push` a legacy `p:` value. Gate the PRESENTATION, never the INVARIANT — Rule 7 protects
-    legacy from churn, not from crash fixes.
+17. ⛔ **REVOKED IN PART — owner ruling 2026-08-29.** John, verbatim: *"I formally revoke contract
+    17 — `?legacy=1` byte-identical behavior is no longer guaranteed."* **The byte-identity
+    guarantee is gone.** `?legacy=1` may change, may degrade, and at LEGACY-RETIRE Stage 7 it stops
+    existing. ⛔ Do not cite byte-identity to refuse or narrow a change, and do not restore this
+    clause from an older copy of this file — every ship from `.533` on that says *"legacy is
+    byte-identical"* in its notes is quoting a contract that no longer holds.
+    ⚠ **What the ruling did NOT name, held pending his correction:** *no legacy UI leakage* —
+    nothing under `body.rd` may `nav_push` a legacy `p:` value — and the general law **gate the
+    PRESENTATION, never the INVARIANT**. The revocation names byte-identity and nothing else, so
+    the leakage invariant stands under the campaign's own *"anything ambiguous defaults to KEEP"*;
+    it becomes moot when Stage 7 deletes the legacy `p:` values it guards against. **Reported here
+    rather than silently resolved** — if John meant the whole contract, he strikes these two lines.
+
+---
+
+## LEGACY-RETIRE — the campaign of record (owner ruling 2026-08-29)
+
+⭐ **`SHIP-HANDOFF-LEGACY-RETIRE-RULING.md` is in the repo** — imported verbatim 2026-08-30,
+**3,454 bytes · `sha256 537be43ddb9dc5fc…`**, byte-identical to the copy in `Downloads`. It had
+lived only in that folder, which is how `SHIP-TECH-FLOW-V2` was nearly lost: a document no session
+can see is not a programme of record. **Read the file, not this summary, before any stage patch.**
+
+**Goal:** `?legacy=1` and the legacy house cease to exist. **Scope: ~10–12 ships, not the 23–36 in
+the proposed stage list** — the ruling replaced it.
+
+**Sequence, and it is not negotiable:**
+`0 → verify → 1 → verify → 2 → verify → 3 → 4 → STRANDED note → organ inventory → OWNER APPROVAL
+→ Stage 6 ships → Stage 7 → done.`
+
+- **Stages 0–2** approved outright. **3–4** approved contingent on 0–2 landing clean and stamped.
+- ⛔ **Stage 5 (STRANDED) is PULLED from this campaign.** The 3 unresolved rows get their redesign
+  doors under `SHIP-HANDOFF-IA-SHIFTNAV`. **Do not build doors here** — document them in
+  `docs/LEGACY-RETIRE-STRANDED.md` and stop.
+- ⛔ **Stage 6 (RE-HOMED decouple) is HELD behind an inventory gate.** `docs/LEGACY-RETIRE-ORGAN-INVENTORY.md`
+  — all 11 borrowed organs, what each is, which shell hosts it, where it re-homes, the blast radius
+  if wrong — goes to John and **he approves it before ship 1 of that stage.** Highest-risk stage in
+  the plan; it gets the most paperwork.
+- **Stage 7 is the finish line:** `redesign_isOn`, `phantom_legacy`, `?legacy=1` and `--tabnav-h`
+  (20 refs) come out. That is the payoff of the whole campaign.
+- ⛔ **Stage 8 (unwrapping the 941 always-true `body.rd` gates) is PERMANENTLY DEFERRED.** They cost
+  nothing at runtime; a 941-edit sweep through a 60k-line file with no build system and no type
+  checker is unacceptable risk for a cosmetic win. **Do not schedule it. Do not revisit it unprompted.**
+
+**Execution rules that override the batching default:** ⛔ **one visible change per ship and NO
+stacking** — every stage takes a phone verify before the next begins, so Ship discipline 0 (CALL 0
+batching) does **not** apply inside this campaign. Adjacent cleanup found mid-stage is logged to a
+findings note, never acted on — *findings notes are leads, not tasking*. Any on-device error,
+console `SyntaxError`, or crash-log entry during a verify is a **full stop** with brace-level
+diagnosis before anything else ships; `.522` is why.
+
+**Stage 0 landed 2026-08-30** — this section, the Contract 17 revocation above, and the ruling
+import. Docs only: no product source touched, so no version bump and no `VERIFIED` stamp.
 
 ---
 

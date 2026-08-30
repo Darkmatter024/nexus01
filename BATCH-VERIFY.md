@@ -4,9 +4,19 @@ any HIGH-risk ship). Every ship keeps its own rollback line. Claude Code appends
 
 ---
 
-# 🟡 CURRENT BATCH — `.519` + `.524` (2 of 6) — OPEN, AWAITING HARDWARE
+# ✅ BATCH — `.519` + `.524` — CLEARED ON HARDWARE 2026-08-29/30
 
-**Live on `main`: `v1.14.524`.** Last stamp: `VERIFIED = v1.14.518`. Two ships in the span —
+⛔ **THIS LIST IS CLOSED. Do not hand it to John again.** `VERIFIED` reached `.532`, which the gate
+can only have accepted by passing through `.524`; the five checks below are answered. Kept as the
+record of what was checked, not as an open ask. **The four code-review defects at the foot of this
+section are still real and still unfixed** — they are carried in `PHANTOM_CURRENT_STATE.md` under
+Open defects, which is where they get resolved, not here.
+
+⛔ **The batching protocol at the top of this file does NOT apply to LEGACY-RETIRE.** That campaign
+is one ship per stage with a phone verify between stages (owner ruling 2026-08-29). Do not stack
+its stages into a consolidated list.
+
+**Live on `main` at the time: `v1.14.524`.** Stamp then: `VERIFIED = v1.14.518`. Two ships in the span —
 `.519` added photo capture / compress / persist (Phase B.1), `.524` added the gallery, viewer and
 delete, and fixed the orphaned brace `.523` shipped. `.520`–`.523` have no commits on any branch:
 burned numbers, not missing work.
