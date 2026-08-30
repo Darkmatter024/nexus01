@@ -949,24 +949,6 @@ body {
   transition: background 0.12s ease, transform 0.12s ease;
 }
 .nav-back-btn:active { background: rgba(92,242,255,0.10); transform: scale(0.95); }
-.app-logo {
-  font-family: var(--brand); font-weight: 400;
-  font-size: 20px; letter-spacing: 1.5px;
-  background: linear-gradient(95deg, #2ff0d6 0%, #34dcff 40%, #c45cff 68%, #ff36d4 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  filter: drop-shadow(0 0 8px rgba(47,240,214,0.5)) drop-shadow(0 0 16px rgba(255,54,212,0.4));
-  line-height: 1;
-  white-space: nowrap;
-}
-.app-logo span { color: var(--violet-bright, #b58cff); }
-.app-loc {
-  font-family: var(--raj); font-weight: 400;
-  font-size: var(--fs-micro); letter-spacing: 3px; color: var(--slate);
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .header-right { display:flex; align-items:center; gap: 8px; }
 .hdr-menu-item {
   display:flex; align-items:center; gap:8px;
@@ -4034,8 +4016,6 @@ body.rd .header-right { align-self: center; }
 :focus:not(:focus-visible) { outline: none; }
 
 /* ── TASK 3: Contrast — bump sub-4.5:1 text to WCAG AA ── */
-/* .app-loc: #486070 → #6a8fa0 (2.8:1 → ~4.6:1) */
-.app-loc { color: #6a8fa0; }
 
 
 /* Body detail text: #7a9eb8 → #8ab8cc */
@@ -10146,7 +10126,7 @@ body.rd #rd-exit.arming .rd-exit-charge{transition:transform .85s linear;transfo
 #rd-wake .rd-wring{stroke:var(--gold);stroke-width:3;stroke-linecap:round;stroke-dasharray:452;stroke-dashoffset:452}
 #rd-wake.arming .rd-wring{transition:stroke-dashoffset .85s linear;stroke-dashoffset:0}
 #rd-wake .rd-wlbl{font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.16em;color:var(--gold);text-align:center;line-height:1.3;z-index:2}
-body.rd .app-logo,body.rd .app-loc,body.rd #mode-toggle,body.rd .tab-nav{display:none}
+body.rd #mode-toggle,body.rd .tab-nav{display:none}   /* v1.14.536: .app-logo/.app-loc dropped with the elements themselves (Stage 3.1) */
 /* Rule A (v1.14.122) — one back control per surface. The legacy header chevron (#nav-back-btn,
    nav_back/history.back) is hidden in the New UI: the redesign provides its own context-back on
    every surface (the per-page #work-back/#ref-back grid-back on panels, the inline '‹ Back' pill
@@ -12976,7 +12956,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.535';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.536';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -13022,8 +13002,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var _site = _prof ? (_prof.facilityName || _prof.facilityId || '') : '';
     var be = document.querySelector('.boot-eyebrow');
     if (be) be.textContent = (_site ? _site + ' \u00b7 ' : '') + PHANTOM_APP_VERSION.replace('phantom-', '');
-    var loc = document.querySelector('.app-loc');
-    if (loc) loc.textContent = _site || '';
   } catch (_) {}
 });
 
@@ -13641,8 +13619,9 @@ if (typeof window !== 'undefined') {
       <div class="header-left">
         <button id="nav-back-btn" class="nav-back-btn" onclick="nav_back()" aria-label="Back" style="display:none">‹</button>
         <div class="header-left-text">
-          <div class="app-logo" id="appLogoTap">PHANTOM</div>
-          <div class="app-loc"></div>
+          <!-- v1.14.536 (LEGACY-RETIRE Stage 3.1): the legacy identity block — the PHANTOM
+               wordmark (#appLogoTap) and the .app-loc site line — was here. Both were
+               display:none under body.rd; the redesign's identity is .wmimg + #rd-sub below. -->
           <!-- REDESIGN frame (shown only under body.rd): chrome wordmark + COREWEAVE · {site} -->
           <img class="wmimg" src="cc-wordmark.png" alt="PHANTOM" aria-hidden="true" draggable="false">
           <div class="sub" id="rd-sub">COREWEAVE · <span class="site" id="rd-site">—</span></div>
@@ -19074,66 +19053,6 @@ function phantomDeferredInit() {
     localStorage.removeItem('gt_lessons');
   }, 500);
 }
-
-// ━━━ DEV ESCAPE HATCH — 5-tap on PHANTOM logo to replay boot screen ━━━
-(function() {
-  function bind() {
-    var logo = document.getElementById('appLogoTap');
-    if (!logo) { setTimeout(bind, 500); return; }
-    // v1.14.210 LOGO-HOME: a11y + affordance, redesign only (shared-header markup stays
-    // byte-identical for legacy — set at runtime, not in the served HTML).
-    if (typeof redesign_isOn !== 'function' || redesign_isOn()) {
-      try { logo.setAttribute('aria-label', 'Go to Command Center'); logo.style.cursor = 'pointer'; } catch (e) {}
-    }
-    var taps = 0;
-    var resetTimer = null;
-    var homeTimer = null;
-    // v1.14.210: settled single tap → Command Center. Redesign only; 5-tap boot
-    // replay is preserved in both houses. Home must never be trappable behind a
-    // broken guard, so the whole thing is wrapped and falls through to navigate.
-    function logo_goHome() {
-      try {
-        if (typeof redesign_isOn === 'function' && !redesign_isOn()) return;   // legacy: logo behavior unchanged
-        var cmd = document.getElementById('pg-cmd');
-        if (cmd && cmd.offsetParent !== null) { if (typeof haptic === 'function') haptic(6); return; }  // already on Command → no re-render
-        var ae = document.activeElement;
-        if (ae && ae.classList && ae.classList.contains('pcl-note') && ae.value && ae.value.trim().length) {
-          if (!confirm('Leave this rack? Unsaved note may be lost.')) return;
-        }
-        if (typeof haptic === 'function') haptic(8);
-        showPage('triage', (typeof getTnItem === 'function') ? getTnItem('triage') : null);
-      } catch (e) {
-        try { showPage('triage', (typeof getTnItem === 'function') ? getTnItem('triage') : null); } catch (_) {}
-      }
-    }
-    logo.addEventListener('click', function(e) {
-      taps++;
-      clearTimeout(resetTimer);
-      resetTimer = setTimeout(function() { taps = 0; }, 2000);
-      // Single-tap-home resolver: a 5-tap burst lands taps 2..5 inside 260ms and keeps
-      // clearing this timer, so it only fires for a genuinely settled single tap.
-      clearTimeout(homeTimer);
-      homeTimer = setTimeout(function() { if (taps === 1) { taps = 0; logo_goHome(); } }, 260);
-      if (taps >= 5) {
-        taps = 0;
-        clearTimeout(homeTimer);   // v1.14.210: no home-jump after a boot-replay burst
-        if (typeof haptic === 'function') haptic(20);
-        try { localStorage.removeItem('phantom_seen_boot'); } catch (e) {}
-        // Tiny toast so the tech sees it worked
-        var toast = document.createElement('div');
-        toast.textContent = 'BOOT REPLAY';
-        toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(8,16,28,0.92);color:#5cf2ff;font-family:var(--mono),monospace;font-size:11px;font-weight:700;letter-spacing:2px;padding:14px 22px;border:1px solid rgba(92,242,255,0.4);border-radius:var(--hud-r12);box-shadow:0 0 24px rgba(92,242,255,0.3);z-index:99999;pointer-events:none';
-        document.body.appendChild(toast);
-        setTimeout(function() { location.reload(); }, 600);
-      }
-    });
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bind);
-  } else {
-    bind();
-  }
-})();
 
 /* ━━━ ILLUMINATED SPINE — bottom-nav capsule/ribbon observer ━━━━━
    Syncs the sliding capsule indicator + bottom color ribbon to
@@ -28794,10 +28713,6 @@ function firstRun_confirm() {
     try { localStorage.setItem('phantom_seen_boot', '1'); } catch (_) {}
     var ov = document.getElementById('fr-overlay');
     if (ov) ov.classList.remove('show');
-    try {
-      var _label = p.facilityName || p.facilityId || '';
-      var _loc = document.querySelector('.app-loc'); if (_loc) _loc.textContent = _label;
-    } catch (_) {}
     if (typeof firstRun_renderChip === 'function') firstRun_renderChip();
     if (typeof cmd_setSiteLabel === 'function') cmd_setSiteLabel();
     if (typeof phantomToast === 'function') phantomToast('Device ready \u2014 ' + (p.operator || 'device') + ' set up', 'ok');

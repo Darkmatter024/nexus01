@@ -5,12 +5,19 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-30, after `v1.14.535` — LEGACY-RETIRE Stage 2b shipped to `main`.
-⏳ ONE UNVERIFIED SHIP: `.535`, on `main`, NOT promoted. `VERIFIED` = `.534`, device-verified
-2026-08-30. `.525`–`.534` all verified and stamped; no older debt behind this one.
-✅ **STAGE 2 IS COMPLETE** — all three RETIRED rows resolved: `.534` Crash-Cart, `.535` TODAY
-Pulse, and Incident Memory needed no ship. Next after verify: **Stage 3 (LIVE shells)**, which the
-ruling approved contingent on 0–2 landing clean and stamped — 4–6 ships, medium risk.**
+**Last updated: 2026-08-30, after `v1.14.536` — LEGACY-RETIRE Stage 3.1 shipped AND promoted.
+⏳ ONE UNVERIFIED SHIP: `.536`. `VERIFIED` = `.535`. ⭐ **Claude Code now promotes** (owner ruling
+2026-08-30, `CLAUDE.md` Branch topology) — `.536` is already on `release` and served, so John's
+device check is the only thing outstanding. Stage 2 complete; Stage 3 in progress, 3.1 of ~4.**
+
+🔴 **OPEN DEFECT, PRE-EXISTING AND NOT FROM THIS CAMPAIGN — the first-run gate has NO SITE LEAD
+FIELD.** `21-first-run-gate.spec.js` fails 3 of 9 at `:44`, `:63`, `:77` with *"the gate still has
+no Site Lead field"* — `#fr-siteLead` resolves to **count 0**. Proven pre-existing by re-running the
+spec against `.535` with the Stage 3.1 changes stashed: **identical three failures.** ⛔ This is a
+**Contract 9a violation** — identity is two people, `siteLead` = authority and `currentOperator` =
+actor, landed `.417`/`.418` — and the authority half cannot be set at setup. The legacy-side test
+still passes, correctly asserting legacy has no such field, so the loss is on the **redesign** side.
+**Age unknown; not investigated.** Needs John's call: chase it now, or finish Stage 3 first.
 
 ⚠ **This file went 14 versions stale** (`.518` → `.532`, 2026-08-27 → 08-30) while it is the one
 document that claims to be state. The refresh rode along with Stage 0 because that ship touches no
@@ -23,7 +30,7 @@ the ship that changes the fact, not in the one that happens to have room.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.535`** (on `main`, unpromoted) / **`.534`** (baseline — `release` and the served bytes, device-verified) |
+| **Version** | **`phantom-v1.14.536`** (on `main` AND `release`, served, awaiting device verify) / **`.535`** (baseline, device-verified) |
 | Commits | `.481–.486` Phase Next work (2026-08-23) · `.487–.518` iOS SW lifecycle + cache hardening (2026-08-24 → 08-27) · `.519`+`.524` photo capture / gallery (`.520`–`.523` are **burned numbers**, committed straight onto `release` and orphaned by a reset — they survive only as `recovery-v1.14.52x` tags) · `.525`–`.532` nav, dock and rack-detail (2026-08-29) |
 | Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.532`, and `curl` of `release` agrees |
 | Shipped | ✅ **v1.14.532 NAV CLEARANCE IS MEASURED** — `--rd-navclear` was a hardcoded `calc(96px + safe-bottom)` while `#rd-botnav` measures **122px** at 390; six rules read that token, so one stale constant under-paid all of them (visible symptom: the phase dock's lowest 14px sat behind the nav). `rd_syncNavClear` now measures the box and writes the token, re-running on a `ResizeObserver` and `orientationchange`. ⭐ **Second occurrence of this exact class** — `:1151` records `--tabnav-h` freezing at 72 while the nav grew to 96. **The box writes the token; a constant that merely DESCRIBES a measured box drifts the moment the box changes.** |
