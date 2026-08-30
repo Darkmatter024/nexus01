@@ -12956,7 +12956,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.538';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.539';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -28557,47 +28557,6 @@ function site_prefillProfileFromMaster() {
 // so it never fires again. Floor fields (rack naming, PDU) are optional here:
 // blank is safe (getContextBlock skips blanks), and forcing a value just
 // invites garbage that would poison AI context.
-/**
- * One honest line about the Master, for the first-run gate (v1.14.432).
- * States what is loaded or that nothing is — never a guess, never a placeholder count.
- */
-function firstRun_masterLine() {
-  try {
-    var m = (typeof PHANTOM_MASTER !== 'undefined') ? PHANTOM_MASTER.active() : null;
-    if (!m || !m.racksByCab) return 'No Master loaded on this device yet.';
-    var racks = Object.keys(m.racksByCab).length;
-    var hosts = (typeof PHANTOM_MASTER_STORE !== 'undefined') ? PHANTOM_MASTER_STORE.hostCount(m) : 0;
-    return 'Loaded &middot; ' + racks + ' RACKS &middot; ' + hosts + ' COMPONENTS'
-      + (m.sourceFile ? ' &middot; ' + escHtml(m.sourceFile) : '');
-  } catch (_) { return 'No Master loaded on this device yet.'; }
-}
-
-/**
- * The Master step of the first-run gate. Delegates to the ONE import door, which already parses,
- * stages, validates, shows the counts summary and activates on a tap (`.422`). This function's
- * only job afterwards is to re-state what is now loaded — it never writes Master state itself.
- */
-async function firstRun_loadMaster() {
-  if (typeof master_loadFromPicker !== 'function') {
-    try { if (typeof phantomToast === 'function') phantomToast('Master loader unavailable', 'error'); } catch (_) {}
-    return;
-  }
-  try { await master_loadFromPicker({}); } catch (_) { /* cancelled or refused — the door says so */ }
-  var el = document.getElementById('fr-master-state');
-  if (el) el.innerHTML = firstRun_masterLine();
-  // A Master carries the site's own identity. If the operator has not typed a site yet, offer
-  // what the Master knows rather than leaving them to retype it — editable, never forced.
-  try {
-    var _mv2 = (typeof master_siteVars === 'function') ? master_siteVars() : null;
-    if (_mv2) {
-      var fid = document.getElementById('fr-facilityId');
-      var fnm = document.getElementById('fr-facilityName');
-      if (fid && !String(fid.value || '').trim()) fid.value = _mv2.locode || _mv2.site || '';
-      if (fnm && !String(fnm.value || '').trim()) fnm.value = _mv2['site-name'] || _mv2.facility || '';
-    }
-  } catch (_) {}
-}
-
 function firstRun_show() {
   var inner = document.getElementById('fr-inner');
   var ov    = document.getElementById('fr-overlay');
@@ -28694,16 +28653,6 @@ function firstRun_confirm() {
   var p = siteProfile_load();
   p.operator = name;
   // v1.14.480: facilityId is Master-sourced only. Do not accept user input for site identity.
-  // v1.14.432 — SITE LEAD. ⚠ GUARDED ON THE ELEMENT EXISTING, not on the house: this function is
-  // SHARED by both branches of firstRun_show and the legacy branch has no such field. A bare read
-  // would throw there; writing a default would change legacy behaviour. Absent element ⇒ this
-  // block does nothing and legacy stays byte-identical (Rule 17).
-  var leadEl = document.getElementById('fr-siteLead');
-  if (leadEl) {
-    var lead = leadEl.value.trim();
-    // Spec §4.1: the two default to each other, written once. Never a read-time coalesce (.418).
-    p.siteLead = lead || name;
-  }
   if (facNameEl) p.facilityName = facNameEl.value.trim();
   if (rackEl && rackEl.value.trim()) p.rackNamingConvention = rackEl.value.trim();
   if (pduEl  && pduEl.value.trim())  p.pduType              = pduEl.value.trim();

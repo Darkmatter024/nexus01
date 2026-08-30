@@ -127,73 +127,29 @@ test.describe('the first-run gate', () => {
     expect(r.siteLead, 'the authority was overwritten by the actor').toBe('J. Hamilton');
   });
 
-  // ⛔ RE-POINTED v1.14.537. This asserted #fr-master exists; v1.14.474's 2-field cold open removed
-  // that step, and the element is cleanly gone — zero references. The removal is a shipped,
-  // device-verified decision, so the test follows it rather than pinning the old gate.
-  // ⚠ FINDING, logged not acted on: firstRun_loadMaster SURVIVED its button and has ZERO callers.
-  // It is orphaned code of the same class as --omni-h (.533) and crashcart_toggle (.534) — dead
-  // body, door removed by an earlier ship. It is not deleted here because this ship is about
-  // Site Lead authority, not cleanup. The ONE-DOOR assertions below still earn their keep: if
-  // anyone re-wires that function to a new surface, it must still go through master_loadFromPicker.
-  test('the Master step is GONE from the gate, and its orphan still honours the ONE door', async ({ phantom, page }) => {
+  // ⛔ v1.14.539 — THE THREE MASTER-STEP TESTS ARE NOW ONE, because the code they drove is gone.
+  // .474 removed the gate's Master step; .539 removed what it left behind: firstRun_loadMaster
+  // (zero callers) and firstRun_masterLine (whose ONLY caller was firstRun_loadMaster, so it was
+  // orphaned transitively). Two of the deleted tests asserted Master-line HONESTY — that it never
+  // invents a count. ⚠ That rule is NOT relaxed; it is Contract 10 and still binds every surface
+  // that reports Master state. What changed is that this particular surface no longer exists, and
+  // a passing test against unreachable code is worse than no test: it reads as coverage.
+  test('the Master step is gone from the gate, and left nothing behind', async ({ phantom, page }) => {
     await phantom.boot();
     await firstRun(page);
     await openGate(page);
     await expect(page.locator('#fr-master'), 'the Master step is back on the gate — .474 removed it deliberately').toHaveCount(0);
 
-    const src = await page.evaluate(() => String(firstRun_loadMaster));
-    expect(src, 'the Master step does not call the one import door').toContain('master_loadFromPicker');
-    expect(src, 'the gate parses a workbook itself — a second write path').not.toContain('phantom_parseMaster');
-    expect(src, 'the gate stages its own candidate — a second write path').not.toContain('PHANTOM_MASTER.stage');
-    expect(src, 'the gate activates its own candidate — a second write path').not.toContain('activateStaged');
-  });
-
-  // v1.14.538 — pins the removal of the migrate() seed. This is the assertion that did not exist
-  // when the seed silently became the only writer of site authority, which is why nobody noticed.
-  test('confirming a device NEVER grants it site authority — the migrate() seed is gone', async ({ phantom, page }) => {
-    await phantom.boot();
-    await firstRun(page);
-    await openGate(page);
-    await page.locator('#fr-operator').fill('R. Diaz');
-    await page.evaluate(() => firstRun_confirm());
-
-    // The seed fired on the boot AFTER confirmation, so run the migration explicitly rather than
-    // reloading and hoping — the runtime is the authority, and this drives the real function.
-    const p = await page.evaluate(() => {
-      try { PHANTOM_SITE.migrate(); } catch (_) {}
-      return siteProfile_load();
-    });
-
-    expect(p.operator, 'the actor was not recorded').toBe('R. Diaz');
-    expect(String(p.siteLead || ''), 'setting up a device silently made the operator the site authority')
-      .toBe('');
-  });
-
-  test('the Master line is HONEST when nothing is loaded', async ({ phantom, page }) => {
-    await phantom.boot();
-    await page.evaluate(() => { try { PHANTOM_MASTER.clear(); } catch (_) {} });
-    const line = await page.evaluate(() => firstRun_masterLine());
-    // Never a placeholder count, never a guess — structural no-data is correct, not unfinished.
-    expect(line).toMatch(/No Master loaded/i);
-    expect(line, 'a count was invented with no Master').not.toMatch(/\d+\s*RACKS/i);
-  });
-
-  test('the Master line REPORTS what is loaded, from the Master itself', async ({ phantom, page }) => {
-    await phantom.boot();
-    await page.evaluate(() => {
-      const racks = {};
-      for (let r = 1; r <= 3; r++) {
-        const id = 'l1:' + String(r).padStart(3, '0');
-        racks[id] = { cabId: id, locode: 'AUS-01', cablesOut: [], cablesIn: [],
-          hosts: [{ locCabRu: id + ':42', dns: id + '-sw', model: 'SN2201', source: 'SITE_HOSTS' }] };
-      }
-      PHANTOM_MASTER.replace({ racksByCab: racks, siteCode: 'AUS-01', sourceFile: 'FR.xlsx',
-        sourceFileHash: 'fr', stats: { sourceFileHash: 'fr', totalCables: 0 } });
-    });
-    const line = await page.evaluate(() => firstRun_masterLine());
-    expect(line).toContain('3 RACKS');
-    expect(line).toContain('3 COMPONENTS');
-    expect(line).toContain('FR.xlsx');
+    // The orphans are gone too. If someone re-adds a Master step, it must be wired to the ONE
+    // import door from the start, not to a resurrected half-function.
+    const ghosts = await page.evaluate(() => ({
+      loadMaster: typeof window.firstRun_loadMaster,
+      masterLine: typeof window.firstRun_masterLine,
+      oneDoor:    typeof window.master_loadFromPicker,
+    }));
+    expect(ghosts.loadMaster, 'firstRun_loadMaster is back — it had zero callers').toBe('undefined');
+    expect(ghosts.masterLine, 'firstRun_masterLine is back — its only caller was the orphan above').toBe('undefined');
+    expect(ghosts.oneDoor, 'the ONE import door vanished — that is the real regression').toBe('function');
   });
 
   // ⚠ Contract 17's byte-identity guarantee was REVOKED by owner ruling 2026-08-29 (CLAUDE.md), so
