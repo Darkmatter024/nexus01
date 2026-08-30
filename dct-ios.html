@@ -197,10 +197,13 @@
   --tap-l:  52px;
   --tap-m:  48px;
   --tap-s:  44px;
-  /* Reserved space below sheet/scroll content so the persistent action
-     stripe (#action-stripe, z-index 800) never obscures primary buttons.
-     Stripe geometry: ~40px tall, sits at bottom: var(--tabnav-h) + 54px.
-     Reserve = stripe height + stripe bottom offset + 12px breathing room. */
+  /* ⛔ DEAD AS OF v1.14.540 — #action-stripe was DELETED. This token reserved 106px below five
+     sheet inners (.sop-sheet-inner :2055, .rm-device-inner, .rm-sheet-inner, .va-sheet-inner,
+     .ge-inner) so the stripe at z-index 800 could not obscure their primary buttons. Those sheets
+     are inset:0 overlays at z-index 150–200 and sit ABOVE #rd-botnav (z-index 40), so this was
+     never nav clearance and removing it cannot tuck content behind the nav — the .532 trap does
+     not apply here. It is kept for ONE ship only: dropping it moves layout in the REDESIGN, which
+     is a separate visible change and gets its own verify (Stage 3.2b). Do not read it as live. */
   --action-stripe-reserve: calc(40px + 54px + 12px);
 
   /* ── typography tokens (font-floor pass) ──
@@ -10135,8 +10138,6 @@ body.rd #mode-toggle,body.rd .tab-nav{display:none}   /* v1.14.536: .app-logo/.a
    display toggled by the legacy nav code. Legacy (?legacy=1) keeps the chevron — byte-identical. */
 body.rd #nav-back-btn{display:none!important}
 /* Stage 5 — demote legacy Action-Stripe to ?legacy=1 only (hide, not delete; rip-cord restores it). Toggle lives in the SYS overflow menu; the stripe itself is the legacy fixed-bottom rack toolbar. */
-body.rd #hdr-stripe-btn{display:none}
-body.rd #action-stripe{display:none!important}
 body.rd .search-wrap{display:none}
 body.rd.mode-ref .search-wrap{display:flex}   /* search bar shows only on Ref; .search-wrap is display:flex — restore it, not block */
 body.rd .header-left-text .wmimg{display:block}
@@ -12956,7 +12957,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.539';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.540';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -13638,8 +13639,6 @@ if (typeof window !== 'undefined') {
             <button onclick="phantomImport();document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open')" class="hdr-menu-item" style="color:var(--slate-readable)" aria-label="Restore from backup"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8AAFBF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> &nbsp;RESTORE</button>
             <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0"></div>
             <button onclick="identity_promptUser();document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open')" id="hdr-identity-btn" class="hdr-menu-item" style="color:var(--cyan)" aria-label="Set identity"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> &nbsp;<span id="hdr-identity-label">SET IDENTITY</span></button>
-            <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0"></div>
-            <button onclick="actionStripe_toggle();document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open')" id="hdr-stripe-btn" class="hdr-menu-item" style="color:var(--slate-readable)" aria-label="Toggle action stripe"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8AAFBF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0"><rect x="3" y="9" width="18" height="6" rx="1"/><line x1="7" y1="12" x2="13" y2="12"/></svg> &nbsp;<span id="hdr-stripe-label">ACTION STRIPE: ON</span></button>
             <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0"></div>
             <!-- v1.6.30: HW REF re-homed here when MASTER took its bottom-nav slot.
                  Reachable from anywhere; hwMatrix_open() is unchanged. -->
@@ -16720,7 +16719,6 @@ if (typeof window !== 'undefined') {
   </div>
 
   <!-- ━━━ ACTION STRIPE ━━━ -->
-  <div id="action-stripe" style="display:none;position:fixed;bottom:calc(var(--tabnav-h) + 54px);left:0;right:0;z-index:800;background:linear-gradient(180deg,rgba(4,7,11,0.95),rgba(8,14,22,0.98));border-top:1px solid rgba(92,242,255,0.1);backdrop-filter:var(--soft-blur);-webkit-backdrop-filter:var(--soft-blur)"></div>
 
   <!-- ━━━ BOTTOM TAB NAV — Stage 3a (4-Verb Collapse) ━━━
        NOW · SCAN · BUILD · KNOW
@@ -42270,7 +42268,6 @@ function deploy_showRackDetail(deployId, rackId) {
 
   // Dynamic Stripe (v1.4.2 Batch 3): drilling into rack detail puts the
   // stripe into entity mode — contextual toolbar for this rack.
-  if (typeof stripeView_setRack === 'function') stripeView_setRack(deployId, rackId);
 
   wakeLock_evaluate(deployId, rackId);
 
@@ -42572,9 +42569,12 @@ function deploy_showRackDetail(deployId, rackId) {
   // ── Log Note (v1.14.172 · Master-Reorg R-2c) — the rack-scoped LOG NOTE was STRANDED under the
   //    redesign: it lived ONLY in the legacy #action-stripe rack toolbar, which is display:none under
   //    body.rd (L8895). Re-home it here in the redesign rack detail — its natural, rack-scoped home;
-  //    the note lands in the same audit trail the Handoff report reads. Redesign-only gate → ?legacy=1
-  //    byte-identical (legacy keeps its #action-stripe LOG NOTE). stripeRack_logNote is async; the
-  //    onclick fires it exactly as the legacy stripe did (fire-and-forget; it awaits its own prompt).
+  //    the note lands in the same audit trail the Handoff report reads. stripeRack_logNote is async;
+  //    the onclick fires it fire-and-forget, as the legacy stripe did (it awaits its own prompt).
+  //    ⭐ v1.14.540: THE LEGACY STRIPE IS GONE, and this door is now the ONLY one. That is why .172
+  //    mattered — it un-stranded LOG NOTE two years of ships before the stripe was deleted, so the
+  //    deletion cost nothing. ⛔ stripeRack_logNote itself is SHARED and must not be removed with
+  //    the rest of the stripe: this door and the rack-detail action list at :22570 both call it.
   if (typeof redesign_isOn === 'function' && redesign_isOn()) {
     html += '<button class="pt-btn pt-btn-ghost" style="width:100%;box-sizing:border-box;margin-top:10px;color:var(--cyan);border-color:rgba(92,242,255,0.25)" onclick="stripeRack_logNote(\'' + deployId + '\',\'' + rackId + '\')">' + _ico.file('#5cf2ff', 13) + ' &nbsp;LOG NOTE</button>';
   }
@@ -56803,33 +56803,6 @@ renderDOM = function(text, el) {
 };
 
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// <span class="ico ico-md ico-zap"></span> ACTION STRIPE — Dual-Mode
-//   · Global: Foreman Voice (deployment-priority next-action)
-//   · Entity (drill into rack): Contextual Toolbar (LOG NOTE / HANDOFF / QR)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-// ── DYNAMIC STRIPE (v1.4.2 Batch 3) ─────────────────────────────
-// In-memory view context. When set, the stripe renders an entity-scoped
-// contextual toolbar (LOG NOTE / HANDOFF / QR LABEL for racks). When null,
-// falls back to the deployment-priority Foreman Voice (default behavior).
-//
-// Set by entity page renderers (deploy_showRackDetail), cleared by top-level
-// tab switches (showPage wrapper). Not persisted — page state is volatile.
-var _stripeViewContext = null;
-
-function stripeView_setRack(deployId, rackId) {
-  if (!deployId || !rackId) return;
-  _stripeViewContext = { type: 'rack', deployId: deployId, rackId: rackId };
-  if (typeof actionStripe_refresh === 'function') actionStripe_refresh();
-}
-
-function stripeView_clear() {
-  if (_stripeViewContext === null) return;
-  _stripeViewContext = null;
-  if (typeof actionStripe_refresh === 'function') actionStripe_refresh();
-}
-
 // Rack-scoped LOG NOTE — distinct from killed today_quickLog (Batch 2)
 // because rack ID is unambiguous here (user is viewing the rack right now,
 // so a focused prompt reinforces context rather than asking "log to what?").
@@ -57150,169 +57123,6 @@ function photo_deletePhoto(photoId) {
     });
   });
 }
-
-// Renders the entity-mode contextual toolbar for a rack.
-// 3 buttons in horizontal flex: LOG NOTE | HANDOFF | QR LABEL
-// Prefixed with the rack label so the tech sees what they're acting on.
-function actionStripe_renderRackToolbar(el, deployId, rackId) {
-  var rackLabel = rackId;
-  try {
-    var racks = deploy_loadRacksFor(deployId);
-    var rack = racks.find(function(r) { return r.id === rackId; });
-    if (rack) rackLabel = rack.rackId || rack.name || rackId;
-  } catch (e) { /* fall through with raw id */ }
-
-  el.style.display = 'block';
-  el.innerHTML =
-    '<div style="display:flex;align-items:center;gap:6px;padding:6px 10px">' +
-      '<div style="flex-shrink:0;font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);letter-spacing:1px;padding-right:8px;border-right:1px solid rgba(255,255,255,0.08);margin-right:4px">' + escHtml(rackLabel) + '</div>' +
-      '<button onclick="stripeRack_logNote(\'' + deployId + '\',\'' + rackId + '\')" ' +
-        'ontouchstart="this.style.opacity=\'0.7\'" ontouchend="this.style.opacity=\'1\'" ' +
-        'style="flex:1;min-height:var(--tap-s);background:rgba(92,242,255,0.06);border:1px solid rgba(92,242,255,0.2);border-radius:var(--hud-r8);color:var(--cyan);font-family:var(--mono);font-size: var(--fs-micro);letter-spacing:1px;cursor:pointer;-webkit-appearance:none">LOG NOTE</button>' +
-      '<button onclick="handoff_showGenerator(\'' + deployId + '\')" ' +
-        'ontouchstart="this.style.opacity=\'0.7\'" ontouchend="this.style.opacity=\'1\'" ' +
-        'style="flex:1;min-height:var(--tap-s);background:rgba(255,138,0,0.06);border:1px solid rgba(255,138,0,0.25);border-radius:var(--hud-r8);color:var(--orange,#ff8a00);font-family:var(--mono);font-size: var(--fs-micro);letter-spacing:1px;cursor:pointer;-webkit-appearance:none">HANDOFF</button>' +
-      '<button onclick="deploy_generateRackQR(\'' + deployId + '\',\'' + rackId + '\')" ' +
-        'ontouchstart="this.style.opacity=\'0.7\'" ontouchend="this.style.opacity=\'1\'" ' +
-        'style="flex:1;min-height:var(--tap-s);background:rgba(92,242,255,0.06);border:1px solid rgba(92,242,255,0.2);border-radius:var(--hud-r8);color:var(--cyan);font-family:var(--mono);font-size: var(--fs-micro);letter-spacing:1px;cursor:pointer;-webkit-appearance:none">QR LABEL</button>' +
-    '</div>';
-}
-// ────────────────────────────────────────────────────────────────
-
-function actionStripe_refresh() {
-  var el = document.getElementById('action-stripe');
-  if (!el) return;
-
-  // Per-device preference: tech can disable stripe via header overflow menu
-  if (actionStripe_isOff()) {
-    el.style.display = 'none';
-    return;
-  }
-
-  // Dynamic Stripe (v1.4.2 Batch 3): entity-scoped contextual toolbar
-  // takes priority over Foreman Voice when user is drilled into an entity.
-  if (_stripeViewContext && _stripeViewContext.type === 'rack') {
-    actionStripe_renderRackToolbar(el, _stripeViewContext.deployId, _stripeViewContext.rackId);
-    return;
-  }
-
-  var deploys = deploy_loadAll().filter(function(d) { return d.status === 'active' || d.status === 'paused'; });
-  if (!deploys.length) {
-    el.style.display = 'none';
-    return;
-  }
-  deploys.sort(function(a, b) { return b.updated - a.updated; });
-  var dep = deploys[0];
-  var roll = deploy_computeDeployRollup(dep.id);
-
-  var text = '';
-  var action = '';
-  var color = 'var(--cyan)';
-  var icon = '▶';
-
-  // Priority 1: Blocked racks
-  var blockedRack = null;
-  roll.rackRollups.forEach(function(rr) {
-    if (!blockedRack && rr.rollup.isBlocked) blockedRack = rr;
-  });
-  if (blockedRack) {
-    text = 'UNBLOCK ' + blockedRack.rack.rackId + ' — ' + (DEPLOY_PHASE_LABELS_FULL[blockedRack.rollup.currentPhase] || 'blocked');
-    action = "deploy_showRackDetail('" + dep.id + "','" + blockedRack.rack.id + "')";
-    color = 'var(--red)'; icon = '<span class="ico ico-md ico-block"></span>';
-  }
-  // Priority 2: In-progress rack (continue work)
-  else {
-    var activeRack = null;
-    roll.rackRollups.forEach(function(rr) {
-      if (!activeRack && rr.rollup.hasInProgress) activeRack = rr;
-    });
-    if (activeRack) {
-      text = activeRack.rack.rackId + ' — ' + (DEPLOY_PHASE_LABELS_FULL[activeRack.rollup.currentPhase] || 'in progress');
-      action = "deploy_showRackDetail('" + dep.id + "','" + activeRack.rack.id + "')";
-      color = 'var(--cyan)'; icon = '◉';
-    }
-    // Priority 3: Next pending rack
-    else {
-      var pendingRack = null;
-      roll.rackRollups.forEach(function(rr) {
-        if (!pendingRack && rr.rollup.currentPhase !== 'complete' && !rr.rollup.isBlocked) pendingRack = rr;
-      });
-      if (pendingRack) {
-        text = 'START ' + pendingRack.rack.rackId + ' — ' + (DEPLOY_PHASE_LABELS_FULL[pendingRack.rollup.currentPhase] || 'pending');
-        action = "deploy_showRackDetail('" + dep.id + "','" + pendingRack.rack.id + "')";
-        color = 'var(--cyan)'; icon = '▶';
-      }
-      // Priority 4: All racks done — check acceptance
-      else if (roll.racksComplete === roll.racks.length && roll.racks.length > 0) {
-        var dep2 = deploy_getById(dep.id);
-        var criteria = (dep2 && dep2.acceptanceCriteria) || [];
-        var unmet = criteria.filter(function(c) { return c.status !== 'met'; });
-        if (unmet.length > 0) {
-          text = 'ACCEPTANCE — ' + unmet.length + ' criteria remaining';
-          action = "deploy_showAcceptance('" + dep.id + "')";
-          color = 'var(--violet)'; icon = '<span class="ico ico-md ico-flag"></span>';
-        } else {
-          text = 'READY TO COMPLETE — all criteria met';
-          action = "deploy_showAcceptance('" + dep.id + "')";
-          color = 'var(--green)'; icon = '✓';
-        }
-      }
-      // Priority 5: Optic ledger gap
-      else {
-        var optics = deploy_loadOpticsFor(dep.id);
-        var opticGap = optics.find(function(o) { return (o.installed || 0) < o.required; });
-        if (opticGap) {
-          var totalRemaining = 0;
-          optics.forEach(function(o) { totalRemaining += Math.max(0, o.required - (o.installed || 0)); });
-          text = totalRemaining + ' optic' + (totalRemaining !== 1 ? 's' : '') + ' outstanding';
-          action = "deploy_showOpticLedger('" + dep.id + "')";
-          color = 'var(--gold)'; icon = '<span class="ico ico-md ico-package"></span>';
-        }
-      }
-    }
-  }
-
-  if (!text) {
-    el.style.display = 'none';
-    return;
-  }
-
-  el.style.display = 'block';
-  el.innerHTML = '<div onclick="' + action + '" style="display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent" ontouchstart="this.style.opacity=\'0.7\'" ontouchend="this.style.opacity=\'1\'">' +
-    '<div style="font-size:14px;flex-shrink:0">' + icon + '</div>' +
-    '<div style="flex:1;font-family:var(--mono);font-size: var(--fs-caption);letter-spacing:1px;color:' + color + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(text) + '</div>' +
-    '<div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);flex-shrink:0">›</div>' +
-    '</div>';
-}
-
-// Refresh action stripe on deployment state changes
-var _origShowPage = showPage;
-showPage = function(id, tnEl, opsTab) {
-  // Dynamic Stripe (v1.4.2 Batch 3): navigating to any top-level tab
-  // exits entity view → stripe returns to Foreman Voice mode.
-  if (id === 'triage' || id === 'scan' || id === 'sop' || id === 'fiber') {
-    if (typeof stripeView_clear === 'function') stripeView_clear();
-  }
-  _origShowPage(id, tnEl, opsTab);
-  setTimeout(actionStripe_refresh, 100);
-};
-// Action stripe refresh loop with visibility-aware pause.
-// Fully clears the interval (not just bails inside it) when app is
-// backgrounded — saves the timer wake-up cost on long cold-aisle shifts.
-var _actionStripeIntervalId = setInterval(actionStripe_refresh, 15000);
-setTimeout(actionStripe_refresh, 1500);
-
-document.addEventListener('visibilitychange', function() {
-  if (document.hidden) {
-    if (_actionStripeIntervalId) {
-      clearInterval(_actionStripeIntervalId);
-      _actionStripeIntervalId = null;
-    }
-  } else if (!_actionStripeIntervalId) {
-    _actionStripeIntervalId = setInterval(actionStripe_refresh, 15000);
-    actionStripe_refresh(); // catch up immediately on resume
-  }
-});
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // BLAST RADIUS — Render module (Phase 2.B, GRID view, read-only)
@@ -57697,39 +57507,6 @@ function _br_applySimDecoration() {
     }
   }
 }
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// ACTION STRIPE — Per-device preference toggle
-// Default: ON (preserves existing behavior). Tech can opt out via
-// header overflow menu. Stored in localStorage, no schema.
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-var ACTION_STRIPE_OFF_KEY = 'phantom_action_stripe_off';
-
-function actionStripe_isOff() {
-  try { return localStorage.getItem(ACTION_STRIPE_OFF_KEY) === '1'; }
-  catch (e) { return false; }
-}
-
-function actionStripe_syncLabel() {
-  var lbl = document.getElementById('hdr-stripe-label');
-  if (!lbl) return;
-  lbl.textContent = actionStripe_isOff() ? 'ACTION STRIPE: OFF' : 'ACTION STRIPE: ON';
-}
-
-function actionStripe_toggle() {
-  var nowOff = !actionStripe_isOff();
-  if (nowOff) safeStore(ACTION_STRIPE_OFF_KEY, '1');
-  else        try { localStorage.removeItem(ACTION_STRIPE_OFF_KEY); } catch (e) {}
-  actionStripe_syncLabel();
-  if (typeof actionStripe_refresh === 'function') actionStripe_refresh();
-  if (typeof haptic === 'function') haptic(6);
-  if (typeof phantomToast === 'function') {
-    phantomToast(nowOff ? 'Action stripe disabled' : 'Action stripe enabled', 'ok');
-  }
-}
-
-// Sync label on first load so the menu shows correct state from the start
-setTimeout(actionStripe_syncLabel, 100);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CAGE NUT COMPASS — Phase 3 Gate 10
