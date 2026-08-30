@@ -6,7 +6,10 @@
 // This pins the door that closes it, the routing, and — the part that actually needs a guard —
 // that routing it did NOT change the legacy house.
 //
-// ⛔ THE RULE-17 TRAP THIS SPEC EXISTS FOR. The base `.rack-canvas-block[data-type=...]` rules are
+// ⛔ THE CROSS-HOUSE TRAP THIS SPEC EXISTS FOR — called "the Rule 17 trap" until that contract was
+// revoked 2026-08-29. The revocation frees legacy to CHANGE; it does not make an accidental,
+// unnoticed repaint of both houses acceptable, so the trap below outlives the rule that named it.
+// The base `.rack-canvas-block[data-type=...]` rules are
 // NOT house-scoped and paint under ?legacy=1 too. Normalising the ATTRIBUTE changes what legacy
 // MATCHES without touching one legacy rule: raw `stor` matches nothing and renders grey today,
 // while normalised `storage` would hit the base rule and turn gold. A legacy behaviour change
@@ -116,7 +119,14 @@ test.describe('the one colour vocabulary', () => {
     console.log('[20] accent-coloured ' + coloured + '/11 · bay values: ' + JSON.stringify(paints.__bay));
   });
 
-  test('⛔ RULE 17 — ?legacy=1 still emits the RAW code, so that house is unchanged', async ({ phantom, page }) => {
+  // ⚠ Contract 17's byte-identity guarantee was REVOKED by owner ruling 2026-08-29 (CLAUDE.md).
+  // This test no longer pins that contract and must not be cited as if it did — legacy is allowed
+  // to change now, and at LEGACY-RETIRE Stage 7 it stops existing. What the assertions still buy,
+  // until then, is LEAK detection in the other direction: the colour rules below are scoped by
+  // house, so a NORMALISED key reaching the legacy renderer makes the base unscoped rules match
+  // and repaints BOTH houses. Retire it in the stage that deletes rackElevation_buildHtml's legacy
+  // branch — per the ruling, a legacy test is rewritten in the stage that removes what it tests.
+  test('legacy raw-code emission — leak guard, not a byte-identity contract', async ({ phantom, page }) => {
     test.setTimeout(120_000);
     await phantom.boot({ query: '?legacy=1' });
     expect(await phantom.isRedesign(), '?legacy=1 must not apply body.rd').toBe(false);
@@ -135,8 +145,8 @@ test.describe('the one colour vocabulary', () => {
     // matching and legacy silently changes colour.
     expect(html, 'legacy stopped emitting the raw code — the base rules will now match differently').toContain('data-type="stor"');
     expect(html, 'legacy stopped emitting the raw code').toContain('data-type="pwr"');
-    expect(html, 'a NORMALISED key leaked into the legacy house — Rule 17 break').not.toContain('data-type="storage"');
-    expect(html, 'a NORMALISED key leaked into the legacy house — Rule 17 break').not.toContain('data-type="pdu"');
+    expect(html, 'a NORMALISED key leaked into the legacy house — the base unscoped rules will now match').not.toContain('data-type="storage"');
+    expect(html, 'a NORMALISED key leaked into the legacy house — the base unscoped rules will now match').not.toContain('data-type="pdu"');
   });
 
   test('the redesign house DOES emit normalised keys — the other half of the same guard', async ({ phantom, page }) => {

@@ -114,7 +114,12 @@ test.describe('the first-run gate', () => {
     expect(line).toContain('FR.xlsx');
   });
 
-  test('⛔ RULE 17 — the legacy branch has no Site Lead field, and confirm still works there', async ({ phantom, page }) => {
+  // ⚠ Contract 17's byte-identity guarantee was REVOKED by owner ruling 2026-08-29 (CLAUDE.md), so
+  // this test no longer pins it. The surviving value is not about legacy at all: firstRun_confirm
+  // is SHARED by both houses, and the assertions prove it neither throws on an absent element nor
+  // invents a siteLead it was never given — a redesign-side guarantee that happens to be provable
+  // through the legacy branch. Retire it with that branch, in the stage that removes it.
+  test('shared firstRun_confirm survives a house with no Site Lead field — no throw, nothing invented', async ({ phantom, page }) => {
     await phantom.boot({ query: '?legacy=1' });
     expect(await phantom.isRedesign()).toBe(false);
     await firstRun(page);
