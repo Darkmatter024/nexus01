@@ -35,7 +35,7 @@ The real shape is *hidden, not deleted*: legacy chrome still present in the DOM 
 | Target | markup | JS refs | Note |
 |---|--:|--:|---|
 | `#action-stripe` | 1 | 1 | The legacy toolbar. All three of its actions have redesign doors — QR `.28529`-era, LOG NOTE `.172`, HANDOFF via deploy detail |
-| `#hdr-overflow-wrap` | 1 | 1 | Legacy header overflow button |
+| ~~`#hdr-overflow-wrap`~~ | — | — | ⛔ **STRUCK 2026-08-30 — NEVER A TARGET. SEE §2a.** |
 | `#hdr-stripe-btn` | 1 | **0** | Pure chrome, no script touches it |
 | `#mode-toggle` | 1 | **0** | Pure chrome, no script touches it |
 | `#phantom-tab-pill` | 1 | 1 | |
@@ -50,6 +50,27 @@ owner ruling as part of the switch. Taking them early breaks that stage's rollba
 `#rf-hw.plat-detail-open`, `.bw-strip:empty`, `#wk-job-host:empty`, `#ref-grid .rf-card.rf-hidden`
 and similar are the **redesign's own state machinery**, not legacy suppression. `.rf-cnr` has **9**
 markup uses — a shared class, not a shell.
+
+## 2a · ⛔ CORRECTION — `#hdr-overflow-wrap` is NOT a target, and never was
+
+**Found while building Stage 3.1, 2026-08-30.** §2 listed it on the strength of
+`body.rd #hdr-overflow-wrap { display:none !important }`. **That grep found the suppression rule
+and never read what it suppresses.** The wrapper holds the legacy overflow **MENU**, and under
+`?legacy=1` it is the only door to:
+
+- `exportAllData()` and `phantomImport()` — **export and restore**
+- `identity_promptUser()` — identity
+- `hwMatrix_open()` — the hardware reference
+- `actionStripe_toggle()` — the action stripe
+- **`legacy_returnToNewUI()` — the only way back out of the `?legacy=1` rip-cord**
+
+⛔ **Deleting it would strand any user who entered legacy, with no route back and no export.** The
+markup even says so at the `.380` comment beside that last button. `#hdr-stripe-btn` — a menu ITEM
+inside this wrapper, not the wrapper — remains a legitimate target and rides with `#action-stripe`.
+
+⭐ **The general lesson, worth more than the correction:** a `display:none` rule proves a thing is
+*hidden in one house*, never that it is *disposable*. Every remaining target in §2 was found the
+same way and must be opened and read before it is cut, not counted.
 
 ## 3 · One freebie, already earned
 
