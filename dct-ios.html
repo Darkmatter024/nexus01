@@ -12956,7 +12956,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.536';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.537';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -31128,6 +31128,13 @@ function siteProfile_showEditor(container) {
   html += field('floorZones',           'FLOOR ZONES',              p.floorZones,           'e.g. L1 = top floor, U1 = lower floor', true);
   html += field('rackNamingConvention', 'RACK NAMING CONVENTION',   p.rackNamingConvention, 'e.g. L-01 through R-08', false);
   html += field('pduType',             'PDU TYPE',                  p.pduType,              'e.g. Vertiv Geist 3-phase 208V', false);
+  // v1.14.537 — SITE LEAD (authority). Contract 9a says this value is "set at Site Setup and
+  // changed only in SITE/SYSTEM"; this is that door, and until now it did not exist. v1.14.474's
+  // 2-field cold open removed the first-run input and nothing replaced it, so the only writer left
+  // was a backfill that silently made the setup operator the site's authority.
+  // ⛔ NOT the same field as DEFAULT BUILD LEAD below — siteLead is who is ACCOUNTABLE for the
+  // site; buildLead is the default lead stamped onto deployments. Do not merge them.
+  html += field('siteLead',            'SITE LEAD (AUTHORITY)',     p.siteLead,             'e.g. the person accountable for this site', false);
   html += field('buildLead',           'DEFAULT BUILD LEAD',        p.buildLead,            'e.g. Lead DCT Operator', false);
 
   // v1.14.346 (ingest Phase 2) — FROM MASTER, read-only. The Master's SITE-VARS sheet
@@ -31342,6 +31349,15 @@ function siteProfile_saveFromEditor() {
   // treated as "no change", never as "erase my name": that is the bug this ship fixes.
   var _opEl = document.getElementById('sp-operator');
   if (_opEl && _opEl.value.trim()) profile.operator = _opEl.value.trim();
+
+  // v1.14.537 — SITE LEAD (authority), same discipline as YOUR NAME above and for the same reason.
+  // A blank box means NO CHANGE, never "erase the site's authority": .347 is the ship that learned
+  // this, when a fresh literal wiped the operator off every sign-off with no way to restore it.
+  // ⛔ And never `|| profile.operator` here. .418 removed exactly that coalesce because it
+  // silently granted lead-only authority to whoever held the device; re-adding it at write time
+  // would be the same defect wearing a different hat.
+  var _leadEl = document.getElementById('sp-siteLead');
+  if (_leadEl && _leadEl.value.trim()) profile.siteLead = _leadEl.value.trim();
 
   Object.keys(_srcs).forEach(function(k) {
     if (profile[k] !== _prev[k]) delete _srcs[k];

@@ -18,6 +18,16 @@
 //     so AUTHORITY had no first-run home and every new device started with siteLead empty.
 //   · THE MASTER STEP — it could pre-fill FROM a Master but never load one, so a genuinely new
 //     device had to confirm, land on Home, and go find the importer.
+//
+// ⛔ BOTH OF THOSE ADDITIONS WERE LATER REMOVED ON PURPOSE, and this file did not follow for ~62
+// versions. v1.14.474 ("Greenfield cold-open path … 2-field setup") took SITE LEAD and the MASTER
+// step back off the gate; v1.14.480 took #fr-facilityId under an owner ruling that the Master is
+// the single writer for site identity. The gate now collects exactly TWO fields: operator and
+// facility name. Three tests here kept asserting the old gate and went red without anyone seeing
+// it, because the suite was never re-run end to end — BATCH-VERIFY had already called it
+// "unproven, not green". ⭐ They were found by adding this spec to an unrelated ship's test set.
+// The three are re-pointed in v1.14.537; SITE LEAD now lives in SITE/SYSTEM, where Contract 9a
+// always said it belonged.
 // ─────────────────────────────────────────────────────────────────────────────
 const { test, expect } = require('./fixtures');
 
@@ -41,44 +51,95 @@ test.describe('the first-run gate', () => {
     expect(src, 'the gate is not conditioned on confirmation').toContain('siteProfile_isConfirmed');
   });
 
-  test('SITE LEAD exists on the gate and DEFAULTS to the operator name', async ({ phantom, page }) => {
+  // ⛔ RE-POINTED v1.14.537. This test asserted SITE LEAD on the first-run GATE and had been red
+  // for ~62 versions. v1.14.474's 2-field cold open removed that input deliberately, and Contract
+  // 9a puts the value's home in SITE/SYSTEM anyway — "set at Site Setup and changed only in
+  // SITE/SYSTEM". So the assertion moves to the door that now owns it, the SITE PROFILE editor.
+  // ⚠ What it must NOT assert any more is the old "blank defaults to the operator" behaviour.
+  // That default is the .418 defect wearing a different hat: it silently grants site authority to
+  // whoever set the device up. The gate no longer collects it, and blank now means NO CHANGE.
+  test('SITE LEAD is settable in SITE/SYSTEM — the door Contract 9a names', async ({ phantom, page }) => {
     await phantom.boot();
     await firstRun(page);
-    await openGate(page);
-    await expect(page.locator('#fr-siteLead'), 'the gate still has no Site Lead field').toHaveCount(1);
 
-    await page.locator('#fr-operator').fill('J. Hamilton');
-    await page.locator('#fr-facilityId').fill('DFW-01');
-    await page.locator('#fr-siteLead').fill('');          // left blank on purpose
-    await page.evaluate(() => firstRun_confirm());
+    // The editor owns this field now. Drive the real save path, not a copy of its logic.
+    const written = await page.evaluate(() => {
+      rd_openProfile();
+      const el = document.getElementById('sp-siteLead');
+      if (!el) return { field: false };
+      el.value = 'J. Hamilton';
+      siteProfile_saveFromEditor();
+      const p = siteProfile_load();
+      return { field: true, siteLead: p.siteLead, operator: p.operator };
+    });
 
-    const p = await profile(page);
-    // A DEFAULT is a value written once, not a read-time coalesce — .418 removed exactly that
-    // fallback because it silently granted lead-only RBAC to an empty actor.
-    expect(p.siteLead, 'a blank Site Lead did not default to the operator').toBe('J. Hamilton');
-    expect(p.operator).toBe('J. Hamilton');
-    expect(p.confirmedAt, 'confirming did not stamp confirmedAt').not.toBeNull();
+    expect(written.field, 'SITE/SYSTEM has no Site Lead field — the value is unsettable again').toBe(true);
+    expect(written.siteLead, 'the editor did not persist the Site Lead').toBe('J. Hamilton');
   });
 
+  test('a blank Site Lead is NO CHANGE, never an erase and never a silent grant', async ({ phantom, page }) => {
+    await phantom.boot();
+    await firstRun(page);
+
+    const r = await page.evaluate(() => {
+      rd_openProfile();
+      const el = document.getElementById('sp-siteLead');
+      if (!el) return { field: false };
+      el.value = 'A. Okafor';
+      siteProfile_saveFromEditor();
+      // Re-open and save with the box emptied. .347: a blank box is "no change", not "erase".
+      rd_openProfile();
+      document.getElementById('sp-siteLead').value = '';
+      siteProfile_saveFromEditor();
+      return { field: true, siteLead: siteProfile_load().siteLead };
+    });
+
+    expect(r.field).toBe(true);
+    expect(r.siteLead, 'a blank box erased the site authority — the .347 data-loss shape').toBe('A. Okafor');
+  });
+
+  // ⛔ RE-POINTED v1.14.537, for TWO removals, not one. It drove #fr-siteLead (gone in .474) and
+  // #fr-facilityId — gone in .480 under an explicit owner ruling, "Master is single writer for
+  // site identity". A test asserting the gate accepts typed site identity was asserting the exact
+  // thing the owner forbade. The INVARIANT it exists for is untouched and still worth pinning:
+  // authority and actor are two people (Contract 9a), and neither may overwrite the other.
   test('SITE LEAD is independent of the operator — authority is not the actor', async ({ phantom, page }) => {
     await phantom.boot();
     await firstRun(page);
+
+    // The actor comes from the gate; the authority comes from SITE/SYSTEM. Two doors, two people.
     await openGate(page);
     await page.locator('#fr-operator').fill('R. Diaz');
-    await page.locator('#fr-facilityId').fill('AUS-01');
-    await page.locator('#fr-siteLead').fill('J. Hamilton');
     await page.evaluate(() => firstRun_confirm());
 
-    const p = await profile(page);
-    expect(p.operator, 'the actor was overwritten by the authority').toBe('R. Diaz');
-    expect(p.siteLead, 'the authority was overwritten by the actor').toBe('J. Hamilton');
+    const r = await page.evaluate(() => {
+      rd_openProfile();
+      const el = document.getElementById('sp-siteLead');
+      if (!el) return { field: false };
+      el.value = 'J. Hamilton';
+      siteProfile_saveFromEditor();
+      const p = siteProfile_load();
+      return { field: true, operator: p.operator, siteLead: p.siteLead };
+    });
+
+    expect(r.field, 'SITE/SYSTEM has no Site Lead field').toBe(true);
+    expect(r.operator, 'the actor was overwritten by the authority').toBe('R. Diaz');
+    expect(r.siteLead, 'the authority was overwritten by the actor').toBe('J. Hamilton');
   });
 
-  test('THE MASTER STEP exists and uses the ONE door (§4.2, no second write path)', async ({ phantom, page }) => {
+  // ⛔ RE-POINTED v1.14.537. This asserted #fr-master exists; v1.14.474's 2-field cold open removed
+  // that step, and the element is cleanly gone — zero references. The removal is a shipped,
+  // device-verified decision, so the test follows it rather than pinning the old gate.
+  // ⚠ FINDING, logged not acted on: firstRun_loadMaster SURVIVED its button and has ZERO callers.
+  // It is orphaned code of the same class as --omni-h (.533) and crashcart_toggle (.534) — dead
+  // body, door removed by an earlier ship. It is not deleted here because this ship is about
+  // Site Lead authority, not cleanup. The ONE-DOOR assertions below still earn their keep: if
+  // anyone re-wires that function to a new surface, it must still go through master_loadFromPicker.
+  test('the Master step is GONE from the gate, and its orphan still honours the ONE door', async ({ phantom, page }) => {
     await phantom.boot();
     await firstRun(page);
     await openGate(page);
-    await expect(page.locator('#fr-master'), 'the gate cannot load a Master').toHaveCount(1);
+    await expect(page.locator('#fr-master'), 'the Master step is back on the gate — .474 removed it deliberately').toHaveCount(0);
 
     const src = await page.evaluate(() => String(firstRun_loadMaster));
     expect(src, 'the Master step does not call the one import door').toContain('master_loadFromPicker');
