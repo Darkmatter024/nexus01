@@ -1,0 +1,82 @@
+# LEGACY-RETIRE — STAGE 3 RECON (LIVE shells)
+
+**Built against live `v1.14.535` · 2026-08-30 · report only, nothing shipped.**
+Stage 3 was staged as *"legacy shells of the 18 LIVE surfaces — redesign already carries each,
+medium risk, 4–6 ships."* This is the re-verification of that scope against live source, because
+`PHASE0-CENSUS.md` is anchored at `v1.14.166` and its line references are now meaningless — 369
+versions plus this campaign's own deletions have moved everything.
+
+---
+
+## 1 · The correction that matters: `pg-*` does NOT mean "legacy"
+
+Twelve page shells exist. Classifying them by whether the redesign styles them under `body.rd`:
+
+| Page | `body.rd` CSS rules | Verdict |
+|---|--:|---|
+| `pg-work` | **30** | ⛔ **THE REDESIGN'S OWN PAGE** — Build/Work |
+| `pg-cmd` | **25** | ⛔ **THE REDESIGN'S OWN PAGE** — Command |
+| `pg-ref` | **5** | ⛔ **THE REDESIGN'S OWN PAGE** — Reference |
+| `pg-scan` `pg-power` `pg-fiber` `pg-cli` `pg-compass` `pg-twin` | 0 | ♻️ **RE-HOMED — Stage 6**, held behind the organ inventory |
+| `pg-sop` | 0 | ⛔ **BLOCKED** — hosts `#ops-content` for the un-homed ops tabs |
+| `pg-master` | 0 | ⛔ Reachable in the redesign via 11 `showPage('master')` calls |
+| `pg-triage` | 0 | ⚠ Legacy default page; `today_render` paints into it at **boot** |
+
+⛔ **So NOT ONE of the twelve page shells is a Stage 3 target.** Three are the redesign itself and
+deleting them would destroy the app; six belong to Stage 6; three are individually blocked. Anyone
+reading "legacy shells" as "the `pg-*` pages" and starting to delete would take the redesign down on
+the first ship. **Stage 3's targets are legacy CHROME, not legacy PAGES.**
+
+## 2 · What Stage 3 actually targets
+
+The real shape is *hidden, not deleted*: legacy chrome still present in the DOM and still live under
+`?legacy=1`, suppressed under the redesign by one of 32 `body.rd … { display:none }` rules.
+
+| Target | markup | JS refs | Note |
+|---|--:|--:|---|
+| `#action-stripe` | 1 | 1 | The legacy toolbar. All three of its actions have redesign doors — QR `.28529`-era, LOG NOTE `.172`, HANDOFF via deploy detail |
+| `#hdr-overflow-wrap` | 1 | 1 | Legacy header overflow button |
+| `#hdr-stripe-btn` | 1 | **0** | Pure chrome, no script touches it |
+| `#mode-toggle` | 1 | **0** | Pure chrome, no script touches it |
+| `#phantom-tab-pill` | 1 | 1 | |
+| `#omni-bar` | 1 | **3** | The LOG bar. `.282` retired it under redesign; `.533` deleted the dead `--omni-h` write. Still live under legacy — treat as its own ship |
+| `.app-logo` · `.app-loc` · `.hdr-ghost-img` | 1 each | — | Legacy header identity block |
+| `.search-wrap` | 2 | — | Two instances; confirm both before cutting |
+
+⛔ **RESERVED FOR STAGE 7, do not take them here** — `#nav-back-btn` and `.tab-nav` are named in the
+owner ruling as part of the switch. Taking them early breaks that stage's rollback story.
+
+⛔ **NOT targets, despite matching the `display:none` grep** — `#pg-work.bw-on #work-grid`,
+`#rf-hw.plat-detail-open`, `.bw-strip:empty`, `#wk-job-host:empty`, `#ref-grid .rf-card.rf-hidden`
+and similar are the **redesign's own state machinery**, not legacy suppression. `.rf-cnr` has **9**
+markup uses — a shared class, not a shell.
+
+## 3 · One freebie, already earned
+
+⭐ `body.rd .reh-3d-mount { display:none }` is **an orphan rule**: `v1.14.531` deleted the 3D mount
+and `.reh-3d-mount` now has **zero markup occurrences**. A rule suppressing an element that no
+longer exists. Fold it into the first Stage 3 ship — it is the same class of debt `.533` removed,
+found the same way.
+
+## 4 · The constraint that changes every Stage 3 verify
+
+Every target above is **live under `?legacy=1`**. Deleting any of them is a **visible legacy
+change**, exactly like `.535`, not an invisible one like `.534`. So:
+
+- Each ship's device check belongs **under `?legacy=1`**, not on the default app.
+- Each is permitted only because Contract 17's byte-identity guarantee was revoked 2026-08-29.
+- The default app must show **no** change; that is the other half of every check.
+
+## 5 · Recommended sequencing
+
+Grouped so each ship is one coherent visible change in the legacy house:
+
+1. **Header identity block** — `.app-logo` · `.app-loc` · `.hdr-ghost-img` · `#hdr-stripe-btn` ·
+   `#hdr-overflow-wrap`, plus the `.reh-3d-mount` orphan rule.
+2. **`#action-stripe`** — its own ship; three redesign doors must be re-confirmed live first.
+3. **`#omni-bar`** — its own ship; 3 JS references to unpick, the largest single piece here.
+4. **`#phantom-tab-pill` · `#mode-toggle` · `.search-wrap`** — the remainder.
+
+**Four ships, not 4–6** — the estimate came down once the `pg-*` pages were ruled out.
+
+⛔ **Not started. Stage 3 ships are blocked until `.535` is promoted, verified and stamped.**
