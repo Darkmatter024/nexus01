@@ -66,6 +66,57 @@ Reachable + working in the default redesign. ⚠️ **pg-sop** is LIVE but a bor
 
 No working entry point anywhere OR owner-killed — safe to delete (physical deletion in the R1 census pass, after Ship B is verified on device).
 
+---
+
+### ⭐ RE-VERIFIED AGAINST LIVE `v1.14.533` — 2026-08-30, LEGACY-RETIRE Stage 2
+
+⛔ **The rest of this document is anchored at `v1.14.166` and is 367 versions stale. Only the three
+rows below have been re-checked. Treat every other verdict in this file as a MAP, not as truth.**
+The re-check changed the shape of Stage 2: **one clean deletion, one no-op, and one row whose
+verdict is wrong.**
+
+**1 · Crash-Cart Mode — ✅ RETIRED CONFIRMED, and it is now DOUBLY dead.**
+`crashcart_toggle()` has **zero callers**: the only occurrences of the name are its own definition
+(`:39535`) and two comments. `v1.14.248` already removed its only doors — the `OPS_TABS.crashcart`
+key and the `#ops-tab-strip` pill — and that ship's own note (`:25337`) designates the remaining
+body for *"the LR-2 atomic sweep that owns it"*, which is this stage. ⭐ **Stronger than the census
+knew:** there is no longer any `.crashcart-active` CSS rule, so `#crashcart-layer` — declared
+`display:none` at `:11284` — could not become visible even if something did call the toggle.
+**Footprint:** 10 CSS rules (`:11284`–`:11377`), 4 functions (`:39535`–`:39615`), one markup div
+(`:60722`–`:60723`), plus comment references at `:16641`, `:25337`–`:25344` and `:25367`. Dead in
+BOTH houses, so deleting it is invisible under `?legacy=1` too.
+
+**2 · Incident Memory Engine — ✅ ALREADY GONE. Zero deletion work; this row is a no-op.**
+Three references survive and **all three are comments** (`:16651`, `:18398`, `:19173`). The engine
+was scrubbed long before this campaign. ⚠ Do not "clean up" `:19173` — the comment sits above live
+code that clears the legacy lesson **cache**, which is a migration path for fielded devices, not
+part of the engine.
+
+**3 · TODAY Pulse — ⛔ THE VERDICT IS WRONG AS WRITTEN. Do not delete it as a RETIRED row.**
+The section is real and locatable (`// ── PULSE SECTION ──` at `:27571` through `// end pulse card`
+at `:27599`, ~29 lines inside `today_render`, which spans `:27435`–`:27793`). But this table's own
+definition is *"no working entry point ANYWHERE"*, and that is false: the pulse renders under
+`?legacy=1`, where it is the legacy NOW dashboard's pulse card. **It is dead under `body.rd` only.**
+Deleting it is therefore a **visible change in the legacy house** — permitted now that Contract 17's
+byte-identity guarantee is revoked, but it is a different KIND of ship from row 1 and must not be
+stacked with it.
+⚠ **And the function around it is not dead.** `today_render()` has four live callers, including one
+at **boot** (`:19166`), plus `showPage('triage')` (`:24922`), a blocker save (`:26166`) and
+`guided_dismissScope` (`:27431`). It early-returns on a missing `#today-dashboard`, but that node
+lives in `pg-triage` markup which is present in the DOM under the redesign — merely never shown — so
+**the function runs in full at every boot and paints into a hidden host.** That is the
+`deploy_deadrender_hosts` shape. Any edit here is surgery inside live code, not a deletion of dead
+code, and the `html +=` string must stay balanced across the removed block.
+📌 **Finding, logged not acted on:** a paint the `:32711` comment describes as *"~500 localStorage
+parses"* (since cached) runs at every boot into a page the redesign never displays. That is a
+performance question that outlives this campaign and belongs to nobody's stage yet.
+
+**Recommended Stage 2 shape:** two ships, not one — **2a Crash-Cart** (invisible in both houses),
+then **2b TODAY Pulse** (visible under `?legacy=1`), each with its own phone verify. The Incident
+Memory row needs no ship at all.
+
+---
+
 | Surface | rd? | home | rationale | ref |
 |---|:--:|---|---|---|
 | **Crash-Cart Mode** | — | none | **OWNER KILL 2026-07-02 (Master-Reorg spec) — reclassified STRANDED → RETIRED. Do NOT build a redesign door.** Was a working ?legacy=1-only hands-free single-rack field overlay (#crashcart-layer @44178, crashcart_toggle/exit/pickRack/render, .crashcart-* CSS, ops-tab launch card). Delete the full symbol+CSS+markup sweep in R1. NOT the Ref-grid "Crash Cart" nav rename. | `dct-ios.html:44178` |
