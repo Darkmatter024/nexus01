@@ -197,14 +197,6 @@
   --tap-l:  52px;
   --tap-m:  48px;
   --tap-s:  44px;
-  /* ⛔ DEAD AS OF v1.14.540 — #action-stripe was DELETED. This token reserved 106px below five
-     sheet inners (.sop-sheet-inner :2055, .rm-device-inner, .rm-sheet-inner, .va-sheet-inner,
-     .ge-inner) so the stripe at z-index 800 could not obscure their primary buttons. Those sheets
-     are inset:0 overlays at z-index 150–200 and sit ABOVE #rd-botnav (z-index 40), so this was
-     never nav clearance and removing it cannot tuck content behind the nav — the .532 trap does
-     not apply here. It is kept for ONE ship only: dropping it moves layout in the REDESIGN, which
-     is a separate visible change and gets its own verify (Stage 3.2b). Do not read it as live. */
-  --action-stripe-reserve: calc(40px + 54px + 12px);
 
   /* ── typography tokens (font-floor pass) ──
      Hard floor: 10px. Use --fs-micro only when letter-spacing carries
@@ -2060,7 +2052,7 @@ code { font-family:var(--mono); font-size: var(--fs-caption); color:var(--cyan2)
   background: var(--bg2); border-radius: 20px 20px 0 0;
   border-top: 1px solid var(--cyan-subtle);
   overflow-y: auto; -webkit-overflow-scrolling: touch;
-  padding: 0 0 calc(var(--safe-bottom) + 20px + var(--action-stripe-reserve));
+  padding: 0 0 calc(var(--safe-bottom) + 20px);
   animation: sheetUp 0.3s cubic-bezier(0.32,0.72,0,1);
 }
 @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
@@ -2519,7 +2511,7 @@ code { font-family:var(--mono); font-size: var(--fs-caption); color:var(--cyan2)
   width: 100%; background: var(--bg2);
   border-radius: 20px 20px 0 0;
   border-top: 1px solid var(--cyan-subtle);
-  padding-bottom: calc(var(--safe-bottom) + 20px + var(--action-stripe-reserve));
+  padding-bottom: calc(var(--safe-bottom) + 20px);
   animation: sheetUp 0.28s cubic-bezier(0.32,0.72,0,1);
   max-height: 85vh; overflow-y: auto;
 }
@@ -2570,7 +2562,7 @@ code { font-family:var(--mono); font-size: var(--fs-caption); color:var(--cyan2)
   overflow-y: auto; -webkit-overflow-scrolling: touch;
   /* Bottom padding reserves space for the persistent action stripe
      so primary action buttons (PARSE & SAVE, etc.) never sit under it. */
-  padding: 0 0 calc(var(--safe-bottom) + 20px + var(--action-stripe-reserve));
+  padding: 0 0 calc(var(--safe-bottom) + 20px);
   animation: sheetUp 0.3s cubic-bezier(0.32,0.72,0,1);
 }
 .rm-sheet-handle {
@@ -2795,7 +2787,7 @@ code { font-family:var(--mono); font-size: var(--fs-caption); color:var(--cyan2)
   border-top: 1px solid var(--cyan-border);
   max-height: 75vh; overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: calc(var(--safe-bottom) + 20px + var(--action-stripe-reserve));
+  padding-bottom: calc(var(--safe-bottom) + 20px);
   animation: sheetUp 0.3s cubic-bezier(0.32,0.72,0,1);
 }
 .va-handle {
@@ -3474,7 +3466,7 @@ body.rd #fs-fiber > .card:nth-child(7) .ico-tile { --optic: url("icons/phantom-o
   border-top: 1px solid var(--cyan-border);
   max-height: 88vh; overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 0 16px calc(var(--safe-bottom) + 16px + var(--action-stripe-reserve));
+  padding: 0 16px calc(var(--safe-bottom) + 16px);
   animation: sheetUp 0.3s cubic-bezier(0.32,0.72,0,1);
 }
 .ge-handle {
@@ -9292,7 +9284,9 @@ body.rd #forge3d-sheet.open { display: flex; }
    44px floor. Every dependent number below is now derived from these four terms; nothing
    in this stack may re-state a measured value. Two field precedents for that rule:
    v1.14.341 (--tabnav-h described 72px over a 96px strip) and v1.14.351 (an unpaid phase
-   dock). Pattern copied from --action-stripe-reserve at :151-155, where every term is named.
+   dock). The pattern was copied from --action-stripe-reserve, where every term was named —
+   ⛔ that token was DELETED in v1.14.541 with the #action-stripe it reserved space for, so the
+   example is gone but the RULE it demonstrated is not: name every term, never a bare constant.
      --forge-tap     the gloved tap floor. EVERY control in the row consumes it as its own
                      height, so no control is sized by a sibling. --tap-m (48px) is the
                      gloved-realistic upgrade the token comment at :141 argues for and is a
@@ -12957,7 +12951,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.540';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.541';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
