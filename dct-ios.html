@@ -6426,7 +6426,6 @@ textarea.hud-input {
    Two rails (L+R mirrored) with EIA-310 3-hole-per-U pattern.
    Highest U at top of DOM = matches physical rack as the tech sees it.
    ═══════════════════════════════════════════════════════════════════ */
-#pg-compass { padding-bottom: 40px; }
 
 .cn-header {
   display: flex; align-items: center; gap: 12px;
@@ -12871,7 +12870,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.550';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.551';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -15179,6 +15178,8 @@ if (typeof window !== 'undefined') {
         <div class="stab" style="display:none" onclick="showStab(this,'pwr-sub','pw-rm');renderRackMap()">Rack Map</div>
         <div class="stab" style="display:none" onclick="showStab(this,'pwr-sub','pw-blast');renderBlastRadius()">Blast Radius</div>
         <div class="stab" onclick="showStab(this,'pwr-sub','pw-thermal')">Thermal</div>
+        <!-- v1.14.551: synthesised by redesign_homeCompass until 6.6 — id, label and onclick verbatim. -->
+        <div class="stab" id="stab-pw-compass" onclick="showStab(this,'pwr-sub','pw-compass');compass_render()">Cage Nut</div>
       </div>
 
       <div class="pwr-sub" id="pw-power" style="display:none">
@@ -15698,6 +15699,43 @@ if (typeof window !== 'undefined') {
 
       </div><!-- end pw-thermal -->
 
+
+        <!-- CAGE NUT. v1.14.551 (LEGACY-RETIRE Stage 6.6): AUTHORED HERE now. redesign_homeCompass
+             used to SYNTHESISE this panel at boot — it existed in no markup anywhere. It built a
+             div with class "ref-sub" (not pwr-sub, despite joining the pwr-sub group), id
+             pw-compass, moved pg-compass's children in, and DROPPED the .cn-header (the Back-to-
+             Triage bar) because the subtab strip is the chrome here. All of that is reproduced
+             above: the class is verbatim and the header is simply not authored. -->
+        <div class="ref-sub" id="pw-compass">
+          <div class="cn-form">
+            <div>
+              <div class="cn-field-lbl">Start U · bottom of chassis</div>
+              <div class="cn-stepper-row">
+                <button class="cn-step-btn" id="cn-step-down" onclick="compass_setStartU(-1)" aria-label="Decrease start U">−</button>
+                <div class="cn-step-display"><span class="cn-u-prefix">U</span><span id="cn-startu-display">14</span></div>
+                <button class="cn-step-btn" id="cn-step-up" onclick="compass_setStartU(1)" aria-label="Increase start U">+</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="cn-field-lbl">Chassis Size</div>
+              <div class="cn-chassis-row">
+                <button class="cn-chassis-btn" data-h="1" onclick="compass_setChassis(1)">1U</button>
+                <button class="cn-chassis-btn" data-h="2" onclick="compass_setChassis(2)">2U</button>
+                <button class="cn-chassis-btn" data-h="4" onclick="compass_setChassis(4)">4U</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="cn-rail-viewport" id="cn-rail-viewport">
+            <!-- Rails rendered by compass_render() — left + right mirrored -->
+          </div>
+
+          <div class="cn-footer">
+            <div class="cn-footer-meta">L/R MIRRORED · 48U FRAME</div>
+            <div class="cn-footer-count"><strong id="cn-nut-count">2</strong> NUTS · PER RAIL</div>
+          </div>
+        </div>
       </div>
       <!-- CLI / IB. v1.14.547 (LEGACY-RETIRE Stage 6.3): AUTHORED HERE now. These panels used to
            live in pg-cli and be drained into this container at boot by redesign_homeCLI(), which
@@ -16488,43 +16526,6 @@ if (typeof window !== 'undefined') {
          Triage-launched tactical tool. Not in bottom tab nav.
          Returns to triage via cn-back-btn. Renders on every open
          from persisted state in localStorage. -->
-    <div class="page" id="pg-compass">
-      <div class="cn-header">
-        <button class="cn-back-btn" onclick="compass_goBack()" aria-label="Back to Triage">← BACK</button>
-        <div class="cn-title">Cage Nut Compass</div>
-      </div>
-
-      <div class="cn-form">
-        <div>
-          <div class="cn-field-lbl">Start U · bottom of chassis</div>
-          <div class="cn-stepper-row">
-            <button class="cn-step-btn" id="cn-step-down" onclick="compass_setStartU(-1)" aria-label="Decrease start U">−</button>
-            <div class="cn-step-display"><span class="cn-u-prefix">U</span><span id="cn-startu-display">14</span></div>
-            <button class="cn-step-btn" id="cn-step-up" onclick="compass_setStartU(1)" aria-label="Increase start U">+</button>
-          </div>
-        </div>
-
-        <div>
-          <div class="cn-field-lbl">Chassis Size</div>
-          <div class="cn-chassis-row">
-            <button class="cn-chassis-btn" data-h="1" onclick="compass_setChassis(1)">1U</button>
-            <button class="cn-chassis-btn" data-h="2" onclick="compass_setChassis(2)">2U</button>
-            <button class="cn-chassis-btn" data-h="4" onclick="compass_setChassis(4)">4U</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="cn-rail-viewport" id="cn-rail-viewport">
-        <!-- Rails rendered by compass_render() — left + right mirrored -->
-      </div>
-
-      <div class="cn-footer">
-        <div class="cn-footer-meta">L/R MIRRORED · 48U FRAME</div>
-        <div class="cn-footer-count"><strong id="cn-nut-count">2</strong> NUTS · PER RAIL</div>
-      </div>
-
-    </div><!-- end pg-compass -->
-
     <!-- ━━━ PAGE: MASTER (v1.6.30 — Step 2 Site Reference query spine) ━━━
          The field tech's "I'm standing at cabinet X — what's in it?" lookup.
          Read-only query interface over the parsed Master file. Does NOT
@@ -17624,8 +17625,10 @@ const STAB_GROUPS = {
   // from this array at runtime, and the reason is not cosmetic: the Runbook panel lives in
   // Reference→Know, so while it was still a member of pwr-sub, switching ANY Hardware subtab
   // stripped its stab-active and blanked Know. Re-adding it re-creates that bug.
-  // 'pw-compass' is still appended at runtime by redesign_homeCompass — Stage 6.6 folds it in here.
-  'pwr-sub':   ['pw-power','pw-hw','pw-rm','pw-thermal','pw-blast'],
+  // 'pw-compass' IS NOW A MEMBER (v1.14.551, Stage 6.6). redesign_homeCompass used to push it here
+  // at runtime, after synthesising the panel and its stab. Both are authored in source now, so the
+  // membership is too — the group and the markup it governs are finally declared in one place.
+  'pwr-sub':   ['pw-power','pw-hw','pw-rm','pw-thermal','pw-blast','pw-compass'],
   // Redesign Reference page subtabs. In redesign mode only, pw-rb (Runbook/
   // ops-knowledge) is re-parented into #rf-know at boot by redesign_homeKnow();
   // pw-rb stays a pwr-sub member so FIELD mode (flag off) is untouched.
@@ -23329,35 +23332,17 @@ function redesign_addPlatformsLanding() {
 }
 document.addEventListener('DOMContentLoaded', redesign_addPlatformsLanding);
 
-// redesign_homeCompass(): fold the Cage Nut Compass (pg-compass) into Hardware as a
-// 'Cage Nut' subtab. Builds a stab on the re-homed Hardware strip + a #pw-compass
-// BLOCK panel (class ref-sub, NOT the pwr-sub grid — it's one tool, not cards) and
-// MOVES the compass content in, dropping its Back-to-Triage header (the strip is the
-// nav now). compass_render() targets global ids so it works in the new home. Runs
-// after homeHardware (strip must exist). Flag-gated → FIELD mode leaves pg-compass whole.
-function redesign_homeCompass() {
-  if (!redesign_isOn()) return;
-  var src = document.getElementById('pg-compass');
-  var dest = document.getElementById('rf-hw');
-  var strip = dest ? dest.querySelector('.subtab-strip') : null;
-  if (!src || !dest || !strip || document.getElementById('pw-compass')) return;
-  var panel = document.createElement('div');
-  panel.className = 'ref-sub';
-  panel.id = 'pw-compass';
-  Array.prototype.slice.call(src.children).forEach(function(ch) {
-    if (ch.classList && ch.classList.contains('cn-header')) return;  // drop Back-to-Triage header
-    panel.appendChild(ch);
-  });
-  dest.appendChild(panel);
-  STAB_GROUPS['pwr-sub'].push('pw-compass');
-  var btn = document.createElement('div');
-  btn.className = 'stab';
-  btn.id = 'stab-pw-compass';
-  btn.textContent = 'Cage Nut';
-  btn.setAttribute('onclick', "showStab(this,'pwr-sub','pw-compass');compass_render()");
-  strip.appendChild(btn);
-}
-document.addEventListener('DOMContentLoaded', redesign_homeCompass);
+// v1.14.551 (LEGACY-RETIRE Stage 6.6) - redesign_homeCompass IS DELETED, the seventh of eight.
+// It was the only re-home that SYNTHESISED markup rather than moving it: the #pw-compass panel and
+// the Cage Nut stab existed in no source anywhere, built at boot with createElement. Both are now
+// authored inside #rf-hw, and pw-compass is a declared member of STAB_GROUPS[pwr-sub] rather than
+// a runtime push.
+// Three details had to be read out of the function because nothing recorded them: the panel class
+// is ref-sub (NOT pwr-sub, despite joining that group), the .cn-header Back-to-Triage bar is
+// dropped, and the stab carries both showStab and compass_render() in its onclick.
+// It also had an ordering dependency on redesign_homeHardware, because it appended into a strip
+// that only existed in #rf-hw once Hardware had moved it there. Stage 6.5 authored that strip in
+// source, so the dependency was already gone before this ship removed the function that had it.
 
 // ⭐ v1.14.547 (LEGACY-RETIRE Stage 6.3) — redesign_homeCLI IS DELETED, the third of eight and the
 // FIRST of the four drain-and-wipe re-homes. It ran dest.innerHTML='' and then drained every child
@@ -57553,11 +57538,11 @@ function goCompass() {
     setTimeout(compass_render, 0);
     return;
   }
-  showPage('compass', null);
-  // Defer render until after showPage applies the .active class — DOM
-  // queries inside compass_render() target #pg-compass children.
-  setTimeout(compass_render, 0);
-  if (typeof haptic === 'function') haptic(4);
+  // v1.14.551: the legacy path is GONE with pg-compass. It used to showPage('compass') and defer
+  // compass_render, whose DOM queries targeted that page's children. Those children now live in
+  // #pw-compass inside #rf-hw, which the legacy house never shows — so the render would have
+  // written into a hidden node and reported success, on top of a page that no longer exists.
+  if (typeof phantomToast === 'function') phantomToast('Cage Nut Compass is not available in the legacy UI — return to the new UI to use it', 'warn');
 }
 
 // Boot-time state hydration — safe before DOMContentLoaded since this

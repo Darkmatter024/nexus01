@@ -127,12 +127,13 @@ test.describe('the borrowed organs', () => {
     expect(await phantom.isRedesign(), '?legacy=1 must not apply body.rd').toBe(false);
     const r = await page.evaluate(() => ({
       // Shells of organs already DECOUPLED (6.1–6.5) must be gone in both houses.
-      goneShells: ['pg-twin', 'pg-cli', 'pg-fiber', 'pg-power', 'hw-matrix-sheet']
+      goneShells: ['pg-twin', 'pg-cli', 'pg-fiber', 'pg-power', 'pg-compass', 'hw-matrix-sheet']
         .filter((id) => !!document.getElementById(id)),
       // Organs STILL borrowed at runtime must remain in their legacy shells, un-moved.
+      // ⭐ pg-scan is the LAST one. When 6.7 lands, these two assertions move up to goneShells and
+      // this file stops tracking borrowed organs entirely — because there will not be any.
       scanInShell: !!(document.getElementById('pg-scan') || { childElementCount: 0 }).childElementCount,
       wkScanEmpty: (document.getElementById('wk-scan') || { childElementCount: 0 }).childElementCount === 0,
-      compassInShell: !!(document.getElementById('pg-compass') || { childElementCount: 0 }).childElementCount,
     }));
 
     // ⛔ RE-POINTED AGAIN by Stage 6.5, and this block will change once more per organ — that is the
@@ -146,7 +147,6 @@ test.describe('the borrowed organs', () => {
     // The house gate still matters for what has NOT been decoupled yet.
     expect(r.scanInShell, 'pg-scan was drained under legacy — redesign_homeScan ran in the wrong house').toBe(true);
     expect(r.wkScanEmpty, '#wk-scan was filled under legacy — redesign_homeScan is no longer house-gated').toBe(true);
-    expect(r.compassInShell, 'pg-compass was drained under legacy — redesign_homeCompass ran in the wrong house').toBe(true);
     // ⭐ WHY THIS BLOCK KEEPS CHANGING, and why that is the rule working rather than churn: a
     // legacy assertion is rewritten in the ship that removes what it tests. 6.1 first re-pointed it
     // (pg-twin), 6.5 again (pg-power). Each decouple moves one organ from the "still borrowed"
