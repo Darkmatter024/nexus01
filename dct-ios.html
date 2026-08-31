@@ -2962,13 +2962,7 @@ code { font-family:var(--mono); font-size: var(--fs-caption); color:var(--cyan2)
   box-shadow: inset 0 2px 0 rgba(255,255,255,0.14), 0 8px 24px rgba(0,0,0,0.45);
 }
 .qa-btn.qa-voice .qa-label { color:rgba(92,242,255,0.6); }
-.qa-btn.qa-nerve {
-  border-color: rgba(255,0,110,0.3);
-  background: linear-gradient(160deg, rgba(255,255,255,0.10) 0%, rgba(255,0,110,0.06) 60%, rgba(255,0,110,0.12) 100%);
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.14), 0 8px 24px rgba(0,0,0,0.45), 0 0 12px rgba(255,0,110,0.08);
-}
-.qa-btn.qa-nerve .qa-label { color: var(--magenta); }
-.qa-btn.qa-nerve .qa-sub { color: rgba(255,0,110,0.5); }
+
 .qa-btn.qa-parser {
   border-color: rgba(48,209,88,0.3);
   background: linear-gradient(160deg, rgba(255,255,255,0.10) 0%, rgba(48,209,88,0.05) 60%, rgba(48,209,88,0.10) 100%);
@@ -12880,7 +12874,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.544';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.545';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -14191,7 +14185,14 @@ if (typeof window !== 'undefined') {
       </div>
       <!-- Issues: the Deployment Issue Log's #issue-page is re-parented in here at boot
            by redesign_homeIssues(); issue_pageOpen() renders the list on tab tap. -->
-      <div class="work-sub" id="wk-issues"></div>
+      <!-- Issues. v1.14.545 (LEGACY-RETIRE Stage 6.1): #issue-page is AUTHORED HERE now. It used
+           to live in pg-twin and be re-parented in at boot by redesign_homeIssues(); that function
+           and pg-twin are both deleted. The div keeps its id and inline padding VERBATIM, because
+           issue_renderList and issue_pageOpen resolve it with getElementById: the node identity is
+           the contract, not its position. issue_pageOpen() still renders the list on tab tap. -->
+      <div class="work-sub" id="wk-issues">
+        <div id="issue-page" style="padding:14px 14px calc(20px + env(safe-area-inset-bottom)) 14px"></div>
+      </div>
     </div>
     <div class="page" id="pg-ref">
       <!-- REDESIGN STEP 2 — Reference subtab strip. Surfaces re-home one at a time
@@ -14317,10 +14318,6 @@ if (typeof window !== 'undefined') {
         <button class="qa-btn qa-voice" data-requires-net="1" onclick="openVaSheet('listening');vaStart()" aria-label="Ask Voice Assistant">
           <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div>
           <div class="qa-label">Ask Assistant</div>
-        </button>
-        <button class="qa-btn qa-nerve" onclick="showPage('twin', getTnItem('triage'))" aria-label="Deployment Issue Log — capture and match build issues">
-          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#b478ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/></svg></div>
-          <div class="qa-label">Issue Log</div>
         </button>
       </div>
 
@@ -16442,9 +16439,7 @@ if (typeof window !== 'undefined') {
          showPage('twin', ...) — page id retained for nav continuity.
          The legacy GT/gt* engine has been fully removed in cleanup.
          All UI is rendered into #issue-page by the issue_* module.    -->
-    <div class="page" id="pg-twin">
-      <div id="issue-page" style="padding:14px 14px calc(20px + env(safe-area-inset-bottom)) 14px"></div>
-    </div><!-- end pg-twin -->
+
 
     <!-- ━━━ PAGE: CAGE NUT COMPASS (Phase 3 Gate 10) ━━━
          Triage-launched tactical tool. Not in bottom tab nav.
@@ -23146,13 +23141,7 @@ document.addEventListener('DOMContentLoaded', redesign_homeScan);
 // target intact — §1 re-home-don't-rebuild. Flag-gated; FIELD mode leaves pg-twin
 // whole (still reached via the legacy NOW 'NERVE' tile -> showPage('twin')). The
 // Issues subtab tap calls issue_pageOpen() to render the list (dynamic surface).
-function redesign_homeIssues() {
-  if (!redesign_isOn()) return;
-  var src = document.getElementById('issue-page');
-  var dest = document.getElementById('wk-issues');
-  if (src && dest && src.parentNode !== dest) { dest.appendChild(src); }
-}
-document.addEventListener('DOMContentLoaded', redesign_homeIssues);
+
 
 // redesign_homeHardware(): re-parent the rest of pg-power (Power / LED-GPU / Rack
 // Map / Blast Radius / Thermal subtabs + panels) into Reference→Hardware (#rf-hw).
@@ -24536,7 +24525,11 @@ function showPage(id, tnEl, opsTab) {
   if (id === 'cli')   initSubtab('cli-sub',   'cs-ib', '#pg-cli .subtab-strip .stab');
   if (id === 'power') initSubtab('pwr-sub',   'pw-power',  '#pg-power .subtab-strip .stab');
   if (id === 'sop')   { _navInternalCall = true; showOpsTab(opsTab || 'deploy'); _navInternalCall = false; }
-  if (id === 'twin')  { if (typeof issue_pageOpen === 'function') issue_pageOpen(); }
+  // v1.14.545: the 'twin' legacy branch is gone with pg-twin. Calling issue_pageOpen() here would
+  // now render into #issue-page inside #wk-issues, a redesign container the legacy house never
+  // shows: a dead render reporting success. The redesign path is unaffected, because showPage('twin')
+  // is intercepted upstream and routed to showWorkTab('issues'), which is what restores a device
+  // holding saved nav state p:'twin'.
   // v1.6.30: MASTER tab activation — idempotent init (one-time wiring)
   // + render. Render reads window._lastPhantomMaster live; on cold
   // restore that's already populated by _phantom_master_bootRestore.

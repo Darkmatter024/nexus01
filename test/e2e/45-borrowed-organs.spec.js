@@ -127,12 +127,19 @@ test.describe('the borrowed organs', () => {
     expect(await phantom.isRedesign(), '?legacy=1 must not apply body.rd').toBe(false);
     const r = await page.evaluate(() => ({
       rbInPower: !!document.querySelector('#pg-power #pw-rb'),
-      issueInTwin: !!document.querySelector('#pg-twin #issue-page'),
       knowEmpty: (document.getElementById('rf-know') || { childElementCount: 0 }).childElementCount === 0,
+      twinGone: !document.getElementById('pg-twin'),
     }));
     expect(r.rbInPower, 'the Runbook left pg-power under legacy — a re-home ran in the wrong house').toBe(true);
-    expect(r.issueInTwin, 'the Issue Log left pg-twin under legacy — a re-home ran in the wrong house').toBe(true);
     expect(r.knowEmpty, 'the redesign scaffold was filled under legacy — a re-home is no longer house-gated').toBe(true);
+    // ⛔ RE-POINTED v1.14.545 by Stage 6.1, which is the rule this campaign runs on: a legacy
+    // assertion is rewritten in the ship that removes what it tests. This used to assert
+    // `#pg-twin #issue-page` — that the Issue Log was still in its legacy shell. 6.1 decoupled that
+    // organ, so pg-twin is deleted and the legacy house no longer has the Issue Log at all.
+    // ⭐ That is not a regression, it is what decoupling COSTS: an organ is a single node, so
+    // moving it out of the borrowed shell necessarily removes it from one house. Expect to rewrite
+    // this block seven more times, once per organ, as each is decoupled.
+    expect(r.twinGone, 'pg-twin is back — Stage 6.1 deleted it').toBe(true);
   });
 
 });
