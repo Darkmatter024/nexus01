@@ -148,7 +148,11 @@ async function tapTool(page, name) {
 const TOOL_CARDS = [
   { name: 'OPTICS', door: "showRefTab('rf-optics')", panel: '#rf-optics', backTitle: 'OPTICS' },
   { name: 'PLATFORMS', door: 'rd_openPlatforms()', panel: '#rf-hw', backTitle: 'PLATFORMS', also: '#rf-platforms' },
-  { name: 'CLI / IB', door: "showRefTab('rf-cli')", panel: '#rf-cli', backTitle: 'CLI / IB' },
+  // ⛔ STALE LABEL, corrected v1.14.547. This row said 'CLI / IB' and had been red for an unknown
+  // span — found by adding this spec to Stage 6.3's test set, not by a bug report. The app is
+  // internally CONSISTENT and always was: the Tools card and REF_CAT_NAMES['rf-cli'] (:19543) both
+  // read 'CLI · IB (InfiniBand)'. Only the test disagreed, so there is no product question here.
+  { name: 'CLI · IB (InfiniBand)', door: "showRefTab('rf-cli')", panel: '#rf-cli', backTitle: 'CLI · IB (InfiniBand)' },
   { name: 'PARTS', door: "showRefTab('rf-hwref')", panel: '#rf-hwref', backTitle: 'PARTS' },
   { name: 'KNOW', door: "showRefTab('rf-know')", panel: '#rf-know', backTitle: 'KNOW' },
   { name: 'COMPASS', door: 'ref_openCompass()', panel: '#rf-hw', backTitle: 'COMPASS', also: '#pw-compass' },
