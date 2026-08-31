@@ -178,7 +178,6 @@
   /* layout */
   --header-h: 56px;
   --search-h: 52px;
-  --tabnav-h: calc(72px + var(--safe-bottom));
 
   /* ━━━ v1.6.34 Tap-target token scale (Option D — no-op refactor) ━━━
      The four dominant min-height values across PHANTOM (56/52/48/44 —
@@ -929,20 +928,6 @@ body {
 .header-inner { display:flex; align-items:center; justify-content:space-between; width:100%; }
 .header-left { display:flex; flex-direction:row; align-items:center; gap: 8px; min-width: 0; flex: 1 1 auto; }
 .header-left-text { display:flex; flex-direction:column; gap:1px; min-width: 0; }
-.nav-back-btn {
-  width: 44px; height: 44px;
-  background: transparent;
-  border: 1px solid rgba(92,242,255,0.22);
-  border-radius: var(--hud-r8);
-  color: var(--cyan);
-  font-family: var(--orb); font-size: 24px; font-weight: 400;
-  cursor: pointer;
-  align-items: center; justify-content: center;
-  -webkit-appearance: none; flex-shrink: 0;
-  padding: 0 0 3px 0; line-height: 1;
-  transition: background 0.12s ease, transform 0.12s ease;
-}
-.nav-back-btn:active { background: rgba(92,242,255,0.10); transform: scale(0.95); }
 .header-right { display:flex; align-items:center; gap: 8px; }
 .hdr-menu-item {
   display:flex; align-items:center; gap:8px;
@@ -1099,7 +1084,7 @@ body {
      ⛔ Redesign is unaffected either way: :9981 records that body.rd .page overrides this with
      --rd-navclear. A follow-up ship can drop the 60px; it is a legacy-visible layout change and
      needs its own verify. Do NOT trim it as a drive-by inside another ship. */
-  padding: 14px calc(var(--safe-right) + 14px) calc(var(--tabnav-h) + 140px) calc(var(--safe-left) + 14px);
+  padding: 14px calc(var(--safe-right) + 14px) calc(var(--rd-navclear) + 140px) calc(var(--safe-left) + 14px);
   display: none;
   background: var(--bg0);
   scroll-behavior: smooth;
@@ -1147,7 +1132,7 @@ body.rd.ops-detail.ph-dock-on .page { padding-bottom: calc(var(--rd-navclear) + 
 #page-search {
   position: absolute; inset: 0;
   overflow-y: auto; -webkit-overflow-scrolling: touch;
-  padding: 14px calc(var(--safe-right) + 14px) calc(var(--tabnav-h) + 14px) calc(var(--safe-left) + 14px);
+  padding: 14px calc(var(--safe-right) + 14px) calc(var(--rd-navclear) + 14px) calc(var(--safe-left) + 14px);
   display: none;
   background: var(--bg0);
   z-index: 5;
@@ -1379,41 +1364,6 @@ body.rd.ops-detail.ph-dock-on .page { padding-bottom: calc(var(--rd-navclear) + 
 mark { background:var(--cyan-subtle); color:var(--cyan); padding:0 2px; border-radius:2px; }
 
 /* ━━━ BOTTOM TAB NAV ━━━ */
-.tab-nav {
-  position: fixed;
-  bottom: 0;
-  left: 12px;
-  right: 12px;
-  height: calc(68px + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
-  background: linear-gradient(180deg, rgba(14,20,32,0.88) 0%, rgba(8,12,20,0.94) 100%);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 22px 22px 0 0;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  z-index: var(--z-nav);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  transform: translateZ(0);
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,0.4),
-    0 -8px 32px rgba(0,0,0,0.5),
-    inset 0 1px 0 rgba(255,255,255,0.10);
-  overflow: hidden;
-}
-.tab-nav::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 12%; right: 12%;
-  height: 1px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(154,246,255,0.28) 35%,
-    rgba(180,120,255,0.28) 65%,
-    transparent 100%);
-  pointer-events: none;
-  z-index: 3;
-}
 
 .tn-item {
   display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -2024,7 +1974,7 @@ code { font-family:var(--mono); font-size: var(--fs-caption); color:var(--cyan2)
   position: absolute; inset: 0; background: var(--bg0); z-index: 10;
   overflow-y: auto; -webkit-overflow-scrolling: touch;
   display: none; flex-direction: column;
-  padding-bottom: calc(var(--tabnav-h) + 14px);
+  padding-bottom: calc(var(--rd-navclear) + 14px);
 }
 .sop-detail.visible { display: flex; }
 .sop-detail-bar {
@@ -10042,14 +9992,12 @@ body.rd #rd-exit.arming .rd-exit-charge{transition:transform .85s linear;transfo
 #rd-wake .rd-wring{stroke:var(--gold);stroke-width:3;stroke-linecap:round;stroke-dasharray:452;stroke-dashoffset:452}
 #rd-wake.arming .rd-wring{transition:stroke-dashoffset .85s linear;stroke-dashoffset:0}
 #rd-wake .rd-wlbl{font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.16em;color:var(--gold);text-align:center;line-height:1.3;z-index:2}
-body.rd .tab-nav{display:none}   /* v1.14.536: .app-logo/.app-loc dropped with the elements themselves (Stage 3.1) */
 /* Rule A (v1.14.122) — one back control per surface. The legacy header chevron (#nav-back-btn,
    nav_back/history.back) is hidden in the New UI: the redesign provides its own context-back on
    every surface (the per-page #work-back/#ref-back grid-back on panels, the inline '‹ Back' pill
    in deploy/rack/sop detail views). This kills the "two app-backs at once" stacking (scope picker)
    and the chevron overlapping the header band/title (deploy detail). !important beats the inline
    display toggled by the legacy nav code. Legacy (?legacy=1) keeps the chevron — byte-identical. */
-body.rd #nav-back-btn{display:none!important}
 /* Stage 5 — demote legacy Action-Stripe to ?legacy=1 only (hide, not delete; rip-cord restores it). Toggle lives in the SYS overflow menu; the stripe itself is the legacy fixed-bottom rack toolbar. */
 body.rd .search-wrap{display:none}
 body.rd.mode-ref .search-wrap{display:flex}   /* search bar shows only on Ref; .search-wrap is display:flex — restore it, not block */
@@ -10488,7 +10436,7 @@ body.rd #rd-botnav{display:grid}
 /* ── 768px: iPad landscape ── */
 @media (min-width: 768px) {
   .page {
-    padding: 20px 32px calc(var(--tabnav-h) + 100px) 32px;
+    padding: 20px 32px calc(var(--rd-navclear) + 100px) 32px;
   }
   .hwm-inner          { max-width: 720px; }
   .btp-inner          { max-width: 560px; }
@@ -10502,7 +10450,7 @@ body.rd #rd-botnav{display:grid}
     padding-right: 40px;
   }
   .page {
-    padding: 28px 48px calc(var(--tabnav-h) + 80px) 48px;
+    padding: 28px 48px calc(var(--rd-navclear) + 80px) 48px;
   }
 
   /* ── Content column grid — fiber, CLI, power sub-sections ──────────────
@@ -11513,7 +11461,7 @@ body[data-net="offline"] .qa-btn[data-requires-net="1"]::after {
    text-overflow: ellipsis or word-break: break-all. */
 
 .master-empty {
-  padding: 32px 16px calc(var(--tabnav-h) + 32px) 16px;
+  padding: 32px 16px calc(var(--rd-navclear) + 32px) 16px;
   text-align: center;
 }
 .master-empty-msg {
@@ -11574,7 +11522,7 @@ body[data-net="offline"] .qa-btn[data-requires-net="1"]::after {
 }
 
 .master-loaded {
-  padding: 0 0 calc(var(--tabnav-h) + 24px) 0;
+  padding: 0 0 calc(var(--rd-navclear) + 24px) 0;
 }
 .master-banner {
   display: flex;
@@ -12613,7 +12561,7 @@ body.rd .gsk-row {
    .pt-btn-warning/-destructive (semantic), .tn-capsule/.tab-nav (chrome D).
    qa-btn note: per-tile BORDER tints yield to the neutral ring; per-tile glow shadows and
    text hues remain — group locatability preserved via glow, flagged for the pass. */
-body.rd #pg-cmd .sigrow, body.rd .kpi, body.rd .nav-back-btn {
+body.rd #pg-cmd .sigrow, body.rd .kpi {
   border: 2px solid transparent;
   background:
     radial-gradient(140% 160% at 50% -40%, rgba(140,172,206,.10) 0%, transparent 46%) padding-box,
@@ -12870,7 +12818,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.553';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.554';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -13531,7 +13479,6 @@ if (typeof window !== 'undefined') {
   <header class="app-header">
     <div class="header-inner">
       <div class="header-left">
-        <button id="nav-back-btn" class="nav-back-btn" onclick="nav_back()" aria-label="Back" style="display:none">‹</button>
         <div class="header-left-text">
           <!-- v1.14.536 (LEGACY-RETIRE Stage 3.1): the legacy identity block — the PHANTOM
                wordmark (#appLogoTap) and the .app-loc site line — was here. Both were
@@ -16763,35 +16710,6 @@ if (typeof window !== 'undefined') {
     <div class="rd-saved">shift state saved · nothing lost</div>
   </div>
 
-  <nav class="tab-nav">
-    <div class="tn-capsule" id="tn-capsule" data-color="red"></div>
-    <div class="tn-item active" onclick="showPage('triage',this)" aria-label="Now">
-      <span class="tn-dot" id="now-tn-dot"></span>
-      <div class="tn-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M8 12h1.6l1-2.4 1.6 4.8 1-2.4h2" stroke-width="1.4"/><circle cx="12" cy="17" r="0.8" fill="#ff2d55" stroke="none"/></svg></div>
-      <div class="tn-label">Now</div>
-    </div>
-    <div class="tn-item" onclick="showPage('sop',this)" aria-label="Build">
-      <div class="tn-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff8a00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
-      <div class="tn-label">Build</div>
-    </div>
-    <div class="tn-item" onclick="showPage('scan',this)" aria-label="Scan">
-      <div class="tn-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5" stroke-width="1.3"/><line x1="12" y1="12" x2="18.4" y2="5.6" stroke-width="1.6"/><circle cx="12" cy="12" r="1.1" fill="#5cf2ff" stroke="none"/></svg></div>
-      <div class="tn-label">Scan</div>
-    </div>
-    <div class="tn-item" onclick="showPage('fiber',this)" aria-label="Know">
-      <div class="tn-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffd60a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><line x1="9" y1="18" x2="15" y2="18" stroke-width="1.4"/><line x1="10" y1="22" x2="14" y2="22" stroke-width="1.4"/><circle cx="12" cy="9" r="1.4" fill="#ffd60a" stroke="none"/></svg></div>
-      <div class="tn-label">Know</div>
-    </div>
-    <!-- v1.6.30: MASTER tab — Site Reference query spine.
-         Replaces HW REF in the bottom nav (HW REF relocated to header
-         overflow menu). Keeps the bottom nav at 5 visible slots for
-         320px viewport ergonomics under gloves. -->
-    <div class="tn-item" onclick="showPage('master',this)" aria-label="Master">
-      <div class="tn-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="18" height="6" rx="1"/><line x1="7" y1="7" x2="7.01" y2="7" stroke-width="2.4"/><line x1="7" y1="17" x2="7.01" y2="17" stroke-width="2.4"/><line x1="11" y1="7" x2="17" y2="7" stroke-width="1.4"/><line x1="11" y1="17" x2="17" y2="17" stroke-width="1.4"/></svg></div>
-      <div class="tn-label" style="color:var(--cyan)">MASTER</div>
-    </div>
-    <div class="tn-ribbon" id="tn-ribbon" data-color="red"></div>
-  </nav>
 
   <!-- v1.14.282 LOG SHEET - deployment-scoped field-note composer (askrow LOG pill opens it; replaces #omni-bar under redesign) -->
   <div id="log-sheet" class="va-sheet" onclick="if(event.target===this)closeLogSheet()">
@@ -18905,61 +18823,6 @@ function phantomDeferredInit() {
    via MutationObserver so any code that toggles .tn-item.active —
    including future tab-switch paths — automatically updates the
    visual state. Zero changes required elsewhere. */
-(function tn_setupSpineObserver() {
-  function tn_getColorFromIndex(idx) {
-    // Matches the inline SVG stroke colors hardcoded in tab-nav HTML.
-    var colors = ['red', 'orange', 'cyan', 'yellow', 'green'];
-    return colors[idx] || 'cyan';
-  }
-
-  function tn_syncSpine() {
-    var nav = document.querySelector('.tab-nav');
-    if (!nav) return;
-    var items = nav.querySelectorAll('.tn-item');
-    var capsule = nav.querySelector('.tn-capsule');
-    var ribbon  = nav.querySelector('.tn-ribbon');
-    if (!capsule || !ribbon) return;
-
-    for (var i = 0; i < items.length; i++) {
-      if (items[i].classList.contains('active')) {
-        var color = tn_getColorFromIndex(i);
-        capsule.setAttribute('data-pos', String(i));
-        capsule.setAttribute('data-color', color);
-        ribbon.setAttribute('data-color', color);
-        return;
-      }
-    }
-  }
-
-  function tn_initSpine() {
-    var nav = document.querySelector('.tab-nav');
-    if (!nav) return;
-    var items = nav.querySelectorAll('.tn-item');
-    if (!items.length) return;
-
-    // Initial sync — match capsule/ribbon to whichever tab boots active
-    tn_syncSpine();
-
-    // Observe class changes on each tn-item
-    var observer = new MutationObserver(function(mutations) {
-      for (var i = 0; i < mutations.length; i++) {
-        if (mutations[i].attributeName === 'class') {
-          tn_syncSpine();
-          return;
-        }
-      }
-    });
-    items.forEach(function(item) {
-      observer.observe(item, { attributes: true, attributeFilter: ['class'] });
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', tn_initSpine);
-  } else {
-    tn_initSpine();
-  }
-})();
 
 function launch(fast) {
   safeStore('phantom_seen_boot','1');
@@ -19026,7 +18889,6 @@ function nav_push(state) {
   try {
     history.pushState(state || {}, '');
     _navDepth++;
-    nav_updateBackButton();
   } catch (e) { /* History API unavailable — fail silently */ }
   // Session restore: persist every nav state so boot can replay it.
   _session_save(state);
@@ -19174,16 +19036,10 @@ function nav_restore(state) {
   _navSuppressPush = false;
 }
 
-function nav_updateBackButton() {
-  var btn = document.getElementById('nav-back-btn');
-  if (!btn) return;
-  btn.style.display = (_navDepth > 0) ? 'flex' : 'none';
-}
 
 window.addEventListener('popstate', function(e) {
   if (_navDepth > 0) _navDepth--;
   nav_restore(e.state);
-  nav_updateBackButton();
 });
 
 // Seed initial root state so popstate fires meaningfully on first back press.

@@ -294,7 +294,10 @@ test.describe('house selection', () => {
 
     expect(await phantom.isRedesign(), 'bare URL must boot body.rd (default since v1.14.101)').toBe(true);
     await expect(page.locator('#rd-botnav')).toBeVisible();
-    await expect(page.locator('.tab-nav')).toBeHidden();   // legacy 5-tab nav, :9607
+    // ⛔ v1.14.554: this asserted the legacy 5-tab nav was HIDDEN. It is now DELETED, and
+    // toBeHidden() passes for an element that does not exist — a vacuous assertion that would keep
+    // passing if the nav came back and were merely display:none. Assert absence instead.
+    await expect(page.locator('.tab-nav')).toHaveCount(0);
     expect(await activePages(page)).toEqual(['command']);
   });
 
