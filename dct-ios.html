@@ -12871,7 +12871,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.549';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.550';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -14230,7 +14230,7 @@ if (typeof window !== 'undefined') {
            live in pg-fiber and be drained into this container at boot by redesign_homeOptics().
            Every id is verbatim (fs-fiber and the seven sibling fiber-sub panels, the strip),
            because showStab and STAB_GROUPS['fiber-sub'] resolve them by id.
-           � The scaffold keeps its stab-active class: #rf-optics is the DEFAULT Reference panel,
+           NOTE: the scaffold keeps its stab-active class: #rf-optics is the DEFAULT Reference panel,
            and dropping that class would open Tools on a blank Optics tab. -->
       <div class="ref-sub stab-active" id="rf-optics">
       <div class="subtab-strip">
@@ -15164,10 +15164,544 @@ if (typeof window !== 'undefined') {
       </div><!-- end fs-triage -->
 
       </div>
-      <div class="ref-sub" id="rf-hw"><div style="padding:24px 16px;opacity:0.5;font-size:var(--fs-caption);text-align:center">Hardware — re-homing from Power in a later step.</div></div>
+      <!-- HARDWARE. v1.14.550 (LEGACY-RETIRE Stage 6.5): pg-power's strip and its remaining five
+           panels (Power, LED/GPU, Rack Map, BLAST RADIUS, Thermal) are AUTHORED HERE now. The
+           Runbook panel is NOT here  -  it lives in #rf-know, which is why homeKnow had to run
+           before homeHardware when both were runtime moves. NOTE: three stabs carry an inline
+           display:none that redesign_homeHardware used to apply by regex on their onclick:
+           Runbook (its panel moved to Know) plus Rack Map and Blast Radius (R-3b, their canonical
+           doors are elsewhere). Removing that inline style resurrects three dead tabs. -->
+      <div class="ref-sub" id="rf-hw">
+      <div class="subtab-strip">
+        <div class="stab active" onclick="showStab(this,'pwr-sub','pw-power')">Power</div>
+        <div class="stab" onclick="showStab(this,'pwr-sub','pw-hw')">LED / GPU</div>
+        <div class="stab" style="display:none" onclick="showStab(this,'pwr-sub','pw-rb')">Runbook</div>
+        <div class="stab" style="display:none" onclick="showStab(this,'pwr-sub','pw-rm');renderRackMap()">Rack Map</div>
+        <div class="stab" style="display:none" onclick="showStab(this,'pwr-sub','pw-blast');renderBlastRadius()">Blast Radius</div>
+        <div class="stab" onclick="showStab(this,'pwr-sub','pw-thermal')">Thermal</div>
+      </div>
+
+      <div class="pwr-sub" id="pw-power" style="display:none">
+        <div class="sh">PDU &amp; Power Math</div>
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">80% Derate Rule</div><div class="card-right"><div class="badge b-red">NEC 210.20</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <p><strong>Never load a breaker above 80% continuously.</strong></p>
+            <table class="dt"><tr><th>Breaker</th><th>Voltage</th><th>Max</th><th>Usable kW</th></tr>
+            <tr><td>30A 1Ø</td><td>208V</td><td>24A</td><td>4.99 kW</td></tr>
+            <tr><td>60A 1Ø</td><td>208V</td><td>48A</td><td>9.98 kW</td></tr>
+            <tr><td>30A 3Ø</td><td>208V</td><td>24A</td><td>8.65 kW</td></tr>
+            <tr><td>60A 3Ø</td><td>208V</td><td>48A</td><td>17.3 kW</td></tr>
+            <tr><td>100A 3Ø</td><td>208V</td><td>80A</td><td>28.8 kW</td></tr></table>
+            <p class="mt">kW = V × A × PF × √3 (3Ø) / 1000 · PF = 0.9–0.95 typical</p>
+          </div>
+        </div>
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">GB300 NVL72 — 120kW DLC</div><div class="card-right"><div class="badge b-red">120kW</div><div class="chev">▶</div></div><div class="card-stat"><span><b>120 kW</b> <i>PEAK RACK POWER</i></span><span><b>~45°C facility water</b> <i>CDU INLET MAX</i></span><span><b>15–30 LPM</b> <i>PER RACK FLOW</i></span></div></div>
+          <div class="card-body">
+            <table class="dt"><tr><th>Parameter</th><th>Spec</th></tr>
+            <tr><td>Peak rack power</td><td>120 kW</td></tr>
+            <tr><td>CDU inlet temp max</td><td>~45°C facility water</td></tr>
+            <tr><td>Flow rate</td><td>15–30 LPM per rack</td></tr>
+            <tr><td>Fluid type</td><td>DI water or water-glycol</td></tr>
+            <tr><td>Electrical</td><td>480V 3-phase typical</td></tr></table>
+            <div class="abar"><span class="ico ico-md ico-alert-red"></span> Do NOT power up GB300 without confirmed coolant flow. GPU damage in minutes at load without cooling.</div>
+          </div>
+        </div>
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">DLC / CDU Troubleshooting</div><div class="card-right"><div class="badge b-cyan">COOLING</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <div class="step crit" style="margin-bottom:8px">
+              <div class="step-num">LEAK RESPONSE</div>
+              <div class="step-detail">1. Alert team lead immediately<br>2. Identify leak source (QD, hose, CDU fitting)<br>3. Shut off at CDU manifold valve<br>4. Do NOT power down unless liquid near electrical<br>5. Document and escalate per site SOP</div>
+            </div>
+            <table class="dt"><tr><th>Symptom</th><th>Cause</th><th>Action</th></tr>
+            <tr><td>High GPU temp, flow OK</td><td>Air pocket</td><td>Bleed loop, check flow meter</td></tr>
+            <tr><td>CDU high outlet temp</td><td>Facility water warm</td><td>Contact facilities</td></tr>
+            <tr><td>No flow alarm</td><td>Valve, pump, filter</td><td>Check CDU pump, delta-P</td></tr>
+            <tr><td>QD drip</td><td>O-ring, not seated</td><td>Reseat; if persists replace</td></tr></table>
+          </div>
+        </div>
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">3-Phase Load Balancing</div><div class="chev">▶</div></div>
+          <div class="card-body">
+            <p>Balance L1/L2/L3. Imbalance &gt;10% causes neutral current, transformer heating, UPS issues.</p>
+            <div class="cli"><span class="out">Phase L1: 28.3A  ← OK</span><br><span class="out">Phase L2: 27.9A  ← OK</span><br><span class="err">Phase L3: 18.2A  ← IMBALANCED — redistribute</span></div>
+          </div>
+        </div>
+
+        <div class="sh">GPU Platform Power &amp; PDU Reference</div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">H100 SXM5 / H200 SXM5 — Power</div><div class="card-right"><div class="badge b-gold">H100/H200</div><div class="chev">▶</div></div><div class="card-stat"><span><b>700W</b> <i>GPU TDP EACH</i></span><span><b>5,600W</b> <i>GPU SUBTOTAL</i></span><span><b>8</b> <i>GPUS PER NODE</i></span></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Parameter</th><th>H100 SXM5</th><th>H200 SXM5</th></tr>
+              <tr><td>GPU TDP each</td><td>700W</td><td>700W</td></tr>
+              <tr><td>GPUs per node</td><td>8</td><td>8</td></tr>
+              <tr><td>GPU subtotal</td><td>5,600W</td><td>5,600W</td></tr>
+              <tr><td>Full system (typical)</td><td>10,000–11,000W</td><td>10,500–11,500W</td></tr>
+              <tr><td>Cooling</td><td>Air (high-perf)</td><td>Air (high-perf)</td></tr>
+              <tr><td>Supply voltage</td><td>200–240V AC</td><td>200–240V AC</td></tr>
+            </table>
+            <div class="sh" style="margin-top:12px">Power Cords &amp; Connectors</div>
+            <table class="dt">
+              <tr><th>Cord Type</th><th>Plug</th><th>Receptacle</th><th>Rating</th><th>Use Case</th></tr>
+              <tr><td>C19 to L6-30P</td><td>NEMA L6-30P</td><td>IEC C20 on PDU</td><td>30A 208V 1Ø</td><td>Primary server power — most common HGX H100 cord</td></tr>
+              <tr><td>C19 to L6-20P</td><td>NEMA L6-20P</td><td>IEC C20 on PDU</td><td>20A 208V 1Ø</td><td>Lower draw accessories, OOB switches</td></tr>
+              <tr><td>C13 to C14</td><td>IEC C14 (male)</td><td>IEC C13 (female)</td><td>10A max</td><td>1U accessories, 1G OOB switches, KVMs. NOT for servers.</td></tr>
+            </table>
+            <div class="sh" style="margin-top:12px">Phase Distribution Rule</div>
+            <p>H100/H200 nodes are dual-corded. Each cord should be on a <strong>different phase AND different PDU</strong>.</p>
+            <div class="cli">
+              <span class="cc"># Example: 4-node rack, dual-corded, two PDUs (PDU-A and PDU-B)</span><br>
+              <span class="out">Node 1 Cord A: PDU-A L1  |  Node 1 Cord B: PDU-B L2</span><br>
+              <span class="out">Node 2 Cord A: PDU-A L2  |  Node 2 Cord B: PDU-B L3</span><br>
+              <span class="out">Node 3 Cord A: PDU-A L3  |  Node 3 Cord B: PDU-B L1</span><br>
+              <span class="out">Node 4 Cord A: PDU-A L1  |  Node 4 Cord B: PDU-B L2</span>
+            </div>
+            <div class="wbar"><span class="ico ico-md ico-warning"></span> C19 = female connector (on the server). C20 = male (on the PDU). C13 is rated 10A — never use on a server PSU. Verify cord rating matches breaker rating.</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">GB200 NVL36 — Power</div><div class="card-right"><div class="badge b-red">GB200</div><div class="chev">▶</div></div><div class="card-stat"><span><b>1,000W</b> <i>GPU TDP EACH</i></span><span><b>65,000–70,000W</b> <i>FULL RACK TYPICAL</i></span><span><b>36</b> <i>GPUS PER RACK</i></span></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Parameter</th><th>Spec</th></tr>
+              <tr><td>GPU TDP each</td><td>1,000W</td></tr>
+              <tr><td>GPUs per rack</td><td>36 (Grace Blackwell pairs)</td></tr>
+              <tr><td>GPU subtotal</td><td>~36,000W</td></tr>
+              <tr><td>Full rack (typical)</td><td>65,000–70,000W</td></tr>
+              <tr><td>Cooling</td><td>Direct Liquid Cooling — MANDATORY</td></tr>
+              <tr><td>Supply voltage</td><td>480V 3-phase (typical US)</td></tr>
+            </table>
+            <div class="sh" style="margin-top:12px">Power Cords &amp; Connectors</div>
+            <table class="dt">
+              <tr><th>Connector</th><th>Type</th><th>Rating</th><th>Notes</th></tr>
+              <tr><td>IEC 60309 5-pin</td><td>3P+N+E twist-lock (blue = 200–250V, red = 380–480V)</td><td>32A–125A</td><td>Standard industrial 3-phase. Red = 480V at US sites.</td></tr>
+              <tr><td>Hubbell CS8365C</td><td>NEMA L21-30 3-phase 208V</td><td>30A 3Ø 120/208V</td><td>Used on some PDU inputs at 208V sites</td></tr>
+              <tr><td>Hardwired</td><td>Lugged termination in PDU</td><td>Per breaker rating</td><td>At 65-70kW most sites go hardwired — no plug/socket</td></tr>
+            </table>
+            <div class="abar"><span class="ico ico-md ico-alert-red"></span> At 65-70kW: a single phase trip takes the rack down. Every circuit must be documented before power-up. Verify PDU load at each phase before adding equipment. 80% derate applies at rack level, not just circuit level.</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">GB300 NVL72 — Power</div><div class="card-right"><div class="badge b-red">120kW</div><div class="chev">▶</div></div><div class="card-stat"><span><b>120,000W</b> <i>FULL RACK PEAK</i></span><span><b>Up to 1,200W</b> <i>GPU TDP EACH</i></span><span><b>72</b> <i>GPUS PER RACK</i></span></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Parameter</th><th>Spec</th></tr>
+              <tr><td>GPU TDP each</td><td>Up to 1,200W (workload dependent)</td></tr>
+              <tr><td>GPUs per rack</td><td>72 (Grace Blackwell pairs)</td></tr>
+              <tr><td>GPU subtotal</td><td>Up to 86,400W</td></tr>
+              <tr><td>Full rack (peak)</td><td>120,000W (120kW)</td></tr>
+              <tr><td>Cooling</td><td>Direct Liquid Cooling — MANDATORY. Air impossible.</td></tr>
+              <tr><td>Supply voltage</td><td>480V 3-phase. Multiple feeds.</td></tr>
+              <tr><td>Typical feed</td><td>200A 3-phase per rack (some configs 2x 100A)</td></tr>
+            </table>
+            <div class="sh" style="margin-top:12px">Power Cords &amp; Connectors</div>
+            <table class="dt">
+              <tr><th>Connector</th><th>Type</th><th>Rating</th><th>Notes</th></tr>
+              <tr><td>IEC 60309 5-pin (red)</td><td>3P+N+E 480V twist-lock</td><td>63A–125A</td><td>Primary 480V 3-phase feed. Red housing = 380–480V.</td></tr>
+              <tr><td>Hardwired lug</td><td>Direct bus bar termination</td><td>200A+</td><td>Most GB300 deployments hardwired from switchgear. No plug.</td></tr>
+              <tr><td>C19/C20</td><td>IEC C19 server to C20 PDU</td><td>16A per cord</td><td>Individual component cords within the rack to in-rack PDU</td></tr>
+            </table>
+            <div class="sh" style="margin-top:12px">Phase Mapping for GB300</div>
+            <p>GB300 NVL72 racks typically have multiple in-rack PDUs fed by 3-phase. Distribution across phases must be balanced and documented before power-up.</p>
+            <div class="cli">
+              <span class="cc"># GB300 PDU phase mapping example</span><br>
+              <span class="out">In-rack PDU-A (left):   Feed 1 L1 · Feed 2 L2 · Feed 3 L3</span><br>
+              <span class="out">In-rack PDU-B (right):  Feed 1 L2 · Feed 2 L3 · Feed 3 L1</span><br>
+              <span class="cc"># Never put all feeds on same phase</span><br>
+              <span class="cc"># Verify with facilities before energizing</span>
+            </div>
+            <div class="abar"><span class="ico ico-md ico-alert-red"></span> DO NOT energize GB300 NVL72 without: (1) confirmed DLC flow and temp, (2) all PDU phase assignments verified and documented, (3) facilities sign-off on electrical capacity. 120kW from a cold start can trip a breaker before coolant flow stabilizes.</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Power Cord Quick Reference</div><div class="card-right"><div class="badge b-cyan">ALL PLATFORMS</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Connector</th><th>Gender Rule</th><th>Rating</th><th>Color Code</th></tr>
+              <tr><td>IEC C13</td><td>Female — goes ON the device</td><td>10A max</td><td>N/A — accessories only</td></tr>
+              <tr><td>IEC C14</td><td>Male — on the PDU/socket</td><td>10A max</td><td>N/A</td></tr>
+              <tr><td>IEC C19</td><td>Female — goes ON the server PSU</td><td>16A</td><td>N/A</td></tr>
+              <tr><td>IEC C20</td><td>Male — on the PDU</td><td>16A</td><td>N/A</td></tr>
+              <tr><td>NEMA L6-20P</td><td>Plug (male) — end of cord</td><td>20A 208V 1Ø</td><td>Varies by site</td></tr>
+              <tr><td>NEMA L6-30P</td><td>Plug (male) — end of cord</td><td>30A 208V 1Ø</td><td>Varies by site</td></tr>
+              <tr><td>IEC 60309 blue</td><td>Twist-lock industrial</td><td>Up to 125A</td><td>Blue = 200–250V</td></tr>
+              <tr><td>IEC 60309 red</td><td>Twist-lock industrial</td><td>Up to 125A</td><td>Red = 380–480V</td></tr>
+            </table>
+            <div class="wbar"><span class="ico ico-md ico-warning"></span> Site cord color conventions vary — red does NOT always mean 208V. Always verify voltage at the receptacle with a meter before connecting equipment. Never assume color.</div>
+          </div>
+        </div>
+
+        <!-- ── PDU LOAD BALANCE DIAGRAMS ── -->
+        <div class="sh" style="margin-top:18px">PDU Load Balance Diagrams</div>
+
+        <!-- H100 SXM5 -->
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">H100 SXM5 — PDU Load Balance</div><div class="card-right"><div class="badge b-cyan">H100</div><div class="chev">▶</div></div><div class="card-stat"><span><b>8x</b> <i>PSU COUNT</i></span><span><b>208V</b> <i>VOLTAGE</i></span><span><b>~6.4kW</b> <i>PER PSU FULL LOAD</i></span></div></div>
+          <div class="card-body">
+            <div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);margin-bottom:12px;letter-spacing:1px">
+              8x PSU · 208V · ~6.4kW per PSU at full load · Dual feed A+B · 3-phase balanced
+            </div>
+            <div id="pdu-h100" data-pdu="h100" style="width:100%;overflow-x:auto"></div>
+            <div class="ibar" style="margin-top:12px">ℹ Tap any PSU or phase label to highlight that circuit path. L1=cyan L2=magenta L3=gold. Balance target: ≤10% variance across phases.</div>
+          </div>
+        </div>
+
+        <!-- H200 SXM5 -->
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">H200 SXM5 — PDU Load Balance</div><div class="card-right"><div class="badge b-cyan">H200</div><div class="chev">▶</div></div><div class="card-stat"><span><b>8x</b> <i>PSU COUNT</i></span><span><b>208V</b> <i>VOLTAGE</i></span><span><b>~7.2kW</b> <i>PER PSU FULL LOAD</i></span></div></div>
+          <div class="card-body">
+            <div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);margin-bottom:12px;letter-spacing:1px">
+              8x PSU · 208V · ~7.2kW per PSU at full load · Dual feed A+B · 3-phase balanced
+            </div>
+            <div id="pdu-h200" data-pdu="h200" style="width:100%;overflow-x:auto"></div>
+            <div class="ibar" style="margin-top:12px">ℹ H200 draws ~12% more per PSU than H100. Verify PDU breaker rating before hot-swap. Same physical layout, higher thermal envelope.</div>
+          </div>
+        </div>
+
+        <!-- GB300 NVL72 -->
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">GB300 NVL72 — PDU Load Balance</div><div class="card-right"><div class="badge b-red">GB300</div><div class="chev">▶</div></div><div class="card-stat"><span><b>12x</b> <i>PSU COUNT</i></span><span><b>~10kW</b> <i>PER PSU</i></span><span><b>120kW</b> <i>TOTAL RACK</i></span></div></div>
+          <div class="card-body">
+            <div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);margin-bottom:12px;letter-spacing:1px">
+              12x PSU · 208V · ~10kW per PSU · Dual feed A+B · 3-phase · DLC required · 120kW total rack
+            </div>
+            <div id="pdu-gb300" data-pdu="gb300" style="width:100%;overflow-x:auto"></div>
+            <div class="wbar" style="margin-top:12px"><span class="ico ico-md ico-warning"></span> GB300 NVL72 requires dedicated 3-phase 200A service per rack. DLC must be active before powering on. Never energize without confirming coolant flow.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="pwr-sub" id="pw-hw" style="display:none">
+        <div class="sh">GPU Server Faults</div>
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">H100 SXM5 — Common Faults</div><div class="card-right"><div class="badge b-gold">H100</div><div class="chev">▶</div></div><div class="card-tags"><span class="ctag"><b>XID 79</b> Reset</span><span class="ctag"><b>XID 94</b> driver</span><span class="ctag">ECC uncorrectable rising</span><span class="ctag">NVLink errors</span></div></div>
+          <div class="card-body">
+            <table class="dt"><tr><th>Symptom</th><th>Cause</th><th>Action</th></tr>
+            <tr><td>GPU not in nvidia-smi</td><td>PCIe, driver, power</td><td>Check slot power, reseat, BMC logs</td></tr>
+            <tr><td>ECC uncorrectable rising</td><td>DRAM fault</td><td>nvidia-smi -q -d ECC, RMA</td></tr>
+            <tr><td>GPU throttling</td><td>Cooling</td><td>nvidia-smi -q -d TEMPERATURE</td></tr>
+            <tr><td>NVLink errors</td><td>Cable/NVSwitch</td><td>nvlink fabric diag, check cable</td></tr>
+            <tr><td>XID in dmesg</td><td>XID 79=Reset, 94=driver</td><td>Check code, correlate smi</td></tr></table>
+            <div class="cli"><span class="cmd">nvidia-smi</span><br><span class="cmd">nvidia-smi -q -d ECC | grep -i error</span><br><span class="cmd">dmesg | grep -i xid</span><br><span class="cmd">nvidia-smi nvlink --status</span></div>
+          </div>
+        </div>
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">BMC / iDRAC / iLO / IPMI</div><div class="card-right"><div class="badge b-cyan">OOB</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <table class="dt"><tr><th>Vendor</th><th>BMC</th><th>Notes</th></tr>
+            <tr><td>Dell</td><td>iDRAC</td><td>Racadm CLI</td></tr>
+            <tr><td>HPE</td><td>iLO</td><td>REST API</td></tr>
+            <tr><td>Supermicro</td><td>IPMI</td><td>ipmitool compat</td></tr>
+            <tr><td>NVIDIA HGX</td><td>BMC</td><td>Redfish API</td></tr></table>
+            <div class="cli"><span class="cmd">ipmitool -I lanplus -H &lt;IP&gt; -U admin -P &lt;pw&gt; sdr</span><br><span class="cmd">ipmitool -I lanplus -H &lt;IP&gt; -U admin -P &lt;pw&gt; sel list</span><br><span class="cmd">ipmitool -I lanplus -H &lt;IP&gt; -U admin -P &lt;pw&gt; power cycle</span></div>
+          </div>
+        </div>
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">NVMe Drive Replacement</div><div class="card-right"><div class="badge b-gold">STORAGE</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <div class="checklist">
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Confirm failed drive: slot LED + OS identification</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Verify hot-swap capable for this bay</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">RAID: confirm array tolerates removal — not already degraded</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Run <code>lsblk</code> and <code>nvme list</code> to confirm slot mapping before pull</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Pull failed drive — note slot number</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Insert replacement — same form factor (U.2 / M.2 / E1.S)</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Confirm OS sees new drive: <code>nvme list</code></div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Initiate RAID rebuild if applicable</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Tag and bag failed drive: date, host, slot, symptom</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sh">LED Indicator Reference</div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Dell PowerEdge LEDs</div><div class="card-right"><div class="badge b-cyan">DELL</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <div class="sh" style="margin-top:4px">System Health (front panel)</div>
+            <table class="dt">
+              <tr><th>LED State</th><th>Meaning</th><th>Action</th></tr>
+              <tr><td style="color:var(--cyan)">Solid Blue</td><td>System healthy</td><td>None</td></tr>
+              <tr><td style="color:#6688ff">Blinking Blue</td><td>ID mode active</td><td>Someone is locating this server</td></tr>
+              <tr><td style="color:var(--gold)">Solid Amber</td><td>Degraded — non-critical fault</td><td>Check iDRAC SEL for details</td></tr>
+              <tr><td style="color:var(--gold)">Blinking Amber</td><td>Critical fault</td><td>Check iDRAC immediately</td></tr>
+            </table>
+            <div class="sh" style="margin-top:10px">PSU LEDs (rear)</div>
+            <table class="dt">
+              <tr><th>LED State</th><th>Meaning</th></tr>
+              <tr><td style="color:var(--green)">Solid Green</td><td>PSU healthy, AC input good</td></tr>
+              <tr><td style="color:var(--green)">Blinking Green</td><td>PSU initializing — normal during POST</td></tr>
+              <tr><td style="color:var(--gold)">Solid Amber</td><td>PSU fault or AC input lost</td></tr>
+              <tr><td style="color:var(--gold)">Blinking Amber</td><td>PSU communication fault with system</td></tr>
+              <tr><td>Off</td><td>PSU not present or no AC input</td></tr>
+            </table>
+            <div class="sh" style="margin-top:10px">DIMM / Drive LEDs</div>
+            <table class="dt">
+              <tr><th>Component</th><th>Amber LED</th><th>No LED</th></tr>
+              <tr><td>DIMM slot</td><td>DIMM fault on that slot</td><td>Healthy (no LED on good DIMMs)</td></tr>
+              <tr><td>Drive bay</td><td>Drive fault or predictive failure</td><td>Healthy</td></tr>
+              <tr><td>Drive bay blink</td><td>Blinking = rebuild in progress</td><td></td></tr>
+            </table>
+            <div class="ibar">ℹ Dell fans have no LED. Fan health is software-reported via iDRAC: <code>racadm -r &lt;ip&gt; getsensorinfo | grep Fan</code></div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">HPE ProLiant LEDs</div><div class="card-right"><div class="badge b-cyan">HPE</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <div class="sh" style="margin-top:4px">System Health (front panel)</div>
+            <table class="dt">
+              <tr><th>LED State</th><th>Meaning</th><th>Action</th></tr>
+              <tr><td style="color:var(--green)">Solid Green</td><td>System healthy</td><td>None</td></tr>
+              <tr><td style="color:var(--gold)">Solid Amber</td><td>Degraded — non-critical</td><td>Check iLO IML (Integrated Management Log)</td></tr>
+              <tr><td style="color:var(--red)">Solid Red</td><td>Critical fault</td><td>Check iLO immediately</td></tr>
+              <tr><td style="color:#6688ff">Solid Blue (UID)</td><td>Server being identified</td><td>UID button activated — press to deactivate</td></tr>
+              <tr><td style="color:#6688ff">Blinking Blue (UID)</td><td>Remote iLO session active</td><td>Normal during remote management</td></tr>
+            </table>
+            <div class="sh" style="margin-top:10px">PSU LEDs</div>
+            <table class="dt">
+              <tr><th>LED State</th><th>Meaning</th></tr>
+              <tr><td style="color:var(--green)">Solid Green</td><td>PSU healthy</td></tr>
+              <tr><td style="color:var(--gold)">Solid Amber</td><td>PSU degraded or failed</td></tr>
+              <tr><td>Off</td><td>PSU not present or no AC</td></tr>
+            </table>
+            <div class="sh" style="margin-top:10px">DIMM Slots</div>
+            <p>HPE: Each DIMM slot has an amber LED on the system board. Amber = fault on that DIMM. Check iLO IML for correctable vs uncorrectable ECC details.</p>
+            <div class="cli">
+              <span class="cc"># Check iLO IML from OS</span><br>
+              <span class="cmd">hponcfg -f getiml.xml</span><br>
+              <span class="cc"># From iLO CLI</span><br>
+              <span class="cmd">show /system1/log1/entry*</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Supermicro LEDs</div><div class="card-right"><div class="badge b-cyan">SUPERMICRO</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <div class="sh" style="margin-top:4px">System Health</div>
+            <table class="dt">
+              <tr><th>LED State</th><th>Meaning</th></tr>
+              <tr><td style="color:var(--green)">Solid Green (PWR)</td><td>System powered and healthy</td></tr>
+              <tr><td style="color:var(--gold)">Solid Amber (HDD)</td><td>Drive fault</td></tr>
+              <tr><td style="color:var(--gold)">Blinking Amber (HDD)</td><td>Drive activity (normal) or rebuild</td></tr>
+              <tr><td>NIC LED Green/Amber</td><td>Green = link/activity, Amber = 1G (vs Green = 10G)</td></tr>
+            </table>
+            <div class="sh" style="margin-top:10px">PSU (on PSU face)</div>
+            <table class="dt">
+              <tr><th>LED State</th><th>Meaning</th></tr>
+              <tr><td style="color:var(--green)">Green</td><td>PSU healthy, AC input present</td></tr>
+              <tr><td style="color:var(--gold)">Amber / Red</td><td>PSU fault — replace</td></tr>
+              <tr><td>Off</td><td>No AC input or PSU failed</td></tr>
+            </table>
+            <div class="sh" style="margin-top:10px">DIMM Slots</div>
+            <p>Supermicro board-level DIMM LED behavior varies by model. Not all boards have per-slot LEDs. Check IPMI SEL for memory errors: <code>ipmitool sel list | grep -i mem</code>. Board-level amber near DIMM bank = fault in that bank.</p>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">NVIDIA HGX / GB-series</div><div class="card-right"><div class="badge b-green">NVIDIA</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <p>HGX and GB-series boards have minimal external LEDs. GPU health is primarily software-reported.</p>
+            <table class="dt">
+              <tr><th>What</th><th>How to Check</th></tr>
+              <tr><td>GPU health</td><td>nvidia-smi — all GPUs visible and no throttle</td></tr>
+              <tr><td>GPU errors</td><td>dmesg | grep -i xid</td></tr>
+              <tr><td>System health LED</td><td>OEM chassis (Wiwynn/Foxconn/QCT) — amber = fault</td></tr>
+              <tr><td>PSU</td><td>Check OEM chassis PSU indicators — same as standard server</td></tr>
+              <tr><td>NVLink status</td><td>nvidia-smi nvlink --status</td></tr>
+              <tr><td>BMC SEL</td><td>ipmitool sel list — hardware events logged here</td></tr>
+            </table>
+            <div class="ibar">ℹ For GB300 NVL72: the NVL72 chassis has status LEDs on the front panel managed by the chassis BMC. Check NVIDIA NVL72 field service manual for chassis LED definitions — these vary from standard server LEDs.</div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- RACK MAP SUB-TAB -->
+      <div class="pwr-sub" id="pw-rm" style="display:none">
+
+        <div class="rm-toolbar">
+          <div class="rm-toolbar-actions">
+            <button class="rm-add-btn pt-btn pt-btn-secondary" onclick="openRmSheet()">+ RACK</button>
+            <button class="rm-add-btn pt-btn pt-btn-ghost" onclick="phantomRackShowHistory(currentRackId, (loadRacks().find(r=>r.id===currentRackId)||{}).name||'Rack')" style="font-size: var(--fs-caption);padding:6px 10px">HISTORY</button>
+          </div>
+          <div id="rm-active-pill-mount-legacy"></div>
+          <div class="rm-search-row">
+            <div class="rack-viewer-controls">
+              <form class="rack-viewer-form" onsubmit="event.preventDefault(); var v=document.getElementById('rm-search-input').value.trim(); if(v) rmSearch_request(v); return false;">
+                <div class="rack-viewer-input-wrap">
+                  <input class="rack-viewer-input"
+                         id="rm-search-input"
+                         type="text"
+                         autocomplete="off"
+                         autocorrect="off"
+                         autocapitalize="characters"
+                         spellcheck="false"
+                         placeholder="Scan or type rack ID"
+                         aria-label="Rack search">
+                  <button class="rack-viewer-clear" type="button" aria-label="Clear" onclick="rmSearch_clear()">✕</button>
+                </div>
+              </form>
+            </div>
+            <div id="rm-last-viewed-mount"></div>
+          </div>
+        </div>
+
+        <div id="rm-elevation-area"></div>
+
+        <div id="rm-empty" class="rm-empty" style="display:none; padding:24px 20px">
+          <div id="rm-empty-svg-slot"></div>
+          <button class="pt-btn pt-btn-secondary" onclick="openRmSheet()" style="margin-top:20px;width:auto;padding:12px 28px">＋ &nbsp;Add First Rack</button>
+        </div>
+
+        <!-- Color legend -->
+        <div class="rm-legend" id="rm-legend" style="display:none">
+          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#30d158"></div>Server</div>
+          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#a855f7"></div>GPU</div>
+          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#5cf2ff"></div>Switch</div>
+          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#ffd60a"></div>PDU</div>
+          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#00bcd4"></div>Storage</div>
+          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#a3a300"></div>Patch</div>
+          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#ff2d55"></div>UPS</div>
+          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#486070"></div>Other</div>
+        </div>
+
+      </div>
+
+      <!-- BLAST RADIUS SUB-TAB — Spatial awareness, A/B feed map -->
+      <div class="pwr-sub" id="pw-blast" style="display:none">
+        <div class="br-wrap" id="br-wrap">
+          <!-- Rendered by renderBlastRadius() -->
+        </div>
+      </div>
+
+      <!-- THERMAL SUB-TAB -->
+      <div class="pwr-sub" id="pw-thermal" style="display:none">
+        <div class="sh">ASHRAE Thermal Envelope</div>
+
+        <!-- Class Overview -->
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr">
+            <div class="card-title">ASHRAE Class A1 / A2 — Data Center Standard</div>
+            <div class="card-right"><div class="badge b-cyan">ASHRAE TC 9.9</div><div class="chev">▶</div></div><div class="card-stat"><span><b>15–32°C</b> <i>A1 INLET (59–89.6°F)</i></span><span><b>10–35°C</b> <i>A2 INLET (50–95°F)</i></span><span><b>80% RH</b> <i>MAX, NON-CONDENSING</i></span></div>
+          </div>
+          <div class="card-body">
+            <p>ASHRAE TC 9.9 defines thermal envelope classes for IT equipment. Most modern data center hardware is rated Class A2 or higher. Inlet temperature is measured at the front face of the equipment, not ambient room temperature.</p>
+            <div class="sh">Class Definitions</div>
+            <table class="dt">
+              <tr><th>Class</th><th>Inlet Temp Range</th><th>Max Humidity</th><th>Typical Use</th></tr>
+              <tr><td style="color:var(--cyan)">A1</td><td>15–32°C (59–89.6°F)</td><td>80% RH non-condensing</td><td>Controlled enterprise DC</td></tr>
+              <tr><td style="color:var(--cyan)">A2</td><td>10–35°C (50–95°F)</td><td>80% RH non-condensing</td><td>Most modern GPU servers</td></tr>
+              <tr><td style="color:var(--gold)">A3</td><td>5–40°C (41–104°F)</td><td>85% RH non-condensing</td><td>Higher-efficiency facilities</td></tr>
+              <tr><td style="color:var(--gold)">A4</td><td>5–45°C (41–113°F)</td><td>90% RH non-condensing</td><td>Aggressive efficiency targets</td></tr>
+            </table>
+            <div class="abar"><span class="ico ico-md ico-alert-red"></span> ASHRAE class is a rating of the equipment, not the room. A server rated A2 can tolerate up to 35°C inlet — but operating at the ceiling reduces component lifespan and increases failure probability. Target inlet temp should be well below the class maximum.</div>
+          </div>
+        </div>
+
+        <!-- GPU Platform Thermal -->
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr">
+            <div class="card-title">GPU Platform Thermal Limits</div>
+            <div class="card-right"><div class="badge b-red">CRITICAL</div><div class="chev">▶</div></div>
+          </div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Platform</th><th>Cooling</th><th>Max Inlet</th><th>GPU Junction Max</th><th>Throttle Onset</th></tr>
+              <tr><td style="color:var(--cyan)">H100 SXM5</td><td>Air</td><td>30°C</td><td>83°C</td><td>~80°C junction</td></tr>
+              <tr><td style="color:var(--cyan)">H200 SXM5</td><td>Air</td><td>30°C</td><td>83°C</td><td>~80°C junction</td></tr>
+              <tr><td style="color:var(--gold)">GB200 NVL36</td><td>DLC required</td><td>25°C coolant supply</td><td>—</td><td>Coolant flow loss = immediate throttle</td></tr>
+              <tr><td style="color:var(--gold)">GB300 NVL72</td><td>DLC required</td><td>22–25°C coolant supply</td><td>—</td><td>Coolant flow loss = immediate throttle</td></tr>
+              <tr><td style="color:var(--slate)">A100 SXM4</td><td>Air</td><td>30°C</td><td>83°C</td><td>~80°C junction</td></tr>
+              <tr><td style="color:var(--slate)">L40S</td><td>Air</td><td>35°C</td><td>89°C</td><td>~85°C junction</td></tr>
+            </table>
+            <div class="wbar"><span class="ico ico-md ico-warning"></span> GPU junction temperature is not inlet temperature. A rack running at 28°C inlet can still have GPU junctions at 82°C under full load. Always check GPU temp via nvidia-smi or XID logs, not just room sensors.</div>
+            <div class="abar"><span class="ico ico-md ico-alert-red"></span> GB200 and GB300 NVL systems use Direct Liquid Cooling. Loss of coolant flow at full load will cause immediate thermal throttling and potential XID thermal events within minutes. Never power up DLC systems without confirming coolant flow and supply temperature.</div>
+          </div>
+        </div>
+
+        <!-- Thermal Action Thresholds -->
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr">
+            <div class="card-title">Thermal Alert — Action Thresholds</div>
+            <div class="card-right"><div class="badge b-gold">FIELD GUIDE</div><div class="chev">▶</div></div><div class="card-stat"><span><b>≥35°C</b> <i>INLET CRITICAL</i></span><span><b>≥83°C</b> <i>JUNCTION THROTTLE RISK</i></span><span><b>31–34°C</b> <i>INLET WARNING</i></span></div>
+          </div>
+          <div class="card-body">
+            <div class="sh">Inlet Temperature Actions</div>
+            <table class="dt">
+              <tr><th>Inlet Reading</th><th>Status</th><th>Action</th></tr>
+              <tr><td style="color:var(--green)">≤27°C</td><td style="color:var(--green)">Normal</td><td>No action required</td></tr>
+              <tr><td style="color:var(--cyan)">28–30°C</td><td style="color:var(--cyan)">Watch</td><td>Monitor. Check CRAC/CRAH operation. Verify no hot aisle/cold aisle mixing.</td></tr>
+              <tr><td style="color:var(--gold)">31–34°C</td><td style="color:var(--gold)">Warning</td><td>Notify facilities. Check blanking panels. Reduce workload if possible. Escalate if sustained.</td></tr>
+              <tr><td style="color:var(--red)">≥35°C</td><td style="color:var(--red)">Critical</td><td>Immediate facilities escalation. GPU throttling likely. Risk of thermal shutdown. Document and ticket.</td></tr>
+            </table>
+            <div class="sh">GPU Junction Temperature Actions</div>
+            <table class="dt">
+              <tr><th>Junction Temp</th><th>Status</th><th>Action</th></tr>
+              <tr><td style="color:var(--green)">≤75°C</td><td style="color:var(--green)">Normal</td><td>No action</td></tr>
+              <tr><td style="color:var(--gold)">76–82°C</td><td style="color:var(--gold)">Elevated</td><td>Monitor. Check inlet temp and airflow. Verify no blocked cable paths in rear exhaust.</td></tr>
+              <tr><td style="color:var(--red)">≥83°C</td><td style="color:var(--red)">Throttle risk</td><td>Check cooling immediately. Review nvidia-smi for throttle state. Notify on-call if sustained.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- DLC / CDU Field Reference -->
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr">
+            <div class="card-title">DLC / CDU Thermal Field Reference</div>
+            <div class="card-right"><div class="badge b-cyan">GB200 · GB300</div><div class="chev">▶</div></div><div class="card-stat"><span><b>18–25°C</b> <i>COOLANT SUPPLY</i></span><span><b>Supply + 5–12°C</b> <i>COOLANT RETURN</i></span></div>
+          </div>
+          <div class="card-body">
+            <p>Direct Liquid Cooling (DLC) systems use a Coolant Distribution Unit (CDU) to supply chilled water or coolant to server cold plates. For GB200 and GB300 NVL systems this is not optional — it is required for operation.</p>
+            <div class="sh">Key Parameters to Monitor</div>
+            <table class="dt">
+              <tr><th>Parameter</th><th>Normal Range</th><th>Action if Outside</th></tr>
+              <tr><td>Coolant supply temp</td><td>18–25°C</td><td>Notify facilities. Warm supply = reduced cooling capacity.</td></tr>
+              <tr><td>Coolant return temp</td><td>Supply + 5–12°C</td><td>High delta-T may indicate flow restriction.</td></tr>
+              <tr><td>Flow rate</td><td>Per CDU spec</td><td>Low flow = immediate throttle risk. Check CDU pumps.</td></tr>
+              <tr><td>Coolant pressure</td><td>Per CDU spec</td><td>Pressure drop may indicate leak. Inspect manifolds.</td></tr>
+            </table>
+            <div class="sh">DLC Fault Response</div>
+            <div class="step crit"><div class="step-num">STEP 01</div><div class="step-action">Confirm coolant flow at CDU</div><div class="step-detail">Check CDU status panel or BMS. Verify pump operation and flow rate.</div></div>
+            <div class="step crit"><div class="step-num">STEP 02</div><div class="step-action">Check for leaks at manifolds</div><div class="step-detail">Inspect quick-disconnect fittings at server manifold. Any moisture = immediate escalation to facilities.</div></div>
+            <div class="step ok"><div class="step-num">STEP 03</div><div class="step-action">Check supply temperature</div><div class="step-detail">Verify coolant supply temp is within 18–25°C range. Warm supply reduces effective cooling capacity.</div></div>
+            <div class="step ok"><div class="step-num">STEP 04</div><div class="step-action">Monitor GPU junction via nvidia-smi</div><div class="step-detail">nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader — run per node to confirm thermal recovery.</div></div>
+            <div class="abar"><span class="ico ico-md ico-alert-red"></span> Any coolant leak near energized equipment = immediate power-down and facilities emergency response. Do not attempt to clean or contain a coolant leak without confirming power is isolated. Coolant conducts electricity.</div>
+          </div>
+        </div>
+
+        <!-- Hot/Cold Aisle -->
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr">
+            <div class="card-title">Hot Aisle / Cold Aisle — Field Checks</div>
+            <div class="card-right"><div class="badge b-gold">AIRFLOW</div><div class="chev">▶</div></div>
+          </div>
+          <div class="card-body">
+            <p>Hot aisle / cold aisle containment separates cool supply air from hot exhaust air. Breakdowns in containment directly raise inlet temperatures even when CRAC/CRAH units are operating normally.</p>
+            <div class="sh">Common Causes of Thermal Elevation</div>
+            <div class="step ok"><div class="step-num">CHECK 01</div><div class="step-action">Missing blanking panels</div><div class="step-detail">Any empty rack U without a blanking panel allows hot exhaust to recirculate into the cold aisle. One missing 1U blank can raise local inlet temp by 2–4°C.</div></div>
+            <div class="step ok"><div class="step-num">CHECK 02</div><div class="step-action">Cable management blocking rear exhaust</div><div class="step-detail">Dense cable bundles routed across the rear of servers restrict hot air exhaust. Check that no cables block more than 20% of rear airflow area.</div></div>
+            <div class="step ok"><div class="step-num">CHECK 03</div><div class="step-action">Containment curtain gaps</div><div class="step-detail">Check aisle containment curtains and doors. Gaps allow hot exhaust to bypass containment and enter cold aisle supply.</div></div>
+            <div class="step ok"><div class="step-num">CHECK 04</div><div class="step-action">Under-floor grille placement (raised floor)</div><div class="step-detail">Verify perforated floor tiles are positioned in cold aisles only and not partially under hot aisle equipment.</div></div>
+            <div class="ibar">ℹ Always measure inlet temperature at the front face of the equipment, not at the CRAC unit or room sensor. Room ambient can read 22°C while server inlet is 31°C due to containment failures.</div>
+          </div>
+        </div>
+
+      </div><!-- end pw-thermal -->
+
+      </div>
       <!-- CLI / IB. v1.14.547 (LEGACY-RETIRE Stage 6.3): AUTHORED HERE now. These panels used to
            live in pg-cli and be drained into this container at boot by redesign_homeCLI(), which
-           did dest.innerHTML='' first  so this scaffold's placeholder was built to be wiped.
+           did dest.innerHTML='' first  -  so this scaffold's placeholder was built to be wiped.
            Every id is verbatim (cs-ib, cs-oob, cs-console, cs-cert, cs-parser and the strip),
            because showStab and STAB_GROUPS['cli-sub'] resolve them by id. -->
       <div class="ref-sub" id="rf-cli">
@@ -15584,7 +16118,178 @@ if (typeof window !== 'undefined') {
       </div>
       <!-- Know: the operational-knowledge content (#pw-rb) is re-parented in here
            at boot by redesign_homeKnow(). Empty in source; filled at runtime. -->
-      <div class="ref-sub" id="rf-know"></div>
+      <!-- KNOW. v1.14.550 (LEGACY-RETIRE Stage 6.5): the Runbook panel is AUTHORED HERE now. It
+           used to live inside pg-power and be MOVED here at boot by redesign_homeKnow(), which
+           also cleared its inline display:none and added stab-active. Both are baked in above  - 
+           a runtime move left no trace in markup, so those two effects had to be read out of the
+           function rather than copied from the DOM. -->
+      <div class="ref-sub" id="rf-know">
+        <div class="pwr-sub stab-active" id="pw-rb">
+        <div class="sh">Incident Note Template</div>
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Ticket-Ready Format</div><div class="chev">▶</div></div>
+          <div class="card-body"><div class="cli">
+            <span class="cc">## INCIDENT — [DATE] [TIME] [NAME]</span><br><br>
+            <span class="out">Asset:       [hostname / rack / port]</span><br>
+            <span class="out">Reported by: [monitoring / user / self]</span><br>
+            <span class="out">Impact:      [# hosts / services]</span><br><br>
+            <span class="cc">## Symptoms</span><br>
+            <span class="out">[What was observed]</span><br><br>
+            <span class="cc">## Investigation</span><br>
+            <span class="out">1. [HH:MM] — [Action] — [Result]</span><br>
+            <span class="out">2. [HH:MM] — [Action] — [Result]</span><br><br>
+            <span class="cc">## Root Cause + Resolution</span><br>
+            <span class="out">[Cause] / [What restored service]</span><br><br>
+            <span class="cc">## Parts Used</span><br>
+            <span class="out">[Part# / serial — OLD and NEW]</span>
+          </div></div>
+        </div>
+
+        <div class="sh">Change Management Checklist</div>
+        <div class="checklist">
+          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Pre:</strong> Change ticket approved, window confirmed</div></div>
+          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Pre:</strong> Rollback plan documented</div></div>
+          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Pre:</strong> Stakeholders notified</div></div>
+          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Pre:</strong> Baseline captured — counters, ping, config backup</div></div>
+          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>During:</strong> Each step logged with timestamp</div></div>
+          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>During:</strong> Each step verified before proceeding</div></div>
+          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Post:</strong> Service verified, change validated</div></div>
+          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Post:</strong> Config saved to running + startup</div></div>
+          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Post:</strong> Ticket updated and closed</div></div>
+          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Post:</strong> DCIM / asset management updated</div></div>
+        </div>
+
+        <div class="sh">Escalation Decision Tree</div>
+        <div class="step crit">
+          <div class="step-num">ESCALATE IMMEDIATELY</div>
+          <div class="step-detail">• DLC leak near live electrical<br>• Multiple hosts / racks affected<br>• UPS or PDU fault<br>• GPU XID 94 on production cluster<br>• FEC uncorrectable &gt; 0 on production uplinks<br>• Smoke, smell, physical damage</div>
+        </div>
+        <div class="step ok">
+          <div class="step-num">RESOLVE THEN DOCUMENT</div>
+          <div class="step-detail">• Single optic replacement<br>• Single drive hot-swap<br>• Cable re-seat / clean<br>• Single host reboot via BMC</div>
+        </div>
+
+        <div class="sh">Shift Handover</div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Shift Start Checklist</div><div class="card-right"><div class="badge b-cyan">START OF SHIFT</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <p>Run this at the start of every shift before touching anything.</p>
+            <div class="checklist">
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Review open tickets from previous shift — note anything active or pending</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Check monitoring console — any red/amber alerts that weren't there at last check</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Verify any ongoing maintenance windows — who owns them, what stage they're at</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Check environmental — temperature trending normal, no DLC anomalies</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Check parts on order — any deliveries expected this shift?</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Note any equipment in degraded state even if not actively alarming</div></div>
+              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Confirm verbal handover received from outgoing tech on any P1/P2 issues</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Shift Handover Template</div><div class="card-right"><div class="badge b-gold">END OF SHIFT</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <div class="cli">
+              <span class="cc">━━ SHIFT HANDOVER ━━</span><br>
+              <span class="out">Date/Time:    [DATE] [HH:MM] → [HH:MM]</span><br>
+              <span class="out">Outgoing:     [YOUR NAME]</span><br>
+              <span class="out">Incoming:     [NEXT TECH NAME]</span><br><br>
+              <span class="cc">━━ OPEN INCIDENTS ━━</span><br>
+              <span class="out">Ticket #    Status    Owner    Next Action    ETA</span><br>
+              <span class="out">[JIRA-XXX]  [STATUS]  [NAME]   [ACTION]       [ETA]</span><br><br>
+              <span class="cc">━━ ACTIVE MAINTENANCE WINDOWS ━━</span><br>
+              <span class="out">Window:   [Description]</span><br>
+              <span class="out">Stage:    [Pre / In-progress / Post-verification]</span><br>
+              <span class="out">Owner:    [Name / Team]</span><br>
+              <span class="out">Ends:     [Time]</span><br><br>
+              <span class="cc">━━ ACTION REQUIRED THIS SHIFT ━━</span><br>
+              <span class="out">[ ] [Task description] — [Priority] — [Context]</span><br>
+              <span class="out">[ ] [Task description] — [Priority] — [Context]</span><br><br>
+              <span class="cc">━━ DEGRADED / WATCH LIST ━━</span><br>
+              <span class="out">Asset:    [Hostname / rack / port]</span><br>
+              <span class="out">Issue:    [What's degraded — not alarming but watch it]</span><br>
+              <span class="out">Ticket:   [Reference or "no ticket yet"]</span><br><br>
+              <span class="cc">━━ ENVIRONMENTAL NOTES ━━</span><br>
+              <span class="out">[Anything running hot, DLC anomaly, humidity, etc.]</span><br><br>
+              <span class="cc">━━ PARTS / LOGISTICS ━━</span><br>
+              <span class="out">[Parts on order, expected delivery, RMAs pending]</span><br><br>
+              <span class="cc">━━ HAPPENED THIS SHIFT / NO TICKET ━━</span><br>
+              <span class="out">[Anything the next team should know that didn't generate a ticket]</span>
+            </div>
+            <div class="wbar"><span class="ico ico-md ico-warning"></span> P1 or P2 active during your shift = VERBAL handover required, not just written. Never hand off an active critical incident in a note alone.</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Incident Severity Reference</div><div class="card-right"><div class="badge b-red">P1–P4</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Severity</th><th>Definition</th><th>Response</th><th>Handover</th></tr>
+              <tr><td style="color:var(--red)">P1 — Critical</td><td>Full outage, production down, data loss risk</td><td>Immediate — all hands</td><td>Verbal mandatory</td></tr>
+              <tr><td style="color:var(--gold)">P2 — High</td><td>Significant degradation, redundancy lost</td><td>&lt;30 min response</td><td>Verbal mandatory</td></tr>
+              <tr><td style="color:var(--cyan)">P3 — Medium</td><td>Partial impact, workaround available</td><td>&lt;4 hours</td><td>Written OK</td></tr>
+              <tr><td style="color:var(--green)">P4 — Low</td><td>Minor issue, no immediate impact</td><td>Next business day</td><td>Written OK</td></tr>
+            </table>
+            <div class="ibar">ℹ Severity definitions vary by site. These are industry-standard baselines — follow your site-specific SLA matrix if one exists.</div>
+          </div>
+        </div>
+
+        <!-- ESD CHECKLIST -->
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">ESD Pre-Work Checklist</div><div class="card-right"><div class="badge b-gold">ESD · SAFETY</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <p>Run this before touching any sensitive hardware — GPUs, DIMMs, NICs, NVMe, transceivers, PCIe cards. ESD damage below 3,000V is imperceptible but can degrade a $30k GPU that fails under load weeks later.</p>
+
+            <div class="sh" style="font-size: var(--fs-caption);margin-top:14px;margin-bottom:8px">Before You Touch Anything</div>
+            <table class="dt">
+              <tr><th>✓</th><th>Check</th><th>Detail</th></tr>
+              <tr><td style="color:var(--green)">□</td><td>Wrist strap on skin</td><td>Must contact bare skin — not over a sleeve</td></tr>
+              <tr><td style="color:var(--green)">□</td><td>Wrist strap continuity tested</td><td>Use tester on strap before starting — straps fail silently</td></tr>
+              <tr><td style="color:var(--green)">□</td><td>Bonded to rack or ESD mat</td><td>Clip to unpainted metal on rack — not a painted surface</td></tr>
+              <tr><td style="color:var(--green)">□</td><td>ESD mat deployed (if available)</td><td>Required for bench work — optional in-rack if strapped</td></tr>
+              <tr><td style="color:var(--green)">□</td><td>Component still in ESD bag</td><td>Do not open bag until ready to install</td></tr>
+              <tr><td style="color:var(--green)">□</td><td>Clear ESD-safe work surface</td><td>No cardboard, no regular plastic — both generate static</td></tr>
+            </table>
+
+            <div class="sh" style="font-size: var(--fs-caption);margin-top:14px;margin-bottom:8px">Component Risk Levels</div>
+            <table class="dt">
+              <tr><th>Component</th><th>Risk</th><th>Notes</th></tr>
+              <tr><td>GPU (H100 / H200 / GB300)</td><td style="color:var(--red)">EXTREME</td><td>Always strapped, always on ESD mat</td></tr>
+              <tr><td>DIMM / Memory</td><td style="color:var(--red)">EXTREME</td><td>Handle by edges only, never touch PCB</td></tr>
+              <tr><td>NVMe / SSD</td><td style="color:var(--red)">HIGH</td><td>Hold by edges, avoid connector pins</td></tr>
+              <tr><td>NIC / ConnectX</td><td style="color:var(--red)">HIGH</td><td>Keep in bag until moment of install</td></tr>
+              <tr><td>Transceiver / Optic</td><td style="color:var(--gold)">MEDIUM</td><td>Avoid touching the optical port pins</td></tr>
+              <tr><td>PSU</td><td style="color:var(--cyan)">LOW</td><td>Still strap — but less sensitive</td></tr>
+              <tr><td>Cable / DAC</td><td style="color:var(--green)">MINIMAL</td><td>Standard handling OK</td></tr>
+            </table>
+
+            <div class="sh" style="font-size: var(--fs-caption);margin-top:14px;margin-bottom:8px">What NOT To Do</div>
+            <table class="dt">
+              <tr><th>Never</th><th>Why</th></tr>
+              <tr><td>Set bare PCB on cardboard</td><td>Cardboard tribocharges — generates kV of static</td></tr>
+              <tr><td>Wear strap over clothing</td><td>No skin contact = no ground path = useless</td></tr>
+              <tr><td>Bond to painted rack surface</td><td>Paint is an insulator — no continuity</td></tr>
+              <tr><td>Slide components on surfaces</td><td>Friction generates charge — lift, don't drag</td></tr>
+              <tr><td>Work in low humidity (&lt;30%)</td><td>Dry air = high static risk — dry winter months especially</td></tr>
+              <tr><td>Remove from bag near powered gear</td><td>Induced charge from nearby PSUs</td></tr>
+            </table>
+
+            <div class="sh" style="font-size: var(--fs-caption);margin-top:14px;margin-bottom:8px">If You Feel or See a Discharge</div>
+            <table class="dt">
+              <tr><th>Step</th><th>Action</th></tr>
+              <tr><td>1</td><td>Stop work immediately — do not proceed</td></tr>
+              <tr><td>2</td><td>Document: component, time, what was touched</td></tr>
+              <tr><td>3</td><td>Tag the component — do not install</td></tr>
+              <tr><td>4</td><td>Report to lead — component may need inspection or RMA</td></tr>
+              <tr><td>5</td><td>Check your strap — replace if continuity test fails</td></tr>
+            </table>
+
+            <div class="wbar" style="margin-top:10px"><span class="ico ico-md ico-warning"></span> ESD damage is cumulative and latent. A component that survives an ESD event may degrade over weeks and fail under thermal or electrical stress. When in doubt — tag it, don't install it.</div>
+          </div>
+        </div>
+      </div>
+      </div>
     </div>
 
     <!-- PAGE: TRIAGE -->
@@ -15751,700 +16456,6 @@ if (typeof window !== 'undefined') {
 
     <!-- PAGE: FIBER+DOM (grouped) -->
     <!-- PAGE: HARDWARE -->
-    <div class="page" id="pg-power">
-      <div class="subtab-strip">
-        <div class="stab active" onclick="showStab(this,'pwr-sub','pw-power')">Power</div>
-        <div class="stab" onclick="showStab(this,'pwr-sub','pw-hw')">LED / GPU</div>
-        <div class="stab" onclick="showStab(this,'pwr-sub','pw-rb')">Runbook</div>
-        <div class="stab" onclick="showStab(this,'pwr-sub','pw-rm');renderRackMap()">Rack Map</div>
-        <div class="stab" onclick="showStab(this,'pwr-sub','pw-blast');renderBlastRadius()">Blast Radius</div>
-        <div class="stab" onclick="showStab(this,'pwr-sub','pw-thermal')">Thermal</div>
-      </div>
-
-      <div class="pwr-sub" id="pw-power" style="display:none">
-        <div class="sh">PDU &amp; Power Math</div>
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">80% Derate Rule</div><div class="card-right"><div class="badge b-red">NEC 210.20</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <p><strong>Never load a breaker above 80% continuously.</strong></p>
-            <table class="dt"><tr><th>Breaker</th><th>Voltage</th><th>Max</th><th>Usable kW</th></tr>
-            <tr><td>30A 1Ø</td><td>208V</td><td>24A</td><td>4.99 kW</td></tr>
-            <tr><td>60A 1Ø</td><td>208V</td><td>48A</td><td>9.98 kW</td></tr>
-            <tr><td>30A 3Ø</td><td>208V</td><td>24A</td><td>8.65 kW</td></tr>
-            <tr><td>60A 3Ø</td><td>208V</td><td>48A</td><td>17.3 kW</td></tr>
-            <tr><td>100A 3Ø</td><td>208V</td><td>80A</td><td>28.8 kW</td></tr></table>
-            <p class="mt">kW = V × A × PF × √3 (3Ø) / 1000 · PF = 0.9–0.95 typical</p>
-          </div>
-        </div>
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">GB300 NVL72 — 120kW DLC</div><div class="card-right"><div class="badge b-red">120kW</div><div class="chev">▶</div></div><div class="card-stat"><span><b>120 kW</b> <i>PEAK RACK POWER</i></span><span><b>~45°C facility water</b> <i>CDU INLET MAX</i></span><span><b>15–30 LPM</b> <i>PER RACK FLOW</i></span></div></div>
-          <div class="card-body">
-            <table class="dt"><tr><th>Parameter</th><th>Spec</th></tr>
-            <tr><td>Peak rack power</td><td>120 kW</td></tr>
-            <tr><td>CDU inlet temp max</td><td>~45°C facility water</td></tr>
-            <tr><td>Flow rate</td><td>15–30 LPM per rack</td></tr>
-            <tr><td>Fluid type</td><td>DI water or water-glycol</td></tr>
-            <tr><td>Electrical</td><td>480V 3-phase typical</td></tr></table>
-            <div class="abar"><span class="ico ico-md ico-alert-red"></span> Do NOT power up GB300 without confirmed coolant flow. GPU damage in minutes at load without cooling.</div>
-          </div>
-        </div>
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">DLC / CDU Troubleshooting</div><div class="card-right"><div class="badge b-cyan">COOLING</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <div class="step crit" style="margin-bottom:8px">
-              <div class="step-num">LEAK RESPONSE</div>
-              <div class="step-detail">1. Alert team lead immediately<br>2. Identify leak source (QD, hose, CDU fitting)<br>3. Shut off at CDU manifold valve<br>4. Do NOT power down unless liquid near electrical<br>5. Document and escalate per site SOP</div>
-            </div>
-            <table class="dt"><tr><th>Symptom</th><th>Cause</th><th>Action</th></tr>
-            <tr><td>High GPU temp, flow OK</td><td>Air pocket</td><td>Bleed loop, check flow meter</td></tr>
-            <tr><td>CDU high outlet temp</td><td>Facility water warm</td><td>Contact facilities</td></tr>
-            <tr><td>No flow alarm</td><td>Valve, pump, filter</td><td>Check CDU pump, delta-P</td></tr>
-            <tr><td>QD drip</td><td>O-ring, not seated</td><td>Reseat; if persists replace</td></tr></table>
-          </div>
-        </div>
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">3-Phase Load Balancing</div><div class="chev">▶</div></div>
-          <div class="card-body">
-            <p>Balance L1/L2/L3. Imbalance &gt;10% causes neutral current, transformer heating, UPS issues.</p>
-            <div class="cli"><span class="out">Phase L1: 28.3A  ← OK</span><br><span class="out">Phase L2: 27.9A  ← OK</span><br><span class="err">Phase L3: 18.2A  ← IMBALANCED — redistribute</span></div>
-          </div>
-        </div>
-
-        <div class="sh">GPU Platform Power &amp; PDU Reference</div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">H100 SXM5 / H200 SXM5 — Power</div><div class="card-right"><div class="badge b-gold">H100/H200</div><div class="chev">▶</div></div><div class="card-stat"><span><b>700W</b> <i>GPU TDP EACH</i></span><span><b>5,600W</b> <i>GPU SUBTOTAL</i></span><span><b>8</b> <i>GPUS PER NODE</i></span></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Parameter</th><th>H100 SXM5</th><th>H200 SXM5</th></tr>
-              <tr><td>GPU TDP each</td><td>700W</td><td>700W</td></tr>
-              <tr><td>GPUs per node</td><td>8</td><td>8</td></tr>
-              <tr><td>GPU subtotal</td><td>5,600W</td><td>5,600W</td></tr>
-              <tr><td>Full system (typical)</td><td>10,000–11,000W</td><td>10,500–11,500W</td></tr>
-              <tr><td>Cooling</td><td>Air (high-perf)</td><td>Air (high-perf)</td></tr>
-              <tr><td>Supply voltage</td><td>200–240V AC</td><td>200–240V AC</td></tr>
-            </table>
-            <div class="sh" style="margin-top:12px">Power Cords &amp; Connectors</div>
-            <table class="dt">
-              <tr><th>Cord Type</th><th>Plug</th><th>Receptacle</th><th>Rating</th><th>Use Case</th></tr>
-              <tr><td>C19 to L6-30P</td><td>NEMA L6-30P</td><td>IEC C20 on PDU</td><td>30A 208V 1Ø</td><td>Primary server power — most common HGX H100 cord</td></tr>
-              <tr><td>C19 to L6-20P</td><td>NEMA L6-20P</td><td>IEC C20 on PDU</td><td>20A 208V 1Ø</td><td>Lower draw accessories, OOB switches</td></tr>
-              <tr><td>C13 to C14</td><td>IEC C14 (male)</td><td>IEC C13 (female)</td><td>10A max</td><td>1U accessories, 1G OOB switches, KVMs. NOT for servers.</td></tr>
-            </table>
-            <div class="sh" style="margin-top:12px">Phase Distribution Rule</div>
-            <p>H100/H200 nodes are dual-corded. Each cord should be on a <strong>different phase AND different PDU</strong>.</p>
-            <div class="cli">
-              <span class="cc"># Example: 4-node rack, dual-corded, two PDUs (PDU-A and PDU-B)</span><br>
-              <span class="out">Node 1 Cord A: PDU-A L1  |  Node 1 Cord B: PDU-B L2</span><br>
-              <span class="out">Node 2 Cord A: PDU-A L2  |  Node 2 Cord B: PDU-B L3</span><br>
-              <span class="out">Node 3 Cord A: PDU-A L3  |  Node 3 Cord B: PDU-B L1</span><br>
-              <span class="out">Node 4 Cord A: PDU-A L1  |  Node 4 Cord B: PDU-B L2</span>
-            </div>
-            <div class="wbar"><span class="ico ico-md ico-warning"></span> C19 = female connector (on the server). C20 = male (on the PDU). C13 is rated 10A — never use on a server PSU. Verify cord rating matches breaker rating.</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">GB200 NVL36 — Power</div><div class="card-right"><div class="badge b-red">GB200</div><div class="chev">▶</div></div><div class="card-stat"><span><b>1,000W</b> <i>GPU TDP EACH</i></span><span><b>65,000–70,000W</b> <i>FULL RACK TYPICAL</i></span><span><b>36</b> <i>GPUS PER RACK</i></span></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Parameter</th><th>Spec</th></tr>
-              <tr><td>GPU TDP each</td><td>1,000W</td></tr>
-              <tr><td>GPUs per rack</td><td>36 (Grace Blackwell pairs)</td></tr>
-              <tr><td>GPU subtotal</td><td>~36,000W</td></tr>
-              <tr><td>Full rack (typical)</td><td>65,000–70,000W</td></tr>
-              <tr><td>Cooling</td><td>Direct Liquid Cooling — MANDATORY</td></tr>
-              <tr><td>Supply voltage</td><td>480V 3-phase (typical US)</td></tr>
-            </table>
-            <div class="sh" style="margin-top:12px">Power Cords &amp; Connectors</div>
-            <table class="dt">
-              <tr><th>Connector</th><th>Type</th><th>Rating</th><th>Notes</th></tr>
-              <tr><td>IEC 60309 5-pin</td><td>3P+N+E twist-lock (blue = 200–250V, red = 380–480V)</td><td>32A–125A</td><td>Standard industrial 3-phase. Red = 480V at US sites.</td></tr>
-              <tr><td>Hubbell CS8365C</td><td>NEMA L21-30 3-phase 208V</td><td>30A 3Ø 120/208V</td><td>Used on some PDU inputs at 208V sites</td></tr>
-              <tr><td>Hardwired</td><td>Lugged termination in PDU</td><td>Per breaker rating</td><td>At 65-70kW most sites go hardwired — no plug/socket</td></tr>
-            </table>
-            <div class="abar"><span class="ico ico-md ico-alert-red"></span> At 65-70kW: a single phase trip takes the rack down. Every circuit must be documented before power-up. Verify PDU load at each phase before adding equipment. 80% derate applies at rack level, not just circuit level.</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">GB300 NVL72 — Power</div><div class="card-right"><div class="badge b-red">120kW</div><div class="chev">▶</div></div><div class="card-stat"><span><b>120,000W</b> <i>FULL RACK PEAK</i></span><span><b>Up to 1,200W</b> <i>GPU TDP EACH</i></span><span><b>72</b> <i>GPUS PER RACK</i></span></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Parameter</th><th>Spec</th></tr>
-              <tr><td>GPU TDP each</td><td>Up to 1,200W (workload dependent)</td></tr>
-              <tr><td>GPUs per rack</td><td>72 (Grace Blackwell pairs)</td></tr>
-              <tr><td>GPU subtotal</td><td>Up to 86,400W</td></tr>
-              <tr><td>Full rack (peak)</td><td>120,000W (120kW)</td></tr>
-              <tr><td>Cooling</td><td>Direct Liquid Cooling — MANDATORY. Air impossible.</td></tr>
-              <tr><td>Supply voltage</td><td>480V 3-phase. Multiple feeds.</td></tr>
-              <tr><td>Typical feed</td><td>200A 3-phase per rack (some configs 2x 100A)</td></tr>
-            </table>
-            <div class="sh" style="margin-top:12px">Power Cords &amp; Connectors</div>
-            <table class="dt">
-              <tr><th>Connector</th><th>Type</th><th>Rating</th><th>Notes</th></tr>
-              <tr><td>IEC 60309 5-pin (red)</td><td>3P+N+E 480V twist-lock</td><td>63A–125A</td><td>Primary 480V 3-phase feed. Red housing = 380–480V.</td></tr>
-              <tr><td>Hardwired lug</td><td>Direct bus bar termination</td><td>200A+</td><td>Most GB300 deployments hardwired from switchgear. No plug.</td></tr>
-              <tr><td>C19/C20</td><td>IEC C19 server to C20 PDU</td><td>16A per cord</td><td>Individual component cords within the rack to in-rack PDU</td></tr>
-            </table>
-            <div class="sh" style="margin-top:12px">Phase Mapping for GB300</div>
-            <p>GB300 NVL72 racks typically have multiple in-rack PDUs fed by 3-phase. Distribution across phases must be balanced and documented before power-up.</p>
-            <div class="cli">
-              <span class="cc"># GB300 PDU phase mapping example</span><br>
-              <span class="out">In-rack PDU-A (left):   Feed 1 L1 · Feed 2 L2 · Feed 3 L3</span><br>
-              <span class="out">In-rack PDU-B (right):  Feed 1 L2 · Feed 2 L3 · Feed 3 L1</span><br>
-              <span class="cc"># Never put all feeds on same phase</span><br>
-              <span class="cc"># Verify with facilities before energizing</span>
-            </div>
-            <div class="abar"><span class="ico ico-md ico-alert-red"></span> DO NOT energize GB300 NVL72 without: (1) confirmed DLC flow and temp, (2) all PDU phase assignments verified and documented, (3) facilities sign-off on electrical capacity. 120kW from a cold start can trip a breaker before coolant flow stabilizes.</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Power Cord Quick Reference</div><div class="card-right"><div class="badge b-cyan">ALL PLATFORMS</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Connector</th><th>Gender Rule</th><th>Rating</th><th>Color Code</th></tr>
-              <tr><td>IEC C13</td><td>Female — goes ON the device</td><td>10A max</td><td>N/A — accessories only</td></tr>
-              <tr><td>IEC C14</td><td>Male — on the PDU/socket</td><td>10A max</td><td>N/A</td></tr>
-              <tr><td>IEC C19</td><td>Female — goes ON the server PSU</td><td>16A</td><td>N/A</td></tr>
-              <tr><td>IEC C20</td><td>Male — on the PDU</td><td>16A</td><td>N/A</td></tr>
-              <tr><td>NEMA L6-20P</td><td>Plug (male) — end of cord</td><td>20A 208V 1Ø</td><td>Varies by site</td></tr>
-              <tr><td>NEMA L6-30P</td><td>Plug (male) — end of cord</td><td>30A 208V 1Ø</td><td>Varies by site</td></tr>
-              <tr><td>IEC 60309 blue</td><td>Twist-lock industrial</td><td>Up to 125A</td><td>Blue = 200–250V</td></tr>
-              <tr><td>IEC 60309 red</td><td>Twist-lock industrial</td><td>Up to 125A</td><td>Red = 380–480V</td></tr>
-            </table>
-            <div class="wbar"><span class="ico ico-md ico-warning"></span> Site cord color conventions vary — red does NOT always mean 208V. Always verify voltage at the receptacle with a meter before connecting equipment. Never assume color.</div>
-          </div>
-        </div>
-
-        <!-- ── PDU LOAD BALANCE DIAGRAMS ── -->
-        <div class="sh" style="margin-top:18px">PDU Load Balance Diagrams</div>
-
-        <!-- H100 SXM5 -->
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">H100 SXM5 — PDU Load Balance</div><div class="card-right"><div class="badge b-cyan">H100</div><div class="chev">▶</div></div><div class="card-stat"><span><b>8x</b> <i>PSU COUNT</i></span><span><b>208V</b> <i>VOLTAGE</i></span><span><b>~6.4kW</b> <i>PER PSU FULL LOAD</i></span></div></div>
-          <div class="card-body">
-            <div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);margin-bottom:12px;letter-spacing:1px">
-              8x PSU · 208V · ~6.4kW per PSU at full load · Dual feed A+B · 3-phase balanced
-            </div>
-            <div id="pdu-h100" data-pdu="h100" style="width:100%;overflow-x:auto"></div>
-            <div class="ibar" style="margin-top:12px">ℹ Tap any PSU or phase label to highlight that circuit path. L1=cyan L2=magenta L3=gold. Balance target: ≤10% variance across phases.</div>
-          </div>
-        </div>
-
-        <!-- H200 SXM5 -->
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">H200 SXM5 — PDU Load Balance</div><div class="card-right"><div class="badge b-cyan">H200</div><div class="chev">▶</div></div><div class="card-stat"><span><b>8x</b> <i>PSU COUNT</i></span><span><b>208V</b> <i>VOLTAGE</i></span><span><b>~7.2kW</b> <i>PER PSU FULL LOAD</i></span></div></div>
-          <div class="card-body">
-            <div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);margin-bottom:12px;letter-spacing:1px">
-              8x PSU · 208V · ~7.2kW per PSU at full load · Dual feed A+B · 3-phase balanced
-            </div>
-            <div id="pdu-h200" data-pdu="h200" style="width:100%;overflow-x:auto"></div>
-            <div class="ibar" style="margin-top:12px">ℹ H200 draws ~12% more per PSU than H100. Verify PDU breaker rating before hot-swap. Same physical layout, higher thermal envelope.</div>
-          </div>
-        </div>
-
-        <!-- GB300 NVL72 -->
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">GB300 NVL72 — PDU Load Balance</div><div class="card-right"><div class="badge b-red">GB300</div><div class="chev">▶</div></div><div class="card-stat"><span><b>12x</b> <i>PSU COUNT</i></span><span><b>~10kW</b> <i>PER PSU</i></span><span><b>120kW</b> <i>TOTAL RACK</i></span></div></div>
-          <div class="card-body">
-            <div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);margin-bottom:12px;letter-spacing:1px">
-              12x PSU · 208V · ~10kW per PSU · Dual feed A+B · 3-phase · DLC required · 120kW total rack
-            </div>
-            <div id="pdu-gb300" data-pdu="gb300" style="width:100%;overflow-x:auto"></div>
-            <div class="wbar" style="margin-top:12px"><span class="ico ico-md ico-warning"></span> GB300 NVL72 requires dedicated 3-phase 200A service per rack. DLC must be active before powering on. Never energize without confirming coolant flow.</div>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="pwr-sub" id="pw-hw" style="display:none">
-        <div class="sh">GPU Server Faults</div>
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">H100 SXM5 — Common Faults</div><div class="card-right"><div class="badge b-gold">H100</div><div class="chev">▶</div></div><div class="card-tags"><span class="ctag"><b>XID 79</b> Reset</span><span class="ctag"><b>XID 94</b> driver</span><span class="ctag">ECC uncorrectable rising</span><span class="ctag">NVLink errors</span></div></div>
-          <div class="card-body">
-            <table class="dt"><tr><th>Symptom</th><th>Cause</th><th>Action</th></tr>
-            <tr><td>GPU not in nvidia-smi</td><td>PCIe, driver, power</td><td>Check slot power, reseat, BMC logs</td></tr>
-            <tr><td>ECC uncorrectable rising</td><td>DRAM fault</td><td>nvidia-smi -q -d ECC, RMA</td></tr>
-            <tr><td>GPU throttling</td><td>Cooling</td><td>nvidia-smi -q -d TEMPERATURE</td></tr>
-            <tr><td>NVLink errors</td><td>Cable/NVSwitch</td><td>nvlink fabric diag, check cable</td></tr>
-            <tr><td>XID in dmesg</td><td>XID 79=Reset, 94=driver</td><td>Check code, correlate smi</td></tr></table>
-            <div class="cli"><span class="cmd">nvidia-smi</span><br><span class="cmd">nvidia-smi -q -d ECC | grep -i error</span><br><span class="cmd">dmesg | grep -i xid</span><br><span class="cmd">nvidia-smi nvlink --status</span></div>
-          </div>
-        </div>
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">BMC / iDRAC / iLO / IPMI</div><div class="card-right"><div class="badge b-cyan">OOB</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <table class="dt"><tr><th>Vendor</th><th>BMC</th><th>Notes</th></tr>
-            <tr><td>Dell</td><td>iDRAC</td><td>Racadm CLI</td></tr>
-            <tr><td>HPE</td><td>iLO</td><td>REST API</td></tr>
-            <tr><td>Supermicro</td><td>IPMI</td><td>ipmitool compat</td></tr>
-            <tr><td>NVIDIA HGX</td><td>BMC</td><td>Redfish API</td></tr></table>
-            <div class="cli"><span class="cmd">ipmitool -I lanplus -H &lt;IP&gt; -U admin -P &lt;pw&gt; sdr</span><br><span class="cmd">ipmitool -I lanplus -H &lt;IP&gt; -U admin -P &lt;pw&gt; sel list</span><br><span class="cmd">ipmitool -I lanplus -H &lt;IP&gt; -U admin -P &lt;pw&gt; power cycle</span></div>
-          </div>
-        </div>
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">NVMe Drive Replacement</div><div class="card-right"><div class="badge b-gold">STORAGE</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <div class="checklist">
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Confirm failed drive: slot LED + OS identification</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Verify hot-swap capable for this bay</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">RAID: confirm array tolerates removal — not already degraded</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Run <code>lsblk</code> and <code>nvme list</code> to confirm slot mapping before pull</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Pull failed drive — note slot number</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Insert replacement — same form factor (U.2 / M.2 / E1.S)</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Confirm OS sees new drive: <code>nvme list</code></div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Initiate RAID rebuild if applicable</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Tag and bag failed drive: date, host, slot, symptom</div></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="sh">LED Indicator Reference</div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Dell PowerEdge LEDs</div><div class="card-right"><div class="badge b-cyan">DELL</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <div class="sh" style="margin-top:4px">System Health (front panel)</div>
-            <table class="dt">
-              <tr><th>LED State</th><th>Meaning</th><th>Action</th></tr>
-              <tr><td style="color:var(--cyan)">Solid Blue</td><td>System healthy</td><td>None</td></tr>
-              <tr><td style="color:#6688ff">Blinking Blue</td><td>ID mode active</td><td>Someone is locating this server</td></tr>
-              <tr><td style="color:var(--gold)">Solid Amber</td><td>Degraded — non-critical fault</td><td>Check iDRAC SEL for details</td></tr>
-              <tr><td style="color:var(--gold)">Blinking Amber</td><td>Critical fault</td><td>Check iDRAC immediately</td></tr>
-            </table>
-            <div class="sh" style="margin-top:10px">PSU LEDs (rear)</div>
-            <table class="dt">
-              <tr><th>LED State</th><th>Meaning</th></tr>
-              <tr><td style="color:var(--green)">Solid Green</td><td>PSU healthy, AC input good</td></tr>
-              <tr><td style="color:var(--green)">Blinking Green</td><td>PSU initializing — normal during POST</td></tr>
-              <tr><td style="color:var(--gold)">Solid Amber</td><td>PSU fault or AC input lost</td></tr>
-              <tr><td style="color:var(--gold)">Blinking Amber</td><td>PSU communication fault with system</td></tr>
-              <tr><td>Off</td><td>PSU not present or no AC input</td></tr>
-            </table>
-            <div class="sh" style="margin-top:10px">DIMM / Drive LEDs</div>
-            <table class="dt">
-              <tr><th>Component</th><th>Amber LED</th><th>No LED</th></tr>
-              <tr><td>DIMM slot</td><td>DIMM fault on that slot</td><td>Healthy (no LED on good DIMMs)</td></tr>
-              <tr><td>Drive bay</td><td>Drive fault or predictive failure</td><td>Healthy</td></tr>
-              <tr><td>Drive bay blink</td><td>Blinking = rebuild in progress</td><td></td></tr>
-            </table>
-            <div class="ibar">ℹ Dell fans have no LED. Fan health is software-reported via iDRAC: <code>racadm -r &lt;ip&gt; getsensorinfo | grep Fan</code></div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">HPE ProLiant LEDs</div><div class="card-right"><div class="badge b-cyan">HPE</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <div class="sh" style="margin-top:4px">System Health (front panel)</div>
-            <table class="dt">
-              <tr><th>LED State</th><th>Meaning</th><th>Action</th></tr>
-              <tr><td style="color:var(--green)">Solid Green</td><td>System healthy</td><td>None</td></tr>
-              <tr><td style="color:var(--gold)">Solid Amber</td><td>Degraded — non-critical</td><td>Check iLO IML (Integrated Management Log)</td></tr>
-              <tr><td style="color:var(--red)">Solid Red</td><td>Critical fault</td><td>Check iLO immediately</td></tr>
-              <tr><td style="color:#6688ff">Solid Blue (UID)</td><td>Server being identified</td><td>UID button activated — press to deactivate</td></tr>
-              <tr><td style="color:#6688ff">Blinking Blue (UID)</td><td>Remote iLO session active</td><td>Normal during remote management</td></tr>
-            </table>
-            <div class="sh" style="margin-top:10px">PSU LEDs</div>
-            <table class="dt">
-              <tr><th>LED State</th><th>Meaning</th></tr>
-              <tr><td style="color:var(--green)">Solid Green</td><td>PSU healthy</td></tr>
-              <tr><td style="color:var(--gold)">Solid Amber</td><td>PSU degraded or failed</td></tr>
-              <tr><td>Off</td><td>PSU not present or no AC</td></tr>
-            </table>
-            <div class="sh" style="margin-top:10px">DIMM Slots</div>
-            <p>HPE: Each DIMM slot has an amber LED on the system board. Amber = fault on that DIMM. Check iLO IML for correctable vs uncorrectable ECC details.</p>
-            <div class="cli">
-              <span class="cc"># Check iLO IML from OS</span><br>
-              <span class="cmd">hponcfg -f getiml.xml</span><br>
-              <span class="cc"># From iLO CLI</span><br>
-              <span class="cmd">show /system1/log1/entry*</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Supermicro LEDs</div><div class="card-right"><div class="badge b-cyan">SUPERMICRO</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <div class="sh" style="margin-top:4px">System Health</div>
-            <table class="dt">
-              <tr><th>LED State</th><th>Meaning</th></tr>
-              <tr><td style="color:var(--green)">Solid Green (PWR)</td><td>System powered and healthy</td></tr>
-              <tr><td style="color:var(--gold)">Solid Amber (HDD)</td><td>Drive fault</td></tr>
-              <tr><td style="color:var(--gold)">Blinking Amber (HDD)</td><td>Drive activity (normal) or rebuild</td></tr>
-              <tr><td>NIC LED Green/Amber</td><td>Green = link/activity, Amber = 1G (vs Green = 10G)</td></tr>
-            </table>
-            <div class="sh" style="margin-top:10px">PSU (on PSU face)</div>
-            <table class="dt">
-              <tr><th>LED State</th><th>Meaning</th></tr>
-              <tr><td style="color:var(--green)">Green</td><td>PSU healthy, AC input present</td></tr>
-              <tr><td style="color:var(--gold)">Amber / Red</td><td>PSU fault — replace</td></tr>
-              <tr><td>Off</td><td>No AC input or PSU failed</td></tr>
-            </table>
-            <div class="sh" style="margin-top:10px">DIMM Slots</div>
-            <p>Supermicro board-level DIMM LED behavior varies by model. Not all boards have per-slot LEDs. Check IPMI SEL for memory errors: <code>ipmitool sel list | grep -i mem</code>. Board-level amber near DIMM bank = fault in that bank.</p>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">NVIDIA HGX / GB-series</div><div class="card-right"><div class="badge b-green">NVIDIA</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <p>HGX and GB-series boards have minimal external LEDs. GPU health is primarily software-reported.</p>
-            <table class="dt">
-              <tr><th>What</th><th>How to Check</th></tr>
-              <tr><td>GPU health</td><td>nvidia-smi — all GPUs visible and no throttle</td></tr>
-              <tr><td>GPU errors</td><td>dmesg | grep -i xid</td></tr>
-              <tr><td>System health LED</td><td>OEM chassis (Wiwynn/Foxconn/QCT) — amber = fault</td></tr>
-              <tr><td>PSU</td><td>Check OEM chassis PSU indicators — same as standard server</td></tr>
-              <tr><td>NVLink status</td><td>nvidia-smi nvlink --status</td></tr>
-              <tr><td>BMC SEL</td><td>ipmitool sel list — hardware events logged here</td></tr>
-            </table>
-            <div class="ibar">ℹ For GB300 NVL72: the NVL72 chassis has status LEDs on the front panel managed by the chassis BMC. Check NVIDIA NVL72 field service manual for chassis LED definitions — these vary from standard server LEDs.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="pwr-sub" id="pw-rb" style="display:none">
-        <div class="sh">Incident Note Template</div>
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Ticket-Ready Format</div><div class="chev">▶</div></div>
-          <div class="card-body"><div class="cli">
-            <span class="cc">## INCIDENT — [DATE] [TIME] [NAME]</span><br><br>
-            <span class="out">Asset:       [hostname / rack / port]</span><br>
-            <span class="out">Reported by: [monitoring / user / self]</span><br>
-            <span class="out">Impact:      [# hosts / services]</span><br><br>
-            <span class="cc">## Symptoms</span><br>
-            <span class="out">[What was observed]</span><br><br>
-            <span class="cc">## Investigation</span><br>
-            <span class="out">1. [HH:MM] — [Action] — [Result]</span><br>
-            <span class="out">2. [HH:MM] — [Action] — [Result]</span><br><br>
-            <span class="cc">## Root Cause + Resolution</span><br>
-            <span class="out">[Cause] / [What restored service]</span><br><br>
-            <span class="cc">## Parts Used</span><br>
-            <span class="out">[Part# / serial — OLD and NEW]</span>
-          </div></div>
-        </div>
-
-        <div class="sh">Change Management Checklist</div>
-        <div class="checklist">
-          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Pre:</strong> Change ticket approved, window confirmed</div></div>
-          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Pre:</strong> Rollback plan documented</div></div>
-          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Pre:</strong> Stakeholders notified</div></div>
-          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Pre:</strong> Baseline captured — counters, ping, config backup</div></div>
-          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>During:</strong> Each step logged with timestamp</div></div>
-          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>During:</strong> Each step verified before proceeding</div></div>
-          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Post:</strong> Service verified, change validated</div></div>
-          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Post:</strong> Config saved to running + startup</div></div>
-          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Post:</strong> Ticket updated and closed</div></div>
-          <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt"><strong>Post:</strong> DCIM / asset management updated</div></div>
-        </div>
-
-        <div class="sh">Escalation Decision Tree</div>
-        <div class="step crit">
-          <div class="step-num">ESCALATE IMMEDIATELY</div>
-          <div class="step-detail">• DLC leak near live electrical<br>• Multiple hosts / racks affected<br>• UPS or PDU fault<br>• GPU XID 94 on production cluster<br>• FEC uncorrectable &gt; 0 on production uplinks<br>• Smoke, smell, physical damage</div>
-        </div>
-        <div class="step ok">
-          <div class="step-num">RESOLVE THEN DOCUMENT</div>
-          <div class="step-detail">• Single optic replacement<br>• Single drive hot-swap<br>• Cable re-seat / clean<br>• Single host reboot via BMC</div>
-        </div>
-
-        <div class="sh">Shift Handover</div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Shift Start Checklist</div><div class="card-right"><div class="badge b-cyan">START OF SHIFT</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <p>Run this at the start of every shift before touching anything.</p>
-            <div class="checklist">
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Review open tickets from previous shift — note anything active or pending</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Check monitoring console — any red/amber alerts that weren't there at last check</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Verify any ongoing maintenance windows — who owns them, what stage they're at</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Check environmental — temperature trending normal, no DLC anomalies</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Check parts on order — any deliveries expected this shift?</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Note any equipment in degraded state even if not actively alarming</div></div>
-              <div class="chk" onclick="toggleChk(this)"><div class="chk-box">✓</div><div class="chk-txt">Confirm verbal handover received from outgoing tech on any P1/P2 issues</div></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Shift Handover Template</div><div class="card-right"><div class="badge b-gold">END OF SHIFT</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <div class="cli">
-              <span class="cc">━━ SHIFT HANDOVER ━━</span><br>
-              <span class="out">Date/Time:    [DATE] [HH:MM] → [HH:MM]</span><br>
-              <span class="out">Outgoing:     [YOUR NAME]</span><br>
-              <span class="out">Incoming:     [NEXT TECH NAME]</span><br><br>
-              <span class="cc">━━ OPEN INCIDENTS ━━</span><br>
-              <span class="out">Ticket #    Status    Owner    Next Action    ETA</span><br>
-              <span class="out">[JIRA-XXX]  [STATUS]  [NAME]   [ACTION]       [ETA]</span><br><br>
-              <span class="cc">━━ ACTIVE MAINTENANCE WINDOWS ━━</span><br>
-              <span class="out">Window:   [Description]</span><br>
-              <span class="out">Stage:    [Pre / In-progress / Post-verification]</span><br>
-              <span class="out">Owner:    [Name / Team]</span><br>
-              <span class="out">Ends:     [Time]</span><br><br>
-              <span class="cc">━━ ACTION REQUIRED THIS SHIFT ━━</span><br>
-              <span class="out">[ ] [Task description] — [Priority] — [Context]</span><br>
-              <span class="out">[ ] [Task description] — [Priority] — [Context]</span><br><br>
-              <span class="cc">━━ DEGRADED / WATCH LIST ━━</span><br>
-              <span class="out">Asset:    [Hostname / rack / port]</span><br>
-              <span class="out">Issue:    [What's degraded — not alarming but watch it]</span><br>
-              <span class="out">Ticket:   [Reference or "no ticket yet"]</span><br><br>
-              <span class="cc">━━ ENVIRONMENTAL NOTES ━━</span><br>
-              <span class="out">[Anything running hot, DLC anomaly, humidity, etc.]</span><br><br>
-              <span class="cc">━━ PARTS / LOGISTICS ━━</span><br>
-              <span class="out">[Parts on order, expected delivery, RMAs pending]</span><br><br>
-              <span class="cc">━━ HAPPENED THIS SHIFT / NO TICKET ━━</span><br>
-              <span class="out">[Anything the next team should know that didn't generate a ticket]</span>
-            </div>
-            <div class="wbar"><span class="ico ico-md ico-warning"></span> P1 or P2 active during your shift = VERBAL handover required, not just written. Never hand off an active critical incident in a note alone.</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Incident Severity Reference</div><div class="card-right"><div class="badge b-red">P1–P4</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Severity</th><th>Definition</th><th>Response</th><th>Handover</th></tr>
-              <tr><td style="color:var(--red)">P1 — Critical</td><td>Full outage, production down, data loss risk</td><td>Immediate — all hands</td><td>Verbal mandatory</td></tr>
-              <tr><td style="color:var(--gold)">P2 — High</td><td>Significant degradation, redundancy lost</td><td>&lt;30 min response</td><td>Verbal mandatory</td></tr>
-              <tr><td style="color:var(--cyan)">P3 — Medium</td><td>Partial impact, workaround available</td><td>&lt;4 hours</td><td>Written OK</td></tr>
-              <tr><td style="color:var(--green)">P4 — Low</td><td>Minor issue, no immediate impact</td><td>Next business day</td><td>Written OK</td></tr>
-            </table>
-            <div class="ibar">ℹ Severity definitions vary by site. These are industry-standard baselines — follow your site-specific SLA matrix if one exists.</div>
-          </div>
-        </div>
-
-        <!-- ESD CHECKLIST -->
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">ESD Pre-Work Checklist</div><div class="card-right"><div class="badge b-gold">ESD · SAFETY</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <p>Run this before touching any sensitive hardware — GPUs, DIMMs, NICs, NVMe, transceivers, PCIe cards. ESD damage below 3,000V is imperceptible but can degrade a $30k GPU that fails under load weeks later.</p>
-
-            <div class="sh" style="font-size: var(--fs-caption);margin-top:14px;margin-bottom:8px">Before You Touch Anything</div>
-            <table class="dt">
-              <tr><th>✓</th><th>Check</th><th>Detail</th></tr>
-              <tr><td style="color:var(--green)">□</td><td>Wrist strap on skin</td><td>Must contact bare skin — not over a sleeve</td></tr>
-              <tr><td style="color:var(--green)">□</td><td>Wrist strap continuity tested</td><td>Use tester on strap before starting — straps fail silently</td></tr>
-              <tr><td style="color:var(--green)">□</td><td>Bonded to rack or ESD mat</td><td>Clip to unpainted metal on rack — not a painted surface</td></tr>
-              <tr><td style="color:var(--green)">□</td><td>ESD mat deployed (if available)</td><td>Required for bench work — optional in-rack if strapped</td></tr>
-              <tr><td style="color:var(--green)">□</td><td>Component still in ESD bag</td><td>Do not open bag until ready to install</td></tr>
-              <tr><td style="color:var(--green)">□</td><td>Clear ESD-safe work surface</td><td>No cardboard, no regular plastic — both generate static</td></tr>
-            </table>
-
-            <div class="sh" style="font-size: var(--fs-caption);margin-top:14px;margin-bottom:8px">Component Risk Levels</div>
-            <table class="dt">
-              <tr><th>Component</th><th>Risk</th><th>Notes</th></tr>
-              <tr><td>GPU (H100 / H200 / GB300)</td><td style="color:var(--red)">EXTREME</td><td>Always strapped, always on ESD mat</td></tr>
-              <tr><td>DIMM / Memory</td><td style="color:var(--red)">EXTREME</td><td>Handle by edges only, never touch PCB</td></tr>
-              <tr><td>NVMe / SSD</td><td style="color:var(--red)">HIGH</td><td>Hold by edges, avoid connector pins</td></tr>
-              <tr><td>NIC / ConnectX</td><td style="color:var(--red)">HIGH</td><td>Keep in bag until moment of install</td></tr>
-              <tr><td>Transceiver / Optic</td><td style="color:var(--gold)">MEDIUM</td><td>Avoid touching the optical port pins</td></tr>
-              <tr><td>PSU</td><td style="color:var(--cyan)">LOW</td><td>Still strap — but less sensitive</td></tr>
-              <tr><td>Cable / DAC</td><td style="color:var(--green)">MINIMAL</td><td>Standard handling OK</td></tr>
-            </table>
-
-            <div class="sh" style="font-size: var(--fs-caption);margin-top:14px;margin-bottom:8px">What NOT To Do</div>
-            <table class="dt">
-              <tr><th>Never</th><th>Why</th></tr>
-              <tr><td>Set bare PCB on cardboard</td><td>Cardboard tribocharges — generates kV of static</td></tr>
-              <tr><td>Wear strap over clothing</td><td>No skin contact = no ground path = useless</td></tr>
-              <tr><td>Bond to painted rack surface</td><td>Paint is an insulator — no continuity</td></tr>
-              <tr><td>Slide components on surfaces</td><td>Friction generates charge — lift, don't drag</td></tr>
-              <tr><td>Work in low humidity (&lt;30%)</td><td>Dry air = high static risk — dry winter months especially</td></tr>
-              <tr><td>Remove from bag near powered gear</td><td>Induced charge from nearby PSUs</td></tr>
-            </table>
-
-            <div class="sh" style="font-size: var(--fs-caption);margin-top:14px;margin-bottom:8px">If You Feel or See a Discharge</div>
-            <table class="dt">
-              <tr><th>Step</th><th>Action</th></tr>
-              <tr><td>1</td><td>Stop work immediately — do not proceed</td></tr>
-              <tr><td>2</td><td>Document: component, time, what was touched</td></tr>
-              <tr><td>3</td><td>Tag the component — do not install</td></tr>
-              <tr><td>4</td><td>Report to lead — component may need inspection or RMA</td></tr>
-              <tr><td>5</td><td>Check your strap — replace if continuity test fails</td></tr>
-            </table>
-
-            <div class="wbar" style="margin-top:10px"><span class="ico ico-md ico-warning"></span> ESD damage is cumulative and latent. A component that survives an ESD event may degrade over weeks and fail under thermal or electrical stress. When in doubt — tag it, don't install it.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- RACK MAP SUB-TAB -->
-      <div class="pwr-sub" id="pw-rm" style="display:none">
-
-        <div class="rm-toolbar">
-          <div class="rm-toolbar-actions">
-            <button class="rm-add-btn pt-btn pt-btn-secondary" onclick="openRmSheet()">+ RACK</button>
-            <button class="rm-add-btn pt-btn pt-btn-ghost" onclick="phantomRackShowHistory(currentRackId, (loadRacks().find(r=>r.id===currentRackId)||{}).name||'Rack')" style="font-size: var(--fs-caption);padding:6px 10px">HISTORY</button>
-          </div>
-          <div id="rm-active-pill-mount-legacy"></div>
-          <div class="rm-search-row">
-            <div class="rack-viewer-controls">
-              <form class="rack-viewer-form" onsubmit="event.preventDefault(); var v=document.getElementById('rm-search-input').value.trim(); if(v) rmSearch_request(v); return false;">
-                <div class="rack-viewer-input-wrap">
-                  <input class="rack-viewer-input"
-                         id="rm-search-input"
-                         type="text"
-                         autocomplete="off"
-                         autocorrect="off"
-                         autocapitalize="characters"
-                         spellcheck="false"
-                         placeholder="Scan or type rack ID"
-                         aria-label="Rack search">
-                  <button class="rack-viewer-clear" type="button" aria-label="Clear" onclick="rmSearch_clear()">✕</button>
-                </div>
-              </form>
-            </div>
-            <div id="rm-last-viewed-mount"></div>
-          </div>
-        </div>
-
-        <div id="rm-elevation-area"></div>
-
-        <div id="rm-empty" class="rm-empty" style="display:none; padding:24px 20px">
-          <div id="rm-empty-svg-slot"></div>
-          <button class="pt-btn pt-btn-secondary" onclick="openRmSheet()" style="margin-top:20px;width:auto;padding:12px 28px">＋ &nbsp;Add First Rack</button>
-        </div>
-
-        <!-- Color legend -->
-        <div class="rm-legend" id="rm-legend" style="display:none">
-          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#30d158"></div>Server</div>
-          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#a855f7"></div>GPU</div>
-          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#5cf2ff"></div>Switch</div>
-          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#ffd60a"></div>PDU</div>
-          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#00bcd4"></div>Storage</div>
-          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#a3a300"></div>Patch</div>
-          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#ff2d55"></div>UPS</div>
-          <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#486070"></div>Other</div>
-        </div>
-
-      </div>
-
-      <!-- BLAST RADIUS SUB-TAB — Spatial awareness, A/B feed map -->
-      <div class="pwr-sub" id="pw-blast" style="display:none">
-        <div class="br-wrap" id="br-wrap">
-          <!-- Rendered by renderBlastRadius() -->
-        </div>
-      </div>
-
-      <!-- THERMAL SUB-TAB -->
-      <div class="pwr-sub" id="pw-thermal" style="display:none">
-        <div class="sh">ASHRAE Thermal Envelope</div>
-
-        <!-- Class Overview -->
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr">
-            <div class="card-title">ASHRAE Class A1 / A2 — Data Center Standard</div>
-            <div class="card-right"><div class="badge b-cyan">ASHRAE TC 9.9</div><div class="chev">▶</div></div><div class="card-stat"><span><b>15–32°C</b> <i>A1 INLET (59–89.6°F)</i></span><span><b>10–35°C</b> <i>A2 INLET (50–95°F)</i></span><span><b>80% RH</b> <i>MAX, NON-CONDENSING</i></span></div>
-          </div>
-          <div class="card-body">
-            <p>ASHRAE TC 9.9 defines thermal envelope classes for IT equipment. Most modern data center hardware is rated Class A2 or higher. Inlet temperature is measured at the front face of the equipment, not ambient room temperature.</p>
-            <div class="sh">Class Definitions</div>
-            <table class="dt">
-              <tr><th>Class</th><th>Inlet Temp Range</th><th>Max Humidity</th><th>Typical Use</th></tr>
-              <tr><td style="color:var(--cyan)">A1</td><td>15–32°C (59–89.6°F)</td><td>80% RH non-condensing</td><td>Controlled enterprise DC</td></tr>
-              <tr><td style="color:var(--cyan)">A2</td><td>10–35°C (50–95°F)</td><td>80% RH non-condensing</td><td>Most modern GPU servers</td></tr>
-              <tr><td style="color:var(--gold)">A3</td><td>5–40°C (41–104°F)</td><td>85% RH non-condensing</td><td>Higher-efficiency facilities</td></tr>
-              <tr><td style="color:var(--gold)">A4</td><td>5–45°C (41–113°F)</td><td>90% RH non-condensing</td><td>Aggressive efficiency targets</td></tr>
-            </table>
-            <div class="abar"><span class="ico ico-md ico-alert-red"></span> ASHRAE class is a rating of the equipment, not the room. A server rated A2 can tolerate up to 35°C inlet — but operating at the ceiling reduces component lifespan and increases failure probability. Target inlet temp should be well below the class maximum.</div>
-          </div>
-        </div>
-
-        <!-- GPU Platform Thermal -->
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr">
-            <div class="card-title">GPU Platform Thermal Limits</div>
-            <div class="card-right"><div class="badge b-red">CRITICAL</div><div class="chev">▶</div></div>
-          </div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Platform</th><th>Cooling</th><th>Max Inlet</th><th>GPU Junction Max</th><th>Throttle Onset</th></tr>
-              <tr><td style="color:var(--cyan)">H100 SXM5</td><td>Air</td><td>30°C</td><td>83°C</td><td>~80°C junction</td></tr>
-              <tr><td style="color:var(--cyan)">H200 SXM5</td><td>Air</td><td>30°C</td><td>83°C</td><td>~80°C junction</td></tr>
-              <tr><td style="color:var(--gold)">GB200 NVL36</td><td>DLC required</td><td>25°C coolant supply</td><td>—</td><td>Coolant flow loss = immediate throttle</td></tr>
-              <tr><td style="color:var(--gold)">GB300 NVL72</td><td>DLC required</td><td>22–25°C coolant supply</td><td>—</td><td>Coolant flow loss = immediate throttle</td></tr>
-              <tr><td style="color:var(--slate)">A100 SXM4</td><td>Air</td><td>30°C</td><td>83°C</td><td>~80°C junction</td></tr>
-              <tr><td style="color:var(--slate)">L40S</td><td>Air</td><td>35°C</td><td>89°C</td><td>~85°C junction</td></tr>
-            </table>
-            <div class="wbar"><span class="ico ico-md ico-warning"></span> GPU junction temperature is not inlet temperature. A rack running at 28°C inlet can still have GPU junctions at 82°C under full load. Always check GPU temp via nvidia-smi or XID logs, not just room sensors.</div>
-            <div class="abar"><span class="ico ico-md ico-alert-red"></span> GB200 and GB300 NVL systems use Direct Liquid Cooling. Loss of coolant flow at full load will cause immediate thermal throttling and potential XID thermal events within minutes. Never power up DLC systems without confirming coolant flow and supply temperature.</div>
-          </div>
-        </div>
-
-        <!-- Thermal Action Thresholds -->
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr">
-            <div class="card-title">Thermal Alert — Action Thresholds</div>
-            <div class="card-right"><div class="badge b-gold">FIELD GUIDE</div><div class="chev">▶</div></div><div class="card-stat"><span><b>≥35°C</b> <i>INLET CRITICAL</i></span><span><b>≥83°C</b> <i>JUNCTION THROTTLE RISK</i></span><span><b>31–34°C</b> <i>INLET WARNING</i></span></div>
-          </div>
-          <div class="card-body">
-            <div class="sh">Inlet Temperature Actions</div>
-            <table class="dt">
-              <tr><th>Inlet Reading</th><th>Status</th><th>Action</th></tr>
-              <tr><td style="color:var(--green)">≤27°C</td><td style="color:var(--green)">Normal</td><td>No action required</td></tr>
-              <tr><td style="color:var(--cyan)">28–30°C</td><td style="color:var(--cyan)">Watch</td><td>Monitor. Check CRAC/CRAH operation. Verify no hot aisle/cold aisle mixing.</td></tr>
-              <tr><td style="color:var(--gold)">31–34°C</td><td style="color:var(--gold)">Warning</td><td>Notify facilities. Check blanking panels. Reduce workload if possible. Escalate if sustained.</td></tr>
-              <tr><td style="color:var(--red)">≥35°C</td><td style="color:var(--red)">Critical</td><td>Immediate facilities escalation. GPU throttling likely. Risk of thermal shutdown. Document and ticket.</td></tr>
-            </table>
-            <div class="sh">GPU Junction Temperature Actions</div>
-            <table class="dt">
-              <tr><th>Junction Temp</th><th>Status</th><th>Action</th></tr>
-              <tr><td style="color:var(--green)">≤75°C</td><td style="color:var(--green)">Normal</td><td>No action</td></tr>
-              <tr><td style="color:var(--gold)">76–82°C</td><td style="color:var(--gold)">Elevated</td><td>Monitor. Check inlet temp and airflow. Verify no blocked cable paths in rear exhaust.</td></tr>
-              <tr><td style="color:var(--red)">≥83°C</td><td style="color:var(--red)">Throttle risk</td><td>Check cooling immediately. Review nvidia-smi for throttle state. Notify on-call if sustained.</td></tr>
-            </table>
-          </div>
-        </div>
-
-        <!-- DLC / CDU Field Reference -->
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr">
-            <div class="card-title">DLC / CDU Thermal Field Reference</div>
-            <div class="card-right"><div class="badge b-cyan">GB200 · GB300</div><div class="chev">▶</div></div><div class="card-stat"><span><b>18–25°C</b> <i>COOLANT SUPPLY</i></span><span><b>Supply + 5–12°C</b> <i>COOLANT RETURN</i></span></div>
-          </div>
-          <div class="card-body">
-            <p>Direct Liquid Cooling (DLC) systems use a Coolant Distribution Unit (CDU) to supply chilled water or coolant to server cold plates. For GB200 and GB300 NVL systems this is not optional — it is required for operation.</p>
-            <div class="sh">Key Parameters to Monitor</div>
-            <table class="dt">
-              <tr><th>Parameter</th><th>Normal Range</th><th>Action if Outside</th></tr>
-              <tr><td>Coolant supply temp</td><td>18–25°C</td><td>Notify facilities. Warm supply = reduced cooling capacity.</td></tr>
-              <tr><td>Coolant return temp</td><td>Supply + 5–12°C</td><td>High delta-T may indicate flow restriction.</td></tr>
-              <tr><td>Flow rate</td><td>Per CDU spec</td><td>Low flow = immediate throttle risk. Check CDU pumps.</td></tr>
-              <tr><td>Coolant pressure</td><td>Per CDU spec</td><td>Pressure drop may indicate leak. Inspect manifolds.</td></tr>
-            </table>
-            <div class="sh">DLC Fault Response</div>
-            <div class="step crit"><div class="step-num">STEP 01</div><div class="step-action">Confirm coolant flow at CDU</div><div class="step-detail">Check CDU status panel or BMS. Verify pump operation and flow rate.</div></div>
-            <div class="step crit"><div class="step-num">STEP 02</div><div class="step-action">Check for leaks at manifolds</div><div class="step-detail">Inspect quick-disconnect fittings at server manifold. Any moisture = immediate escalation to facilities.</div></div>
-            <div class="step ok"><div class="step-num">STEP 03</div><div class="step-action">Check supply temperature</div><div class="step-detail">Verify coolant supply temp is within 18–25°C range. Warm supply reduces effective cooling capacity.</div></div>
-            <div class="step ok"><div class="step-num">STEP 04</div><div class="step-action">Monitor GPU junction via nvidia-smi</div><div class="step-detail">nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader — run per node to confirm thermal recovery.</div></div>
-            <div class="abar"><span class="ico ico-md ico-alert-red"></span> Any coolant leak near energized equipment = immediate power-down and facilities emergency response. Do not attempt to clean or contain a coolant leak without confirming power is isolated. Coolant conducts electricity.</div>
-          </div>
-        </div>
-
-        <!-- Hot/Cold Aisle -->
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr">
-            <div class="card-title">Hot Aisle / Cold Aisle — Field Checks</div>
-            <div class="card-right"><div class="badge b-gold">AIRFLOW</div><div class="chev">▶</div></div>
-          </div>
-          <div class="card-body">
-            <p>Hot aisle / cold aisle containment separates cool supply air from hot exhaust air. Breakdowns in containment directly raise inlet temperatures even when CRAC/CRAH units are operating normally.</p>
-            <div class="sh">Common Causes of Thermal Elevation</div>
-            <div class="step ok"><div class="step-num">CHECK 01</div><div class="step-action">Missing blanking panels</div><div class="step-detail">Any empty rack U without a blanking panel allows hot exhaust to recirculate into the cold aisle. One missing 1U blank can raise local inlet temp by 2–4°C.</div></div>
-            <div class="step ok"><div class="step-num">CHECK 02</div><div class="step-action">Cable management blocking rear exhaust</div><div class="step-detail">Dense cable bundles routed across the rear of servers restrict hot air exhaust. Check that no cables block more than 20% of rear airflow area.</div></div>
-            <div class="step ok"><div class="step-num">CHECK 03</div><div class="step-action">Containment curtain gaps</div><div class="step-detail">Check aisle containment curtains and doors. Gaps allow hot exhaust to bypass containment and enter cold aisle supply.</div></div>
-            <div class="step ok"><div class="step-num">CHECK 04</div><div class="step-action">Under-floor grille placement (raised floor)</div><div class="step-detail">Verify perforated floor tiles are positioned in cold aisles only and not partially under hot aisle equipment.</div></div>
-            <div class="ibar">ℹ Always measure inlet temperature at the front face of the equipment, not at the CRAC unit or room sensor. Room ambient can read 22°C while server inlet is 31°C due to containment failures.</div>
-          </div>
-        </div>
-
-      </div><!-- end pw-thermal -->
-
-    </div><!-- end pg-power -->
-
 
     <!-- PAGE: OPS -->
     <div class="page" id="pg-sop">
@@ -17609,7 +17620,12 @@ const INDEX = [
 const STAB_GROUPS = {
   'fiber-sub': ['fs-fiber','fs-form','fs-mpo','fs-dom','fs-optic','fs-cable','fs-hardware','fs-triage'],
   'cli-sub':   ['cs-cert','cs-ib','cs-oob','cs-console','cs-parser'],
-  'pwr-sub':   ['pw-power','pw-hw','pw-rb','pw-rm','pw-thermal','pw-blast'],
+  // ⛔ 'pw-rb' IS DELIBERATELY ABSENT (v1.14.550, Stage 6.5). redesign_homeKnow used to strip it
+  // from this array at runtime, and the reason is not cosmetic: the Runbook panel lives in
+  // Reference→Know, so while it was still a member of pwr-sub, switching ANY Hardware subtab
+  // stripped its stab-active and blanked Know. Re-adding it re-creates that bug.
+  // 'pw-compass' is still appended at runtime by redesign_homeCompass — Stage 6.6 folds it in here.
+  'pwr-sub':   ['pw-power','pw-hw','pw-rm','pw-thermal','pw-blast'],
   // Redesign Reference page subtabs. In redesign mode only, pw-rb (Runbook/
   // ops-knowledge) is re-parented into #rf-know at boot by redesign_homeKnow();
   // pw-rb stays a pwr-sub member so FIELD mode (flag off) is untouched.
@@ -23080,24 +23096,17 @@ window.wk_renderJob = wk_renderJob;
 // rebuild. Runs in BOTH modes so the content has ONE home that search + the old
 // Runbook button both reach. pw-rb is held permanently stab-active; #rf-know gates
 // its visibility via the ref-sub group.
-function redesign_homeKnow() {
-  if (!redesign_isOn()) return;  // FIELD mode: leave pw-rb in pg-power, untouched
-  var rb = document.getElementById('pw-rb');
-  var dest = document.getElementById('rf-know');
-  if (rb && dest && rb.parentNode !== dest) {
-    dest.appendChild(rb);
-    rb.style.display = '';
-    rb.classList.add('stab-active');
-  }
-  // pw-rb now lives in Reference→Know, not Power. Drop it from the pwr-sub group
-  // so Hardware (re-homed pg-power) subtab switching can't strip its stab-active
-  // and hide the Know panel. Idempotent; redesign-mode only (homeKnow early-returns
-  // in field mode, so the field pwr-sub keeps pw-rb intact).
-  if (STAB_GROUPS['pwr-sub'].indexOf('pw-rb') !== -1) {
-    STAB_GROUPS['pwr-sub'] = STAB_GROUPS['pwr-sub'].filter(function(id){ return id !== 'pw-rb'; });
-  }
-}
-document.addEventListener('DOMContentLoaded', redesign_homeKnow);
+// ⭐ v1.14.550 (LEGACY-RETIRE Stage 6.5) — redesign_homeKnow IS DELETED, and with homeHardware it
+// makes the fifth and sixth of the eight re-homes. pw-rb is authored in #rf-know directly.
+// ⛔ IT DID THREE THINGS, NOT ONE, and only the first was a DOM move:
+//   1. moved pw-rb into #rf-know                — now the markup's own position
+//   2. cleared its inline display:none and added stab-active — baked into the authored tag
+//   3. REMOVED 'pw-rb' FROM STAB_GROUPS['pwr-sub'] — now removed from the literal at its source
+// Effect 3 is the one with teeth and the one a markup diff would never show: while pw-rb was still
+// listed in pwr-sub, switching any Hardware subtab stripped its stab-active and blanked the Know
+// panel. That is why the two functions were ORDER-DEPENDENT as runtime moves — homeKnow had to take
+// pw-rb out before homeHardware drained what remained. Authored in source, the ordering problem
+// stops existing rather than being preserved.
 
 // ⭐ v1.14.549 (LEGACY-RETIRE Stage 6.4) — redesign_homeOptics IS DELETED, the fourth of eight.
 // It drained every child of pg-fiber into #rf-optics; those panels are now authored there and
@@ -23144,25 +23153,24 @@ document.addEventListener('DOMContentLoaded', redesign_homeScan);
 // Runs AFTER homeKnow (registered earlier), so pw-rb is already moved to Know and
 // dropped from pwr-sub. Hides the now-orphaned Runbook stab + the Rack Map stab (R-3b: Rack Map's canonical door is the Work RACK MAP card, rd_openOpsTool('rackmap'); the ref-strip pill was a duplicate). v1.14.177: also hides the Blast Radius stab — Blast Radius is re-homed to the Deploy detail (deployment-scoped, Design Law 2) via a settable renderBlastRadius target + OPS_TABS.blast; its dead rd_openPower door is orphaned (R1 delete), then defaults
 // the inner Power subtab. Flag-gated → FIELD mode leaves pg-power whole.
-function redesign_homeHardware() {
+// v1.14.550 (LEGACY-RETIRE Stage 6.5)  -  redesign_homeHardware IS DELETED. pg-power's strip and
+// its remaining five panels are authored in #rf-hw directly; the Runbook panel went to #rf-know.
+// Its stab-hiding pass is baked into the markup as inline display:none on three stabs  -  Runbook
+// (panel moved to Know) plus Rack Map and Blast Radius (R-3b: canonical doors are elsewhere). The
+// regex that did it read each stab's onclick attribute, so NOTHING in the markup recorded the
+// result; it had to be read out of the function. Remove those inline styles and three dead tabs
+// come back.
+// The initSubtab binding stays, for the fourth ship running  -  the DOM move is gone, the binding
+// is not. It defaults the Power panel and wires pwr-sub to the strip at its authored location.
+// NOTE: redesign_homeCompass (Stage 6.6, still live) appends into '#rf-hw .subtab-strip'. That strip
+// now exists in source from first paint instead of arriving mid-boot, so its old ordering
+// dependency on this function is satisfied unconditionally.
+document.addEventListener('DOMContentLoaded', function () {
   if (!redesign_isOn()) return;
-  var src = document.getElementById('pg-power');
-  var dest = document.getElementById('rf-hw');
-  if (src && dest && src.firstChild) {
-    dest.innerHTML = '';
-    while (src.firstChild) dest.appendChild(src.firstChild);
-    var strip = dest.querySelector('.subtab-strip');
-    if (strip) {
-      strip.querySelectorAll('.stab').forEach(function(b) {
-        if (/pw-rb|pw-rm|pw-blast/.test(b.getAttribute('onclick') || '')) b.style.display = 'none';  // v1.14.176/.177 R-3b: hide Rack Map + Blast Radius pills (Rack Map = Work card; Blast Radius = Deploy detail)
-      });
-    }
-    if (typeof initSubtab === 'function') {
-      try { initSubtab('pwr-sub', 'pw-power', '#rf-hw .subtab-strip .stab'); } catch (_) {}
-    }
+  if (typeof initSubtab === 'function') {
+    try { initSubtab('pwr-sub', 'pw-power', '#rf-hw .subtab-strip .stab'); } catch (_) {}
   }
-}
-document.addEventListener('DOMContentLoaded', redesign_homeHardware);
+});
 
 // ── PLATFORMS (v1.14.175 · Master-Reorg R-3b) ─────────────────────────────────────
 // Collapses the redundant HARDWARE + POWER Crash-Cart cards into ONE platform-first
@@ -24528,7 +24536,9 @@ function showPage(id, tnEl, opsTab) {
   // v1.14.547: the 'cli' line is gone with pg-cli — its selector '#pg-cli .subtab-strip .stab'
   // matched nothing once the page was deleted, so it bound nothing. The redesign's binding lives
   // at DOMContentLoaded against '#rf-cli .subtab-strip .stab'.
-  if (id === 'power') initSubtab('pwr-sub',   'pw-power',  '#pg-power .subtab-strip .stab');
+  // v1.14.550: the 'power' line is gone with pg-power, completing the set with 'cli' (.547)
+  // and 'fiber' (.549)  -  its '#pg-power .subtab-strip .stab' selector matched nothing once the page
+  // was deleted. All three groups now bind against their authored #rf-* locations at DOMContentLoaded.
   if (id === 'sop')   { _navInternalCall = true; showOpsTab(opsTab || 'deploy'); _navInternalCall = false; }
   // v1.14.545: the 'twin' legacy branch is gone with pg-twin. Calling issue_pageOpen() here would
   // now render into #issue-page inside #wk-issues, a redesign container the legacy house never
@@ -48975,7 +48985,7 @@ const INTENT_MAP = [
   { keywords: ['oob','idrac','ilo','ipmi','bmc','out of band'], action: () => { if (redesign_isOn()) { showRefTab('rf-cli'); var b = document.querySelector('#rf-cli .subtab-strip .stab[onclick*="cs-oob"]'); if (b) showStab(b, 'cli-sub', 'cs-oob'); return; } showPage('cli', getTnItem('cli')); setTimeout(() => showStab(document.querySelector('#pg-cli .stab:nth-child(2)'), 'cli-sub', 'cs-oob'), 50); } },
   { keywords: ['console','baud','serial','rollover','putty','minicom'], action: () => { if (redesign_isOn()) { showRefTab('rf-cli'); var b = document.querySelector('#rf-cli .subtab-strip .stab[onclick*="cs-console"]'); if (b) showStab(b, 'cli-sub', 'cs-console'); return; } showPage('cli', getTnItem('cli')); setTimeout(() => showStab(document.querySelector('#pg-cli .stab:nth-child(3)'), 'cli-sub', 'cs-console'), 50); } },
   { keywords: ['power','pdu','derate','phase','cord','c19','c20','l6-30','iec 60309','gb300 power','h100 power'], action: () => { if (redesign_isOn()) { showRefTab('rf-hw'); return; } showPage('power', getTnItem('power')); } },
-  { keywords: ['led','fault','xid','ecc','nvme','drive','psu','dimm','hardware'], action: () => { if (redesign_isOn()) { showRefTab('rf-hw'); return; } showPage('power', getTnItem('power')); setTimeout(() => { const s = document.querySelector('#pg-power .subtab-strip .stab:nth-child(2)'); if(s) s.click(); }, 50); } },
+  { keywords: ['led','fault','xid','ecc','nvme','drive','psu','dimm','hardware'], action: () => { if (redesign_isOn()) { showRefTab('rf-hw'); return; } /* v1.14.550: legacy path gone with pg-power  -  the selector matched nothing and the click never landed. */ if (typeof phantomToast === 'function') phantomToast('Hardware reference is not available in the legacy UI  -  return to the new UI to use it', 'warn'); } },
 ];
 
 // ── Search input behavior — debounce + immediate-commit (Cut 4a) ──

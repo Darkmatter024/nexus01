@@ -126,20 +126,34 @@ test.describe('the borrowed organs', () => {
     await phantom.boot({ query: '?legacy=1' });
     expect(await phantom.isRedesign(), '?legacy=1 must not apply body.rd').toBe(false);
     const r = await page.evaluate(() => ({
-      rbInPower: !!document.querySelector('#pg-power #pw-rb'),
-      knowEmpty: (document.getElementById('rf-know') || { childElementCount: 0 }).childElementCount === 0,
-      twinGone: !document.getElementById('pg-twin'),
+      // Shells of organs already DECOUPLED (6.1–6.5) must be gone in both houses.
+      goneShells: ['pg-twin', 'pg-cli', 'pg-fiber', 'pg-power', 'hw-matrix-sheet']
+        .filter((id) => !!document.getElementById(id)),
+      // Organs STILL borrowed at runtime must remain in their legacy shells, un-moved.
+      scanInShell: !!(document.getElementById('pg-scan') || { childElementCount: 0 }).childElementCount,
+      wkScanEmpty: (document.getElementById('wk-scan') || { childElementCount: 0 }).childElementCount === 0,
+      compassInShell: !!(document.getElementById('pg-compass') || { childElementCount: 0 }).childElementCount,
     }));
-    expect(r.rbInPower, 'the Runbook left pg-power under legacy — a re-home ran in the wrong house').toBe(true);
-    expect(r.knowEmpty, 'the redesign scaffold was filled under legacy — a re-home is no longer house-gated').toBe(true);
-    // ⛔ RE-POINTED v1.14.545 by Stage 6.1, which is the rule this campaign runs on: a legacy
-    // assertion is rewritten in the ship that removes what it tests. This used to assert
-    // `#pg-twin #issue-page` — that the Issue Log was still in its legacy shell. 6.1 decoupled that
-    // organ, so pg-twin is deleted and the legacy house no longer has the Issue Log at all.
-    // ⭐ That is not a regression, it is what decoupling COSTS: an organ is a single node, so
-    // moving it out of the borrowed shell necessarily removes it from one house. Expect to rewrite
-    // this block seven more times, once per organ, as each is decoupled.
-    expect(r.twinGone, 'pg-twin is back — Stage 6.1 deleted it').toBe(true);
+
+    // ⛔ RE-POINTED AGAIN by Stage 6.5, and this block will change once more per organ — that is the
+    // rule working, not churn. It used to assert `#pg-power #pw-rb` (the Runbook still in its legacy
+    // shell) and that `#rf-know` was EMPTY under legacy. Both were true only while the organ was
+    // BORROWED. Once decoupled, the panel is authored in #rf-know in the markup, so it is present in
+    // BOTH houses — legacy simply never shows pg-ref. A populated redesign scaffold under ?legacy=1
+    // is now the CORRECT state, and asserting emptiness would pin the old borrowing.
+    expect(r.goneShells, `decoupled shells are back: ${r.goneShells.join(', ')}`).toEqual([]);
+
+    // The house gate still matters for what has NOT been decoupled yet.
+    expect(r.scanInShell, 'pg-scan was drained under legacy — redesign_homeScan ran in the wrong house').toBe(true);
+    expect(r.wkScanEmpty, '#wk-scan was filled under legacy — redesign_homeScan is no longer house-gated').toBe(true);
+    expect(r.compassInShell, 'pg-compass was drained under legacy — redesign_homeCompass ran in the wrong house').toBe(true);
+    // ⭐ WHY THIS BLOCK KEEPS CHANGING, and why that is the rule working rather than churn: a
+    // legacy assertion is rewritten in the ship that removes what it tests. 6.1 first re-pointed it
+    // (pg-twin), 6.5 again (pg-power). Each decouple moves one organ from the "still borrowed"
+    // list to the "shell must be gone" list above. Two organs remain — pg-scan and pg-compass —
+    // so expect exactly two more rewrites.
+    // ⛔ And the cost this pins: an organ is a SINGLE node, so decoupling it necessarily removes it
+    // from the legacy house. That is not a regression, it is what Stage 6 buys.
   });
 
 });
