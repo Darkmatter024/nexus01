@@ -72,6 +72,34 @@ inside this wrapper, not the wrapper — remains a legitimate target and rides w
 *hidden in one house*, never that it is *disposable*. Every remaining target in §2 was found the
 same way and must be opened and read before it is cut, not counted.
 
+## 2b · ⛔ TWO MORE STRIKES — and §2 is now three-for-ten wrong
+
+**Found while building Stage 3.4, 2026-08-30.** Both were listed in §2 on the same
+`body.rd … display:none` evidence, and both are wrong for different reasons.
+
+**`.search-wrap` — STRUCK. It is LIVE IN THE REDESIGN.** `:10064` hides it under `body.rd`, and the
+very next line, `:10065`, gives it back: `body.rd.mode-ref .search-wrap{display:flex}` — **the search
+bar on Tools**. Deleting it would have removed redesign search. ⭐ The grep did not merely fail to
+prove disposability here; it read the *first* of two rules and stopped.
+
+**`#phantom-tab-pill` — HELD, owner decision needed.** It is the multi-tab warning chip of the Clone
+War module, which the census classes **LIVE**. `tab_pillTap()` says *"open in another tab — close it
+to avoid data loss."* ⛔ **It is the ONLY in-app multi-tab warning that exists.** `showBanner()`
+renders exclusively into `#boot .boot-items` and returns early otherwise, with the comment *"In-app
+(boot dismissed) we intentionally show no floating popup."*
+⚠ **Which surfaces a real gap, independent of this campaign:** the pill is `display:none` under
+`body.rd`, so **the redesign has had no in-app multi-tab warning at all** — only a boot-screen row a
+user sees before they open the second tab. Deleting the pill would remove the last one anywhere.
+**Not a Stage 3 call. Report it, then let John rule on whether the redesign needs the warning first.**
+
+⭐ **THE RULE THIS ESTABLISHES.** Three of the ten §2 entries were wrong — `#hdr-overflow-wrap`,
+`.search-wrap`, `#phantom-tab-pill` — and each was wrong in a different way: the rule hid a door, the
+rule was reversed one line later, the rule hid the only instance of a live warning. **A
+`display:none` under `body.rd` is the START of an investigation, never the end of one.** Every
+target must be opened, its JS traced, and its neighbours checked for shared symbols — `.540` and
+`.542` each found one (`stripeRack_logNote`, `omni_getActiveDeployment`) sitting inside a
+legacy-only module.
+
 ## 3 · One freebie, already earned
 
 ⭐ `body.rd .reh-3d-mount { display:none }` is **an orphan rule**: `v1.14.531` deleted the 3D mount
