@@ -298,30 +298,27 @@ test.describe('house selection', () => {
     expect(await activePages(page)).toEqual(['command']);
   });
 
-  test('?legacy=1 boots the legacy house — no body.rd, no redesign nav', async ({ phantom, page }) => {
+  // ⛔ REWRITTEN v1.14.553 (LEGACY-RETIRE Stage 7a). These two pinned the rip-cord: that ?legacy=1
+  // booted a second house, and that the choice survived a reload. The switch is deleted, so both
+  // behaviours are gone BY DESIGN. What needs pinning now is the opposite, and it matters more:
+  // the URL is INERT. Fielded devices, bookmarks and saved home-screen shortcuts still carry
+  // ?legacy=1, and every one of them must land in the redesign rather than on an empty shell.
+  test('?legacy=1 is INERT — the redesign loads anyway', async ({ phantom, page }) => {
     await phantom.boot({ query: '?legacy=1' });
+    await needsBottomNav(page);   // the desktop shell swaps the bottom nav for a rail at >=1024
 
-    expect(await phantom.isRedesign(), '?legacy=1 must NOT apply body.rd').toBe(false);
-    await expect(page.locator('#rd-botnav')).toBeHidden();   // base rule :9564 is display:none
-    await expect(page.locator('.tab-nav')).toBeVisible();
+    expect(await phantom.isRedesign(), '?legacy=1 still suppresses body.rd — the switch is back').toBe(true);
+    await expect(page.locator('#rd-botnav')).toBeVisible();
+    expect(await activePages(page)).toEqual(['command']);
 
-    // redesign_initToggle returns before showMode (:18889), so no rd page is activated —
-    // the legacy default #pg-triage (:13577) stays the live surface.
-    expect(await activePages(page)).toEqual([]);
-    await expect(page.locator('#pg-triage')).toHaveClass(/active/);
-
-    // v1.14.466: The rip-cord now uses sessionStorage (not localStorage), so it persists across
-    // reloads within a session but clears when the tab closes — preventing the indefinite trap.
-    expect(await page.evaluate(() => sessionStorage.getItem('phantom_legacy'))).toBe('1');
+    // And it must not persist. redesign_isOn() clears the flag from BOTH storages on boot, so a
+    // device that pinned it under .465/.468 comes home by itself instead of needing a magic URL.
+    expect(await page.evaluate(() => sessionStorage.getItem('phantom_legacy')), 'the opt-out was persisted again').toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem('phantom_legacy')), 'a stale localStorage flag survived boot').toBeNull();
   });
 
-  test('?legacy=1 survives a reload without the query string', async ({ phantom, page }) => {
+  test('?legacy=1 does not stick across a reload', async ({ phantom, page }) => {
     await phantom.boot({ query: '?legacy=1' });
-    expect(await phantom.isRedesign()).toBe(false);
-
-    // v1.14.466: sessionStorage survives reloads within the same session.
-    // A page.reload() keeps the flag; a full page.goto() is a new session and clears it.
-    // This test verifies the reload case (same session, sessionStorage persists).
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.locator('#pe-tapcatch').click({ force: true });
     await page.waitForFunction(() => {
@@ -329,7 +326,7 @@ test.describe('house selection', () => {
       return !!app && app.classList.contains('visible');
     }, undefined, { timeout: 25_000 });
 
-    expect(await phantom.isRedesign(), 'phantom_legacy must keep the bare URL in the legacy house').toBe(false);
+    expect(await phantom.isRedesign(), 'a reload resurrected the legacy house').toBe(true);
   });
 });
 
@@ -391,18 +388,19 @@ test.describe('#rd-exit is hold-only', () => {
 // index, which routes by page id when redesign_isOn() is false.
 test.describe('showPage — a missing page never blanks the app', () => {
 
-  test('an unknown page id leaves exactly one page active, in the LEGACY house', async ({ phantom, page }) => {
-    await phantom.boot({ query: '?legacy=1' });
-    expect(await phantom.isRedesign(), '?legacy=1 must not apply body.rd').toBe(false);
+  test('an unknown page id leaves exactly one page active', async ({ phantom, page }) => {
+    await phantom.boot();
 
-    // ⛔ MUST navigate AWAY from the legacy home first. Landing on pg-triage is the FIX's
-    // behaviour, but it is also the boot default — asserting it from a standing start passes even
-    // when the fallback is deleted. Proven: a first cut of these tests stayed green with the
-    // fallback neutered.
-    await page.evaluate(() => showPage('sop'));
+    // ⛔ MUST navigate AWAY from the home page first. Landing on pg-cmd is the FIX's behaviour,
+    // but it is also the boot default — asserting it from a standing start passes even when the
+    // fallback is deleted. Proven: a first cut of these tests stayed green with it neutered.
+    // ⚠ v1.14.553: this used showPage('sop'), but 'sop' is a LEGACY id — the guard redirects it to
+    // showWorkTab and returns BEFORE the page swap, so it never moved the active page. 'work' is a
+    // redesign id and actually navigates.
+    await page.evaluate(() => showPage('work'));
     await expect.poll(async () => await page.evaluate(() => {
       const a = document.querySelector('.page.active'); return a ? a.id : null;
-    }), { message: 'never navigated to pg-sop', timeout: 8_000 }).toBe('pg-sop');
+    }), { message: 'never navigated to pg-work', timeout: 8_000 }).toBe('pg-work');
 
     // ⚠ _pageSwitch runs inside document.startViewTransition, so the swap is ASYNC. A synchronous
     // read after showPage() sees the PREVIOUS page still active. Poll, never read once.
@@ -411,25 +409,30 @@ test.describe('showPage — a missing page never blanks the app', () => {
       const a = document.querySelectorAll('.page.active');
       return a.length === 1 ? a[0].id : ('count=' + a.length);
     }), { message: 'showPage left the app blank (count=0) or on the wrong page', timeout: 8_000 })
-      .toBe('pg-triage');
+      .toBe('pg-cmd');
   });
 
   test('a page deleted by LEGACY-RETIRE routes somewhere real, not nowhere', async ({ phantom, page }) => {
-    await phantom.boot({ query: '?legacy=1' });
+    await phantom.boot();
     expect(await page.evaluate(() => !document.getElementById('pg-cli')),
       'pg-cli is back — v1.14.547 deleted it').toBe(true);
 
-    await page.evaluate(() => showPage('sop'));
+    await page.evaluate(() => showPage('work'));
     await expect.poll(async () => await page.evaluate(() => {
       const a = document.querySelector('.page.active'); return a ? a.id : null;
-    }), { message: 'never navigated to pg-sop', timeout: 8_000 }).toBe('pg-sop');
+    }), { message: 'never navigated to pg-work', timeout: 8_000 }).toBe('pg-work');
 
     // 'cli' had a real page until v1.14.547 decoupled it; legacy doors to it still exist.
     await page.evaluate(() => showPage('cli'));
     await expect.poll(async () => await page.evaluate(() => {
       const a = document.querySelectorAll('.page.active');
       return a.length === 1 ? a[0].id : ('count=' + a.length);
-    }), { message: 'a decoupled page id blanked the app', timeout: 8_000 }).toBe('pg-triage');
+    }), { message: 'a decoupled page id blanked the app', timeout: 8_000 }).toBe('pg-ref');
+    // ⭐ pg-ref, NOT the pg-cmd fallback, and that is the better outcome: showPage's guard
+    // recognises 'cli' as a legacy id with a redesign home and redirects to showRefTab('rf-cli')
+    // before the missing-page path is ever reached. The .548 fallback is the net under that, for
+    // ids with no home at all — which the sibling test above exercises. Both matter: this one
+    // proves a decoupled surface still ROUTES, that one proves an unknown id never blanks.
   });
 
   test('the redesign lands on its OWN home, never pg-triage', async ({ phantom, page }) => {

@@ -119,12 +119,14 @@ test.describe('the borrowed organs', () => {
     expect(dupes, `duplicated organ ids: ${dupes.join(', ')} — a shell was copied instead of drained`).toEqual([]);
   });
 
-  // ── LEGACY IS UNTOUCHED ─────────────────────────────────────────────────────
-  // Every re-home early-returns on !redesign_isOn(). Until Stage 7, ?legacy=1 must still find its
-  // organs where they were authored — this is what makes the rip-cord worth having during Stage 6.
-  test('under ?legacy=1 the organs stay in their original shells', async ({ phantom, page }) => {
+  // ── THERE IS ONLY ONE HOUSE NOW ─────────────────────────────────────────────
+  // ⛔ REWRITTEN v1.14.553 (Stage 7a). This asserted that ?legacy=1 booted a second house and left
+  // the organs in their legacy shells. The switch is deleted, so the URL is inert — it is kept here
+  // ON PURPOSE rather than dropped, because fielded devices and saved shortcuts still carry it and
+  // must land in a working redesign, with every decoupled organ present.
+  test('?legacy=1 is inert, and every organ is present anyway', async ({ phantom, page }) => {
     await phantom.boot({ query: '?legacy=1' });
-    expect(await phantom.isRedesign(), '?legacy=1 must not apply body.rd').toBe(false);
+    expect(await phantom.isRedesign(), '?legacy=1 suppressed body.rd — the switch is back').toBe(true);
     const r = await page.evaluate(() => ({
       // Shells of organs already DECOUPLED (6.1–6.5) must be gone in both houses.
       goneShells: ['pg-twin', 'pg-cli', 'pg-fiber', 'pg-power', 'pg-compass', 'pg-scan', 'hw-matrix-sheet']
@@ -139,15 +141,10 @@ test.describe('the borrowed organs', () => {
         + '/' + (typeof window.redesign_homeIssues) + '/' + (typeof window.redesign_homeHWRef),
     }));
 
-    // ⛔ RE-POINTED AGAIN by Stage 6.5, and this block will change once more per organ — that is the
-    // rule working, not churn. It used to assert `#pg-power #pw-rb` (the Runbook still in its legacy
-    // shell) and that `#rf-know` was EMPTY under legacy. Both were true only while the organ was
-    // BORROWED. Once decoupled, the panel is authored in #rf-know in the markup, so it is present in
-    // BOTH houses — legacy simply never shows pg-ref. A populated redesign scaffold under ?legacy=1
-    // is now the CORRECT state, and asserting emptiness would pin the old borrowing.
+    // This block was re-pointed once per organ from 6.1 to 6.7, each time predicted by the ship
+    // before it. Stage 7a is its last rewrite: with no second house there is nothing left to gate.
     expect(r.goneShells, `decoupled shells are back: ${r.goneShells.join(', ')}`).toEqual([]);
 
-    // The house gate still matters for what has NOT been decoupled yet.
     // ⭐ THE ASSERTION STAGE 6 EXISTED TO EARN. Not one re-home function survives, so the redesign
     // borrows nothing from the legacy house at boot. Stage 7 can delete redesign_isOn, phantom_legacy
     // and ?legacy=1 as a REMOVAL rather than a rebuild — which is only true while this stays green.

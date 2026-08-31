@@ -152,32 +152,14 @@ test.describe('the first-run gate', () => {
     expect(ghosts.oneDoor, 'the ONE import door vanished — that is the real regression').toBe('function');
   });
 
-  // ⚠ Contract 17's byte-identity guarantee was REVOKED by owner ruling 2026-08-29 (CLAUDE.md), so
-  // this test no longer pins it. The surviving value is not about legacy at all: firstRun_confirm
-  // is SHARED by both houses, and the assertions prove it neither throws on an absent element nor
-  // invents a siteLead it was never given — a redesign-side guarantee that happens to be provable
-  // through the legacy branch. Retire it with that branch, in the stage that removes it.
-  test('shared firstRun_confirm survives a house with no Site Lead field — no throw, nothing invented', async ({ phantom, page }) => {
-    await phantom.boot({ query: '?legacy=1' });
-    expect(await phantom.isRedesign()).toBe(false);
-    await firstRun(page);
-    await openGate(page);
-
-    // The legacy gate is untouched: same fields it always had, and no new one.
-    await expect(page.locator('#fr-operator')).toHaveCount(1);
-    await expect(page.locator('#fr-siteLead'), 'a redesign field leaked into the legacy gate').toHaveCount(0);
-
-    // firstRun_confirm is SHARED by both branches. It must not throw on the missing element, and
-    // must not invent a siteLead in a house that never offered the field.
-    await page.locator('#fr-operator').fill('Legacy Tech');
-    await page.locator('#fr-facilityId').fill('LEG-01');
-    await page.evaluate(() => firstRun_confirm());
-
-    const p = await profile(page);
-    expect(p.operator, 'the legacy gate stopped saving the operator').toBe('Legacy Tech');
-    expect(p.confirmedAt, 'the legacy gate stopped confirming').not.toBeNull();
-    expect(p.siteLead, 'the legacy house wrote a Site Lead it never asked for').toBe('');
-  });
+  // ⛔ RETIRED v1.14.553 (LEGACY-RETIRE Stage 7a), exactly as this block's own note instructed:
+  // "Retire it with that branch, in the stage that removes it." The test was
+  // 'shared firstRun_confirm survives a house with no Site Lead field'. It drove firstRun_confirm
+  // through ?legacy=1 to prove it neither threw on an absent #fr-siteLead nor invented a siteLead.
+  // ⭐ Nothing is lost. There is no second house to drive it through, and #fr-siteLead exists in NO
+  // house since v1.14.474 — so every run of firstRun_confirm is now the 'absent element' case. The
+  // guarantee it protected is pinned directly by 'confirming a device NEVER grants it site
+  // authority' (v1.14.538) above, which asserts the same outcome without needing a house to hide in.
 
   test('the v1.6.70 backfill is UNCHANGED — existing devices are never re-prompted', async ({ phantom, page }) => {
     await phantom.boot();

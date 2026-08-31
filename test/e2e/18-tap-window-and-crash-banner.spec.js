@@ -186,13 +186,16 @@ test.describe('the 340ms tap window and the crash banner', () => {
     expect(p1.real, `same-origin uncaught errors during a normal session: ${JSON.stringify(p1.real)}`).toEqual([]);
   });
 
-  test('ITEM 14, legacy half — ?legacy=1 walks clean with no uncaught errors', async ({ phantom, page }) => {
+  // ⛔ REWRITTEN v1.14.553 (Stage 7a): there is no legacy half any more. The value of this walk is
+  // now that the INERT ?legacy=1 URL — still on fielded devices, bookmarks and home-screen shortcuts
+  // — boots the redesign and raises nothing. A URL that used to switch houses must not now throw.
+  test('ITEM 14, inert URL — ?legacy=1 walks clean with no uncaught errors', async ({ phantom, page }) => {
     test.setTimeout(120_000);
     const pageErrors = [];
     page.on('pageerror', (e) => pageErrors.push(String(e && e.message)));
 
     await phantom.boot({ query: '?legacy=1' });
-    expect(await phantom.isRedesign(), '?legacy=1 must not apply body.rd').toBe(false);
+    expect(await phantom.isRedesign(), '?legacy=1 suppressed body.rd — the switch is back').toBe(true);
     await page.waitForTimeout(2500);
 
     // ⚠ The banner MUTATION is redesign-gated (:18075) so legacy stays byte-identical, which is

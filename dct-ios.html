@@ -12870,7 +12870,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.552';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.553';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -13557,9 +13557,6 @@ if (typeof window !== 'undefined') {
                  Reachable from anywhere; hwMatrix_open() is unchanged. -->
             <button onclick="hwMatrix_open();document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open')" class="hdr-menu-item" style="color:var(--cyan)" aria-label="Open hardware reference"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg> &nbsp;HW REF</button>
             <button onclick="if(redesign_isOn()){rd_openProfile();document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open');return;}showPage('master');setTimeout(function(){master_showSection('profile');},10);document.getElementById('hdr-overflow-menu').classList.remove('hdr-menu-open')" class="hdr-menu-item" style="color:var(--violet-bright,#b58cff)" aria-label="Open site profile editor"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b58cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> &nbsp;SITE PROFILE</button>
-              <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0"></div>
-              <!-- v1.14.380: the way back out of the ?legacy=1 rip-cord. Legacy-only by construction - #hdr-overflow-wrap is display:none !important under body.rd. -->
-              <button onclick="legacy_returnToNewUI()" class="hdr-menu-item" style="color:var(--teal)" aria-label="Return to the new UI"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg> &nbsp;RETURN TO NEW UI</button>
           </div>
         </div>
         <button id="phantom-tab-pill" class="tab-pill" onclick="tab_pillTap()" aria-label="PHANTOM open in another tab — tap for details">
@@ -19477,19 +19474,22 @@ function showMode(mode) {
     if (typeof hideSearch === 'function') hideSearch();   // dismiss any active overlay when leaving Ref
   }
 }
+// ⛔ v1.14.553 (LEGACY-RETIRE Stage 7a) — THE SWITCH IS GONE. This parsed ?legacy=1 / ?redesign=0,
+// persisted the choice to sessionStorage as phantom_legacy, and returned false to run the legacy
+// 5-tab app. Those URLs are now inert: they parse to nothing and the redesign loads either way.
+// ⭐ THERE IS NO LEGACY HOUSE LEFT TO RETURN TO. Stage 6 moved all eight borrowed organs into the
+// redesign's own markup, so the opt-out would land on a shell with nothing in it — the rip-cord
+// stopped being a fallback several ships before this one stopped offering it.
+// ⭐ THE FUNCTION SURVIVES, AND THAT IS THE RULING, NOT AN OVERSIGHT. 108 call sites read it and 939
+// body.rd rules hang off the class it gates. The owner deferred unwrapping those permanently — "the
+// 941 gates remain as inert always-true branches nobody ever has to think about again" — and that
+// state is only reachable if this keeps answering. Deleting the symbol would force exactly the
+// 108-site sweep the Stage 8 deferral exists to prevent. It is now a constant, by design.
+// One-time cleanup so a device that stored the opt-out under .465/.468 comes home on next boot.
 function redesign_isOn() {
-  // v1.14.101 — ARCHIVE STEP: the redesign IS now the default UI. Operators opt OUT
-  // to the legacy 5-tab app with ?legacy=1 (persisted as phantom_legacy — the
-  // rip-cord). Back-compat: ?redesign=0 is an alias for ?legacy=1; ?redesign=1 (or
-  // ?legacy=0) clears the opt-out. Returns true unless legacy was explicitly chosen.
-  // Legacy is NOT removed — it stays a full, reachable fallback until trust is earned.
-  try {
-    try { localStorage.removeItem('phantom_legacy'); } catch (_) {}  // v1.14.468 — migration: kill stale .465 localStorage flag on every boot
-    var s = location.search;
-    if (s.indexOf('legacy=1') !== -1 || s.indexOf('redesign=0') !== -1) sessionStorage.setItem('phantom_legacy', '1');
-    if (s.indexOf('redesign=1') !== -1 || s.indexOf('legacy=0') !== -1) sessionStorage.removeItem('phantom_legacy');
-    return sessionStorage.getItem('phantom_legacy') !== '1';
-  } catch (_) { return true; }
+  try { localStorage.removeItem('phantom_legacy'); } catch (_) {}
+  try { sessionStorage.removeItem('phantom_legacy'); } catch (_) {}
+  return true;
 }
 // v1.14.382 - COMMAND SHELL opt-in. Mirrors redesign_isOn()'s parse but is
 // DELIBERATELY NOT PERSISTED. redesign_isOn writes phantom_legacy to sessionStorage
@@ -19528,22 +19528,8 @@ function cshell_isOn() {
     return true;
   } catch (_) { return true; }
 }
-// v1.14.380 - THE RIP-CORD'S WAY BACK. ?legacy=1 pins phantom_legacy in sessionStorage,
-// and until now nothing in the legacy house could clear it: the only escape was
-// knowing to type ?redesign=1, which is what stranded a laptop mid-verify. This is
-// that door. It is reachable ONLY from the legacy SYS overflow menu, whose wrapper
-// is display:none !important under body.rd, so the redesign house never renders it.
-// Navigates with ?redesign=1 rather than a bare reload so the un-stick still works
-// even if removeItem fails (private mode, quota, disabled storage).
-function legacy_returnToNewUI() {
-  try {
-    sessionStorage.removeItem('phantom_legacy');
-  } catch (e) {
-    try { console.warn('[PHANTOM] could not clear phantom_legacy:', e); } catch (_) {}
-    try { phantomToast('Could not clear legacy mode - loading with ?redesign=1'); } catch (_) {}
-  }
-  location.replace(location.pathname + '?redesign=1');
-}
+// v1.14.553: legacy_returnToNewUI() is DELETED with the switch. It existed only to clear
+// phantom_legacy from inside the legacy house — a door out of a house that no longer opens.
 function redesign_initToggle() {
   if (!redesign_isOn()) return;
   // v1.14.93: gate the WHOLE redesign frame via body.rd. CSS under body.rd hides

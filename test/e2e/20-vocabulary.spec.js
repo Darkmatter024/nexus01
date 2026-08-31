@@ -119,35 +119,17 @@ test.describe('the one colour vocabulary', () => {
     console.log('[20] accent-coloured ' + coloured + '/11 · bay values: ' + JSON.stringify(paints.__bay));
   });
 
-  // ⚠ Contract 17's byte-identity guarantee was REVOKED by owner ruling 2026-08-29 (CLAUDE.md).
-  // This test no longer pins that contract and must not be cited as if it did — legacy is allowed
-  // to change now, and at LEGACY-RETIRE Stage 7 it stops existing. What the assertions still buy,
-  // until then, is LEAK detection in the other direction: the colour rules below are scoped by
-  // house, so a NORMALISED key reaching the legacy renderer makes the base unscoped rules match
-  // and repaints BOTH houses. Retire it in the stage that deletes rackElevation_buildHtml's legacy
-  // branch — per the ruling, a legacy test is rewritten in the stage that removes what it tests.
-  test('legacy raw-code emission — leak guard, not a byte-identity contract', async ({ phantom, page }) => {
-    test.setTimeout(120_000);
-    await phantom.boot({ query: '?legacy=1' });
-    expect(await phantom.isRedesign(), '?legacy=1 must not apply body.rd').toBe(false);
-
-    // Drive the REAL writer, not a copy of its logic.
-    const html = await page.evaluate(() => {
-      const rack = { totalU: 12, slots: [
-        { uStart: 1, uEnd: 1, type: 'stor', name: 's', dns: 's', model: 'M', status: 'pending' },
-        { uStart: 3, uEnd: 3, type: 'pwr', name: 'p', dns: 'p', model: 'M', status: 'pending' },
-      ] };
-      return rackElevation_buildHtml(rack);
-    });
-
-    // The whole guard in two assertions: legacy keeps the raw codes it always emitted, and the
-    // normalised keys never appear there. If this flips, the base non-house-scoped rules start
-    // matching and legacy silently changes colour.
-    expect(html, 'legacy stopped emitting the raw code — the base rules will now match differently').toContain('data-type="stor"');
-    expect(html, 'legacy stopped emitting the raw code').toContain('data-type="pwr"');
-    expect(html, 'a NORMALISED key leaked into the legacy house — the base unscoped rules will now match').not.toContain('data-type="storage"');
-    expect(html, 'a NORMALISED key leaked into the legacy house — the base unscoped rules will now match').not.toContain('data-type="pdu"');
-  });
+  // ⛔ RETIRED v1.14.553 (LEGACY-RETIRE Stage 7a), as this block's own note instructed: "retire it
+  // in the stage that deletes rackElevation_buildHtml's legacy branch." The test was
+  // 'legacy raw-code emission — leak guard'. It drove the real writer through ?legacy=1 and
+  // asserted the legacy house kept emitting RAW device codes, so the base unscoped colour rules
+  // could not start matching and repaint both houses.
+  // ⭐ It cannot run any more: ?legacy=1 is inert, so the writer always takes the redesign path.
+  // The branch itself still EXISTS inside rackElevation_buildHtml — unwrapping the 939 body.rd
+  // gates is Stage 8, which the owner deferred permanently — but it is now unreachable, and a
+  // test that cannot reach its subject proves nothing.
+  // ⚠ The live half of the guard is untouched and still green: 'the redesign house DOES emit
+  // normalised keys' below asserts the surviving direction of exactly this invariant.
 
   test('the redesign house DOES emit normalised keys — the other half of the same guard', async ({ phantom, page }) => {
     test.setTimeout(120_000);
