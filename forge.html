@@ -43,19 +43,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;cursor:none;}
 /* AI TRIAGE in log */
 .log-ai{color:rgba(0,255,136,.5);font-size:9px;font-style:italic;}
 .log-ai-prefix{color:rgba(0,255,136,.35);}
-/* API KEY UI */
-#api-key-bar{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;pointer-events:none;}
-#api-key-bar.show{display:flex;pointer-events:auto;}
 #el-key-bar.show{display:flex;pointer-events:auto;}
-#api-key-modal{background:rgba(4,8,20,.97);border:1px solid rgba(0,170,255,.25);border-top:2px solid #00aaff;padding:28px 32px;min-width:360px;box-shadow:0 0 60px rgba(0,170,255,.15);}
-#api-key-input{display:block;width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(0,170,255,.2);border-bottom:2px solid rgba(0,170,255,.4);color:rgba(180,210,240,.85);font-family:"Share Tech Mono",monospace;font-size:11px;padding:10px 12px;outline:none;letter-spacing:.06em;box-sizing:border-box;}
-#api-key-input:focus{border-color:rgba(0,170,255,.5);border-bottom-color:#00aaff;background:rgba(0,170,255,.04);}
-#api-key-input::placeholder{color:rgba(0,170,255,.18);}
-#api-key-save{font-family:"Orbitron",monospace;font-size:9px;font-weight:700;letter-spacing:.25em;padding:9px 22px;background:rgba(0,170,255,.1);border:1px solid rgba(0,170,255,.4);color:#00aaff;cursor:pointer;text-transform:uppercase;transition:all .2s;}
-#api-key-save:hover{background:rgba(0,170,255,.2);box-shadow:0 0 20px rgba(0,170,255,.2);}
-#api-key-cancel{font-family:"Orbitron",monospace;font-size:9px;font-weight:700;letter-spacing:.25em;padding:9px 22px;background:transparent;border:1px solid rgba(255,34,68,.2);color:rgba(255,34,68,.45);cursor:pointer;text-transform:uppercase;transition:all .2s;}
-#api-key-cancel:hover{border-color:rgba(255,34,68,.5);color:#ff2244;}
-#api-key-status{font-family:"Share Tech Mono",monospace;font-size:9px;margin-top:10px;letter-spacing:.12em;min-height:16px;}
 
 /* NAVBAR */
 #navbar{position:fixed;top:0;left:0;right:0;height:46px;z-index:300;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(2,4,10,.92);backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,170,255,.15);opacity:0;pointer-events:none;transition:opacity .8s ease;}
@@ -769,18 +757,6 @@ textarea::placeholder{color:rgba(0,200,100,.2);}
 </div>
 <div id="minimap"><div class="mm-label">MAP</div><canvas id="mm-canvas" width="140" height="160"></canvas></div>
 <div id="kb-toast"></div>
-<div id="api-key-bar">
-  <div id="api-key-modal">
-    <div style="font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:#00aaff;letter-spacing:.25em;margin-bottom:14px;text-transform:uppercase;">◈ Claude API Key</div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(0,170,255,.4);letter-spacing:.1em;margin-bottom:10px;">Required for AI triage + diagnostics. Key stays local.</div>
-    <input id="api-key-input" type="password" placeholder="sk-ant-api03-..." autocomplete="off" />
-    <div style="display:flex;gap:8px;margin-top:12px;">
-      <button id="api-key-save" onclick="saveApiKey()">SAVE KEY</button>
-      <button id="api-key-cancel" onclick="document.getElementById('api-key-bar').classList.remove('show')">CANCEL</button>
-    </div>
-    <div id="api-key-status"></div>
-  </div>
-</div>
 
 <!-- ══ GPU DASHBOARD OVERLAY ══ -->
 <div id="dash-panel" style="position:fixed;inset:0;z-index:800;background:rgba(2,4,12,.98);overflow-y:auto;display:none;flex-direction:column;">
@@ -4121,6 +4097,11 @@ function forgeWorkerError(res, data) {
   if (res && !res.ok) return 'AI unavailable: request failed (HTTP ' + res.status + ').';
   return null;
 }
+// FORGE-WORKER-CUTOVER Ship 2: PURGE THE STORED KEY, not just the code that read it. Ship 1
+// stopped reading cw_api_key, but on any device where an older build saved one the secret is
+// still sitting in localStorage — a credential nothing uses is still a credential. Removing it
+// on load is the only way those devices ever get clean, since the UI that wrote it is now gone.
+try { localStorage.removeItem('cw_api_key'); } catch (e) {}
 // FORGE-WORKER-CUTOVER Ship 1: the hardcoded Anthropic key and its cw_api_key override are DELETED.
 // The page holds no credential at all now — every call goes through the origin-locked phantom-api
 // Worker, which adds the key server-side. claudeApiKey had NO remaining reader once the headers
