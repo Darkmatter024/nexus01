@@ -12880,7 +12880,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.543';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.544';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -32736,8 +32736,20 @@ function deploy_opsHost() {
     if (typeof redesign_isOn === 'function' && redesign_isOn()) {
       var h = document.getElementById('wk-deploy');
       if (h) return h;
+      // ⛔ v1.14.544 (LEGACY-RETIRE Stage 4) — THE LEGACY NET IS CUT, under the redesign only.
+      // This used to fall through to #ops-content when #wk-deploy was missing. #ops-content lives
+      // inside pg-sop, which the redesign never shows — so the "fallback" rendered the deploy
+      // surface into a hidden node and reported success. Every caller then believed it had drawn
+      // something. That is the dead-render-host shape, and .224 already fixed one instance of it
+      // by hand (vendorEdp_open, "invisible 100% of the time"); this fixes it at the source.
+      // Returning null makes the callers' loud guards fire instead — .461's rack-detail guard and
+      // the one added to deploy_showList in this ship. ⭐ A missing host is now SAYABLE.
+      console.warn('[deploy] #wk-deploy is not mounted under the redesign — refusing the legacy '
+        + '#ops-content fallback, which would render into hidden pg-sop. Returning null.');
+      return null;
     }
   } catch (e) { phantom_logErr('deploy_opsHost:hostResolve', e); }
+  // Legacy house: #ops-content IS the correct host, not a net. It stays until Stage 7 deletes it.
   return document.getElementById('ops-content');
 }
 function deploy_showCommandCenter(container) {
@@ -33014,6 +33026,16 @@ function deploy_detailTool(id, tab) {
 
 function deploy_showList(container) {
   container = container || deploy_opsHost();
+  // ⛔ v1.14.544 — deploy_opsHost() no longer hands back the legacy #ops-content when the
+  // redesign's own host is missing, so `container` can legitimately be null here for the first
+  // time. Without this guard the function runs its whole render and throws at
+  // `container.innerHTML = html`. Fail LOUD instead, in the shape .461 established: say what is
+  // wrong and where to go, and do NOT leave body state half-set as if navigation had happened.
+  if (!container) {
+    console.warn('[deploy] deployment list has no host — deploy_opsHost() resolved nothing');
+    if (typeof phantomToast === 'function') phantomToast('Cannot open the deployment list — the Build surface is not mounted. Go to BUILD and try again.', 'error');
+    return;
+  }
   document.body.classList.remove('ops-detail');   // Rule A/B (v1.14.125): list view shows the grid-back (#work-back)
   var deploys = deploy_loadAll();
   var html = '';

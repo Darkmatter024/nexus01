@@ -82,7 +82,13 @@ very next line, `:10065`, gives it back: `body.rd.mode-ref .search-wrap{display:
 bar on Tools**. Deleting it would have removed redesign search. ⭐ The grep did not merely fail to
 prove disposability here; it read the *first* of two rules and stopped.
 
-**`#phantom-tab-pill` — HELD, owner decision needed.** It is the multi-tab warning chip of the Clone
+**`#phantom-tab-pill` — ⭐ OWNER RULING 2026-08-30: KEEP IT. Struck from the campaign.** John ruled
+after the finding below was reported. ⛔ It is not to be deleted in Stage 7 either without a fresh
+ruling: the whole point is that removing it removes the last in-app multi-tab warning anywhere.
+📌 **The gap it exposes is now a standing finding** (see `PHANTOM_CURRENT_STATE.md`): the redesign
+has no in-app multi-tab warning at all. That is unresolved, and outlives this campaign.
+
+**Why it was held —** It is the multi-tab warning chip of the Clone
 War module, which the census classes **LIVE**. `tab_pillTap()` says *"open in another tab — close it
 to avoid data loss."* ⛔ **It is the ONLY in-app multi-tab warning that exists.** `showBanner()`
 renders exclusively into `#boot .boot-items` and returns early otherwise, with the comment *"In-app
