@@ -12818,7 +12818,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.556';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.557';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -39139,12 +39139,32 @@ function reh3d_activate3D() {
   var rack = window._reh3dRack;
   var host = document.getElementById('reh3dCanvasHost');
   if (!host) return;
+  // ⛔ v1.14.557 — RESOLVE THE MOUNT BEFORE TOUCHING THE CLASS, AND BAIL IF IT IS GONE.
+  // `.531` (Ship A) deleted #reh3dMount and the reh3d_restore() call inside deploy_showRackDetail,
+  // but forge3d_close (:19693) STILL calls this on its no-lender branch. Reached from there the old
+  // order added .is-3d FIRST — and :11119 hides #rehFlatWrap on .is-3d, which since `.531` is the
+  // ONLY rack visual on this page. The mount lookup then returned null, rackElevation_ensure3D
+  // early-returned, and nothing removes the class again (only reh3d_fail does, and it is never
+  // reached because no load was attempted). The technician was left with a 51px control rail over
+  // an empty box — the exact condition `.531` shipped to remove, restored by the caller it did not
+  // audit. NOTHING THREW, and the `.461` instrument measures the OPS host (still 51px, above its
+  // 8px floor), so no warning fired either. Reproduced from Home → rack detail → OPEN AISLE →
+  // close on both desktop-chromium and phone-webkit: elevation 120px → 0px.
+  // ⭐ THE ORDER IS THE FIX, AND IT CLOSES THE CLASS, NOT THE INSTANCE: no caller — present or
+  // future — can put this host into .is-3d when there is nothing to draw into.
+  // ⚠ Checked BEFORE the WebGL probe on purpose: warning 'WebGL unavailable' when the real reason
+  // is an absent mount would name the wrong cause, which is the honest-naming rule this file holds.
+  var mount = document.getElementById('reh3dMount');
+  if (!mount) {
+    console.warn('[PHANTOM] 3D rack view: no #reh3dMount on this surface — leaving the flat elevation up');
+    return;
+  }
   if (!reh3d_webglOK()) {
     console.warn('[PHANTOM] 3D rack view: WebGL unavailable — showing flat elevation fallback');
     return;
   }
   host.classList.add('is-3d');
-  rackElevation_ensure3D(rack, document.getElementById('reh3dMount'));
+  rackElevation_ensure3D(rack, mount);
 }
 
 // Lazy-load three.js (SW-precached, same-origin) then render. Never blank: on any
