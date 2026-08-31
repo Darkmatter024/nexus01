@@ -9061,7 +9061,12 @@ body.rd #master-back { display:flex; align-items:center; gap:12px; margin:4px 0 
 #ops-banner-container { position:relative; z-index:10; background:transparent; }
 .ops-banner-row { background:linear-gradient(135deg,rgba(92,242,255,.05),rgba(155,89,255,.05)); border-bottom:1px solid rgba(92,242,255,.1); padding:12px 16px; display:flex; align-items:center; cursor:pointer; user-select:none; transition:all 200ms cubic-bezier(.4,0,.2,1); }
 .ops-banner-row:hover { background:linear-gradient(135deg,rgba(92,242,255,.1),rgba(155,89,255,.1)); }
-.ops-banner-btn { display:flex; align-items:center; gap:8px; background:none; border:none; color:var(--text-primary); cursor:pointer; font-family:var(--mono); font-size:12px; letter-spacing:2px; width:100%; padding:0; margin:0; text-align:left; }
+/* v1.14.558 — min-height is the Cold Aisle floor, not styling. This button carries the onclick, so
+   IT is the tap target, not the .ops-banner-row around it: with padding:0 and no min-height it
+   measured 28px on a 390px phone, well under the 44px floor for gloved hands. The defect shipped
+   in .465 and was never caught because ops_init never ran, so the control never rendered for
+   anything to measure. Pinned by 48-ops-row-exists. */
+.ops-banner-btn { display:flex; align-items:center; gap:8px; background:none; border:none; color:var(--text-primary); cursor:pointer; font-family:var(--mono); font-size:12px; letter-spacing:2px; width:100%; min-height:var(--tap-s); padding:0; margin:0; text-align:left; }
 .ops-banner-icon { font-size:20px; flex-shrink:0; }
 .ops-banner-label { flex-grow:0; }
 .ops-banner-chevron { margin-left:auto; flex-shrink:0; transition:transform 300ms cubic-bezier(.4,0,.2,1); }
@@ -12818,7 +12823,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.557';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.558';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -19201,9 +19206,25 @@ function showMode(mode) {
   // v1.14.385: BUILD resolves a real build context instead of landing on the static
   // launcher. Redesign-gated inside bw_render(); ?legacy=1 never reaches it.
   if (mode === 'work' && typeof bw_render === 'function') { try { bw_render(); } catch (e) { phantom_logErr('showMode:bw_render', e); } }
-  // ⛔ GATE: ops_init() disabled at boot time due to phone-webkit test failures.
-  // The OPS banner insertion during boot causes phantom-api CORS errors and layout
-  // cascade failures on phone-webkit. Re-enable when ops_renderPanels is deferred.
+  // ⭐ v1.14.558 — THE OPS ROW IS RE-ARMED, DEFERRED. `.473` (c199f43) removed this call and wrote
+  // that OPS "will be triggered on-demand when user taps the OPS control". ⛔ THAT TRIGGER WAS
+  // NEVER WIRED. `ops_init` has had ZERO callers since, so the banner it builds never existed and
+  // the owner ruling of 2026-08-19 — Build's tool door IS the OPS row — was not in effect on the
+  // shipped app. An intended DEFERRAL landed as a DELETION, and nothing failed loudly because the
+  // absence of a control looks exactly like a control that has not been reached yet.
+  // ⚠ `.473` also blamed "phantom-api CORS errors". Inserting a DOM node cannot cause CORS; that
+  // was a coincident harness failure (no allowed origin in the test env), not causation. The real
+  // cause was the second half of its own note: the banner went in as the FIRST CHILD of #bw-shell
+  // while bw_render's WebGL/layout work was still settling.
+  // ⭐ THE FIX IS THE TIMING `.473` PRESCRIBED AND DID NOT APPLY — a double rAF, so Build has laid
+  // out before the row is inserted. ops_init's own `bwShell` guard still refuses to run early, and
+  // ops_renderPanels stays lazy: it runs on expand (or a restored expanded state), never on a
+  // collapsed boot.
+  if (mode === 'work' && typeof ops_init === 'function') {
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      try { ops_init(); } catch (e) { phantom_logErr('showMode:ops_init', e); }
+    }); });
+  }
   ['command', 'work', 'ref'].forEach(function(m) {
     var el = document.getElementById('mode-' + m);
     if (el) el.classList.toggle('active', m === mode);
