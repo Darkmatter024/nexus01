@@ -379,3 +379,75 @@ test.describe('#rd-exit is hold-only', () => {
     expect(mark && mark.mode, 'freeze marker must record the mode to return to').toBe('command');
   });
 });
+
+// ═══════════════════════════════════════
+// showPage — a missing page must never blank the app (v1.14.548)
+// ═══════════════════════════════════════
+//
+// ⛔ THE SHAPE THIS PINS. showPage deactivates EVERY .page and EVERY .tn-item before it activates
+// the target. The activation was a bare `if (target)` with no else, so an id with no page left the
+// app on NO ACTIVE PAGE AT ALL — a blank screen, silently. LEGACY-RETIRE made that reachable: each
+// Stage 6 ship deletes a legacy page while doors to it survive in legacy chrome and in the search
+// index, which routes by page id when redesign_isOn() is false.
+test.describe('showPage — a missing page never blanks the app', () => {
+
+  test('an unknown page id leaves exactly one page active, in the LEGACY house', async ({ phantom, page }) => {
+    await phantom.boot({ query: '?legacy=1' });
+    expect(await phantom.isRedesign(), '?legacy=1 must not apply body.rd').toBe(false);
+
+    // ⛔ MUST navigate AWAY from the legacy home first. Landing on pg-triage is the FIX's
+    // behaviour, but it is also the boot default — asserting it from a standing start passes even
+    // when the fallback is deleted. Proven: a first cut of these tests stayed green with the
+    // fallback neutered.
+    await page.evaluate(() => showPage('sop'));
+    await expect.poll(async () => await page.evaluate(() => {
+      const a = document.querySelector('.page.active'); return a ? a.id : null;
+    }), { message: 'never navigated to pg-sop', timeout: 8_000 }).toBe('pg-sop');
+
+    // ⚠ _pageSwitch runs inside document.startViewTransition, so the swap is ASYNC. A synchronous
+    // read after showPage() sees the PREVIOUS page still active. Poll, never read once.
+    await page.evaluate(() => showPage('definitely-not-a-page'));
+    await expect.poll(async () => await page.evaluate(() => {
+      const a = document.querySelectorAll('.page.active');
+      return a.length === 1 ? a[0].id : ('count=' + a.length);
+    }), { message: 'showPage left the app blank (count=0) or on the wrong page', timeout: 8_000 })
+      .toBe('pg-triage');
+  });
+
+  test('a page deleted by LEGACY-RETIRE routes somewhere real, not nowhere', async ({ phantom, page }) => {
+    await phantom.boot({ query: '?legacy=1' });
+    expect(await page.evaluate(() => !document.getElementById('pg-cli')),
+      'pg-cli is back — v1.14.547 deleted it').toBe(true);
+
+    await page.evaluate(() => showPage('sop'));
+    await expect.poll(async () => await page.evaluate(() => {
+      const a = document.querySelector('.page.active'); return a ? a.id : null;
+    }), { message: 'never navigated to pg-sop', timeout: 8_000 }).toBe('pg-sop');
+
+    // 'cli' had a real page until v1.14.547 decoupled it; legacy doors to it still exist.
+    await page.evaluate(() => showPage('cli'));
+    await expect.poll(async () => await page.evaluate(() => {
+      const a = document.querySelectorAll('.page.active');
+      return a.length === 1 ? a[0].id : ('count=' + a.length);
+    }), { message: 'a decoupled page id blanked the app', timeout: 8_000 }).toBe('pg-triage');
+  });
+
+  test('the redesign lands on its OWN home, never pg-triage', async ({ phantom, page }) => {
+    await phantom.boot();
+    // Under body.rd the upstream guard redirects legacy ids, so this exercises the fallback
+    // directly. It must never activate the legacy NOW dashboard inside the redesign frame.
+    await page.evaluate(() => showPage('definitely-not-a-page'));
+    // Give the view transition the same room the legacy cases get, then assert the house rule.
+    await expect.poll(async () => await page.evaluate(() => {
+      const a = document.querySelectorAll('.page.active');
+      return a.length === 1 ? a[0].id : ('count=' + a.length);
+    }), { message: 'the redesign was left blank by an unknown page id', timeout: 8_000 })
+      .toBe('pg-cmd');
+
+    expect(await page.evaluate(() => {
+      const t = document.getElementById('pg-triage');
+      return !!(t && t.classList.contains('active'));
+    }), 'the redesign activated the legacy pg-triage — house leak').toBe(false);
+  });
+
+});

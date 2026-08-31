@@ -12871,7 +12871,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.547';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.548';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -24491,6 +24491,26 @@ function showPage(id, tnEl, opsTab) {
     if (target) {
       target.classList.add('active');
       target.scrollTop = 0;
+    } else {
+      // ⛔ v1.14.548 — NO SILENT BLANK PAGE. This was a bare `if (target)` with no else, and it is
+      // the worst shape of silent failure in the file: every .page was ALREADY deactivated six
+      // lines above, and every .tn-item too, so a missing target does not merely fail to navigate —
+      // it leaves the app on NO ACTIVE PAGE AT ALL. A blank screen, no warning, no toast, nothing
+      // thrown. Contract 14, and the exact class .461 and .544 were written to end.
+      // ⭐ LEGACY-RETIRE made this reachable rather than theoretical. Stage 6 deletes a legacy page
+      // per ship, and doors to those pages still exist in legacy chrome and in the search index,
+      // which routes by page id when redesign_isOn() is false (:49067). Every organ still to come
+      // strands more of them. Fixing it HERE covers all of them at once, which is why this shipped
+      // as its own change rather than as a patch per door inside an organ decouple.
+      try {
+        console.warn('[nav] showPage("' + id + '"): #pg-' + id + ' does not exist. Every page was '
+          + 'deactivated before this point, so returning silently would strand the app on a blank screen.');
+      } catch (_) {}
+      if (typeof phantomToast === 'function') phantomToast('That surface is not available in this UI', 'warn');
+      // Land somewhere real rather than nowhere. House-correct: the redesign never wants pg-triage.
+      var _homeId = (typeof redesign_isOn === 'function' && redesign_isOn()) ? 'pg-cmd' : 'pg-triage';
+      var _home = document.getElementById(_homeId);
+      if (_home && _homeId !== ('pg-' + id)) { _home.classList.add('active'); _home.scrollTop = 0; }
     }
 
     if (tnEl) tnEl.classList.add('active');
