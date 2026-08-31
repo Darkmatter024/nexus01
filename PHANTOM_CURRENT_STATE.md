@@ -5,14 +5,20 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-31, after `v1.14.556`.
-✅ **NO VERIFY DEBT AND NO GAP.** `main` = `release` = served = `VERIFIED` = **`.556`**, every ship
+**Last updated: 2026-08-31, after `v1.14.557`.
+✅ **NO VERIFY DEBT AND NO GAP.** `main` = `release` = served = `VERIFIED` = **`.557`**, every ship
 device-verified in both houses as it landed. ⭐ **LEGACY-RETIRE IS COMPLETE** (owner ruling
 2026-08-29): stages 0,1,2,3,4,6,7 shipped across `.533`–`.554`; stage 5 pulled to IA-SHIFTNAV;
 stage 8 permanently deferred. ⭐ **FORGE-WORKER-CUTOVER IS COMPLETE** — forge.html holds no
 credential and sends no key. ⭐ **Both standing findings that were open at `.554` are CLOSED**:
 `.555` took the pg-triage writers, `.556` fixed the multi-tab warning.
-⛔ **THE QUEUE IS EMPTY. Nothing is in flight.**
+⭐ **`.557` CLOSED THE RACK-DETAIL BUG HUNT** (board Q-1) — the aisle no longer takes the rack with
+it. ⚠ **But the hunt's own honest bound stands and must not be lost:** `.557` fixes *a* defect that
+emptied the elevation; it was **never proven to be the failure behind sandbox gate 2**. If the rack
+still misbehaves on device, that is a SEPARATE hunt, not a regression of this ship.
+⛔ **THE QUEUE IS NOT EMPTY.** Board `PHANTOM-BOARD-NEXT-OPS.md` carries Q-2 IA-SHIFTNAV (spec
+unwritten, blocks Deploy Optics), Q-3 BOOT-TAPGATE (authored, approved, held), and O-2 the
+Grok-icon provenance ruling. Nothing is in flight; all three need the owner, not Claude Code.
 ⚠ Claude Code now promotes `release` itself (ruling 2026-08-30); `VERIFIED` and the device verify
 remain owner-only, which is what actually gates a ship.**
 ⚠ Claude Code now promotes `release` itself (ruling 2026-08-30); `VERIFIED` and the device verify
@@ -75,9 +81,9 @@ the ship that changes the fact, not in the one that happens to have room.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.556`** — on `main`, on `release`, served, and stamped in `VERIFIED`. Gap 0. `forge.html` carries NO version stamp and ships outside `version.json`'s scope. |
+| **Version** | **`phantom-v1.14.557`** — on `main`, on `release`, served, and stamped in `VERIFIED`. Gap 0. `forge.html` carries NO version stamp and ships outside `version.json`'s scope. |
 | Commits | `.481–.486` Phase Next work (2026-08-23) · `.487–.518` iOS SW lifecycle + cache hardening (2026-08-24 → 08-27) · `.519`+`.524` photo capture / gallery (`.520`–`.523` are **burned numbers**, committed straight onto `release` and orphaned by a reset — they survive only as `recovery-v1.14.52x` tags) · `.525`–`.532` nav, dock and rack-detail (2026-08-29) |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.532`, and `curl` of `release` agrees |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.557`, and `curl` of the Pages URL agrees on all three (`version.json`, `PHANTOM_APP_VERSION`, `CACHE_VERSION`), checked 2026-08-31. ⭐ **The guard itself was confirmed in the SERVED bytes, not just the stamp** — `:39157` carries the `#reh3dMount` check. A stamp proves delivery of a number; grepping the fix proves delivery of the fix. ⚠ This row read `.532` while the Version row read `.556` — a stale row nobody re-read for 24 versions. |
 | Shipped | ✅ **v1.14.532 NAV CLEARANCE IS MEASURED** — `--rd-navclear` was a hardcoded `calc(96px + safe-bottom)` while `#rd-botnav` measures **122px** at 390; six rules read that token, so one stale constant under-paid all of them (visible symptom: the phase dock's lowest 14px sat behind the nav). `rd_syncNavClear` now measures the box and writes the token, re-running on a `ResizeObserver` and `orientationchange`. ⭐ **Second occurrence of this exact class** — `:1151` records `--tabnav-h` freezing at 72 while the nav grew to 96. **The box writes the token; a constant that merely DESCRIBES a measured box drifts the moment the box changes.** |
 | Verified | ✅ **`.519`–`.532` CLEARED ON HARDWARE 2026-08-29/30** — verified one at a time, not as a batch: the campaign now in force forbids stacking. `VERIFIED` stamped `.532` at 01:01 on 08-30. **Verify debt is zero for the first time since `.483`.** |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
@@ -92,6 +98,8 @@ the ship that changes the fact, not in the one that happens to have room.
 | Phase Next-3 | ✅ **Discovery complete** — `PHASE-NEXT-3-DISCOVERY.md` — Shift handoff storage & device transfer audit. Finds: Current usage 1.36 MB (27% of 5 MB quota), multi-shift approaches wall (50KB–6MB per shift), no pruning strategy, no device transfer flow. 5 gaps: no volume measurement, no pruning, no photo storage policy, no device transfer UX, no IndexedDB migration. Recommends 3.1 (measurement LOW), 3.2 (export LOW-MEDIUM), 3.3 (pruning MEDIUM), 3.4 (device transfer HIGH), 3.5 (IndexedDB MEDIUM) sequence. |
 | Next Ship | **NONE — awaiting owner direction.** Two things are parked, both needing the owner rather than Claude Code: (1) ⛔ **`SHIP-HANDOFF-IA-SHIFTNAV.md` does not exist on this machine**, which blocks the single stranded surface — Deploy Optics, and `docs/LEGACY-RETIRE-STRANDED.md` shows it needs **a door, not a rebuild**: `showOpsTab('optics')` already renders into `#wk-deploy` under the redesign; (2) the **Grok-icon provenance conflict**. |
 | Stage 2b result | ✅ **`.535` — TODAY Pulse card removed.** 30 lines, −2,765 bytes. ⛔ **NOT dead code, unlike 2a:** it rendered under `?legacy=1` as part of the legacy NOW dashboard. ⭐ **The census row was wrong** — it called this RETIRED under a definition of *"no working entry point ANYWHERE"*, and the entry point was the legacy house. Shipped as a deliberate visible legacy change under the Contract 17 revocation. Safe to cut because its two locals (`contextName`, `contextSite`) were used nowhere else and its 14 opening divs were matched by 14 closers. |
+| ✅ Closed `.557` | **The rack comes back after the aisle** (board Q-1, RACK-DETAIL BUG HUNT). Reach a rack detail from anywhere Build's 3D preview never mounted — the deep-link/back-nav restore, which calls `deploy_showRackDetail` from wherever the operator is — then OPEN AISLE and close: the elevation was **gone**, a 51px control rail over an empty box. ⛔ **THE CAUSE IS A CALLER SHIP A DID NOT AUDIT.** `.531` deleted `#reh3dMount` and the `reh3d_restore` call inside `deploy_showRackDetail`, but `reh3d_activate3D` has a SECOND caller — `forge3d_close`'s no-lender branch at `:19693`. After `.531` the rack detail registers **nothing** with RackEngine (`rackElevation_render3D` `:40773` is the only non-aisle registrar and this page no longer calls it), so from Build a lender exists and close hands the context back — **it looks fine** — but from Home there is no lender, close falls through, and the old order added `.is-3d` **before** looking for the mount. `:11119` then hides the flat wrap, the only rack visual since `.531`. ⭐ **`.531`'s OWN COMMIT BODY PREDICTED THIS EXACT FAILURE** for the wrong fix; it removed the caller it could see. **The fix is the ORDER** — resolve the mount first, return if absent — which closes the CLASS, not the instance. ⚠ **Why it hid: nothing throws, and the `.461` instrument measures the OPS host, which survives at 51px, above its own 8px floor** — so the zero-size instrument watched the rack go to 0px and said nothing. It also self-heals on re-render, so it presented as intermittent. Pinned by `test/e2e/47-rack-detail-aisle-return.spec.js`, 4 tests, mutation-proven. ⛔ **HONEST BOUND: this fixes A defect that emptied the elevation, NOT provably the one behind sandbox gate 2.** Evidence in `docs/RACK-DETAIL-BUG-HUNT-EVIDENCE.md`. |
+| 📌 `.557` measurement trap | ⛔ **`#rehFlatWrap` is `display: contents` (`:11117`) and therefore has NO BOX** — measuring it for height reports a **false zero even when the rack renders perfectly**. This failed the first probe of the bug and briefly looked like a much larger defect. The honest instrument is its child `#rackCanvas` (`:40794`). **Any future rack-elevation test or probe measures the child, never the wrapper.** Recorded because this is the second time the display:contents class has cost real time. |
 | ✅ Closed `.556` | **The multi-tab warning now reaches the phone.** ⛔ **Two things had to be true at once, which is why it hid:** `#phantom-tab-pill` is hidden by `@media (max-width:480px){display:none !important}` — a deliberate `.391` call, the wordmark overlapped it by ~93px at 390 — and `tab_pillRefresh` set an **inline** `display:inline-flex`, which can never beat an `!important`. So on every iPhone it updated a chip nobody could see, while `showBanner()` only ever renders into `#boot .boot-items` and returns early after boot. The warning moved **off the pill onto a toast**, which has no viewport constraint; it latches on the 0→N transition so a new tab warns again but an open one never nags. The pill still works above 480. ⭐ **Corrects my own Stage 3.4 wording** — I had recorded "no in-app warning at all"; it was hidden only at ≤480px. Pinned by `test/e2e/46-multi-tab-warning.spec.js`, mutation-tested. |
 | ✅ Closed `.555` | **The pg-triage writers are gone**, with the page itself — `today_render` (338 lines), `triage_renderDeployCard` (88), `firstRun_renderChip` (15), 10 call sites and the 97-line page. −569 lines. ⭐ **The find was a live bug, not the waste:** `_session_startFresh` called `showPage('triage')`, and **START FRESH is a real button** in the resume banner — since `.553` removed the switch, `'triage'` is not in the guard's whitelist, so every tap toasted *"Not in the new UI yet: TRIAGE"* before landing on Command anyway. ⛔ Safe to delete because **none of the three wrote storage** and each touched only elements inside `pg-triage`; had any carried a side effect the fix would have been to re-point. `deploy_quick` survives — the redesign reaches it through its own doors. |
 | Stage 2a result | ✅ **`.534` — Crash-Cart Mode deleted.** Owner-killed 2026-07-02; `.248` removed both doors and left the body for "the LR-2 atomic sweep", which was this ship. 4 functions, 10 CSS rules, 1 overlay div: **188 lines, −6,724 bytes.** Dead in BOTH houses, so invisible under `?legacy=1` too. ⭐ **Re-verified before cutting rather than trusting the census:** zero callers, and **no `.crashcart-active` rule survived**, so the `display:none` layer could not have appeared even if one had. Incident Memory Engine (row 2) needed **no ship at all** — already gone, three comments left. |
@@ -884,7 +892,15 @@ reclaim barrier (I6), modes, the data contract, `Vocabulary` normalisation. M2-a
 than the previous wording: the ONLY permitted data additions are `PHASE_MODEL`, the Event Log and
 the Blocker record. Everything else is routing, folding and relabeling of existing capability.
 
-## 3 · Verify debt — ⏳ `.460`–`.462` OPEN (3 of 6). Everything before it is cleared
+## 3 · Verify debt — ✅ **ZERO at `.557`.** Everything below is the historical record
+
+⚠ **This heading read *"`.460`–`.462` OPEN (3 of 6)"* until 2026-08-31, while §1's header two
+screens above said *"NO VERIFY DEBT"*. Both could not be true.** `.460` and `.462` are marked
+PASSED in this very section; only the `.461` CONTINUE **diagnostic** was ever outstanding, and a
+diagnostic is not verify debt — it is an open question about a defect that never reproduced. The
+count in the heading was never decremented as the passes landed. ⭐ **A stale summary line outlives
+the correct detail underneath it, and the summary is what gets read.** Same class as the `.532`
+stamps row in §1.
 
 ✅ **(a) `.460` — the SHIFT door. PASSED on hardware 2026-08-14.** The shift-end timer is reachable
 in production for the first time; the row was confirmed rendering on the deck in the `.462` capture
@@ -1064,6 +1080,17 @@ githubstatus is all-green — a transient repo-side lock, **not code**. An empty
 
 ## 8 · Last physical-iPhone verification
 
+✅ **2026-08-31, against `v1.14.557`.** The rack-detail aisle return: rack detail opened **from
+Home** (not from Build — the Build path never reproduced the defect), OPEN AISLE, close. The rack
+elevation survives. Owner reported the pass and directed the `VERIFIED` stamp.
+
+⚠ **What this pass does and does not establish.** It clears the `.557` fix on hardware. It does
+**not** close sandbox gate 2 — the hunt never proved this defect was the failure that opened that
+gate, and the state of the rack-detail surface under other entry paths is unmeasured. A later "the
+rack is missing" report is a new hunt, not a `.557` regression.
+
+### Historical
+
 ✅ **2026-08-14, against `v1.14.459`.** Both passes of the `.457`–`.459` batch. **Pass A closed the
 SW UPDATE P0** — one tap moved the installed PWA from `.458` to `.459`, reloading once, clearing the
 badge, and leaving Site Profile, Active Master and rack/work/event data intact; no reinstall, no
@@ -1074,8 +1101,6 @@ to a real record, no blank-stubbed rows, no placeholder step text in the prompt.
 DELIVERY of every future one.** While it was broken, no ship could reach the phone by the intended
 route. ⭐ And it was only conclusive because the payload was a no-op — nothing but the mechanism
 could have moved the number.
-
-### Historical
 
 ✅ **2026-08-13, against `v1.14.456`.** All six checks of the `.454`–`.456` pass, reported one at a
 time: the rack dead straight and square on S1:008 · no framing drift across ten racks · a locked
@@ -1106,12 +1131,29 @@ sustained thermals across a ten-rack aisle walk.
 
 ## 9 · Next action
 
-**PARKED ON `.462`. Nothing autonomous.** ⏳ **CALL 0 cap 3 of 6** — see §3. One of the three
-(`.460`) has already passed.
+**PARKED ON `.557`, VERIFIED AND STAMPED. Nothing autonomous, nothing in flight.** Verify debt is
+zero and the ship gate is re-armed: the next item can be slotted whenever the owner chooses.
 
-⭐ **The `.461` check is a DIAGNOSTIC, not just a pass/fail.** The reported CONTINUE failure does
-not reproduce in the harness, so the useful outcome is *which* message appears — or that none does.
-Silence would eliminate host resolution, sub-tab reveal and hidden-host rendering in one report.
+⭐ **THE QUEUE LIVES IN `PHANTOM-BOARD-NEXT-OPS.md`** (owner copy, `Downloads`), not here. Open at
+`.557`, all three needing the owner rather than Claude Code:
+- **Q-2 · `SHIP-HANDOFF-IA-SHIFTNAV.md`** — base spec **not yet written**, and it blocks the one
+  stranded surface. `docs/LEGACY-RETIRE-STRANDED.md` shows Deploy Optics needs **a door, not a
+  rebuild**. Say the word and the spec gets authored.
+- **Q-3 · `SHIP-HANDOFF-BOOT-TAPGATE.md`** — authored, approved, **held**. Phase 0 evidence against
+  current stamped source first, then one ship.
+- **O-2 · Grok-icon provenance** — licensing/origin call. Until ruled, it ships nowhere new.
+
+⚠ **SANDBOX GATE 2 IS NOT PROVEN CLOSED BY `.557`.** The board opened it as *"rack-detail visual
+renders"*; `.557` fixed a defect that emptied the elevation but was never shown to be that one.
+⛔ Before calling the gate closed, the rack detail wants a look on device from the paths the hunt
+did **not** measure. And per the standing trap, an empty-rack report can be **data** — ~42% of cabs
+are cable-only — so `0/0` with a real location is a DATA suspicion, not a code one.
+
+⭐ **The `.461` CONTINUE diagnostic is still owed and is still informative** — the reported failure
+never reproduced in the harness, so the useful outcome is *which* message appears, or that none
+does. ⚠ `.557` sharpened why that matters: **that instrument measures the OPS host, not the
+surface**, and it sat silent through a rack at 0px because the host held 51px. **Silence from it
+rules out less than it appears to.**
 
 Open, none started, all owner decisions:
 - **The `"Loading storage metrics…"` line** and the **`CONTEXT INJECTION ACTIVE` copy naming 3 of 7
