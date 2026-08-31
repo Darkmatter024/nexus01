@@ -12870,7 +12870,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.551';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.552';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -14093,8 +14093,8 @@ if (typeof window !== 'undefined') {
       </div>
     </div>
     <div class="page" id="pg-work">
-      <!-- REDESIGN STEP 3 — Workspace subtab strip. Scan is re-homed for real:
-           pg-scan content is re-parented into #wk-scan at boot by redesign_homeScan().
+      <!-- REDESIGN STEP 3 — Workspace subtab strip. v1.14.552: Scan is no longer re-homed —
+           its content is AUTHORED in #wk-scan below, and pg-scan is deleted.
            Deploy/Handoff are overlay flows (deploy_quick/handoff_quick) with no page
            node, so their panels are thin launchers that fire the existing flow — §1
            re-home-don't-rebuild. Flag-gated; field app reaches all three via legacy nav. -->
@@ -14160,8 +14160,73 @@ if (typeof window !== 'undefined') {
           <button class="pt-btn pt-btn-primary" style="width:auto;padding:14px 28px" onclick="deploy_quick()" aria-label="Open deployment command">Open Deploy &rarr;</button>
         </div>
       </div>
-      <!-- Scan: pg-scan content re-parented in here at boot by redesign_homeScan(). Empty in source. -->
-      <div class="work-sub" id="wk-scan"></div>
+      <!-- SCAN. v1.14.552 (LEGACY-RETIRE Stage 6.7): AUTHORED HERE now, and this is the LAST
+           borrowed organ. These children used to live in pg-scan and be drained into this
+           container at boot by redesign_homeScan(). SCAN is a primary nav pillar, which is why
+           the inventory put it last: the decouple pattern was proven on six cheaper organs
+           first. Every id is verbatim — ScanDispatch, the BT scan-gun wiring and showPage(scan)
+           all resolve them by id, so identity is the contract, not position. -->
+      <div class="work-sub" id="wk-scan">
+      <div class="scan-page">
+        <div class="scan-context-strip" id="scan-context-strip">
+          <div class="scan-context-dot idle" id="scan-context-dot"></div>
+          <div id="scan-context-text">No active deployment — scans will not verify against EDP.</div>
+        </div>
+
+        <button class="scan-hero" onclick="ScanDispatch.openScanner()" aria-label="Scan anything">
+          <div class="scan-hero-icon"><span class="ico ico-md ico-camera"></span></div>
+          <div class="scan-hero-title">Scan Anything</div>
+          <div class="scan-hero-subtitle">Rack tag, switch tag, optic, or asset. PHANTOM routes you.</div>
+        </button>
+
+        <div class="scan-gun-row">
+          <div class="scan-gun-eyebrow">Or pull the trigger on a BT scanner</div>
+          <div class="scan-gun-input-wrap">
+            <input class="scan-gun-input"
+                   id="scan-gun-input"
+                   type="text"
+                   inputmode="none"
+                   autocomplete="off"
+                   autocorrect="off"
+                   autocapitalize="off"
+                   spellcheck="false"
+                   placeholder="Tap here, then scan with BT gun…"
+                   aria-label="Bluetooth scanner input"
+                   oninput="scanGun_toggleClear(this)">
+            <button class="scan-gun-clear" type="button" aria-label="Clear scan field"
+                    onclick="scanGun_clear('scan-gun-input')">✕</button>
+            <button class="scan-gun-go" type="button" aria-label="Submit scan"
+                    onclick="scanGun_submit('scan-gun-input', 'scan')">GO</button>
+          </div>
+        </div>
+
+        <!-- Gate 31: Verify-mode discoverability hint —
+             scans here go to a collection list, but if the tech actually
+             needs to verify an optic against the EDP, point them at the
+             real tool in KNOW. -->
+        <button class="scan-verify-hint" type="button" onclick="goOpticVerify()">
+          <span class="scan-verify-hint-icon">✓</span>
+          <span class="scan-verify-hint-body">
+            <span class="scan-verify-hint-title">Verifying an optic against the EDP?</span>
+            <span class="scan-verify-hint-detail">Use Optic Score Verify in KNOW →</span>
+          </span>
+        </button>
+
+        <div class="scan-collection">
+          <div class="scan-collection-header">
+            <div class="scan-collection-eyebrow">Collected Scans</div>
+            <div class="scan-collection-count" id="scan-collection-count">0 scans</div>
+          </div>
+          <div id="scan-collection-list">
+            <div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);padding:14px;text-align:center;border:1px dashed rgba(255,255,255,0.06);border-radius:8px">Scan something — it will appear here.</div>
+          </div>
+          <div class="scan-collection-actions" id="scan-collection-actions" style="display:none">
+            <button class="scan-export-btn" type="button" onclick="ScanDispatch.exportCollection()">⇪ &nbsp;EXPORT (CSV + Audit)</button>
+            <button class="scan-clear-btn" type="button" onclick="ScanDispatch.clearCollection()">CLEAR</button>
+          </div>
+        </div>
+      </div>
+      </div>
       <div class="work-sub" id="wk-handoff">
         <!-- v1.14.462 — HANDOFF feature-hero art replaced (owner directive 2026-08-14).
              ⛔ THIS SUPERSEDES THE 2026-07-21 OWNER OVERRIDE that previously stood here. That note
@@ -16430,68 +16495,6 @@ if (typeof window !== 'undefined') {
     </div><!-- end pg-triage -->
 
     <!-- PAGE: SCAN — Stage 2 unified scan destination -->
-    <div class="page" id="pg-scan">
-      <div class="scan-page">
-        <div class="scan-context-strip" id="scan-context-strip">
-          <div class="scan-context-dot idle" id="scan-context-dot"></div>
-          <div id="scan-context-text">No active deployment — scans will not verify against EDP.</div>
-        </div>
-
-        <button class="scan-hero" onclick="ScanDispatch.openScanner()" aria-label="Scan anything">
-          <div class="scan-hero-icon"><span class="ico ico-md ico-camera"></span></div>
-          <div class="scan-hero-title">Scan Anything</div>
-          <div class="scan-hero-subtitle">Rack tag, switch tag, optic, or asset. PHANTOM routes you.</div>
-        </button>
-
-        <div class="scan-gun-row">
-          <div class="scan-gun-eyebrow">Or pull the trigger on a BT scanner</div>
-          <div class="scan-gun-input-wrap">
-            <input class="scan-gun-input"
-                   id="scan-gun-input"
-                   type="text"
-                   inputmode="none"
-                   autocomplete="off"
-                   autocorrect="off"
-                   autocapitalize="off"
-                   spellcheck="false"
-                   placeholder="Tap here, then scan with BT gun…"
-                   aria-label="Bluetooth scanner input"
-                   oninput="scanGun_toggleClear(this)">
-            <button class="scan-gun-clear" type="button" aria-label="Clear scan field"
-                    onclick="scanGun_clear('scan-gun-input')">✕</button>
-            <button class="scan-gun-go" type="button" aria-label="Submit scan"
-                    onclick="scanGun_submit('scan-gun-input', 'scan')">GO</button>
-          </div>
-        </div>
-
-        <!-- Gate 31: Verify-mode discoverability hint —
-             scans here go to a collection list, but if the tech actually
-             needs to verify an optic against the EDP, point them at the
-             real tool in KNOW. -->
-        <button class="scan-verify-hint" type="button" onclick="goOpticVerify()">
-          <span class="scan-verify-hint-icon">✓</span>
-          <span class="scan-verify-hint-body">
-            <span class="scan-verify-hint-title">Verifying an optic against the EDP?</span>
-            <span class="scan-verify-hint-detail">Use Optic Score Verify in KNOW →</span>
-          </span>
-        </button>
-
-        <div class="scan-collection">
-          <div class="scan-collection-header">
-            <div class="scan-collection-eyebrow">Collected Scans</div>
-            <div class="scan-collection-count" id="scan-collection-count">0 scans</div>
-          </div>
-          <div id="scan-collection-list">
-            <div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);padding:14px;text-align:center;border:1px dashed rgba(255,255,255,0.06);border-radius:8px">Scan something — it will appear here.</div>
-          </div>
-          <div class="scan-collection-actions" id="scan-collection-actions" style="display:none">
-            <button class="scan-export-btn" type="button" onclick="ScanDispatch.exportCollection()">⇪ &nbsp;EXPORT (CSV + Audit)</button>
-            <button class="scan-clear-btn" type="button" onclick="ScanDispatch.clearCollection()">CLEAR</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- PAGE: FIBER+DOM (grouped) -->
     <!-- PAGE: HARDWARE -->
 
@@ -23128,20 +23131,14 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
-// redesign_homeScan(): re-parent the WHOLE pg-scan surface (scan hero, BT-gun row,
-// collected-scans list) into Workspace->Scan (#wk-scan). Re-parenting keeps the
-// ScanDispatch handlers + element ids byte-identical — §1 re-home-don't-rebuild.
-// Flag-gated so FIELD mode leaves pg-scan (still reached via the legacy nav) whole.
-function redesign_homeScan() {
-  if (!redesign_isOn()) return;
-  var src = document.getElementById('pg-scan');
-  var dest = document.getElementById('wk-scan');
-  if (src && dest && src.firstChild) {
-    dest.innerHTML = '';
-    while (src.firstChild) dest.appendChild(src.firstChild);
-  }
-}
-document.addEventListener('DOMContentLoaded', redesign_homeScan);
+// v1.14.552 (LEGACY-RETIRE Stage 6.7) - redesign_homeScan IS DELETED, the EIGHTH AND LAST of the
+// borrowed-organ re-homes. Its children are authored in #wk-scan directly and pg-scan is gone.
+// With this the redesign no longer borrows a single node from the legacy house at boot: every
+// #rf-* and #wk-* surface is populated from its own markup. That was the whole point of Stage 6,
+// and it is what makes Stage 7 - deleting redesign_isOn, phantom_legacy and ?legacy=1 - a removal
+// rather than a rebuild.
+// SCAN went last on purpose: it is a primary nav pillar, so the pattern was proven on six cheaper
+// organs before it was pointed at the scanner.
 
 // redesign_homeIssues(): re-parent the Deployment Issue Log surface (#issue-page,
 // filled by the issue_* module) out of pg-twin into Workspace->Issues (#wk-issues).

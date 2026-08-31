@@ -127,13 +127,16 @@ test.describe('the borrowed organs', () => {
     expect(await phantom.isRedesign(), '?legacy=1 must not apply body.rd').toBe(false);
     const r = await page.evaluate(() => ({
       // Shells of organs already DECOUPLED (6.1–6.5) must be gone in both houses.
-      goneShells: ['pg-twin', 'pg-cli', 'pg-fiber', 'pg-power', 'pg-compass', 'hw-matrix-sheet']
+      goneShells: ['pg-twin', 'pg-cli', 'pg-fiber', 'pg-power', 'pg-compass', 'pg-scan', 'hw-matrix-sheet']
         .filter((id) => !!document.getElementById(id)),
-      // Organs STILL borrowed at runtime must remain in their legacy shells, un-moved.
-      // ⭐ pg-scan is the LAST one. When 6.7 lands, these two assertions move up to goneShells and
-      // this file stops tracking borrowed organs entirely — because there will not be any.
-      scanInShell: !!(document.getElementById('pg-scan') || { childElementCount: 0 }).childElementCount,
-      wkScanEmpty: (document.getElementById('wk-scan') || { childElementCount: 0 }).childElementCount === 0,
+      // ⭐ v1.14.552 — STAGE 6 IS COMPLETE, so there is no "still borrowed" list any more. Every
+      // organ is authored in its redesign scaffold, which means every scaffold is populated in BOTH
+      // houses; legacy simply never shows pg-ref or pg-work. The house gate that used to matter here
+      // — "did a re-home run in the wrong house?" — cannot be violated, because no re-home exists.
+      homesLeft: (typeof window.redesign_homeScan) + '/' + (typeof window.redesign_homeHardware)
+        + '/' + (typeof window.redesign_homeKnow) + '/' + (typeof window.redesign_homeCompass)
+        + '/' + (typeof window.redesign_homeOptics) + '/' + (typeof window.redesign_homeCLI)
+        + '/' + (typeof window.redesign_homeIssues) + '/' + (typeof window.redesign_homeHWRef),
     }));
 
     // ⛔ RE-POINTED AGAIN by Stage 6.5, and this block will change once more per organ — that is the
@@ -145,8 +148,11 @@ test.describe('the borrowed organs', () => {
     expect(r.goneShells, `decoupled shells are back: ${r.goneShells.join(', ')}`).toEqual([]);
 
     // The house gate still matters for what has NOT been decoupled yet.
-    expect(r.scanInShell, 'pg-scan was drained under legacy — redesign_homeScan ran in the wrong house').toBe(true);
-    expect(r.wkScanEmpty, '#wk-scan was filled under legacy — redesign_homeScan is no longer house-gated').toBe(true);
+    // ⭐ THE ASSERTION STAGE 6 EXISTED TO EARN. Not one re-home function survives, so the redesign
+    // borrows nothing from the legacy house at boot. Stage 7 can delete redesign_isOn, phantom_legacy
+    // and ?legacy=1 as a REMOVAL rather than a rebuild — which is only true while this stays green.
+    expect(r.homesLeft, 'a redesign_home* function is back — the redesign is borrowing again')
+      .toBe('undefined/undefined/undefined/undefined/undefined/undefined/undefined/undefined');
     // ⭐ WHY THIS BLOCK KEEPS CHANGING, and why that is the rule working rather than churn: a
     // legacy assertion is rewritten in the ship that removes what it tests. 6.1 first re-pointed it
     // (pg-twin), 6.5 again (pg-power). Each decouple moves one organ from the "still borrowed"
