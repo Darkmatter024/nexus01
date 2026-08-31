@@ -377,7 +377,6 @@ body {
 #app,
 .sop-sheet, .sop-sheet-inner,
 .va-sheet, .ge-sheet,
-#hw-matrix-sheet,
 .qr-overlay, #rapid-scan-overlay,
 .pt-sheet, .audit-detail-sheet,
 .rm-sheet, .bd-sheet, .deploy-sheet {
@@ -8383,8 +8382,6 @@ textarea.hud-input {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* ━━━ HW MATRIX SHEET ━━━ */
-#hw-matrix-sheet { display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,0.82); backdrop-filter:var(--blur-sheet); -webkit-backdrop-filter:var(--blur-sheet); overflow-y:auto; -webkit-overflow-scrolling:touch; }
 /* ━━━ TROUBLESHOOT ASSISTANT (v1.6.98) — reuses .hwm-* shell + .hwm-entry cards ━━━ */
 #ta-sheet { display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,0.82); backdrop-filter:var(--blur-sheet); -webkit-backdrop-filter:var(--blur-sheet); overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .ta-blocker-note { margin:0 16px 10px; padding:9px 12px; background:rgba(255,45,85,0.08); border:1px solid rgba(255,45,85,0.28); border-radius:8px; font-family:var(--mono); font-size:var(--fs-caption); color:#ff9bb0; line-height:1.4; }
@@ -12874,7 +12871,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.545';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.546';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -14233,7 +14230,36 @@ if (typeof window !== 'undefined') {
       <div class="ref-sub stab-active" id="rf-optics"></div>
       <div class="ref-sub" id="rf-hw"><div style="padding:24px 16px;opacity:0.5;font-size:var(--fs-caption);text-align:center">Hardware — re-homing from Power in a later step.</div></div>
       <div class="ref-sub" id="rf-cli"><div style="padding:24px 16px;opacity:0.5;font-size:var(--fs-caption);text-align:center">CLI/IB — re-homing from CLI in a later step.</div></div>
-      <div class="ref-sub" id="rf-hwref"><div style="padding:24px 16px;opacity:0.5;font-size:var(--fs-caption);text-align:center">HW Ref — re-homing in a later step.</div></div>
+      <!-- HW Ref. v1.14.546 (LEGACY-RETIRE Stage 6.2): the matrix is AUTHORED HERE now. It used
+           to live in the #hw-matrix-sheet modal and be moved in at boot by redesign_homeHWRef(),
+           which also stripped the sheet's title+CLOSE header because the tab is the chrome. That
+           header is simply not authored here. Every id (#hwm-search, #hwm-count, #hwm-list, the
+           model/category stabs) is VERBATIM: hwMatrix_render and its filters resolve them with
+           getElementById, so identity is the contract, not position. -->
+      <div class="ref-sub" id="rf-hwref">
+        <div class="hwm-inner">
+  <div class="hwm-controls">
+    <input class="hwm-search" id="hwm-search" type="search" placeholder="SEARCH FAULT, INDICATOR, KEYWORD…" oninput="hwMatrix_render()" autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="hwm-model-row">
+      <button class="stab active" id="hwm-m-all" onclick="hwMatrix_setModel('all')">ALL</button>
+      <button class="stab" id="hwm-m-h100" onclick="hwMatrix_setModel('H100')">H100</button>
+      <button class="stab" id="hwm-m-h200" onclick="hwMatrix_setModel('H200')">H200</button>
+      <button class="stab" id="hwm-m-gb200" onclick="hwMatrix_setModel('GB200')">GB200/300</button>
+    </div>
+    <div class="hwm-cat-row">
+      <button class="stab active" id="hwm-c-all" onclick="hwMatrix_setCat('all')">ALL CATEGORIES</button>
+      <button class="stab" id="hwm-c-transceiver" onclick="hwMatrix_setCat('transceiver')">OSFP/QSFP</button>
+      <button class="stab" id="hwm-c-nvlink" onclick="hwMatrix_setCat('nvlink')">NVLINK</button>
+      <button class="stab" id="hwm-c-infiniband" onclick="hwMatrix_setCat('infiniband')">INFINIBAND</button>
+      <button class="stab" id="hwm-c-power" onclick="hwMatrix_setCat('power')">POWER</button>
+      <button class="stab" id="hwm-c-led" onclick="hwMatrix_setCat('led')">LED CODES</button>
+      <button class="stab" id="hwm-c-liquid" onclick="hwMatrix_setCat('liquid')">LIQUID COOL</button>
+    </div>
+  </div>
+  <div class="hwm-count" id="hwm-count"></div>
+  <div class="hwm-list" id="hwm-list"></div>
+        </div>
+      </div>
       <!-- Know: the operational-knowledge content (#pw-rb) is re-parented in here
            at boot by redesign_homeKnow(). Empty in source; filled at runtime. -->
       <div class="ref-sub" id="rf-know"></div>
@@ -16887,38 +16913,6 @@ if (typeof window !== 'undefined') {
   <!-- ━━━ DCT-13: SHIFT HANDOFF SHEET ━━━ -->
 
   <!-- ━━━ HW MATRIX SHEET ━━━ -->
-  <div id="hw-matrix-sheet" role="dialog" aria-modal="true" aria-label="Hardware Reference Matrix">
-    <div class="hwm-inner">
-      <div class="hwm-hdr">
-        <div>
-          <div class="hwm-title">PHANTOM · H100/H200</div>
-          <div class="hwm-subtitle">Hardware Reference</div>
-        </div>
-        <button class="hwm-close" onclick="hwMatrix_close()" aria-label="Close hardware matrix">CLOSE</button>
-      </div>
-      <div class="hwm-controls">
-        <input class="hwm-search" id="hwm-search" type="search" placeholder="SEARCH FAULT, INDICATOR, KEYWORD…" oninput="hwMatrix_render()" autocomplete="off" autocorrect="off" spellcheck="false">
-        <div class="hwm-model-row">
-          <button class="stab active" id="hwm-m-all" onclick="hwMatrix_setModel('all')">ALL</button>
-          <button class="stab" id="hwm-m-h100" onclick="hwMatrix_setModel('H100')">H100</button>
-          <button class="stab" id="hwm-m-h200" onclick="hwMatrix_setModel('H200')">H200</button>
-          <button class="stab" id="hwm-m-gb200" onclick="hwMatrix_setModel('GB200')">GB200/300</button>
-        </div>
-        <div class="hwm-cat-row">
-          <button class="stab active" id="hwm-c-all" onclick="hwMatrix_setCat('all')">ALL CATEGORIES</button>
-          <button class="stab" id="hwm-c-transceiver" onclick="hwMatrix_setCat('transceiver')">OSFP/QSFP</button>
-          <button class="stab" id="hwm-c-nvlink" onclick="hwMatrix_setCat('nvlink')">NVLINK</button>
-          <button class="stab" id="hwm-c-infiniband" onclick="hwMatrix_setCat('infiniband')">INFINIBAND</button>
-          <button class="stab" id="hwm-c-power" onclick="hwMatrix_setCat('power')">POWER</button>
-          <button class="stab" id="hwm-c-led" onclick="hwMatrix_setCat('led')">LED CODES</button>
-          <button class="stab" id="hwm-c-liquid" onclick="hwMatrix_setCat('liquid')">LIQUID COOL</button>
-        </div>
-      </div>
-      <div class="hwm-count" id="hwm-count"></div>
-      <div class="hwm-list" id="hwm-list"></div>
-    </div>
-  </div>
-
   <!-- ━━━ TROUBLESHOOT ASSISTANT SHEET (v1.6.98) ━━━ -->
   <div id="ta-sheet" role="dialog" aria-modal="true" aria-label="Troubleshoot Assistant">
     <div class="hwm-inner" id="ta-inner"></div>
@@ -23372,24 +23366,12 @@ function redesign_homeCLI() {
 }
 document.addEventListener('DOMContentLoaded', redesign_homeCLI);
 
-// redesign_homeHWRef(): the HW Ref matrix is a modal sheet (#hw-matrix-sheet), not
-// a page. Move its .hwm-inner (search + model/category filters + count + list) into
-// Reference→HW Ref (#rf-hwref), dropping the sheet's title+CLOSE header (the tab is
-// the chrome now). .hwm-* styling is class-based so it survives the move; the inner
-// .hwm-list keeps its own responsive grid. Render once so the tab shows populated.
-// Flag-gated → FIELD mode leaves the sheet + hwMatrix_open's sheet path untouched.
-function redesign_homeHWRef() {
-  if (!redesign_isOn()) return;
-  var inner = document.querySelector('#hw-matrix-sheet .hwm-inner');
-  var dest = document.getElementById('rf-hwref');
-  if (!inner || !dest || dest.querySelector('.hwm-inner')) return;
-  var hdr = inner.querySelector('.hwm-hdr');
-  if (hdr) hdr.parentNode.removeChild(hdr);
-  dest.innerHTML = '';
-  dest.appendChild(inner);
-  if (typeof hwMatrix_render === 'function') { try { hwMatrix_render(); } catch (_) {} }
-}
-document.addEventListener('DOMContentLoaded', redesign_homeHWRef);
+// ⭐ v1.14.546 (LEGACY-RETIRE Stage 6.2) — redesign_homeHWRef IS DELETED, the second of the eight
+// re-homes to go. It moved #hw-matrix-sheet's .hwm-inner into #rf-hwref at boot and stripped the
+// sheet's title+CLOSE header on the way. The matrix is now authored in #rf-hwref directly, without
+// that header, so there is nothing to move and no sheet to move it from.
+// ⚠ Note what it also did that the markup cannot: it called hwMatrix_render() after the move, so
+// the tab showed populated on first paint. That call now lives in hwMatrix_open()'s single path.
 
 // ━━━ REDESIGN STEP 4 — Command Center render (honest state only) ━━━
 // Populates pg-cmd from REAL app state — never demo data, never asserted infra
@@ -29863,28 +29845,21 @@ var PHANTOM_HW_MATRIX = {
 })();
 
 // ── HW Matrix: open / close ──
+// v1.14.546 (LEGACY-RETIRE Stage 6.2): ONE PATH. The legacy branch opened #hw-matrix-sheet as a
+// modal; that sheet is deleted and the matrix now lives in the Reference→HW Ref tab, authored there.
+// ⛔ Under ?legacy=1 this surface is GONE — #rf-hwref sits inside pg-ref, which the legacy house
+// never shows, so routing there would be a dead render reporting success. It says so instead.
+// hwMatrix_close() went with the sheet: its only caller was the CLOSE button in the header that
+// redesign_homeHWRef used to strip, and the tab needs no close affordance.
 function hwMatrix_open() {
-  if (redesign_isOn()) {
-    // Redesign: HW Ref is the Reference→HW Ref tab, not a sheet.
-    showRefTab('rf-hwref');
-    var si = document.getElementById('hwm-search'); if (si) si.value = '';
-    if (typeof hwMatrix_render === 'function') hwMatrix_render();
-    setTimeout(function() { var s = document.getElementById('hwm-search'); if (s) s.focus(); }, 200);
+  if (!redesign_isOn()) {
+    if (typeof phantomToast === 'function') phantomToast('Hardware Reference is not available in the legacy UI — return to the new UI to use it', 'warn');
     return;
   }
-  var sheet = document.getElementById('hw-matrix-sheet');
-  if (!sheet) return;
-  sheet.style.display = 'block';
-  document.body.style.overflow = 'hidden';
-  document.getElementById('hwm-search').value = '';
-  hwMatrix_render();
-  setTimeout(function() { document.getElementById('hwm-search').focus(); }, 200);
-}
-function hwMatrix_close() {
-  var sheet = document.getElementById('hw-matrix-sheet');
-  if (!sheet) return;
-  sheet.style.display = 'none';
-  document.body.style.overflow = '';
+  showRefTab('rf-hwref');
+  var si = document.getElementById('hwm-search'); if (si) si.value = '';
+  if (typeof hwMatrix_render === 'function') hwMatrix_render();
+  setTimeout(function() { var s = document.getElementById('hwm-search'); if (s) s.focus(); }, 200);
 }
 
 // ── HW Matrix: active filter state ──
