@@ -12871,7 +12871,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.548';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.549';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -14226,595 +14226,13 @@ if (typeof window !== 'undefined') {
         <div class="stab" data-rf="rf-hwref" onclick="showStab(this,'ref-sub','rf-hwref')">Parts</div>
         <div class="stab" data-rf="rf-know" onclick="showStab(this,'ref-sub','rf-know')">Know</div>
       </div>
-      <!-- Optics: pg-fiber surface re-parented in here at boot by redesign_homeOptics(). -->
-      <div class="ref-sub stab-active" id="rf-optics"></div>
-      <div class="ref-sub" id="rf-hw"><div style="padding:24px 16px;opacity:0.5;font-size:var(--fs-caption);text-align:center">Hardware — re-homing from Power in a later step.</div></div>
-      <!-- CLI / IB. v1.14.547 (LEGACY-RETIRE Stage 6.3): AUTHORED HERE now. These panels used to
-           live in pg-cli and be drained into this container at boot by redesign_homeCLI(), which
-           did dest.innerHTML='' first  so this scaffold's placeholder was built to be wiped.
-           Every id is verbatim (cs-ib, cs-oob, cs-console, cs-cert, cs-parser and the strip),
-           because showStab and STAB_GROUPS['cli-sub'] resolve them by id. -->
-      <div class="ref-sub" id="rf-cli">
-      <div class="subtab-strip">
-        <div class="stab active" onclick="showStab(this,'cli-sub','cs-ib')">IB / NDR</div>
-        <div class="stab" onclick="showStab(this,'cli-sub','cs-oob')">OOB</div>
-        <div class="stab" onclick="showStab(this,'cli-sub','cs-console')">Console</div>
-        <div class="stab" onclick="showStab(this,'cli-sub','cs-cert')">Test &amp; Cert</div>
-        <div class="stab" id="stab-cli-parser" onclick="showStab(this,'cli-sub','cs-parser');selTypeVal2='auto'">Parser</div>
-      </div>
-
-      <!-- TEST & CERT -->
-      <div class="cli-sub" id="cs-cert" style="display:none">
-        <div class="sh">Cable Certifier — Fluke DTX</div>
-        <p>Certification proves a cable plant meets TIA-568 standards. Required for warranty claims, insurance, and commissioning sign-off. Know what you're certifying and what the results mean.</p>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Link Test vs Channel Test</div><div class="card-right"><div class="badge b-gold">IMPORTANT</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Test Type</th><th>What It Includes</th><th>When to Use</th></tr>
-              <tr><td>Link (Permanent Link)</td><td>Horizontal cable only — no patch cords</td><td>Certifying installed cable plant. Standard for data center.</td></tr>
-              <tr><td>Channel</td><td>Horizontal cable + both patch cords</td><td>End-to-end certification including active equipment patch cords</td></tr>
-            </table>
-            <div class="ibar">ℹ Data centers almost always certify to Permanent Link. Know which your project requires before testing — they use different adapters on the Fluke.</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Reading DTX Results</div><div class="card-right"><div class="badge b-cyan">RESULTS</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Result</th><th>Meaning</th><th>Action</th></tr>
-              <tr><td style="color:var(--green)">PASS</td><td>All parameters within TIA limit</td><td>Document, move on</td></tr>
-              <tr><td style="color:var(--gold)">PASS*</td><td>Marginal — within limit but close</td><td>Document asterisk. Monitor. May fail under load or temp change.</td></tr>
-              <tr><td style="color:var(--red)">FAIL</td><td>One or more parameters out of spec</td><td>Identify failing test, remediate, re-certify</td></tr>
-            </table>
-            <div class="sh" style="margin-top:12px">Key Parameters</div>
-            <table class="dt">
-              <tr><th>Parameter</th><th>What It Checks</th><th>Common Fail Cause</th></tr>
-              <tr><td>Wire Map</td><td>Correct pin-to-pin continuity</td><td>Split pair, crossed pair, mis-termination</td></tr>
-              <tr><td>Length</td><td>Cable not exceeding 90m (permanent link)</td><td>Run too long, VoP calibration off</td></tr>
-              <tr><td>Insertion Loss</td><td>Signal attenuation over length</td><td>Damaged cable, bad termination, excessive length</td></tr>
-              <tr><td>NEXT</td><td>Near-End Crosstalk between pairs</td><td>Untwisted pairs at termination, split pairs</td></tr>
-              <tr><td>Return Loss</td><td>Signal reflection back to source</td><td>Impedance mismatch, kinked cable</td></tr>
-              <tr><td>Propagation Delay</td><td>Signal travel time</td><td>Excessive length, wrong cable category</td></tr>
-              <tr><td>Delay Skew</td><td>Timing difference between pairs</td><td>Should be &lt;45ns for Cat6A</td></tr>
-            </table>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Common Fail Causes &amp; Fixes</div><div class="card-right"><div class="badge b-red">TROUBLESHOOT</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Failure</th><th>Likely Cause</th><th>Fix</th></tr>
-              <tr><td>Wire map fail</td><td>Split pair or crossed termination</td><td>Re-terminate both ends. Check pair grouping.</td></tr>
-              <tr><td>NEXT fail</td><td>Too much untwisted at keystone/punch</td><td>Keep untwist to &lt;13mm (Cat6) / &lt;6mm (Cat6A)</td></tr>
-              <tr><td>Insertion loss fail</td><td>Run over 90m, damaged cable</td><td>Measure actual run. Replace damaged section.</td></tr>
-              <tr><td>Return loss fail</td><td>Kink in cable, bad keystone</td><td>Inspect full run. Replace keystone.</td></tr>
-              <tr><td>PASS* on NEXT</td><td>Marginal termination</td><td>Re-terminate with tighter untwist. Re-test.</td></tr>
-            </table>
-            <div class="wbar"><span class="ico ico-md ico-warning"></span> Never exceed 90m for horizontal permanent link. With 5m patch each end = 100m channel max. Velcro too tight and zip ties on fiber both cause return loss failures.</div>
-          </div>
-        </div>
-
-        <div class="sh">Fiber Certification — OLTS</div>
-        <p>Optical Loss Test Set (OLTS) certifies fiber attenuation meets TIA-568 / IEC 14763-3 loss budgets. Different tool from the copper certifier.</p>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">OLTS Pass/Fail Thresholds</div><div class="card-right"><div class="badge b-cyan">FIBER</div><div class="chev">▶</div></div><div class="card-stat"><span><b>3.5 dB/km</b> <i>OM3/OM4 @850NM</i></span><span><b>0.4 dB/km</b> <i>OS2 @1310NM</i></span><span><b>0.75 dB</b> <i>PER MATED PAIR</i></span></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Fiber Type</th><th>Wavelength</th><th>Max Loss / km</th><th>Connector Budget</th></tr>
-              <tr><td>OM3/OM4 MMF</td><td>850nm</td><td>3.5 dB/km</td><td>0.75 dB per mated pair</td></tr>
-              <tr><td>OM3/OM4 MMF</td><td>1300nm</td><td>1.5 dB/km</td><td>0.75 dB per mated pair</td></tr>
-              <tr><td>OS2 SMF</td><td>1310nm</td><td>0.4 dB/km</td><td>0.75 dB per mated pair</td></tr>
-              <tr><td>OS2 SMF</td><td>1550nm</td><td>0.3 dB/km</td><td>0.75 dB per mated pair</td></tr>
-            </table>
-            <p class="mt">Total loss budget = fiber loss + (connector pairs × 0.75dB) + splice loss. If measured loss exceeds budget: dirty connectors, bad splice, or damaged fiber.</p>
-            <div class="ibar">ℹ Always clean both ends before OLTS measurement. A dirty connector adds 0.5–3dB alone and will cause a false fail.</div>
-          </div>
-        </div>
-
-        <div class="sh">Multimeter in the DC</div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">What to Measure &amp; Where</div><div class="card-right"><div class="badge b-gold">SAFETY FIRST</div><div class="chev">▶</div></div><div class="card-stat"><span><b>200–220V AC</b> <i>SINGLE-PHASE 208V</i></span><span><b>~208V AC</b> <i>3-PHASE LINE-TO-LINE</i></span><span><b>~120V AC</b> <i>3-PHASE LINE-TO-NEUTRAL</i></span></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>What</th><th>Where</th><th>Expected Reading</th></tr>
-              <tr><td>Single-phase 208V</td><td>Hot to neutral at receptacle</td><td>200–220V AC</td></tr>
-              <tr><td>3-phase line-to-line</td><td>L1–L2, L2–L3, L1–L3</td><td>~208V AC each</td></tr>
-              <tr><td>3-phase line-to-neutral</td><td>Each leg to neutral</td><td>~120V AC each</td></tr>
-              <tr><td>Circuit dead check</td><td>Hot to ground after breaker off</td><td>0V — if not 0V, stop</td></tr>
-              <tr><td>Continuity</td><td>Cable ends, ground path</td><td>Beep = continuous</td></tr>
-            </table>
-            <div class="abar"><span class="ico ico-md ico-alert-red"></span> SAFETY RULES — READ BEFORE USING METER IN DC:<br>
-            • Use CAT III rated meter minimum for PDU receptacle work<br>
-            • One hand in pocket when probing live circuits — prevents current path across your heart<br>
-            • Never probe inside an open PDU cabinet near bus bars — that's an electrician's job<br>
-            • Check probe leads for cracks or exposed wire before every use<br>
-            • Verify meter is in correct mode (ACV not DCV) before touching probes to AC circuit<br>
-            • If you see arcing, smell burning, or breaker trips when you connect — stop immediately</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">DCT Scope vs Electrician Scope</div><div class="card-right"><div class="badge b-red">KNOW YOUR LIMITS</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Task</th><th>DCT</th><th>Electrician</th></tr>
-              <tr><td>Measure voltage at receptacle</td><td style="color:var(--green)">✓ OK</td><td></td></tr>
-              <tr><td>Verify circuit is dead at outlet</td><td style="color:var(--green)">✓ OK</td><td></td></tr>
-              <tr><td>Continuity check on cable</td><td style="color:var(--green)">✓ OK</td><td></td></tr>
-              <tr><td>Measure current on PDU branch</td><td style="color:var(--gold)">With training</td><td></td></tr>
-              <tr><td>Open PDU cabinet panel</td><td style="color:var(--red)">✗ NO</td><td style="color:var(--green)">✓</td></tr>
-              <tr><td>Work near bus bars</td><td style="color:var(--red)">✗ NO</td><td style="color:var(--green)">✓</td></tr>
-              <tr><td>Replace breaker</td><td style="color:var(--red)">✗ NO</td><td style="color:var(--green)">✓</td></tr>
-              <tr><td>Terminate hardwired feeds</td><td style="color:var(--red)">✗ NO</td><td style="color:var(--green)">✓</td></tr>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="cli-sub" id="cs-ib" style="display:none">
-        <div class="sh">Quantum-2 QM9700 InfiniBand</div>
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">ibstat / perfquery / UFM</div><div class="chev">▶</div></div>
-          <div class="card-body"><div class="cli">
-            <span class="cmd">ibstat</span><br>
-            <span class="cmd">ibstatus</span><br>
-            <span class="cmd">ibnetdiscover</span><br>
-            <span class="cmd">perfquery -x &lt;LID&gt; &lt;port&gt;</span><br>
-            <span class="cmd">ibnodes | grep -i down</span><br>
-            <span class="cmd">perfquery -R &lt;LID&gt; &lt;port&gt;</span>
-          </div>
-          <div class="wbar"><span class="ico ico-md ico-warning"></span> NDR IB is highly sensitive to signal integrity. NVIDIA-qualified AOC or DAC only.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- OOB MANAGEMENT -->
-      <div class="cli-sub" id="cs-oob" style="display:none">
-        <div class="sh">What is OOB?</div>
-        <p>Out-of-Band management is a dedicated network path to server BMCs and switch management ports that is physically separate from the production data network. When in-band is completely dead — OS crashed, NIC failed, network misconfigured — OOB is how you get in without touching hardware.</p>
-        <div class="ibar">ℹ OOB should be on a separate switch, separate VLAN, and ideally a separate UPS leg from production. If OOB shares a failure domain with production, it fails when you need it most.</div>
-
-        <div class="sh">Access Methods</div>
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Dell iDRAC</div><div class="card-right"><div class="badge b-cyan">DELL</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <div class="cli">
-              <span class="cc"># SSH to iDRAC directly</span><br>
-              <span class="cmd">ssh admin@&lt;idrac-ip&gt;</span><br><br>
-              <span class="cc"># racadm — remote management CLI</span><br>
-              <span class="cmd">racadm -r &lt;idrac-ip&gt; -u admin -p &lt;pw&gt; getsysinfo</span><br>
-              <span class="cmd">racadm -r &lt;idrac-ip&gt; -u admin -p &lt;pw&gt; serveraction powercycle</span><br>
-              <span class="cmd">racadm -r &lt;idrac-ip&gt; -u admin -p &lt;pw&gt; getsel</span><br><br>
-              <span class="cc"># ipmitool via iDRAC</span><br>
-              <span class="cmd">ipmitool -I lanplus -H &lt;idrac-ip&gt; -U admin -P &lt;pw&gt; chassis status</span><br>
-              <span class="cmd">ipmitool -I lanplus -H &lt;idrac-ip&gt; -U admin -P &lt;pw&gt; sol activate</span><br><br>
-              <span class="cc"># Web UI</span><br>
-              <span class="out">https://&lt;idrac-ip&gt; → Virtual Console → Serial</span><br><br>
-              <span class="cc"># iDRAC default port: 443 (HTTPS), 22 (SSH), 623 (IPMI)</span><br>
-              <span class="cc"># Default creds (change immediately): root / calvin</span>
-            </div>
-            <div class="wbar"><span class="ico ico-md ico-warning"></span> iDRAC 9 requires modern TLS. If browser rejects cert, use Firefox or racadm CLI. Chrome may block self-signed iDRAC certs.</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">HPE iLO</div><div class="card-right"><div class="badge b-cyan">HPE</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <div class="cli">
-              <span class="cc"># SSH to iLO</span><br>
-              <span class="cmd">ssh administrator@&lt;ilo-ip&gt;</span><br><br>
-              <span class="cc"># iLO CLI commands</span><br>
-              <span class="cmd">show system1</span><br>
-              <span class="cmd">reset /system1</span><br>
-              <span class="cmd">show /system1/log1/entry*</span><br><br>
-              <span class="cc"># ipmitool works with iLO too</span><br>
-              <span class="cmd">ipmitool -I lanplus -H &lt;ilo-ip&gt; -U administrator -P &lt;pw&gt; sel list</span><br><br>
-              <span class="cc"># Redfish REST API</span><br>
-              <span class="cmd">curl -k -u admin:&lt;pw&gt; https://&lt;ilo-ip&gt;/redfish/v1/Systems/1</span><br><br>
-              <span class="cc"># Default port: 443. Default creds: administrator / (printed on server pull tab)</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Supermicro IPMI</div><div class="card-right"><div class="badge b-cyan">SUPERMICRO</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <div class="cli">
-              <span class="cc"># Web UI at port 443</span><br>
-              <span class="out">https://&lt;ipmi-ip&gt; → Remote Control → iKVM</span><br><br>
-              <span class="cc"># ipmitool (same as others)</span><br>
-              <span class="cmd">ipmitool -I lanplus -H &lt;ipmi-ip&gt; -U ADMIN -P ADMIN sel list</span><br>
-              <span class="cmd">ipmitool -I lanplus -H &lt;ipmi-ip&gt; -U ADMIN -P ADMIN power status</span><br>
-              <span class="cmd">ipmitool -I lanplus -H &lt;ipmi-ip&gt; -U ADMIN -P ADMIN power reset</span><br><br>
-              <span class="cc"># Default creds: ADMIN / ADMIN (change immediately)</span><br>
-              <span class="cc"># Some units: ADMIN / (last 8 chars of MAC address)</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">NVIDIA HGX / GB200 / GB300 BMC</div><div class="card-right"><div class="badge b-green">NVIDIA</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <div class="cli">
-              <span class="cc"># Redfish API — primary management interface</span><br>
-              <span class="cmd">curl -k -u admin:&lt;pw&gt; https://&lt;bmc-ip&gt;/redfish/v1/Systems</span><br>
-              <span class="cmd">curl -k -u admin:&lt;pw&gt; https://&lt;bmc-ip&gt;/redfish/v1/Systems/System_0/LogServices/EventLog/Entries</span><br><br>
-              <span class="cc"># ipmitool still works on NVIDIA BMC</span><br>
-              <span class="cmd">ipmitool -I lanplus -H &lt;bmc-ip&gt; -U admin -P &lt;pw&gt; sdr list</span><br>
-              <span class="cmd">ipmitool -I lanplus -H &lt;bmc-ip&gt; -U admin -P &lt;pw&gt; sel list</span><br><br>
-              <span class="cc"># GPU health via BMC (HGX specific)</span><br>
-              <span class="cmd">curl -k -u admin:&lt;pw&gt; https://&lt;bmc-ip&gt;/redfish/v1/Systems/System_0/Processors</span><br><br>
-              <span class="cc"># BMC cold reset (when BMC itself is unresponsive)</span><br>
-              <span class="cmd">ipmitool -I lanplus -H &lt;bmc-ip&gt; -U admin -P &lt;pw&gt; mc reset cold</span>
-            </div>
-            <div class="abar"><span class="ico ico-md ico-alert-red"></span> If BMC is completely unresponsive: physical BMC reset button on server backplane. Check server service manual for location — varies by OEM integrator (Foxconn, Wiwynn, QCT).</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Finding the BMC IP When Unknown</div><div class="card-right"><div class="badge b-gold">DISCOVERY</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <ul>
-              <li>Check DCIM — BMC IPs should be documented. If not, that's a gap.</li>
-              <li>ipmitool locally on the OS: <code>ipmitool lan print 1</code> — shows BMC IP if OS is alive</li>
-              <li>Check DHCP server lease table for the BMC MAC address (usually printed on service tag)</li>
-              <li>Aruba/Cisco OOB switch: <code>show arp</code> on the OOB switch VLAN — BMC will have an ARP entry if it has a lease</li>
-              <li>Dell: <code>racadm getsysinfo</code> locally on OS shows iDRAC IP</li>
-              <li>HPE: <code>hponcfg -g</code> locally shows iLO IP</li>
-            </ul>
-            <div class="wbar"><span class="ico ico-md ico-warning"></span> If BMC has no IP at all: it may be set to static and misconfigured, or DHCP exhausted. Connect via physical serial console to configure.</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">OOB Network Architecture</div><div class="card-right"><div class="badge b-cyan">DESIGN</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Component</th><th>Standard</th><th>Notes</th></tr>
-              <tr><td>OOB switch</td><td>Dedicated 1G switch</td><td>Separate from production fabric. Never shared.</td></tr>
-              <tr><td>OOB VLAN</td><td>Dedicated VLAN (e.g. VLAN 100)</td><td>Routed but firewalled. No production traffic.</td></tr>
-              <tr><td>OOB subnet</td><td>RFC 1918 private</td><td>Commonly 10.0.0.0/24 or 192.168.x.0/24 per site</td></tr>
-              <tr><td>OOB power</td><td>Separate UPS leg</td><td>Ideally different PDU from servers it manages</td></tr>
-              <tr><td>Speed</td><td>1G copper</td><td>BMC ports are 1G. Never need more.</td></tr>
-              <tr><td>Access</td><td>Jump host / VPN</td><td>Never directly internet-routable</td></tr>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- CONSOLE CABLE -->
-      <div class="cli-sub" id="cs-console" style="display:none">
-        <div class="sh">Console Cable Reference</div>
-        <p>When in-band and OOB are both down, physical serial console is your last resort. Know this before you need it.</p>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Baud Rates by Platform</div><div class="card-right"><div class="badge b-red">CRITICAL</div><div class="chev">▶</div></div><div class="card-stat"><span><b>9600</b> <i>CISCO IOS / NX-OS</i></span><span><b>115200</b> <i>DELL iDRAC</i></span><span><b>115200</b> <i>NVIDIA HGX BMC</i></span></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Platform</th><th>Baud</th><th>Settings</th></tr>
-              <tr><td>Cisco IOS / NX-OS</td><td>9600</td><td>8N1, no flow control</td></tr>
-              <tr><td>Arista EOS</td><td>9600</td><td>8N1, no flow control</td></tr>
-              <tr><td>NVIDIA MLNX-OS</td><td>9600</td><td>8N1, no flow control</td></tr>
-              <tr><td>Dell iDRAC serial</td><td>115200</td><td>8N1, no flow control</td></tr>
-              <tr><td>HPE iLO serial</td><td>9600</td><td>8N1, no flow control</td></tr>
-              <tr><td>Supermicro IPMI</td><td>115200</td><td>8N1, no flow control</td></tr>
-              <tr><td>NVIDIA HGX BMC</td><td>115200</td><td>8N1, no flow control</td></tr>
-              <tr><td>Linux (GRUB/kernel)</td><td>115200</td><td>8N1, console=ttyS0,115200</td></tr>
-              <tr><td>Linux (legacy)</td><td>9600</td><td>Older distros may default 9600</td></tr>
-            </table>
-            <div class="wbar"><span class="ico ico-md ico-warning"></span> Garbage on screen = wrong baud rate. Try 115200 first, then 9600, then 38400. Never change other settings (8N1 is universal).</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Cisco Rollover Cable Pinout</div><div class="card-right"><div class="badge b-cyan">PINOUT</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <p>The Cisco rollover (yost) cable is the standard for most network gear console ports. RJ45 to DB9.</p>
-            <table class="dt">
-              <tr><th>RJ45 Pin</th><th>Signal</th><th>DB9 Pin</th></tr>
-              <tr><td>1</td><td>RTS</td><td>8</td></tr>
-              <tr><td>2</td><td>DTR</td><td>6</td></tr>
-              <tr><td>3</td><td>TxD</td><td>2</td></tr>
-              <tr><td>4</td><td>GND</td><td>5</td></tr>
-              <tr><td>5</td><td>GND</td><td>5</td></tr>
-              <tr><td>6</td><td>RxD</td><td>3</td></tr>
-              <tr><td>7</td><td>DSR</td><td>4</td></tr>
-              <tr><td>8</td><td>CTS</td><td>7</td></tr>
-            </table>
-            <div class="info-bar" style="margin-top:10px">ℹ Rollover = pin 1 connects to pin 8, pin 2 to pin 7, etc. — each pair is reversed. Not the same as an Ethernet straight-through cable.</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">USB-to-Serial Adapter Guide</div><div class="card-right"><div class="badge b-gold">ADAPTERS</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Chipset</th><th>OS</th><th>Status</th></tr>
-              <tr><td>FTDI FT232</td><td>macOS 10.9+</td><td>Built-in driver. Plug and play.</td></tr>
-              <tr><td>FTDI FT232</td><td>Linux</td><td>Built-in. Device: /dev/ttyUSB0</td></tr>
-              <tr><td>FTDI FT232</td><td>Windows</td><td>Download from ftdichip.com</td></tr>
-              <tr><td>Prolific PL2303</td><td>macOS 12+</td><td>Broken — use FTDI instead</td></tr>
-              <tr><td>Prolific PL2303</td><td>Windows 10/11</td><td>Often works but less reliable than FTDI</td></tr>
-              <tr><td>CP2102 (Silicon Labs)</td><td>All</td><td>Good alternative to FTDI</td></tr>
-            </table>
-            <div class="abar"><span class="ico ico-md ico-alert-red"></span> Avoid cheap Prolific clones on macOS — driver is broken on Monterey and later. Buy FTDI-based adapters only for reliable DC work.</div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Terminal Emulator Settings</div><div class="card-right"><div class="badge b-cyan">SOFTWARE</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <div class="cli">
-              <span class="cc"># macOS / Linux — screen</span><br>
-              <span class="cmd">screen /dev/ttyUSB0 9600</span><br>
-              <span class="cmd">screen /dev/tty.usbserial-XXXX 115200</span><br>
-              <span class="cc"># Exit screen: Ctrl-A then K</span><br><br>
-              <span class="cc"># macOS / Linux — minicom</span><br>
-              <span class="cmd">minicom -s</span><span class="out">  ← configure port + baud first</span><br>
-              <span class="cmd">minicom -b 9600 -D /dev/ttyUSB0</span><br><br>
-              <span class="cc"># Linux — find your serial device</span><br>
-              <span class="cmd">dmesg | grep tty</span><br>
-              <span class="cmd">ls /dev/ttyUSB*</span><br>
-              <span class="cmd">ls /dev/ttyACM*</span><br><br>
-              <span class="cc"># PuTTY (Windows) settings:</span><br>
-              <span class="out">Connection type: Serial</span><br>
-              <span class="out">Serial line: COM3 (check Device Manager)</span><br>
-              <span class="out">Speed: 9600 or 115200</span><br>
-              <span class="out">Data bits: 8, Stop bits: 1, Parity: None, Flow: None</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" onclick="toggleCard(this)">
-          <div class="card-hdr"><div class="card-title">Console Cable Types by Gear</div><div class="card-right"><div class="badge b-cyan">REFERENCE</div><div class="chev">▶</div></div></div>
-          <div class="card-body">
-            <table class="dt">
-              <tr><th>Gear</th><th>Console Port</th><th>Cable Needed</th></tr>
-              <tr><td>Cisco switches/routers</td><td>RJ45</td><td>RJ45 rollover + DB9 adapter</td></tr>
-              <tr><td>Arista switches</td><td>RJ45</td><td>RJ45 rollover + DB9 or USB-A</td></tr>
-              <tr><td>MLNX switches</td><td>RJ45</td><td>RJ45 rollover + USB adapter</td></tr>
-              <tr><td>Dell PowerEdge</td><td>DB9 or USB mini-B</td><td>DB9 null modem or USB mini-B</td></tr>
-              <tr><td>HPE ProLiant</td><td>DB9 or USB</td><td>DB9 null modem or USB-A</td></tr>
-              <tr><td>Supermicro</td><td>DB9</td><td>DB9 null modem cable</td></tr>
-              <tr><td>NVIDIA HGX servers</td><td>USB Type-A or RJ45</td><td>Check OEM (Wiwynn/Foxconn/QCT) manual</td></tr>
-            </table>
-            <div class="ibar">ℹ Carry: 1x RJ45 rollover cable, 1x DB9-to-USB adapter (FTDI), 1x USB-A cable. That covers 95% of DC console situations.</div>
-          </div>
-        </div>
-      </div>
-      <!-- CLI OUTPUT PARSER — relocated from OPS tab -->
-      <div class="cli-sub" id="cs-parser" style="display:none">
-        <div class="sh">Output Parser &amp; Interpreter</div>
-        <p>Paste raw CLI output, port map, or fiber data. Parser identifies type, extracts key data, flags issues.</p>
-        <div style="margin-top:12px">
-          <div style="font-family:var(--orb);font-size: var(--fs-micro);letter-spacing:3px;color:var(--slate);margin-bottom:8px;text-transform:uppercase">Detect type or select:</div>
-          <div class="type-row" id="typeChips2">
-            <div class="tc sel" data-type="auto" onclick="selType2(this)">AUTO</div>
-            <div class="tc" data-type="dom" onclick="selType2(this)">DOM</div>
-            <div class="tc" data-type="errors" onclick="selType2(this)">Errors</div>
-            <div class="tc" data-type="portchan" onclick="selType2(this)">Port-Channel</div>
-            <div class="tc" data-type="portmap" onclick="selType2(this)">Port Map <span class="ai-tag">AI</span></div>
-            <div class="tc" data-type="fibermap" onclick="selType2(this)">Fiber Map <span class="ai-tag">AI</span></div>
-            <div class="tc" data-type="ibperf" onclick="selType2(this)">IB perf</div>
-            <div class="tc" data-type="nvidia" onclick="selType2(this)">nvidia-smi</div>
-            <div class="tc" data-type="freeform" onclick="selType2(this)">Free-form <span class="ai-tag">AI</span></div>
-          </div>
-          <textarea class="paste-box" id="parserInput2" rows="7" placeholder="Paste output here...&#10;&#10;DOM: show interfaces Eth1/1 transceiver&#10;Errors: show interfaces counters errors&#10;Port Map: any format&#10;IB: perfquery output"></textarea>
-          <div style="display:flex;gap:8px;margin-top:9px">
-            <button class="parse-btn pt-btn pt-btn-secondary" id="parseBtn2" onclick="runParser2()" style="flex:1;margin-top:0">▶ &nbsp;ANALYZE</button>
-            <button class="import-btn" onclick="importFileToInput('parserInput2')" aria-label="Import file"><span class="ico ico-md ico-file"></span> IMPORT</button>
-          </div>
-          <button class="clear-btn pt-btn pt-btn-ghost" onclick="document.getElementById('parserInput2').value='';document.getElementById('parserResults2').innerHTML='';document.querySelectorAll('#typeChips2 .tc').forEach(c=>c.classList.remove('sel'));document.querySelector('#typeChips2 .tc[data-type=auto]').classList.add('sel');selTypeVal2='auto'">CLEAR</button>
-        </div>
-        <div class="parse-results" id="parserResults2"></div>
-      </div>
-
-      </div>
-      <!-- HW Ref. v1.14.546 (LEGACY-RETIRE Stage 6.2): the matrix is AUTHORED HERE now. It used
-           to live in the #hw-matrix-sheet modal and be moved in at boot by redesign_homeHWRef(),
-           which also stripped the sheet's title+CLOSE header because the tab is the chrome. That
-           header is simply not authored here. Every id (#hwm-search, #hwm-count, #hwm-list, the
-           model/category stabs) is VERBATIM: hwMatrix_render and its filters resolve them with
-           getElementById, so identity is the contract, not position. -->
-      <div class="ref-sub" id="rf-hwref">
-        <div class="hwm-inner">
-  <div class="hwm-controls">
-    <input class="hwm-search" id="hwm-search" type="search" placeholder="SEARCH FAULT, INDICATOR, KEYWORD…" oninput="hwMatrix_render()" autocomplete="off" autocorrect="off" spellcheck="false">
-    <div class="hwm-model-row">
-      <button class="stab active" id="hwm-m-all" onclick="hwMatrix_setModel('all')">ALL</button>
-      <button class="stab" id="hwm-m-h100" onclick="hwMatrix_setModel('H100')">H100</button>
-      <button class="stab" id="hwm-m-h200" onclick="hwMatrix_setModel('H200')">H200</button>
-      <button class="stab" id="hwm-m-gb200" onclick="hwMatrix_setModel('GB200')">GB200/300</button>
-    </div>
-    <div class="hwm-cat-row">
-      <button class="stab active" id="hwm-c-all" onclick="hwMatrix_setCat('all')">ALL CATEGORIES</button>
-      <button class="stab" id="hwm-c-transceiver" onclick="hwMatrix_setCat('transceiver')">OSFP/QSFP</button>
-      <button class="stab" id="hwm-c-nvlink" onclick="hwMatrix_setCat('nvlink')">NVLINK</button>
-      <button class="stab" id="hwm-c-infiniband" onclick="hwMatrix_setCat('infiniband')">INFINIBAND</button>
-      <button class="stab" id="hwm-c-power" onclick="hwMatrix_setCat('power')">POWER</button>
-      <button class="stab" id="hwm-c-led" onclick="hwMatrix_setCat('led')">LED CODES</button>
-      <button class="stab" id="hwm-c-liquid" onclick="hwMatrix_setCat('liquid')">LIQUID COOL</button>
-    </div>
-  </div>
-  <div class="hwm-count" id="hwm-count"></div>
-  <div class="hwm-list" id="hwm-list"></div>
-        </div>
-      </div>
-      <!-- Know: the operational-knowledge content (#pw-rb) is re-parented in here
-           at boot by redesign_homeKnow(). Empty in source; filled at runtime. -->
-      <div class="ref-sub" id="rf-know"></div>
-    </div>
-
-    <!-- PAGE: TRIAGE -->
-    <div class="page active" id="pg-triage">
-
-      <!-- DCT-05: HEALTH STATUS — now in header dots -->
-
-      <!-- TODAY DASHBOARD — build lead morning overview (populated by today_render on tab open) -->
-      <div id="fr-chip"></div>
-      <div id="today-dashboard"></div>
-
-      <!-- SHIFT BRIEFING BAR — shown on first open each shift -->
-      <div id="triage-brief-bar" style="display:none"></div>
-
-      <!-- MISSION STATUS BAR — live, hidden when no active deployment -->
-      <div id="triage-mission-bar" style="display:none;margin-bottom:10px"></div>
-
-      <!-- COMMAND GRID (v1.4.1 Cut 9) — primary action surface, 10 tiles in 5×2 -->
-      <div class="cmd-grid">
-        <!-- DEPLOY — deployment command engine (id preserved for existing JS hooks) -->
-        <button id="qa-deploy-card" class="qa-btn qa-deploy qa-deploy-inactive" onclick="deploy_quick()" aria-label="Deployment Command">
-          <div class="qa-icon"><svg width="22" height="28" viewBox="0 0 64 64" fill="none" style="vertical-align:middle">
-          <defs>
-            <linearGradient id="_dpr_g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5cf2ff"/><stop offset="100%" stop-color="#5cf2ff" stop-opacity="0.4"/></linearGradient>
-            <filter id="_dpr_gl"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          </defs>
-          <rect x="16" y="6" width="32" height="52" rx="2" stroke="url(#_dpr_g)" stroke-width="1.5" fill="none"/>
-          <rect x="16" y="6" width="5" height="52" rx="1" stroke="#5cf2ff" stroke-width="0.6" fill="rgba(92,242,255,0.03)"/>
-          <rect x="43" y="6" width="5" height="52" rx="1" stroke="#5cf2ff" stroke-width="0.6" fill="rgba(92,242,255,0.03)"/>
-          <rect x="22" y="14" width="20" height="8" rx="1" fill="rgba(92,242,255,0.1)" stroke="#5cf2ff" stroke-width="1.2" filter="url(#_dpr_gl)"/>
-          <circle cx="26" cy="18" r="1.2" fill="#32d74b"><animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/></circle>
-          <circle cx="30" cy="18" r="0.8" fill="#ffd60a" opacity="0.7"/>
-          <circle cx="33" cy="18" r="0.8" fill="#5cf2ff" opacity="0.7"/>
-          <rect x="22" y="26" width="20" height="4" rx="1" fill="rgba(155,89,255,0.08)" stroke="#9b59ff" stroke-width="0.8" opacity="0.6"/>
-          <rect x="22" y="44" width="20" height="6" rx="1" fill="rgba(255,214,10,0.06)" stroke="#ffd60a" stroke-width="0.6" opacity="0.5"/>
-        </svg></div>
-          <div class="qa-label">Deploy</div>
-          <div class="qa-sub">No active pod</div>
-        </button>
-        <!-- BLOCKER — mark active rack for follow-up; context-aware routing -->
-        <button id="cmd-blocker-card" class="qa-btn qa-blocker" onclick="blocker_quick()" aria-label="Mark rack blocked">
-          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff453a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
-          <div class="qa-label" style="color: var(--hud-red);">Blocker</div>
-        </button>
-        <!-- HANDOFF — shift handoff generator; context-aware routing -->
-        <button id="cmd-handoff-card" class="qa-btn qa-handoff" onclick="handoff_quick()" aria-label="Generate shift handoff">
-          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff8a00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>
-          <div class="qa-label" style="color: var(--hud-orange);">Handoff</div>
-        </button>
-        <!-- COMPASS — cage nut + rail layout -->
-        <button class="qa-btn qa-compass" onclick="goCompass()" aria-label="Cage Compass — rail layout">
-          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect x="6" y="2" width="12" height="20" rx="1.2"/><line x1="6" y1="8" x2="18" y2="8" stroke-opacity="0.45"/><line x1="6" y1="14" x2="18" y2="14" stroke-opacity="0.45"/><rect x="9" y="4" width="2" height="2" rx="0.4" fill="#5cf2ff" stroke="none"/><rect x="13" y="4" width="2" height="2" rx="0.4" fill="rgba(92,242,255,0.25)" stroke="none"/><rect x="9" y="10" width="2" height="2" rx="0.4" fill="rgba(92,242,255,0.25)" stroke="none"/><rect x="13" y="10" width="2" height="2" rx="0.4" fill="#5cf2ff" stroke="none"/><rect x="9" y="16" width="2" height="2" rx="0.4" fill="#5cf2ff" stroke="none"/><rect x="13" y="16" width="2" height="2" rx="0.4" fill="rgba(92,242,255,0.25)" stroke="none"/></svg></div>
-          <div class="qa-label">Compass</div>
-        </button>
-        <!-- GHOST ECHO — log fix, replay patterns, second brain -->
-        <button class="qa-btn qa-ghost" onclick="geOpen()" aria-label="Ghost Echo — log fix, replay patterns">
-          <div class="qa-icon"><span class="ico ico-2xl ico-ghost" style="vertical-align:middle"></span></div>
-          <div class="qa-label">Ghost Echo</div>
-        </button>
-        <!-- HW REF — hardware reference matrix. v1.6.74: re-homed from header overflow to a NOW tile (crash-cart moved to BUILD subtab). Overflow entry retained for reach-from-anywhere. -->
-        <button class="qa-btn" onclick="hwMatrix_open()" aria-label="Open hardware reference">
-          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg></div>
-          <div class="qa-label" style="color: var(--cyan-bright);">HW Ref</div>
-        </button>
-        <!-- SHIFT REPORT — generate end-of-shift report -->
-        <button class="qa-btn qa-parser" onclick="shiftReport_generate()" aria-label="Generate shift report">
-          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#30d158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
-          <div class="qa-label">Shift Report</div>
-        </button>
-        <!-- MISSION BRIEF (v1.6.46) — pairs with SHIFT REPORT as shift-boundary bookends; surfaces today's briefing -->
-        <button class="qa-btn qa-brief" onclick="brief_show()" aria-label="Mission Brief — today's shift briefing">
-          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffd60a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect x="6" y="3" width="12" height="18" rx="1.5"/><rect x="9" y="1.5" width="6" height="3" rx="0.5"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></div>
-          <div class="qa-label" style="color: var(--gold);">Mission Brief</div>
-        </button>
-      </div>
-
-      <!-- SECOND BRAIN ROW (v1.4.1 Cut 9) — voice + memory pair -->
-      <div class="cmd-grid cmd-second-brain">
-        <button class="qa-btn qa-voice" data-requires-net="1" onclick="openVaSheet('listening');vaStart()" aria-label="Ask Voice Assistant">
-          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div>
-          <div class="qa-label">Ask Assistant</div>
-        </button>
-      </div>
-
-      <div class="qa-divider" style="margin-top:14px">
-        <div class="qa-divider-line"></div>
-        <div class="qa-divider-label">Field Protocols</div>
-        <div class="qa-divider-line"></div>
-      </div>
-
-      <!-- DOWN LINK PROTOCOL — shortcut to full content in Reference tab -->
-      <button onclick="goFiberTriage()" style="width:100%;display:flex;align-items:center;justify-content:flex-start;gap:14px;min-height:var(--tap-xl);padding:12px 16px;margin-bottom:10px;border-radius:12px;border:1px solid rgba(255,45,85,0.3);background:linear-gradient(135deg,rgba(255,45,85,0.07),rgba(255,45,85,0.02));cursor:pointer;-webkit-appearance:none;user-select:none" aria-label="Down Link Protocol — opens in Reference">
-        <div><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></div>
-        <div style="text-align:left;flex:1">
-          <div style="font-family:var(--orb);font-size: var(--fs-micro);letter-spacing:2px;color:var(--red);text-transform:uppercase">Down Link Protocol</div>
-          <div style="font-family:var(--raj);font-size: var(--fs-caption);color:var(--slate)">7-step fiber triage · tap to open in Reference</div>
-        </div>
-        <div style="font-family:var(--mono);font-size:14px;color:var(--red);flex-shrink:0">→</div>
-      </button>
-    </div><!-- end pg-triage -->
-
-    <!-- PAGE: SCAN — Stage 2 unified scan destination -->
-    <div class="page" id="pg-scan">
-      <div class="scan-page">
-        <div class="scan-context-strip" id="scan-context-strip">
-          <div class="scan-context-dot idle" id="scan-context-dot"></div>
-          <div id="scan-context-text">No active deployment — scans will not verify against EDP.</div>
-        </div>
-
-        <button class="scan-hero" onclick="ScanDispatch.openScanner()" aria-label="Scan anything">
-          <div class="scan-hero-icon"><span class="ico ico-md ico-camera"></span></div>
-          <div class="scan-hero-title">Scan Anything</div>
-          <div class="scan-hero-subtitle">Rack tag, switch tag, optic, or asset. PHANTOM routes you.</div>
-        </button>
-
-        <div class="scan-gun-row">
-          <div class="scan-gun-eyebrow">Or pull the trigger on a BT scanner</div>
-          <div class="scan-gun-input-wrap">
-            <input class="scan-gun-input"
-                   id="scan-gun-input"
-                   type="text"
-                   inputmode="none"
-                   autocomplete="off"
-                   autocorrect="off"
-                   autocapitalize="off"
-                   spellcheck="false"
-                   placeholder="Tap here, then scan with BT gun…"
-                   aria-label="Bluetooth scanner input"
-                   oninput="scanGun_toggleClear(this)">
-            <button class="scan-gun-clear" type="button" aria-label="Clear scan field"
-                    onclick="scanGun_clear('scan-gun-input')">✕</button>
-            <button class="scan-gun-go" type="button" aria-label="Submit scan"
-                    onclick="scanGun_submit('scan-gun-input', 'scan')">GO</button>
-          </div>
-        </div>
-
-        <!-- Gate 31: Verify-mode discoverability hint —
-             scans here go to a collection list, but if the tech actually
-             needs to verify an optic against the EDP, point them at the
-             real tool in KNOW. -->
-        <button class="scan-verify-hint" type="button" onclick="goOpticVerify()">
-          <span class="scan-verify-hint-icon">✓</span>
-          <span class="scan-verify-hint-body">
-            <span class="scan-verify-hint-title">Verifying an optic against the EDP?</span>
-            <span class="scan-verify-hint-detail">Use Optic Score Verify in KNOW →</span>
-          </span>
-        </button>
-
-        <div class="scan-collection">
-          <div class="scan-collection-header">
-            <div class="scan-collection-eyebrow">Collected Scans</div>
-            <div class="scan-collection-count" id="scan-collection-count">0 scans</div>
-          </div>
-          <div id="scan-collection-list">
-            <div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);padding:14px;text-align:center;border:1px dashed rgba(255,255,255,0.06);border-radius:8px">Scan something — it will appear here.</div>
-          </div>
-          <div class="scan-collection-actions" id="scan-collection-actions" style="display:none">
-            <button class="scan-export-btn" type="button" onclick="ScanDispatch.exportCollection()">⇪ &nbsp;EXPORT (CSV + Audit)</button>
-            <button class="scan-clear-btn" type="button" onclick="ScanDispatch.clearCollection()">CLEAR</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PAGE: FIBER+DOM (grouped) -->
-    <div class="page" id="pg-fiber">
+      <!-- OPTICS. v1.14.549 (LEGACY-RETIRE Stage 6.4): AUTHORED HERE now. These panels used to
+           live in pg-fiber and be drained into this container at boot by redesign_homeOptics().
+           Every id is verbatim (fs-fiber and the seven sibling fiber-sub panels, the strip),
+           because showStab and STAB_GROUPS['fiber-sub'] resolve them by id.
+           � The scaffold keeps its stab-active class: #rf-optics is the DEFAULT Reference panel,
+           and dropping that class would open Tools on a blank Optics tab. -->
+      <div class="ref-sub stab-active" id="rf-optics">
       <div class="subtab-strip">
         <div class="stab active" onclick="showStab(this,'fiber-sub','fs-fiber')">Fiber Types</div>
         <div class="stab" onclick="showStab(this,'fiber-sub','fs-form')">Form Factors</div>
@@ -15745,8 +15163,593 @@ if (typeof window !== 'undefined') {
         </div>
       </div><!-- end fs-triage -->
 
-    </div><!-- end pg-fiber -->
+      </div>
+      <div class="ref-sub" id="rf-hw"><div style="padding:24px 16px;opacity:0.5;font-size:var(--fs-caption);text-align:center">Hardware — re-homing from Power in a later step.</div></div>
+      <!-- CLI / IB. v1.14.547 (LEGACY-RETIRE Stage 6.3): AUTHORED HERE now. These panels used to
+           live in pg-cli and be drained into this container at boot by redesign_homeCLI(), which
+           did dest.innerHTML='' first  so this scaffold's placeholder was built to be wiped.
+           Every id is verbatim (cs-ib, cs-oob, cs-console, cs-cert, cs-parser and the strip),
+           because showStab and STAB_GROUPS['cli-sub'] resolve them by id. -->
+      <div class="ref-sub" id="rf-cli">
+      <div class="subtab-strip">
+        <div class="stab active" onclick="showStab(this,'cli-sub','cs-ib')">IB / NDR</div>
+        <div class="stab" onclick="showStab(this,'cli-sub','cs-oob')">OOB</div>
+        <div class="stab" onclick="showStab(this,'cli-sub','cs-console')">Console</div>
+        <div class="stab" onclick="showStab(this,'cli-sub','cs-cert')">Test &amp; Cert</div>
+        <div class="stab" id="stab-cli-parser" onclick="showStab(this,'cli-sub','cs-parser');selTypeVal2='auto'">Parser</div>
+      </div>
 
+      <!-- TEST & CERT -->
+      <div class="cli-sub" id="cs-cert" style="display:none">
+        <div class="sh">Cable Certifier — Fluke DTX</div>
+        <p>Certification proves a cable plant meets TIA-568 standards. Required for warranty claims, insurance, and commissioning sign-off. Know what you're certifying and what the results mean.</p>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Link Test vs Channel Test</div><div class="card-right"><div class="badge b-gold">IMPORTANT</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Test Type</th><th>What It Includes</th><th>When to Use</th></tr>
+              <tr><td>Link (Permanent Link)</td><td>Horizontal cable only — no patch cords</td><td>Certifying installed cable plant. Standard for data center.</td></tr>
+              <tr><td>Channel</td><td>Horizontal cable + both patch cords</td><td>End-to-end certification including active equipment patch cords</td></tr>
+            </table>
+            <div class="ibar">ℹ Data centers almost always certify to Permanent Link. Know which your project requires before testing — they use different adapters on the Fluke.</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Reading DTX Results</div><div class="card-right"><div class="badge b-cyan">RESULTS</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Result</th><th>Meaning</th><th>Action</th></tr>
+              <tr><td style="color:var(--green)">PASS</td><td>All parameters within TIA limit</td><td>Document, move on</td></tr>
+              <tr><td style="color:var(--gold)">PASS*</td><td>Marginal — within limit but close</td><td>Document asterisk. Monitor. May fail under load or temp change.</td></tr>
+              <tr><td style="color:var(--red)">FAIL</td><td>One or more parameters out of spec</td><td>Identify failing test, remediate, re-certify</td></tr>
+            </table>
+            <div class="sh" style="margin-top:12px">Key Parameters</div>
+            <table class="dt">
+              <tr><th>Parameter</th><th>What It Checks</th><th>Common Fail Cause</th></tr>
+              <tr><td>Wire Map</td><td>Correct pin-to-pin continuity</td><td>Split pair, crossed pair, mis-termination</td></tr>
+              <tr><td>Length</td><td>Cable not exceeding 90m (permanent link)</td><td>Run too long, VoP calibration off</td></tr>
+              <tr><td>Insertion Loss</td><td>Signal attenuation over length</td><td>Damaged cable, bad termination, excessive length</td></tr>
+              <tr><td>NEXT</td><td>Near-End Crosstalk between pairs</td><td>Untwisted pairs at termination, split pairs</td></tr>
+              <tr><td>Return Loss</td><td>Signal reflection back to source</td><td>Impedance mismatch, kinked cable</td></tr>
+              <tr><td>Propagation Delay</td><td>Signal travel time</td><td>Excessive length, wrong cable category</td></tr>
+              <tr><td>Delay Skew</td><td>Timing difference between pairs</td><td>Should be &lt;45ns for Cat6A</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Common Fail Causes &amp; Fixes</div><div class="card-right"><div class="badge b-red">TROUBLESHOOT</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Failure</th><th>Likely Cause</th><th>Fix</th></tr>
+              <tr><td>Wire map fail</td><td>Split pair or crossed termination</td><td>Re-terminate both ends. Check pair grouping.</td></tr>
+              <tr><td>NEXT fail</td><td>Too much untwisted at keystone/punch</td><td>Keep untwist to &lt;13mm (Cat6) / &lt;6mm (Cat6A)</td></tr>
+              <tr><td>Insertion loss fail</td><td>Run over 90m, damaged cable</td><td>Measure actual run. Replace damaged section.</td></tr>
+              <tr><td>Return loss fail</td><td>Kink in cable, bad keystone</td><td>Inspect full run. Replace keystone.</td></tr>
+              <tr><td>PASS* on NEXT</td><td>Marginal termination</td><td>Re-terminate with tighter untwist. Re-test.</td></tr>
+            </table>
+            <div class="wbar"><span class="ico ico-md ico-warning"></span> Never exceed 90m for horizontal permanent link. With 5m patch each end = 100m channel max. Velcro too tight and zip ties on fiber both cause return loss failures.</div>
+          </div>
+        </div>
+
+        <div class="sh">Fiber Certification — OLTS</div>
+        <p>Optical Loss Test Set (OLTS) certifies fiber attenuation meets TIA-568 / IEC 14763-3 loss budgets. Different tool from the copper certifier.</p>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">OLTS Pass/Fail Thresholds</div><div class="card-right"><div class="badge b-cyan">FIBER</div><div class="chev">▶</div></div><div class="card-stat"><span><b>3.5 dB/km</b> <i>OM3/OM4 @850NM</i></span><span><b>0.4 dB/km</b> <i>OS2 @1310NM</i></span><span><b>0.75 dB</b> <i>PER MATED PAIR</i></span></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Fiber Type</th><th>Wavelength</th><th>Max Loss / km</th><th>Connector Budget</th></tr>
+              <tr><td>OM3/OM4 MMF</td><td>850nm</td><td>3.5 dB/km</td><td>0.75 dB per mated pair</td></tr>
+              <tr><td>OM3/OM4 MMF</td><td>1300nm</td><td>1.5 dB/km</td><td>0.75 dB per mated pair</td></tr>
+              <tr><td>OS2 SMF</td><td>1310nm</td><td>0.4 dB/km</td><td>0.75 dB per mated pair</td></tr>
+              <tr><td>OS2 SMF</td><td>1550nm</td><td>0.3 dB/km</td><td>0.75 dB per mated pair</td></tr>
+            </table>
+            <p class="mt">Total loss budget = fiber loss + (connector pairs × 0.75dB) + splice loss. If measured loss exceeds budget: dirty connectors, bad splice, or damaged fiber.</p>
+            <div class="ibar">ℹ Always clean both ends before OLTS measurement. A dirty connector adds 0.5–3dB alone and will cause a false fail.</div>
+          </div>
+        </div>
+
+        <div class="sh">Multimeter in the DC</div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">What to Measure &amp; Where</div><div class="card-right"><div class="badge b-gold">SAFETY FIRST</div><div class="chev">▶</div></div><div class="card-stat"><span><b>200–220V AC</b> <i>SINGLE-PHASE 208V</i></span><span><b>~208V AC</b> <i>3-PHASE LINE-TO-LINE</i></span><span><b>~120V AC</b> <i>3-PHASE LINE-TO-NEUTRAL</i></span></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>What</th><th>Where</th><th>Expected Reading</th></tr>
+              <tr><td>Single-phase 208V</td><td>Hot to neutral at receptacle</td><td>200–220V AC</td></tr>
+              <tr><td>3-phase line-to-line</td><td>L1–L2, L2–L3, L1–L3</td><td>~208V AC each</td></tr>
+              <tr><td>3-phase line-to-neutral</td><td>Each leg to neutral</td><td>~120V AC each</td></tr>
+              <tr><td>Circuit dead check</td><td>Hot to ground after breaker off</td><td>0V — if not 0V, stop</td></tr>
+              <tr><td>Continuity</td><td>Cable ends, ground path</td><td>Beep = continuous</td></tr>
+            </table>
+            <div class="abar"><span class="ico ico-md ico-alert-red"></span> SAFETY RULES — READ BEFORE USING METER IN DC:<br>
+            • Use CAT III rated meter minimum for PDU receptacle work<br>
+            • One hand in pocket when probing live circuits — prevents current path across your heart<br>
+            • Never probe inside an open PDU cabinet near bus bars — that's an electrician's job<br>
+            • Check probe leads for cracks or exposed wire before every use<br>
+            • Verify meter is in correct mode (ACV not DCV) before touching probes to AC circuit<br>
+            • If you see arcing, smell burning, or breaker trips when you connect — stop immediately</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">DCT Scope vs Electrician Scope</div><div class="card-right"><div class="badge b-red">KNOW YOUR LIMITS</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Task</th><th>DCT</th><th>Electrician</th></tr>
+              <tr><td>Measure voltage at receptacle</td><td style="color:var(--green)">✓ OK</td><td></td></tr>
+              <tr><td>Verify circuit is dead at outlet</td><td style="color:var(--green)">✓ OK</td><td></td></tr>
+              <tr><td>Continuity check on cable</td><td style="color:var(--green)">✓ OK</td><td></td></tr>
+              <tr><td>Measure current on PDU branch</td><td style="color:var(--gold)">With training</td><td></td></tr>
+              <tr><td>Open PDU cabinet panel</td><td style="color:var(--red)">✗ NO</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>Work near bus bars</td><td style="color:var(--red)">✗ NO</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>Replace breaker</td><td style="color:var(--red)">✗ NO</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>Terminate hardwired feeds</td><td style="color:var(--red)">✗ NO</td><td style="color:var(--green)">✓</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="cli-sub" id="cs-ib" style="display:none">
+        <div class="sh">Quantum-2 QM9700 InfiniBand</div>
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">ibstat / perfquery / UFM</div><div class="chev">▶</div></div>
+          <div class="card-body"><div class="cli">
+            <span class="cmd">ibstat</span><br>
+            <span class="cmd">ibstatus</span><br>
+            <span class="cmd">ibnetdiscover</span><br>
+            <span class="cmd">perfquery -x &lt;LID&gt; &lt;port&gt;</span><br>
+            <span class="cmd">ibnodes | grep -i down</span><br>
+            <span class="cmd">perfquery -R &lt;LID&gt; &lt;port&gt;</span>
+          </div>
+          <div class="wbar"><span class="ico ico-md ico-warning"></span> NDR IB is highly sensitive to signal integrity. NVIDIA-qualified AOC or DAC only.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OOB MANAGEMENT -->
+      <div class="cli-sub" id="cs-oob" style="display:none">
+        <div class="sh">What is OOB?</div>
+        <p>Out-of-Band management is a dedicated network path to server BMCs and switch management ports that is physically separate from the production data network. When in-band is completely dead — OS crashed, NIC failed, network misconfigured — OOB is how you get in without touching hardware.</p>
+        <div class="ibar">ℹ OOB should be on a separate switch, separate VLAN, and ideally a separate UPS leg from production. If OOB shares a failure domain with production, it fails when you need it most.</div>
+
+        <div class="sh">Access Methods</div>
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Dell iDRAC</div><div class="card-right"><div class="badge b-cyan">DELL</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <div class="cli">
+              <span class="cc"># SSH to iDRAC directly</span><br>
+              <span class="cmd">ssh admin@&lt;idrac-ip&gt;</span><br><br>
+              <span class="cc"># racadm — remote management CLI</span><br>
+              <span class="cmd">racadm -r &lt;idrac-ip&gt; -u admin -p &lt;pw&gt; getsysinfo</span><br>
+              <span class="cmd">racadm -r &lt;idrac-ip&gt; -u admin -p &lt;pw&gt; serveraction powercycle</span><br>
+              <span class="cmd">racadm -r &lt;idrac-ip&gt; -u admin -p &lt;pw&gt; getsel</span><br><br>
+              <span class="cc"># ipmitool via iDRAC</span><br>
+              <span class="cmd">ipmitool -I lanplus -H &lt;idrac-ip&gt; -U admin -P &lt;pw&gt; chassis status</span><br>
+              <span class="cmd">ipmitool -I lanplus -H &lt;idrac-ip&gt; -U admin -P &lt;pw&gt; sol activate</span><br><br>
+              <span class="cc"># Web UI</span><br>
+              <span class="out">https://&lt;idrac-ip&gt; → Virtual Console → Serial</span><br><br>
+              <span class="cc"># iDRAC default port: 443 (HTTPS), 22 (SSH), 623 (IPMI)</span><br>
+              <span class="cc"># Default creds (change immediately): root / calvin</span>
+            </div>
+            <div class="wbar"><span class="ico ico-md ico-warning"></span> iDRAC 9 requires modern TLS. If browser rejects cert, use Firefox or racadm CLI. Chrome may block self-signed iDRAC certs.</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">HPE iLO</div><div class="card-right"><div class="badge b-cyan">HPE</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <div class="cli">
+              <span class="cc"># SSH to iLO</span><br>
+              <span class="cmd">ssh administrator@&lt;ilo-ip&gt;</span><br><br>
+              <span class="cc"># iLO CLI commands</span><br>
+              <span class="cmd">show system1</span><br>
+              <span class="cmd">reset /system1</span><br>
+              <span class="cmd">show /system1/log1/entry*</span><br><br>
+              <span class="cc"># ipmitool works with iLO too</span><br>
+              <span class="cmd">ipmitool -I lanplus -H &lt;ilo-ip&gt; -U administrator -P &lt;pw&gt; sel list</span><br><br>
+              <span class="cc"># Redfish REST API</span><br>
+              <span class="cmd">curl -k -u admin:&lt;pw&gt; https://&lt;ilo-ip&gt;/redfish/v1/Systems/1</span><br><br>
+              <span class="cc"># Default port: 443. Default creds: administrator / (printed on server pull tab)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Supermicro IPMI</div><div class="card-right"><div class="badge b-cyan">SUPERMICRO</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <div class="cli">
+              <span class="cc"># Web UI at port 443</span><br>
+              <span class="out">https://&lt;ipmi-ip&gt; → Remote Control → iKVM</span><br><br>
+              <span class="cc"># ipmitool (same as others)</span><br>
+              <span class="cmd">ipmitool -I lanplus -H &lt;ipmi-ip&gt; -U ADMIN -P ADMIN sel list</span><br>
+              <span class="cmd">ipmitool -I lanplus -H &lt;ipmi-ip&gt; -U ADMIN -P ADMIN power status</span><br>
+              <span class="cmd">ipmitool -I lanplus -H &lt;ipmi-ip&gt; -U ADMIN -P ADMIN power reset</span><br><br>
+              <span class="cc"># Default creds: ADMIN / ADMIN (change immediately)</span><br>
+              <span class="cc"># Some units: ADMIN / (last 8 chars of MAC address)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">NVIDIA HGX / GB200 / GB300 BMC</div><div class="card-right"><div class="badge b-green">NVIDIA</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <div class="cli">
+              <span class="cc"># Redfish API — primary management interface</span><br>
+              <span class="cmd">curl -k -u admin:&lt;pw&gt; https://&lt;bmc-ip&gt;/redfish/v1/Systems</span><br>
+              <span class="cmd">curl -k -u admin:&lt;pw&gt; https://&lt;bmc-ip&gt;/redfish/v1/Systems/System_0/LogServices/EventLog/Entries</span><br><br>
+              <span class="cc"># ipmitool still works on NVIDIA BMC</span><br>
+              <span class="cmd">ipmitool -I lanplus -H &lt;bmc-ip&gt; -U admin -P &lt;pw&gt; sdr list</span><br>
+              <span class="cmd">ipmitool -I lanplus -H &lt;bmc-ip&gt; -U admin -P &lt;pw&gt; sel list</span><br><br>
+              <span class="cc"># GPU health via BMC (HGX specific)</span><br>
+              <span class="cmd">curl -k -u admin:&lt;pw&gt; https://&lt;bmc-ip&gt;/redfish/v1/Systems/System_0/Processors</span><br><br>
+              <span class="cc"># BMC cold reset (when BMC itself is unresponsive)</span><br>
+              <span class="cmd">ipmitool -I lanplus -H &lt;bmc-ip&gt; -U admin -P &lt;pw&gt; mc reset cold</span>
+            </div>
+            <div class="abar"><span class="ico ico-md ico-alert-red"></span> If BMC is completely unresponsive: physical BMC reset button on server backplane. Check server service manual for location — varies by OEM integrator (Foxconn, Wiwynn, QCT).</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Finding the BMC IP When Unknown</div><div class="card-right"><div class="badge b-gold">DISCOVERY</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <ul>
+              <li>Check DCIM — BMC IPs should be documented. If not, that's a gap.</li>
+              <li>ipmitool locally on the OS: <code>ipmitool lan print 1</code> — shows BMC IP if OS is alive</li>
+              <li>Check DHCP server lease table for the BMC MAC address (usually printed on service tag)</li>
+              <li>Aruba/Cisco OOB switch: <code>show arp</code> on the OOB switch VLAN — BMC will have an ARP entry if it has a lease</li>
+              <li>Dell: <code>racadm getsysinfo</code> locally on OS shows iDRAC IP</li>
+              <li>HPE: <code>hponcfg -g</code> locally shows iLO IP</li>
+            </ul>
+            <div class="wbar"><span class="ico ico-md ico-warning"></span> If BMC has no IP at all: it may be set to static and misconfigured, or DHCP exhausted. Connect via physical serial console to configure.</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">OOB Network Architecture</div><div class="card-right"><div class="badge b-cyan">DESIGN</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Component</th><th>Standard</th><th>Notes</th></tr>
+              <tr><td>OOB switch</td><td>Dedicated 1G switch</td><td>Separate from production fabric. Never shared.</td></tr>
+              <tr><td>OOB VLAN</td><td>Dedicated VLAN (e.g. VLAN 100)</td><td>Routed but firewalled. No production traffic.</td></tr>
+              <tr><td>OOB subnet</td><td>RFC 1918 private</td><td>Commonly 10.0.0.0/24 or 192.168.x.0/24 per site</td></tr>
+              <tr><td>OOB power</td><td>Separate UPS leg</td><td>Ideally different PDU from servers it manages</td></tr>
+              <tr><td>Speed</td><td>1G copper</td><td>BMC ports are 1G. Never need more.</td></tr>
+              <tr><td>Access</td><td>Jump host / VPN</td><td>Never directly internet-routable</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONSOLE CABLE -->
+      <div class="cli-sub" id="cs-console" style="display:none">
+        <div class="sh">Console Cable Reference</div>
+        <p>When in-band and OOB are both down, physical serial console is your last resort. Know this before you need it.</p>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Baud Rates by Platform</div><div class="card-right"><div class="badge b-red">CRITICAL</div><div class="chev">▶</div></div><div class="card-stat"><span><b>9600</b> <i>CISCO IOS / NX-OS</i></span><span><b>115200</b> <i>DELL iDRAC</i></span><span><b>115200</b> <i>NVIDIA HGX BMC</i></span></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Platform</th><th>Baud</th><th>Settings</th></tr>
+              <tr><td>Cisco IOS / NX-OS</td><td>9600</td><td>8N1, no flow control</td></tr>
+              <tr><td>Arista EOS</td><td>9600</td><td>8N1, no flow control</td></tr>
+              <tr><td>NVIDIA MLNX-OS</td><td>9600</td><td>8N1, no flow control</td></tr>
+              <tr><td>Dell iDRAC serial</td><td>115200</td><td>8N1, no flow control</td></tr>
+              <tr><td>HPE iLO serial</td><td>9600</td><td>8N1, no flow control</td></tr>
+              <tr><td>Supermicro IPMI</td><td>115200</td><td>8N1, no flow control</td></tr>
+              <tr><td>NVIDIA HGX BMC</td><td>115200</td><td>8N1, no flow control</td></tr>
+              <tr><td>Linux (GRUB/kernel)</td><td>115200</td><td>8N1, console=ttyS0,115200</td></tr>
+              <tr><td>Linux (legacy)</td><td>9600</td><td>Older distros may default 9600</td></tr>
+            </table>
+            <div class="wbar"><span class="ico ico-md ico-warning"></span> Garbage on screen = wrong baud rate. Try 115200 first, then 9600, then 38400. Never change other settings (8N1 is universal).</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Cisco Rollover Cable Pinout</div><div class="card-right"><div class="badge b-cyan">PINOUT</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <p>The Cisco rollover (yost) cable is the standard for most network gear console ports. RJ45 to DB9.</p>
+            <table class="dt">
+              <tr><th>RJ45 Pin</th><th>Signal</th><th>DB9 Pin</th></tr>
+              <tr><td>1</td><td>RTS</td><td>8</td></tr>
+              <tr><td>2</td><td>DTR</td><td>6</td></tr>
+              <tr><td>3</td><td>TxD</td><td>2</td></tr>
+              <tr><td>4</td><td>GND</td><td>5</td></tr>
+              <tr><td>5</td><td>GND</td><td>5</td></tr>
+              <tr><td>6</td><td>RxD</td><td>3</td></tr>
+              <tr><td>7</td><td>DSR</td><td>4</td></tr>
+              <tr><td>8</td><td>CTS</td><td>7</td></tr>
+            </table>
+            <div class="info-bar" style="margin-top:10px">ℹ Rollover = pin 1 connects to pin 8, pin 2 to pin 7, etc. — each pair is reversed. Not the same as an Ethernet straight-through cable.</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">USB-to-Serial Adapter Guide</div><div class="card-right"><div class="badge b-gold">ADAPTERS</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Chipset</th><th>OS</th><th>Status</th></tr>
+              <tr><td>FTDI FT232</td><td>macOS 10.9+</td><td>Built-in driver. Plug and play.</td></tr>
+              <tr><td>FTDI FT232</td><td>Linux</td><td>Built-in. Device: /dev/ttyUSB0</td></tr>
+              <tr><td>FTDI FT232</td><td>Windows</td><td>Download from ftdichip.com</td></tr>
+              <tr><td>Prolific PL2303</td><td>macOS 12+</td><td>Broken — use FTDI instead</td></tr>
+              <tr><td>Prolific PL2303</td><td>Windows 10/11</td><td>Often works but less reliable than FTDI</td></tr>
+              <tr><td>CP2102 (Silicon Labs)</td><td>All</td><td>Good alternative to FTDI</td></tr>
+            </table>
+            <div class="abar"><span class="ico ico-md ico-alert-red"></span> Avoid cheap Prolific clones on macOS — driver is broken on Monterey and later. Buy FTDI-based adapters only for reliable DC work.</div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Terminal Emulator Settings</div><div class="card-right"><div class="badge b-cyan">SOFTWARE</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <div class="cli">
+              <span class="cc"># macOS / Linux — screen</span><br>
+              <span class="cmd">screen /dev/ttyUSB0 9600</span><br>
+              <span class="cmd">screen /dev/tty.usbserial-XXXX 115200</span><br>
+              <span class="cc"># Exit screen: Ctrl-A then K</span><br><br>
+              <span class="cc"># macOS / Linux — minicom</span><br>
+              <span class="cmd">minicom -s</span><span class="out">  ← configure port + baud first</span><br>
+              <span class="cmd">minicom -b 9600 -D /dev/ttyUSB0</span><br><br>
+              <span class="cc"># Linux — find your serial device</span><br>
+              <span class="cmd">dmesg | grep tty</span><br>
+              <span class="cmd">ls /dev/ttyUSB*</span><br>
+              <span class="cmd">ls /dev/ttyACM*</span><br><br>
+              <span class="cc"># PuTTY (Windows) settings:</span><br>
+              <span class="out">Connection type: Serial</span><br>
+              <span class="out">Serial line: COM3 (check Device Manager)</span><br>
+              <span class="out">Speed: 9600 or 115200</span><br>
+              <span class="out">Data bits: 8, Stop bits: 1, Parity: None, Flow: None</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" onclick="toggleCard(this)">
+          <div class="card-hdr"><div class="card-title">Console Cable Types by Gear</div><div class="card-right"><div class="badge b-cyan">REFERENCE</div><div class="chev">▶</div></div></div>
+          <div class="card-body">
+            <table class="dt">
+              <tr><th>Gear</th><th>Console Port</th><th>Cable Needed</th></tr>
+              <tr><td>Cisco switches/routers</td><td>RJ45</td><td>RJ45 rollover + DB9 adapter</td></tr>
+              <tr><td>Arista switches</td><td>RJ45</td><td>RJ45 rollover + DB9 or USB-A</td></tr>
+              <tr><td>MLNX switches</td><td>RJ45</td><td>RJ45 rollover + USB adapter</td></tr>
+              <tr><td>Dell PowerEdge</td><td>DB9 or USB mini-B</td><td>DB9 null modem or USB mini-B</td></tr>
+              <tr><td>HPE ProLiant</td><td>DB9 or USB</td><td>DB9 null modem or USB-A</td></tr>
+              <tr><td>Supermicro</td><td>DB9</td><td>DB9 null modem cable</td></tr>
+              <tr><td>NVIDIA HGX servers</td><td>USB Type-A or RJ45</td><td>Check OEM (Wiwynn/Foxconn/QCT) manual</td></tr>
+            </table>
+            <div class="ibar">ℹ Carry: 1x RJ45 rollover cable, 1x DB9-to-USB adapter (FTDI), 1x USB-A cable. That covers 95% of DC console situations.</div>
+          </div>
+        </div>
+      </div>
+      <!-- CLI OUTPUT PARSER — relocated from OPS tab -->
+      <div class="cli-sub" id="cs-parser" style="display:none">
+        <div class="sh">Output Parser &amp; Interpreter</div>
+        <p>Paste raw CLI output, port map, or fiber data. Parser identifies type, extracts key data, flags issues.</p>
+        <div style="margin-top:12px">
+          <div style="font-family:var(--orb);font-size: var(--fs-micro);letter-spacing:3px;color:var(--slate);margin-bottom:8px;text-transform:uppercase">Detect type or select:</div>
+          <div class="type-row" id="typeChips2">
+            <div class="tc sel" data-type="auto" onclick="selType2(this)">AUTO</div>
+            <div class="tc" data-type="dom" onclick="selType2(this)">DOM</div>
+            <div class="tc" data-type="errors" onclick="selType2(this)">Errors</div>
+            <div class="tc" data-type="portchan" onclick="selType2(this)">Port-Channel</div>
+            <div class="tc" data-type="portmap" onclick="selType2(this)">Port Map <span class="ai-tag">AI</span></div>
+            <div class="tc" data-type="fibermap" onclick="selType2(this)">Fiber Map <span class="ai-tag">AI</span></div>
+            <div class="tc" data-type="ibperf" onclick="selType2(this)">IB perf</div>
+            <div class="tc" data-type="nvidia" onclick="selType2(this)">nvidia-smi</div>
+            <div class="tc" data-type="freeform" onclick="selType2(this)">Free-form <span class="ai-tag">AI</span></div>
+          </div>
+          <textarea class="paste-box" id="parserInput2" rows="7" placeholder="Paste output here...&#10;&#10;DOM: show interfaces Eth1/1 transceiver&#10;Errors: show interfaces counters errors&#10;Port Map: any format&#10;IB: perfquery output"></textarea>
+          <div style="display:flex;gap:8px;margin-top:9px">
+            <button class="parse-btn pt-btn pt-btn-secondary" id="parseBtn2" onclick="runParser2()" style="flex:1;margin-top:0">▶ &nbsp;ANALYZE</button>
+            <button class="import-btn" onclick="importFileToInput('parserInput2')" aria-label="Import file"><span class="ico ico-md ico-file"></span> IMPORT</button>
+          </div>
+          <button class="clear-btn pt-btn pt-btn-ghost" onclick="document.getElementById('parserInput2').value='';document.getElementById('parserResults2').innerHTML='';document.querySelectorAll('#typeChips2 .tc').forEach(c=>c.classList.remove('sel'));document.querySelector('#typeChips2 .tc[data-type=auto]').classList.add('sel');selTypeVal2='auto'">CLEAR</button>
+        </div>
+        <div class="parse-results" id="parserResults2"></div>
+      </div>
+
+      </div>
+      <!-- HW Ref. v1.14.546 (LEGACY-RETIRE Stage 6.2): the matrix is AUTHORED HERE now. It used
+           to live in the #hw-matrix-sheet modal and be moved in at boot by redesign_homeHWRef(),
+           which also stripped the sheet's title+CLOSE header because the tab is the chrome. That
+           header is simply not authored here. Every id (#hwm-search, #hwm-count, #hwm-list, the
+           model/category stabs) is VERBATIM: hwMatrix_render and its filters resolve them with
+           getElementById, so identity is the contract, not position. -->
+      <div class="ref-sub" id="rf-hwref">
+        <div class="hwm-inner">
+  <div class="hwm-controls">
+    <input class="hwm-search" id="hwm-search" type="search" placeholder="SEARCH FAULT, INDICATOR, KEYWORD…" oninput="hwMatrix_render()" autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="hwm-model-row">
+      <button class="stab active" id="hwm-m-all" onclick="hwMatrix_setModel('all')">ALL</button>
+      <button class="stab" id="hwm-m-h100" onclick="hwMatrix_setModel('H100')">H100</button>
+      <button class="stab" id="hwm-m-h200" onclick="hwMatrix_setModel('H200')">H200</button>
+      <button class="stab" id="hwm-m-gb200" onclick="hwMatrix_setModel('GB200')">GB200/300</button>
+    </div>
+    <div class="hwm-cat-row">
+      <button class="stab active" id="hwm-c-all" onclick="hwMatrix_setCat('all')">ALL CATEGORIES</button>
+      <button class="stab" id="hwm-c-transceiver" onclick="hwMatrix_setCat('transceiver')">OSFP/QSFP</button>
+      <button class="stab" id="hwm-c-nvlink" onclick="hwMatrix_setCat('nvlink')">NVLINK</button>
+      <button class="stab" id="hwm-c-infiniband" onclick="hwMatrix_setCat('infiniband')">INFINIBAND</button>
+      <button class="stab" id="hwm-c-power" onclick="hwMatrix_setCat('power')">POWER</button>
+      <button class="stab" id="hwm-c-led" onclick="hwMatrix_setCat('led')">LED CODES</button>
+      <button class="stab" id="hwm-c-liquid" onclick="hwMatrix_setCat('liquid')">LIQUID COOL</button>
+    </div>
+  </div>
+  <div class="hwm-count" id="hwm-count"></div>
+  <div class="hwm-list" id="hwm-list"></div>
+        </div>
+      </div>
+      <!-- Know: the operational-knowledge content (#pw-rb) is re-parented in here
+           at boot by redesign_homeKnow(). Empty in source; filled at runtime. -->
+      <div class="ref-sub" id="rf-know"></div>
+    </div>
+
+    <!-- PAGE: TRIAGE -->
+    <div class="page active" id="pg-triage">
+
+      <!-- DCT-05: HEALTH STATUS — now in header dots -->
+
+      <!-- TODAY DASHBOARD — build lead morning overview (populated by today_render on tab open) -->
+      <div id="fr-chip"></div>
+      <div id="today-dashboard"></div>
+
+      <!-- SHIFT BRIEFING BAR — shown on first open each shift -->
+      <div id="triage-brief-bar" style="display:none"></div>
+
+      <!-- MISSION STATUS BAR — live, hidden when no active deployment -->
+      <div id="triage-mission-bar" style="display:none;margin-bottom:10px"></div>
+
+      <!-- COMMAND GRID (v1.4.1 Cut 9) — primary action surface, 10 tiles in 5×2 -->
+      <div class="cmd-grid">
+        <!-- DEPLOY — deployment command engine (id preserved for existing JS hooks) -->
+        <button id="qa-deploy-card" class="qa-btn qa-deploy qa-deploy-inactive" onclick="deploy_quick()" aria-label="Deployment Command">
+          <div class="qa-icon"><svg width="22" height="28" viewBox="0 0 64 64" fill="none" style="vertical-align:middle">
+          <defs>
+            <linearGradient id="_dpr_g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5cf2ff"/><stop offset="100%" stop-color="#5cf2ff" stop-opacity="0.4"/></linearGradient>
+            <filter id="_dpr_gl"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <rect x="16" y="6" width="32" height="52" rx="2" stroke="url(#_dpr_g)" stroke-width="1.5" fill="none"/>
+          <rect x="16" y="6" width="5" height="52" rx="1" stroke="#5cf2ff" stroke-width="0.6" fill="rgba(92,242,255,0.03)"/>
+          <rect x="43" y="6" width="5" height="52" rx="1" stroke="#5cf2ff" stroke-width="0.6" fill="rgba(92,242,255,0.03)"/>
+          <rect x="22" y="14" width="20" height="8" rx="1" fill="rgba(92,242,255,0.1)" stroke="#5cf2ff" stroke-width="1.2" filter="url(#_dpr_gl)"/>
+          <circle cx="26" cy="18" r="1.2" fill="#32d74b"><animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/></circle>
+          <circle cx="30" cy="18" r="0.8" fill="#ffd60a" opacity="0.7"/>
+          <circle cx="33" cy="18" r="0.8" fill="#5cf2ff" opacity="0.7"/>
+          <rect x="22" y="26" width="20" height="4" rx="1" fill="rgba(155,89,255,0.08)" stroke="#9b59ff" stroke-width="0.8" opacity="0.6"/>
+          <rect x="22" y="44" width="20" height="6" rx="1" fill="rgba(255,214,10,0.06)" stroke="#ffd60a" stroke-width="0.6" opacity="0.5"/>
+        </svg></div>
+          <div class="qa-label">Deploy</div>
+          <div class="qa-sub">No active pod</div>
+        </button>
+        <!-- BLOCKER — mark active rack for follow-up; context-aware routing -->
+        <button id="cmd-blocker-card" class="qa-btn qa-blocker" onclick="blocker_quick()" aria-label="Mark rack blocked">
+          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff453a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+          <div class="qa-label" style="color: var(--hud-red);">Blocker</div>
+        </button>
+        <!-- HANDOFF — shift handoff generator; context-aware routing -->
+        <button id="cmd-handoff-card" class="qa-btn qa-handoff" onclick="handoff_quick()" aria-label="Generate shift handoff">
+          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff8a00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>
+          <div class="qa-label" style="color: var(--hud-orange);">Handoff</div>
+        </button>
+        <!-- COMPASS — cage nut + rail layout -->
+        <button class="qa-btn qa-compass" onclick="goCompass()" aria-label="Cage Compass — rail layout">
+          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect x="6" y="2" width="12" height="20" rx="1.2"/><line x1="6" y1="8" x2="18" y2="8" stroke-opacity="0.45"/><line x1="6" y1="14" x2="18" y2="14" stroke-opacity="0.45"/><rect x="9" y="4" width="2" height="2" rx="0.4" fill="#5cf2ff" stroke="none"/><rect x="13" y="4" width="2" height="2" rx="0.4" fill="rgba(92,242,255,0.25)" stroke="none"/><rect x="9" y="10" width="2" height="2" rx="0.4" fill="rgba(92,242,255,0.25)" stroke="none"/><rect x="13" y="10" width="2" height="2" rx="0.4" fill="#5cf2ff" stroke="none"/><rect x="9" y="16" width="2" height="2" rx="0.4" fill="#5cf2ff" stroke="none"/><rect x="13" y="16" width="2" height="2" rx="0.4" fill="rgba(92,242,255,0.25)" stroke="none"/></svg></div>
+          <div class="qa-label">Compass</div>
+        </button>
+        <!-- GHOST ECHO — log fix, replay patterns, second brain -->
+        <button class="qa-btn qa-ghost" onclick="geOpen()" aria-label="Ghost Echo — log fix, replay patterns">
+          <div class="qa-icon"><span class="ico ico-2xl ico-ghost" style="vertical-align:middle"></span></div>
+          <div class="qa-label">Ghost Echo</div>
+        </button>
+        <!-- HW REF — hardware reference matrix. v1.6.74: re-homed from header overflow to a NOW tile (crash-cart moved to BUILD subtab). Overflow entry retained for reach-from-anywhere. -->
+        <button class="qa-btn" onclick="hwMatrix_open()" aria-label="Open hardware reference">
+          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg></div>
+          <div class="qa-label" style="color: var(--cyan-bright);">HW Ref</div>
+        </button>
+        <!-- SHIFT REPORT — generate end-of-shift report -->
+        <button class="qa-btn qa-parser" onclick="shiftReport_generate()" aria-label="Generate shift report">
+          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#30d158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
+          <div class="qa-label">Shift Report</div>
+        </button>
+        <!-- MISSION BRIEF (v1.6.46) — pairs with SHIFT REPORT as shift-boundary bookends; surfaces today's briefing -->
+        <button class="qa-btn qa-brief" onclick="brief_show()" aria-label="Mission Brief — today's shift briefing">
+          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffd60a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect x="6" y="3" width="12" height="18" rx="1.5"/><rect x="9" y="1.5" width="6" height="3" rx="0.5"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></div>
+          <div class="qa-label" style="color: var(--gold);">Mission Brief</div>
+        </button>
+      </div>
+
+      <!-- SECOND BRAIN ROW (v1.4.1 Cut 9) — voice + memory pair -->
+      <div class="cmd-grid cmd-second-brain">
+        <button class="qa-btn qa-voice" data-requires-net="1" onclick="openVaSheet('listening');vaStart()" aria-label="Ask Voice Assistant">
+          <div class="qa-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5cf2ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div>
+          <div class="qa-label">Ask Assistant</div>
+        </button>
+      </div>
+
+      <div class="qa-divider" style="margin-top:14px">
+        <div class="qa-divider-line"></div>
+        <div class="qa-divider-label">Field Protocols</div>
+        <div class="qa-divider-line"></div>
+      </div>
+
+      <!-- DOWN LINK PROTOCOL — shortcut to full content in Reference tab -->
+      <button onclick="goFiberTriage()" style="width:100%;display:flex;align-items:center;justify-content:flex-start;gap:14px;min-height:var(--tap-xl);padding:12px 16px;margin-bottom:10px;border-radius:12px;border:1px solid rgba(255,45,85,0.3);background:linear-gradient(135deg,rgba(255,45,85,0.07),rgba(255,45,85,0.02));cursor:pointer;-webkit-appearance:none;user-select:none" aria-label="Down Link Protocol — opens in Reference">
+        <div><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff2d55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></div>
+        <div style="text-align:left;flex:1">
+          <div style="font-family:var(--orb);font-size: var(--fs-micro);letter-spacing:2px;color:var(--red);text-transform:uppercase">Down Link Protocol</div>
+          <div style="font-family:var(--raj);font-size: var(--fs-caption);color:var(--slate)">7-step fiber triage · tap to open in Reference</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:14px;color:var(--red);flex-shrink:0">→</div>
+      </button>
+    </div><!-- end pg-triage -->
+
+    <!-- PAGE: SCAN — Stage 2 unified scan destination -->
+    <div class="page" id="pg-scan">
+      <div class="scan-page">
+        <div class="scan-context-strip" id="scan-context-strip">
+          <div class="scan-context-dot idle" id="scan-context-dot"></div>
+          <div id="scan-context-text">No active deployment — scans will not verify against EDP.</div>
+        </div>
+
+        <button class="scan-hero" onclick="ScanDispatch.openScanner()" aria-label="Scan anything">
+          <div class="scan-hero-icon"><span class="ico ico-md ico-camera"></span></div>
+          <div class="scan-hero-title">Scan Anything</div>
+          <div class="scan-hero-subtitle">Rack tag, switch tag, optic, or asset. PHANTOM routes you.</div>
+        </button>
+
+        <div class="scan-gun-row">
+          <div class="scan-gun-eyebrow">Or pull the trigger on a BT scanner</div>
+          <div class="scan-gun-input-wrap">
+            <input class="scan-gun-input"
+                   id="scan-gun-input"
+                   type="text"
+                   inputmode="none"
+                   autocomplete="off"
+                   autocorrect="off"
+                   autocapitalize="off"
+                   spellcheck="false"
+                   placeholder="Tap here, then scan with BT gun…"
+                   aria-label="Bluetooth scanner input"
+                   oninput="scanGun_toggleClear(this)">
+            <button class="scan-gun-clear" type="button" aria-label="Clear scan field"
+                    onclick="scanGun_clear('scan-gun-input')">✕</button>
+            <button class="scan-gun-go" type="button" aria-label="Submit scan"
+                    onclick="scanGun_submit('scan-gun-input', 'scan')">GO</button>
+          </div>
+        </div>
+
+        <!-- Gate 31: Verify-mode discoverability hint —
+             scans here go to a collection list, but if the tech actually
+             needs to verify an optic against the EDP, point them at the
+             real tool in KNOW. -->
+        <button class="scan-verify-hint" type="button" onclick="goOpticVerify()">
+          <span class="scan-verify-hint-icon">✓</span>
+          <span class="scan-verify-hint-body">
+            <span class="scan-verify-hint-title">Verifying an optic against the EDP?</span>
+            <span class="scan-verify-hint-detail">Use Optic Score Verify in KNOW →</span>
+          </span>
+        </button>
+
+        <div class="scan-collection">
+          <div class="scan-collection-header">
+            <div class="scan-collection-eyebrow">Collected Scans</div>
+            <div class="scan-collection-count" id="scan-collection-count">0 scans</div>
+          </div>
+          <div id="scan-collection-list">
+            <div style="font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate);padding:14px;text-align:center;border:1px dashed rgba(255,255,255,0.06);border-radius:8px">Scan something — it will appear here.</div>
+          </div>
+          <div class="scan-collection-actions" id="scan-collection-actions" style="display:none">
+            <button class="scan-export-btn" type="button" onclick="ScanDispatch.exportCollection()">⇪ &nbsp;EXPORT (CSV + Audit)</button>
+            <button class="scan-clear-btn" type="button" onclick="ScanDispatch.clearCollection()">CLEAR</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: FIBER+DOM (grouped) -->
     <!-- PAGE: HARDWARE -->
     <div class="page" id="pg-power">
       <div class="subtab-strip">
@@ -23096,26 +23099,22 @@ function redesign_homeKnow() {
 }
 document.addEventListener('DOMContentLoaded', redesign_homeKnow);
 
-// redesign_homeOptics(): re-parent the WHOLE pg-fiber surface (its subtab strip +
-// all 8 fiber-sub panels) into Reference→Optics (#rf-optics). Re-parenting keeps
-// the fiber-sub group, showStab/toggleCard/openSopDetail handlers, and responsive
-// grid byte-identical. Flag-gated so FIELD mode leaves pg-fiber (the KNOW nav tab)
-// untouched. After the move, initSubtab() defaults the inner fiber subtab so the
-// Optics tab shows content immediately. NOTE: the fiber strip's Hardware/CLI
-// cross-links still showPage('power'/'cli') — repoint when those re-home.
-function redesign_homeOptics() {
+// ⭐ v1.14.549 (LEGACY-RETIRE Stage 6.4) — redesign_homeOptics IS DELETED, the fourth of eight.
+// It drained every child of pg-fiber into #rf-optics; those panels are now authored there and
+// pg-fiber is gone. The binding stays, for the same reason it stayed in 6.3: initSubtab defaults
+// the inner fiber subtab and wires the group to the strip AT ITS NEW LOCATION, and authoring
+// markup binds nothing. Without it the Optics tab — which is the DEFAULT Reference panel — opens
+// with every panel hidden.
+// 📌 The old note here said "the fiber strip's Hardware/CLI cross-links still showPage('power'/'cli')
+// — repoint when those re-home." They did not need repointing: under the redesign showPage's guard
+// redirects 'cli' to showRefTab('rf-cli') and 'power' to rd_openPlatforms(), so both cross-links
+// land correctly, and v1.14.548 made the legacy side say so instead of blanking.
+document.addEventListener('DOMContentLoaded', function () {
   if (!redesign_isOn()) return;
-  var src = document.getElementById('pg-fiber');
-  var dest = document.getElementById('rf-optics');
-  if (src && dest && src.firstChild) {
-    dest.innerHTML = '';
-    while (src.firstChild) dest.appendChild(src.firstChild);
-    if (typeof initSubtab === 'function') {
-      try { initSubtab('fiber-sub', 'fs-fiber', '#rf-optics .subtab-strip .stab'); } catch (_) {}
-    }
+  if (typeof initSubtab === 'function') {
+    try { initSubtab('fiber-sub', 'fs-fiber', '#rf-optics .subtab-strip .stab'); } catch (_) {}
   }
-}
-document.addEventListener('DOMContentLoaded', redesign_homeOptics);
+});
 
 // redesign_homeScan(): re-parent the WHOLE pg-scan surface (scan hero, BT-gun row,
 // collected-scans list) into Workspace->Scan (#wk-scan). Re-parenting keeps the
@@ -24524,7 +24523,8 @@ function showPage(id, tnEl, opsTab) {
     _pageSwitch();
   }
 
-  if (id === 'fiber') initSubtab('fiber-sub', 'fs-fiber', '#pg-fiber .subtab-strip .stab');
+  // v1.14.549: the 'fiber' line is gone with pg-fiber, same as 'cli' in .547 — its
+  // '#pg-fiber .subtab-strip .stab' selector matched nothing once the page was deleted.
   // v1.14.547: the 'cli' line is gone with pg-cli — its selector '#pg-cli .subtab-strip .stab'
   // matched nothing once the page was deleted, so it bound nothing. The redesign's binding lives
   // at DOMContentLoaded against '#rf-cli .subtab-strip .stab'.
@@ -48858,13 +48858,11 @@ function goOptic() {
     if (typeof OpticScore !== 'undefined' && OpticScore.activateMode) OpticScore.activateMode('reference');
     return;
   }
-  showPage('fiber', getTnItem('fiber'));
-  const stabs = document.querySelectorAll('#pg-fiber .subtab-strip .stab');
-  if (stabs[4]) showStab(stabs[4], 'fiber-sub', 'fs-optic');
-  // Gate 17: default to REFERENCE mode — VERIFY is opt-in via the tab
-  if (typeof OpticScore !== 'undefined' && OpticScore.activateMode) {
-    OpticScore.activateMode('reference');
-  }
+  // v1.14.549: the legacy path is GONE with pg-fiber. It used to showPage('fiber') and index into
+  // '#pg-fiber .subtab-strip .stab' — a selector that now matches nothing — which would land the
+  // user on the NOW dashboard via the .548 fallback and then activate an optic mode with no
+  // surface behind it. Say so once and stop, rather than half-executing.
+  if (typeof phantomToast === 'function') phantomToast('Optics is not available in the legacy UI — return to the new UI to use it', 'warn');
 }
 // Gate 31: shortcut to Verify mode — used by SCAN-page discoverability hint
 function goOpticVerify() {
@@ -48875,12 +48873,8 @@ function goOpticVerify() {
     if (typeof OpticScore !== 'undefined' && OpticScore.activateMode) OpticScore.activateMode('verify');
     return;
   }
-  showPage('fiber', getTnItem('fiber'));
-  const stabs = document.querySelectorAll('#pg-fiber .subtab-strip .stab');
-  if (stabs[4]) showStab(stabs[4], 'fiber-sub', 'fs-optic');
-  if (typeof OpticScore !== 'undefined' && OpticScore.activateMode) {
-    OpticScore.activateMode('verify');
-  }
+  // v1.14.549: legacy path gone with pg-fiber, same as goOpticReference above.
+  if (typeof phantomToast === 'function') phantomToast('Optics is not available in the legacy UI — return to the new UI to use it', 'warn');
 }
 function goOpsTab(tab) {
   // Stage 2 (HEALTH B1.4): chokepoint for 4 callers. The ops cluster (SOP/portmap/
