@@ -1093,7 +1093,13 @@ body {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   overscroll-behavior-x: none;
-  /* Bottom padding reserves: tab-nav (56px) + omni-bar (~60px) + content breathing (80px) = ~196px */
+  /* Bottom padding reserves: tab-nav (56px) + omni-bar (~60px) + content breathing (80px) = ~196px.
+     ⚠ v1.14.542: #omni-bar IS DELETED, so ~60px of the 140px below now reserves nothing. Left as-is
+     deliberately — this is `.page`, i.e. EVERY legacy page, a far wider blast radius than the five
+     sheets 3.2b touched, and dead bottom padding is harmless scroll room rather than a defect.
+     ⛔ Redesign is unaffected either way: :9981 records that body.rd .page overrides this with
+     --rd-navclear. A follow-up ship can drop the 60px; it is a legacy-visible layout change and
+     needs its own verify. Do NOT trim it as a drive-by inside another ship. */
   padding: 14px calc(var(--safe-right) + 14px) calc(var(--tabnav-h) + 140px) calc(var(--safe-left) + 14px);
   display: none;
   background: var(--bg0);
@@ -4629,80 +4635,6 @@ select {
     0 4px 14px rgba(0,0,0,0.4) !important;
 }
 
-/* ━━━ OMNI-CAPTURE OVERLAY ━━━
-   Decoupled floating input. Writes to active deployment's audit log.
-   Sits above tab-nav, does not alter any existing page/route/nav. */
-#omni-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  /* --tabnav-h already includes safe-bottom internally. Do not add it again. */
-  bottom: var(--tabnav-h);
-  z-index: 25;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 8px 10px;
-  background: linear-gradient(180deg, rgba(4,7,11,0.72), rgba(8,14,22,0.95));
-  border-top: 1px solid rgba(92,242,255,0.12);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  pointer-events: auto;
-}
-#omni-bar .omni-tag {
-  font-family: var(--mono);
-  font-size: var(--fs-micro);
-  letter-spacing: 1.5px;
-  color: var(--cyan);
-  padding: 8px 10px;
-  border: 1px solid rgba(92,242,255,0.2);
-  background: rgba(92,242,255,0.06);
-  border-radius: 6px;
-  min-width: 46px;
-  text-align: center;
-  user-select: none;
-}
-#omni-bar input {
-  flex: 1;
-  min-width: 0;
-  background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(92,242,255,0.15);
-  border-radius: 6px;
-  color: var(--white);
-  font-family: var(--raj);
-  font-size: var(--fs-body);
-  padding: 10px 12px;
-  outline: none;
-}
-#omni-bar input:focus { border-color: rgba(92,242,255,0.4); }
-#omni-bar .omni-send {
-  background: var(--cyan);
-  border: none;
-  color: #000;
-  font-family: var(--mono);
-  font-size: var(--fs-micro);
-  letter-spacing: 1.5px;
-  font-weight: 700;
-  padding: 10px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  -webkit-appearance: none;
-}
-#omni-bar .omni-send:disabled { opacity: 0.4; cursor: not-allowed; }
-/* Inactive state — hidden entirely. Prevents overlap with full-page forms
-   (e.g. Ingest EDP) and stops tap interception when there's no active
-   deployment to log to. Re-appears the moment a deployment becomes active.
-   Triple-belt: !important defeats cascade overrides; visibility +
-   pointer-events as backup so the bar can't render OR intercept taps. */
-#omni-bar.omni-inactive {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-#omni-bar.omni-inactive .omni-tag { color: var(--slate); border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); }
-#omni-bar input:disabled { cursor: not-allowed; }
-/* v1.14.282: LOG composer moved from the persistent #omni-bar to #log-sheet (askrow LOG pill). Bar retired under redesign; legacy (?legacy=1) keeps it byte-identical. */
-body.rd #omni-bar{display:none!important}
 #log-sheet .ls-dest{margin:12px 20px 4px;font-family:var(--mono);font-size:var(--fs-micro);letter-spacing:1.5px;color:var(--cyan)}
 #log-sheet .ls-dest.ls-dest-none{color:var(--gold)}
 #log-sheet .ls-text{display:block;width:calc(100% - 40px);margin:8px 20px;min-height:120px;background:rgba(0,0,0,0.4);border:1px solid rgba(92,242,255,0.15);border-radius:8px;color:var(--white);font-family:var(--raj);font-size:var(--fs-body);padding:12px;outline:none;resize:none;box-sizing:border-box}
@@ -4712,9 +4644,6 @@ body.rd #omni-bar{display:none!important}
 #log-sheet .ls-send{display:block;width:calc(100% - 40px);margin:0 20px 12px;min-height:var(--tap-xl,56px);background:var(--cyan);border:none;border-radius:8px;color:#000;font-family:var(--mono);font-size:var(--fs-body);letter-spacing:1.5px;font-weight:700;cursor:pointer;-webkit-appearance:none}
 #log-sheet .ls-send:disabled{opacity:0.4;cursor:not-allowed}
 #log-sheet .ls-route{display:block;width:calc(100% - 40px);margin:0 20px 16px;min-height:var(--tap-xl,56px);background:rgba(92,242,255,0.06);border:1px solid rgba(92,242,255,0.25);border-radius:8px;color:var(--cyan);font-family:var(--mono);font-size:var(--fs-micro);letter-spacing:1px;cursor:pointer;-webkit-appearance:none}
-/* Hide during boot splash — #boot covers viewport with higher z-index, but hide cleanly */
-body.phantom-booting #omni-bar { display: none; }
-body.rd #omni-bar { background: linear-gradient(180deg, rgba(4,7,11,0.93), rgba(8,14,22,0.99)); } /* v1.14.204: opaque plate — card text was ghosting through the nav band */
 
 /* ━━━ POINT-AND-SHOOT · RACK-LOOKUP SCAN BUTTON ━━━ */
 /* Full-screen scan HUD is handled by #qr-overlay (PhantomScanner). */
@@ -12951,7 +12880,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.541';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.542';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -16836,15 +16765,6 @@ if (typeof window !== 'undefined') {
     <div class="tn-ribbon" id="tn-ribbon" data-color="red"></div>
   </nav>
 
-  <!-- ━━━ OMNI-CAPTURE OVERLAY ━━━
-       Floats above tab-nav. Type, hit Enter or SEND, writes to active deployment's audit log.
-       No routing changes. No page changes. Decoupled overlay only. -->
-  <div id="omni-bar" role="region" aria-label="Omni-Capture — log to active deployment">
-    <div class="omni-tag">LOG</div>
-    <input id="omni-input" type="text" placeholder="Log to active deployment…" autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="true" aria-label="Field note input">
-    <button id="omni-send" class="omni-send" type="button" aria-label="Submit field note">SEND</button>
-  </div>
-
   <!-- v1.14.282 LOG SHEET - deployment-scoped field-note composer (askrow LOG pill opens it; replaces #omni-bar under redesign) -->
   <div id="log-sheet" class="va-sheet" onclick="if(event.target===this)closeLogSheet()">
     <div class="va-sheet-inner">
@@ -18859,50 +18779,6 @@ function omni_getActiveDeployment() {
   return list[0];
 }
 
-function omni_updatePlaceholder() {
-  var input = document.getElementById('omni-input');
-  var btn = document.getElementById('omni-send');
-  var bar = document.getElementById('omni-bar');
-  if (!input || !btn || !bar) return;
-  var dep = omni_getActiveDeployment();
-  if (dep) {
-    input.placeholder = 'Log to ' + dep.name + '…';
-    input.disabled = false;
-    btn.disabled = false;
-    bar.classList.remove('omni-inactive');
-  } else {
-    input.placeholder = 'No active deployment';
-    input.disabled = true;
-    btn.disabled = true;
-    bar.classList.add('omni-inactive');
-  }
-}
-
-function omni_submit() {
-  var input = document.getElementById('omni-input');
-  var btn = document.getElementById('omni-send');
-  if (!input || !btn) return;
-  var text = (input.value || '').trim();
-  if (!text) return;
-  // Hard cap — prevent oversized writes that could blow storage quota
-  if (text.length > 500) text = text.substring(0, 500);
-  var dep = omni_getActiveDeployment();
-  if (!dep) {
-    phantomToast('No active deployment — start a build first', 'warn');
-    return;
-  }
-  // Route through the hardened audit path. deploy_logAudit handles safeStore internally.
-  // Audit writes are intentionally non-blocking — we do not gate on success.
-  try {
-    deploy_logAudit(dep.id, 'OMNI_NOTE', 'deployment', dep.id, text);
-    input.value = '';
-    haptic(HAPTIC_PASS);
-    phantomToast('Logged · ' + dep.name, 'ok');
-  } catch (e) {
-    phantomToast('Log failed', 'error');
-  }
-}
-
 // v1.14.282 LOG SHEET - deployment-scoped field-note composer that replaces the #omni-bar under redesign.
 // SEND routes through deploy_logAudit(id,'OMNI_NOTE','deployment',id,text) - byte-identical to omni_submit,
 // so entries land in the same FIELD NOTE feed. No new storage path, no new audit vocabulary.
@@ -18961,31 +18837,6 @@ function logSheet_routeWork() {
   if (typeof cmd_route === 'function') cmd_route('work', 'deploy');
 }
 
-function omni_init() {
-  var input = document.getElementById('omni-input');
-  var btn = document.getElementById('omni-send');
-  var bar = document.getElementById('omni-bar');
-  if (!input || !btn) return;
-  // Guard: prevent listener stacking (anonymous keydown cannot be removed without this)
-  if (btn.dataset._omniInit) return;
-  btn.dataset._omniInit = '1';
-  btn.addEventListener('click', omni_submit);
-  function omni_keydown(e) {
-    if (e.key === 'Enter') { e.preventDefault(); omni_submit(); }
-  }
-  input.addEventListener('keydown', omni_keydown);
-  // Refresh state on user interaction so newly-created deployments activate the bar immediately
-  if (bar) bar.addEventListener('click', omni_updatePlaceholder, true);
-  input.addEventListener('focus', omni_updatePlaceholder);
-  omni_updatePlaceholder();
-  // Periodic refresh as a safety net for background state changes.
-  // Clear any prior interval before re-setting — when the omni DOM is replaced
-  // (tab swap, page rerender) the dataset guard above doesn't catch it because
-  // the new button has no dataset flag, so the old interval would stack.
-  if (omni_init._intervalId) clearInterval(omni_init._intervalId);
-  omni_init._intervalId = setInterval(omni_updatePlaceholder, 15000);
-}
-
 // ━━━ BOOT ━━━
 // ── LEGACY-KEY REAPER (v1.6.50) ──
 // Production iPads accumulate orphan localStorage keys that were only ever
@@ -19038,7 +18889,6 @@ function phantomDeferredInit() {
     triage_renderDeployCard();
     identity_refreshOverflowLabels();
     brief_show();
-    try { omni_init(); } catch(e) { /* overlay is decoupled — failure must not block boot */ }
     // Clean legacy localStorage force-lead key — now uses sessionStorage only
     localStorage.removeItem('phantom_force_lead_v1');
     // Clean legacy Incident Memory lesson cache (engine removed in cleanup)
@@ -36359,8 +36209,6 @@ function mscope_open() {
   var c = deploy_opsHost();
   if (!c) return;
   if (typeof nav_push === 'function') nav_push({ p: (redesign_isOn() ? 'work' : 'sop'), o: 'deploy', d: 'mscope' });
-  var omniBar = document.getElementById('omni-bar');
-  if (omniBar) omniBar.classList.add('omni-inactive');
   // Ship 2: surface that a pending staged scope will be replaced on next confirm.
   try { if (localStorage.getItem(PHANTOM_JOBSNAP_STORE.KEY)) phantomToast('A staged scope exists — re-staging replaces it', 'warn'); } catch (e) { phantom_logErr('mscope_open:jobsnapProbe', e); }
   _mscopeState.selected = {};
