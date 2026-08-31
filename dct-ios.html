@@ -12818,7 +12818,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.555';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.556';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -55375,10 +55375,38 @@ setInterval(phantomStorageCheck, 300000);
     }
     return n;
   }
+  // ⛔ v1.14.556 — THE WARNING NO LONGER DEPENDS ON THE PILL, because on the device that matters
+  // the pill cannot appear. :58619 hides it under `@media (max-width: 480px)` with !important —
+  // a deliberate .391 call, since the chrome wordmark overlapped it by ~93px at 390 and something
+  // had to stand down. But the inline `display:inline-flex` below can never beat that !important,
+  // so on every iPhone this function has been updating a chip nobody can see.
+  // ⭐ AND THE BOOT BANNER DOES NOT COVER IT: showBanner() renders only into `#boot .boot-items`
+  // and returns early once boot is dismissed, by its own comment — "In-app (boot dismissed) we
+  // intentionally show no floating popup." So the boot row fires BEFORE the second tab is opened,
+  // and nothing fires after. An operator who opened a second tab mid-shift was told NOTHING, while
+  // the pill's own tap text says "close it to avoid data loss".
+  // The count is known here regardless of viewport, so say it here. Once per arrival, not per poll:
+  // _cwWarned latches on the 0→N transition and clears when the other tabs go away, so a genuinely
+  // new second tab warns again but a tab left open all shift does not nag every 20 seconds.
+  var _cwWarned = false;
   function tab_pillRefresh() {
+    var others = liveTabCount();
+
+    if (others >= 1 && !_cwWarned) {
+      _cwWarned = true;
+      try {
+        if (typeof phantomToast === 'function') {
+          phantomToast('PHANTOM is open in ' + (others + 1) + ' tabs — close the others to avoid data loss.', 'warn');
+        }
+        if (typeof haptic === 'function') haptic(6);
+      } catch (_) {}
+    } else if (others === 0) {
+      _cwWarned = false;
+    }
+
+    // The pill is still the richer affordance wherever there is room for it (>480px).
     var pill = document.getElementById('phantom-tab-pill');
     if (!pill) return;
-    var others = liveTabCount();
     if (others >= 1) {
       var txt = pill.querySelector('.tab-pill-text');
       if (txt) txt.textContent = (others + 1) + ' TABS';
@@ -55404,7 +55432,11 @@ setInterval(phantomStorageCheck, 300000);
   window.__phantomClonewar = {
     tabId: MY_TAB_ID,
     known: knownTabs,
-    forceBanner: showBanner
+    forceBanner: showBanner,
+    // v1.14.556: exposed so the multi-tab warning is TESTABLE without waiting out the 20s poll or
+    // opening a real second tab. `known` was already here, so a test can seed a peer and drive the
+    // refresh deterministically. Debug surface only — nothing in the app calls this.
+    refresh: tab_pillRefresh
   };
 })();
 
