@@ -2,13 +2,13 @@
 //
 // Every selector, class and function name below was read out of dct-ios.html, not guessed:
 //   #rd-botnav markup ...................... :16030-16051
-//   #bn-rail / #bn-core / .botitem .......... :16031-16044
+//   #bn-rail / .botitem ..................... :16610-16630
 //   #rd-exit (hold-to-exit, NOT a tab) ...... :16046-16050, wiring rd_initExit :18751
 //   showMode() .............................. :18786  (map {command:'cmd', work:'work', ref:'ref'})
 //   showPage() adds .active to #pg-<id> ..... :22558-22569
 //   nav_push()/popstate/history ............. :18443, :18602, :18610
 //   redesign_initToggle adds body.rd ........ :18888-18903
-//   #bn-core{display:none} — rail retired ... :9566
+//   #bn-core retired outright (v1.14.563) ... gone
 //   body.rd.mode-ref .search-wrap ........... :9619  (the ONLY body.mode-* class in the file)
 //   #rd-botnav{display:none} base ........... :9564   / body.rd #rd-botnav{display:grid} :9653
 //   body.rd .tab-nav{display:none} .......... :9607
@@ -159,27 +159,27 @@ test.describe('bottom nav — routing', () => {
     }
   });
 
-  test('#bn-core still tracks the active slot, but the rail is retired and paints nothing', async ({ phantom, page }) => {
+  test('#bn-core is gone, and the nav still resolves to exactly four grid items', async ({ phantom, page }) => {
     await phantom.boot();
     await needsBottomNav(page);
 
-    // showMode :18827-18829 writes left = index * 33.333%.
-    const expected = { command: '0%', work: '33.333%', ref: '66.666%' };
-    for (const mode of ['work', 'ref', 'command']) {
-      await tapSlot(page, mode);
-      await expect
-        .poll(() => page.evaluate(() => document.getElementById('bn-core').style.left),
-          { message: `#bn-core slider did not move for ${mode}` })
-        .toBe(expected[mode]);
-    }
+    // v1.14.563 retired the last of the .159 reactor rail: the <span id="bn-core">, its
+    // #bn-core{display:none} rule, and showMode's dead `left = index * 33.333%` write. The
+    // predecessor of this test asserted that dead write still tracked the active slot, with an
+    // honest note that it painted nothing. There is nothing left to track.
+    const present = await page.evaluate(() => !!document.getElementById('bn-core'));
+    expect(present, '#bn-core was retired at .563 — if it is back, the dead thirds-math write probably came back with it').toBe(false);
 
-    // HONEST NOTE (not a failure): #bn-core{display:none} at :9566 — "old sliding reactor
-    // rail retired". The slider math above is a dead write; the real active indicator is
-    // .botitem.active + its .btick. Asserted so the suite records the truth rather than
-    // implying a visible slider exists.
-    const display = await page.evaluate(() =>
-      getComputedStyle(document.getElementById('bn-core')).display);
-    expect(display, '#bn-core is retired (:9566) — if this ever paints, the assertion above is the wrong contract').toBe('none');
+    // ⚠ WHY THE SECOND ASSERTION EXISTS. #bn-rail is display:contents, so its children are
+    // promoted into #rd-botnav's grid-template-columns:repeat(4,1fr). #bn-core stayed out of
+    // that count ONLY because it was display:none — the rule was load-bearing while the span
+    // existed, and removing the rule alone would have made it a fifth grid item and collapsed
+    // the nav. This pins the count so that class of mistake fails loudly instead of visually.
+    const cells = await page.evaluate(() =>
+      Array.from(document.getElementById('rd-botnav').children)
+        .flatMap((el) => (getComputedStyle(el).display === 'contents' ? Array.from(el.children) : [el]))
+        .filter((el) => getComputedStyle(el).display !== 'none').length);
+    expect(cells, '#rd-botnav must resolve to exactly four grid items').toBe(4);
   });
 
   test('body.mode-ref is set on Tools only — it is the sole mode-* class the app owns', async ({ phantom, page }) => {

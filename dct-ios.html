@@ -9959,7 +9959,6 @@ body.rd{--rd-cardfill:linear-gradient(158deg,#050506 0%,#010102 46%,#000000 76%,
    nav stays pinned ABOVE the iOS #pg-ref scroller, and EXIT color is #ff5a4d directly (the live --red is #ff453a). */
 #rd-botnav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:40;overflow:hidden;grid-template-columns:repeat(4,1fr);align-items:stretch;border-top:1px solid rgba(92,242,255,.14);background:linear-gradient(158deg,#050506 0%,#010102 46%,#000000 76%,#030304 100%);padding:8px 6px calc(8px + var(--safe-bottom));max-width:760px;margin-inline:auto;transform:translateZ(0)}   /* v1.14.338: solid stat-card surface (matches the RACKS tile), was translucent gradient + blur that read lighter than the cards */
 #bn-rail{display:contents}                 /* its 3 tabs become direct grid cells */
-#bn-core{display:none}                      /* old sliding reactor rail retired */
 /* v1.14.323 — pnav look (owner lab-locked: flush·glass·underbar·large·always-labels·per-icon color·WebP icons)
    applied to the EXISTING #rd-botnav (keeps ids + showMode routing + hold-to-exit). Per-tab color = --tc (inline).
    Underbar = .btick (order:2 → sits under the icon, above the always-on label). Icons are precached WebP <img>. */
@@ -9992,7 +9991,8 @@ body.rd{--rd-cardfill:linear-gradient(158deg,#050506 0%,#010102 46%,#000000 76%,
 #rd-botnav #rd-exit.arming .btick{opacity:1;width:26px;background:var(--gold);box-shadow:0 0 8px var(--gold)}
 
 /* ── v1.14.315 — HOLD-TO-EXIT (freeze & wake). Redesign-only (body.rd); ?legacy byte-identical.
-   #bn-rail wraps the reactor rail + 3 botitems so #bn-core keeps its thirds-of-the-wrapper % math
+   #bn-rail wraps the 3 botitems as direct grid cells (v1.14.563 retired #bn-core, its
+   display:none rule and the dead thirds-math write that fed it)
    (rail JS untouched) while #rd-exit sits set-apart beside them (never a landable tab). v1.14.316: #rd-exit MATCHES
    the nav items — reuses the nav's .blabel/.btick (dim slate Orbitron, no gold pill), lighting gold only
    as it arms. Curtain + wake-ring authored (no prototype). */
@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.562';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.563';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -16610,7 +16610,6 @@ if (typeof window !== 'undefined') {
   </div>
   <div class="botnav" id="rd-botnav">
     <div id="bn-rail">
-      <span id="bn-core" aria-hidden="true"></span>
       <div class="botitem active" id="bn-command" role="button" tabindex="0" onclick="showMode('command')" aria-label="Command" style="--tc:#61efff">
         <img class="bicon" src="icons/phantom-nav-command-v3-256.webp" width="256" height="256" alt="" loading="eager">
         <span class="blabel">Command</span><span class="btick"></span>
@@ -19260,9 +19259,6 @@ function showMode(mode) {
     var _csd = _csn && document.getElementById(_csn);
     if (_csd) _csd.classList.toggle('on', m === mode);
   });
-  var _bnIdx = { command:0, work:1, ref:2 }[mode];
-  var _core = document.getElementById('bn-core');
-  if (_core && _bnIdx !== undefined) _core.style.left = (_bnIdx * 33.333) + '%';
   // Search bar shows only on Ref in redesign (mock-clean Command/Work headers).
   document.body.classList.toggle('mode-ref', mode === 'ref');
   // v1.14.102: entering Ref via the bottom nav lands on the card-grid landing.
