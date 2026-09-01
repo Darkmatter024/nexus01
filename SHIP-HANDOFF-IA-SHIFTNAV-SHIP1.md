@@ -127,6 +127,22 @@ default: leaving a working door alone is never the risky choice.
 say *"find the optic ledger."* Then *"get me to ISOLATE."* Count taps and seconds. **That test is
 why this spec exists**; it is the honest measure of whether the rename earned its ship.
 
+### ⚠ VERIFY DEBT THIS SHIP CARRIES — nine of the ten tools are unmeasured
+
+The 2026-08-31 hardware pass cleared **the door**, not what the door opens. It establishes the
+OPS control's EXISTENCE at the top of the Build workspace and its 44px gloved tap floor. It does
+**not** clear the ten tools' own surfaces: each renders through `rd_openOpsTool`, and **only
+OPTICS was measured** — visible host, 362×746, 1,619 chars. **The other nine are unverified on
+the phone.**
+
+⛔ **A door that opens is not a surface that renders.** `.558` is the standing proof: a control
+can be absent, or present-and-inert, for 85 versions without throwing. The nine unmeasured tools
+sit in exactly that state — nothing has yet asked them to paint on hardware. Step 2 above walks
+ISOLATE and step 3 walks OPTIC LEDGER; **the remaining eight are opened by no step in this list.**
+
+Source of record: `PHANTOM_CURRENT_STATE.md`, the `.558` Historical verify entry. Owner-restated
+2026-09-01.
+
 ---
 
 ## GUARDRAILS
