@@ -9066,7 +9066,19 @@ body.rd #master-back { display:flex; align-items:center; gap:12px; margin:4px 0 
    measured 28px on a 390px phone, well under the 44px floor for gloved hands. The defect shipped
    in .465 and was never caught because ops_init never ran, so the control never rendered for
    anything to measure. Pinned by 48-ops-row-exists. */
-.ops-banner-btn { display:flex; align-items:center; gap:8px; background:none; border:none; color:var(--text-primary); cursor:pointer; font-family:var(--mono); font-size:12px; letter-spacing:2px; width:100%; min-height:var(--tap-s); padding:0; margin:0; text-align:left; }
+/* v1.14.560 — SIX DECLARATIONS THAT WERE SILENTLY DEAD. `--text-primary` and `--text-tertiary`
+   are declared NOWHERE — zero occurrences — and an undefined var() invalidates its whole
+   declaration in silence, so all six `color` rules were inert and these elements inherited from
+   their parent. ⛔ THIS IS NOT NEW: the dead-token set is byte-identical at `.556`, proven by
+   comparison. What IS new is that anyone can SEE it — the rules sat inert for 85 versions because
+   `ops_init` never ran, and `.558` made the row render. The defect is old; the exposure is `.558`'s.
+   ⭐ Tokens chosen by owner ruling: `--white` for the four primary sites, `--slate-dim` for the two
+   dim ones. The `opacity:.6` on the dim pair is REMOVED in the same stroke — `--slate-dim` is
+   already the dim step of the palette, so the opacity was dimming twice and computed to roughly
+   2.2:1 against `--surf-1` at 9-10px, under the Cold Aisle bar. ⚠ `19-design-tokens` is the only
+   gate in the project that can see a silently-killed CSS declaration; brace balance passes and
+   `node --check` never reads CSS. It found `--alert` the same way at `.428`. */
+.ops-banner-btn { display:flex; align-items:center; gap:8px; background:none; border:none; color:var(--white); cursor:pointer; font-family:var(--mono); font-size:12px; letter-spacing:2px; width:100%; min-height:var(--tap-s); padding:0; margin:0; text-align:left; }
 .ops-banner-icon { font-size:20px; flex-shrink:0; }
 .ops-banner-label { flex-grow:0; }
 .ops-banner-chevron { margin-left:auto; flex-shrink:0; transition:transform 300ms cubic-bezier(.4,0,.2,1); }
@@ -9074,9 +9086,9 @@ body.rd #master-back { display:flex; align-items:center; gap:12px; margin:4px 0 
 .ops-grid-host { background:var(--surf-0); padding:0; overflow:hidden; max-height:0; opacity:0; transition:max-height 300ms,opacity 300ms cubic-bezier(.4,0,.2,1); }
 .ops-grid-host.ops-grid-show { max-height:2000px; opacity:1; }
 .ops-grid-header { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid rgba(92,242,255,.1); background:linear-gradient(135deg,rgba(92,242,255,.03),rgba(155,89,255,.03)); }
-.ops-grid-back { background:none; border:none; color:var(--text-primary); cursor:pointer; font-size:18px; padding:0; width:auto; height:auto; flex-shrink:0; }
+.ops-grid-back { background:none; border:none; color:var(--white); cursor:pointer; font-size:18px; padding:0; width:auto; height:auto; flex-shrink:0; }
 .ops-grid-back:hover { opacity:.7; }
-.ops-grid-title { font-family:var(--mono); font-size:12px; letter-spacing:2px; color:var(--text-primary); text-transform:uppercase; }
+.ops-grid-title { font-family:var(--mono); font-size:12px; letter-spacing:2px; color:var(--white); text-transform:uppercase; }
 .ops-grid-spacer { flex-grow:1; }
 .ops-grid { display:grid; gap:8px; padding:12px 16px 16px; grid-auto-rows:auto; }
 @media (max-width:600px) { .ops-grid { grid-template-columns:1fr 1fr; grid-auto-rows:140px; } }
@@ -9086,12 +9098,12 @@ body.rd #master-back { display:flex; align-items:center; gap:12px; margin:4px 0 
 .ops-panel:hover { background:var(--surf-2); border-color:rgba(92,242,255,.25); transform:translateY(-2px); }
 .ops-panel:active { transform:translateY(0); background:var(--surf-1); }
 .ops-panel-icon { font-size:28px; margin-bottom:4px; flex-shrink:0; }
-.ops-panel-name { font-family:var(--mono); font-size:11px; letter-spacing:2px; color:var(--text-primary); text-transform:uppercase; margin-bottom:2px; line-height:1; }
-.ops-panel-meta { font-family:var(--mono); font-size:9px; letter-spacing:1px; color:var(--text-tertiary); opacity:.6; margin-bottom:8px; line-height:1; }
+.ops-panel-name { font-family:var(--mono); font-size:11px; letter-spacing:2px; color:var(--white); text-transform:uppercase; margin-bottom:2px; line-height:1; }
+.ops-panel-meta { font-family:var(--mono); font-size:9px; letter-spacing:1px; color:var(--slate-dim); margin-bottom:8px; line-height:1; }
 .ops-panel-divider { width:100%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent); margin:8px 0; flex-shrink:0; }
 .ops-panel-stat { font-family:var(--raj); font-size:18px; font-weight:700; color:var(--panel-accent,#5cf2ff); line-height:1; margin-bottom:2px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
 @media (min-width:601px) { .ops-panel-stat { font-size:24px; } }
-.ops-panel-label { font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--text-tertiary); opacity:.7; line-height:1; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
+.ops-panel-label { font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--slate-dim); line-height:1; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; }
 .ops-panel-cta { margin-top:auto; padding:6px 12px; background:transparent; border:none; color:var(--panel-accent,#5cf2ff); font-family:var(--mono); font-size:10px; letter-spacing:1px; cursor:pointer; opacity:.7; transition:opacity 200ms; flex-shrink:0; }
 .ops-panel-cta:hover { opacity:1; }
 .ops-panel-cta:active { opacity:.5; }
@@ -12823,7 +12835,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.559';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.560';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
