@@ -146,6 +146,9 @@ without carrying that forward would re-open a defect that has already been paid 
 - ⛔ **Nothing here is design.** Where v2 asks for something the data cannot currently support, the
   finding is reported for owner amendment — it is not narrowed, resequenced or rewritten.
 - 📌 **Collisions with existing repo work are recorded in commit `bcd0205`**, not repeated here:
-  COMMAND→DECK probably moot, `SEE IN AISLE` already built at `:41699`, v2's "ISOLATE is dangerous"
-  against the traced finding that it performs no destructive operation, and the three-way SCAN
+  COMMAND→DECK probably moot, `SEE IN AISLE` already built at `:41699`, and the three-way SCAN
   disagreement between v2 §2, board v2, and the held SCAN-PILLAR handoff.
+- ✅ **ONE COLLISION IS NOW CLOSED.** v2 §1's *"ISOLATE is dangerous"* was ruled against by the
+  owner on 2026-09-01: **ISOLATE stays as-is, it is not dangerous, and §1's confirm/red/full-width
+  prescription is STRUCK.** Recorded in `PHANTOM_CURRENT_STATE.md`. Phase 1 must not assign ISOLATE
+  a destructive affordance.
