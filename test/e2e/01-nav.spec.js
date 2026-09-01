@@ -250,6 +250,57 @@ test.describe('bottom nav — routing', () => {
   });
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// v1.14.562 — THE NAV BLOCKER BADGE. Addendum A3. The desktop shell has carried this count
+// since .383 (#cs-tnotif/.cs-tbadge); the phone nav never did, so the number a technician most
+// needs was visible only on the composition they are NOT holding in an aisle.
+// ⭐ THE TAP-TARGET ASSERTION IS THE LOAD-BEARING ONE. A badge pinned over a nav item is a
+// classic way to eat the tap it decorates, and this app's whole Cold Aisle Filter is about
+// gloved hands hitting what they aim at. pointer-events:none is the fix; this pins it.
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe('nav blocker badge', () => {
+  const readBadge = (page) => page.evaluate(() => {
+    const b = document.getElementById('bn-work-n');
+    const item = document.getElementById('bn-work');
+    if (!b || !item) return { present: false };
+    const cs = getComputedStyle(b);
+    const r = b.getBoundingClientRect(), ir = item.getBoundingClientRect();
+    return { present: true, text: b.textContent.trim(), display: cs.display,
+      pointerEvents: cs.pointerEvents, shown: cs.display !== 'none' && r.width > 0,
+      hasClass: item.classList.contains('has'),
+      inside: r.left >= ir.left - 2 && r.right <= ir.right + 2 };
+  });
+
+  test('⛔ it is HIDDEN at zero — an always-on badge is a lie about the shift', async ({ phantom, page }) => {
+    await phantom.boot();
+    await page.waitForTimeout(1000);
+    const b = await readBadge(page);
+    expect(b.present, 'the nav badge node is gone from #bn-work').toBe(true);
+    expect(b.shown, `the badge shows with no blockers (text="${b.text}") — Contract B10, do not label absent trouble`).toBe(false);
+  });
+
+  test('⛔ it NEVER eats the tap it decorates — Cold Aisle floor', async ({ phantom, page }) => {
+    await phantom.boot();
+    await page.evaluate(() => {
+      const i = document.getElementById('bn-work'), n = document.getElementById('bn-work-n');
+      if (i && n) { n.textContent = '3'; i.classList.add('has'); }
+    });
+    await page.waitForTimeout(300);
+    const b = await readBadge(page);
+    expect(b.shown, 'the badge did not appear when blockers exist').toBe(true);
+    expect(b.inside, 'the badge renders outside its nav item — it will overlap a neighbour').toBe(true);
+    expect(b.pointerEvents, 'the badge accepts pointer events and can swallow a BUILD tap').toBe('none');
+    const hit = await page.evaluate(() => {
+      const i = document.getElementById('bn-work');
+      const r = i.getBoundingClientRect();
+      const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return { h: Math.round(r.height), hitsItem: !!el && (el === i || i.contains(el)) };
+    });
+    expect(hit.hitsItem, 'a centre tap on BUILD no longer lands on BUILD').toBe(true);
+    expect(hit.h, `BUILD is ${hit.h}px tall — under the 44px gloved floor`).toBeGreaterThanOrEqual(44);
+  });
+});
+
 test.describe('browser back', () => {
   // ⛔ KNOWN DEFECT H1 — showMode() sets _navInternalCall = true around its showPage()
   // call (:18810-18811), and nav_push() early-returns on that flag (:18444). So a

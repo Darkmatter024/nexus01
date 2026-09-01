@@ -9975,6 +9975,13 @@ body.rd{--rd-cardfill:linear-gradient(158deg,#050506 0%,#010102 46%,#000000 76%,
    rendered it 50% wider than measured here. Tracking is set in em so it scales with the font
    instead of staying a fixed 1.6px as the type shrinks. The token itself is untouched: 46 other
    rules use --hud-track-mid, and this is the dock's own rule. */
+/* v1.14.562 — the nav blocker badge. Mirrors the desktop .cs-tbadge (:59129) deliberately: same
+   magenta, same weight, same hide-unless-.has contract, so one number does not grow two looks.
+   ⚠ It sits on the ITEM, not the icon: .bicon is 54x54 and object-fit:contain, so its painted box
+   is not its layout box and anchoring there would drift with the art. ⚠ pointer-events:none — the
+   badge must never eat a tap meant for the 54px BUILD target under the Cold Aisle Filter. */
+#rd-botnav .bn-badge{position:absolute;top:2px;right:calc(50% - 26px);min-width:16px;height:16px;padding:0 4px;border-radius:var(--r-ctl,8px);background:var(--mag,#ff2bd6);color:#04060a;font-family:var(--mono);font-size:var(--fs-micro);font-weight:800;line-height:16px;text-align:center;display:none;pointer-events:none;z-index:2}
+#rd-botnav .botitem.has .bn-badge{display:block}
 #rd-botnav .blabel{order:3;font-family:var(--orb);font-weight:700;font-size:clamp(8px,2.3vw,var(--fs-micro));letter-spacing:.06em;text-transform:uppercase;color:#4a565f;white-space:nowrap;max-width:100%;transition:color .2s,text-shadow .2s}
 #rd-botnav .botitem.active .bicon,#rd-botnav #rd-exit .bicon{opacity:1}
 #rd-botnav .botitem.active .btick{opacity:1;box-shadow:0 0 6px var(--tc)}
@@ -12835,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.561';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.562';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -16611,6 +16618,11 @@ if (typeof window !== 'undefined') {
       <div class="botitem" id="bn-work" role="button" tabindex="0" onclick="showMode('work')" aria-label="Build" style="--tc:#3d84ff">
         <img class="bicon" src="icons/phantom-nav-build-v3-256.webp" width="256" height="256" alt="" loading="eager">
         <span class="blabel">Build</span><span class="btick"></span>
+        <!-- v1.14.562 — Addendum A3's live blocker count. The desktop shell has carried this since
+             .383 (#cs-tnotif / .cs-tbadge); the phone nav never did, so the number a tech most
+             needs was visible only on the composition they are NOT using in an aisle. Same data
+             source (cmd_render's blockerCount), same shape, so the two shells stay one design. -->
+        <span class="bn-badge" id="bn-work-n" aria-hidden="true">0</span>
       </div>
       <div class="botitem" id="bn-ref" role="button" tabindex="0" onclick="showMode('ref')" aria-label="Tools" style="--tc:#cfe3ee">
         <img class="bicon" src="icons/phantom-nav-tools-v4-256.webp" width="256" height="256" alt="" loading="eager">
@@ -23346,6 +23358,18 @@ function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, on
   if (nb) {
     setText('cs-tnotif-n', String(blockerCount || 0));
     if (blockerCount > 0) nb.classList.add('has'); else nb.classList.remove('has');
+  }
+  // v1.14.562 — the PHONE nav badge, fed from this same aggregate so the two shells can never
+  // disagree about the number. ⚠ Written here rather than in a new poller: cmd_render already runs
+  // on every Command render and is the one place blockerCount is computed. A second source would be
+  // a second truth. ⛔ NOT a silent no-op if the node is missing — the nav is always in the DOM, so
+  // an absent #bn-work is a real structural change and should say so.
+  var _bnw = E('bn-work');
+  if (_bnw) {
+    setText('bn-work-n', String(blockerCount || 0));
+    if (blockerCount > 0) _bnw.classList.add('has'); else _bnw.classList.remove('has');
+  } else {
+    try { console.warn('[nav] #bn-work missing — the blocker badge has nowhere to render'); } catch (_) {}
   }
 
   // ── §9.9 Intelligence: the same recommendation the phone NBA renders ──
