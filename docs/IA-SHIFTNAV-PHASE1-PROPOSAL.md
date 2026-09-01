@@ -60,15 +60,14 @@ load-bearing (`.287` FIX-2 keeps the nav above the iOS `#pg-ref` scroller). The 
 already warns in writing that giving `#bn-rail` a box **"would out-specify `display:contents` and
 collapse the 4-cell grid to 2."**
 
-### ⛔ M4 PREREQUISITE — `#bn-core`'s JS is a live landmine, and this ruling does not remove it
+### ✅ M4 PREREQUISITE — DISCHARGED EARLY AT `v1.14.563` (was: a live landmine)
 
 `showMode()` still writes `_core.style.left = (_bnIdx * 33.333) + '%'` on **every mode change**, to
 an element that has been `display:none` since `.321`. The math is **thirds**; at five pillars the
 correct step is **20%**. It is inert, invisible, and waiting — the same shape as `.473`, where a
 stated intent the bytes did not carry sat undetected for 85 versions and never threw.
 
-**The M4 ship deletes the write and the `<span id="bn-core">` together.** With the thumb rejected,
-both are dead code; leaving them is how a wrong number survives to be un-hidden by a later session.
+**~~The M4 ship deletes the write and the `<span id="bn-core">` together.~~** ⭐ **Done at `.563`, not deferred** (owner call, 2026-09-01): the span, the `display:none` rule, the three JS lines and the stale comment are gone. ⚠ **The ordering trap was real and is now pinned** — `#bn-rail` is `display:contents`, so `#bn-core` stayed out of `#rd-botnav`'s four-column count **only** because of that `display:none` rule; removing the rule alone would have made it a fifth grid item and collapsed the nav. `01-nav` now asserts the nav resolves to exactly four grid items so that class of mistake fails loudly. **M4 inherits nothing here.**
 
 ### A1-2 · COMMAND becomes DECK. Label only.
 
