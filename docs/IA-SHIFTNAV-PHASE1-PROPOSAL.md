@@ -5,6 +5,7 @@
 the smallest honest first ship surfaces them as a group rather than doing Optics alone."*
 **Grounded in:** `docs/IA-SHIFTNAV-PHASE0-NAV-CENSUS.md`, measured at 390×844 against `.557`.
 **Status:** ⭐ **RULED BY OWNER 2026-08-31.** Design on paper; nothing shipped from Phase 1 itself.
+**Amended:** ⭐ **2026-09-01 — Amendment 1** (the dock's two open design questions). See below.
 
 ## ⭐ OWNER RULINGS — 2026-08-31
 
@@ -18,6 +19,99 @@ the smallest honest first ship surfaces them as a group rather than doing Optics
 **Consequent ship order:** `ops_init` repair → Ship 1 (the OPS bay on Build, incl. the OPTIC LEDGER
 rename) → Ship 2 (five-pillar dock) → Ship 3 (VERIFY band) → Addendum A8 phases.
 Open questions 1, 2 and 5 below are **CLOSED** by these rulings; 3 and 4 remain open.
+
+---
+
+## ⭐ AMENDMENT 1 — OWNER RULINGS 2026-09-01 · the dock's two open design questions
+
+**Context, so this is not misread as a ship.** Phase 1 in Addendum A8's map is the **dock**, and the
+dock is **M4** work. Current milestone is **M2**, and the standing directive stops broad UI work
+until M2 passes on hardware. SHIFT's three unsourced questions still measure **0 references** in the
+live file (`PhantomIntelligence.queue`, the `Store` write journal, the derived readiness gate),
+re-verified 2026-09-01. The SCAN pillar was **held until M4** by owner ruling on this same day,
+because shipping one pillar early makes the nav change twice. ⛔ **These two rulings are paper for
+M4. Nothing ships from them.**
+
+### A1-1 · The sliding thumb is REJECTED. `.btick` stays.
+
+⭐ **The conflict was thinner than it was recorded.** `.321` did not rule against sliding indicators.
+It replaced the whole `.159` reactor-rail **flex** nav with the icon-forward **grid** ("Option C nav
+— icon-forward CSS grid (can't wrap)"). `#bn-core` died **with its mechanism, not by verdict**, so
+Addendum A3 proposed a thumb into a vacuum rather than against a standing decision. The two owner
+decisions were never actually opposed.
+
+It is rejected anyway, on PHANTOM's own doctrine:
+
+1. ⛔ **A thumb in transit is under no pillar.** ~200ms of "the indicator is between two answers"
+   fails the Cold Aisle Filter — a tech glances once, gloved, cold. `.btick` is instantaneous state.
+2. ⛔ **It breaks the per-icon colour lock.** `.323` is owner lab-locked on *per-icon color* and
+   `.btick` carries `--tc` per pillar. One shared thumb must pick a colour or animate between them,
+   and a colour transition is exactly what the motion doctrine bans.
+3. ⚠ **`.btick` is load-bearing elsewhere.** `#rd-exit.arming .btick` widens to 26px and goes gold.
+   A shared thumb cannot express that, so `.btick` survives regardless — and two indicators for one
+   state is the "one canonical" violation in visual form.
+
+📌 **Precedent for a partial rejection:** A3 already adopts its mechanics and rejects its skin.
+This rejects one mechanic on the same basis, and the rest of A3 is unaffected.
+
+⚠ **Had it been restored, the host was the trap.** `#bn-rail{display:contents}` generates no box, so
+the only available host is `#rd-botnav` itself — whose `overflow:hidden` and `translateZ(0)` are
+load-bearing (`.287` FIX-2 keeps the nav above the iOS `#pg-ref` scroller). The CSS at `:9999`
+already warns in writing that giving `#bn-rail` a box **"would out-specify `display:contents` and
+collapse the 4-cell grid to 2."**
+
+### ⛔ M4 PREREQUISITE — `#bn-core`'s JS is a live landmine, and this ruling does not remove it
+
+`showMode()` still writes `_core.style.left = (_bnIdx * 33.333) + '%'` on **every mode change**, to
+an element that has been `display:none` since `.321`. The math is **thirds**; at five pillars the
+correct step is **20%**. It is inert, invisible, and waiting — the same shape as `.473`, where a
+stated intent the bytes did not carry sat undetected for 85 versions and never threw.
+
+**The M4 ship deletes the write and the `<span id="bn-core">` together.** With the thumb rejected,
+both are dead code; leaving them is how a wrong number survives to be un-hidden by a later session.
+
+### A1-2 · COMMAND becomes DECK. Label only.
+
+⭐ **The tap floor was never the risk — the label is.** Geometry is comfortable: 390 − 12 ÷ 5 =
+**75.6px** against a 44px floor. But the drop from four slots to five consumes the safety margin
+`.530` was explicitly built to hold:
+
+| | 4 slots (today) | 5 slots (M4) |
+|---|---|---|
+| Cell | 95px | **75.6px** |
+| Usable (−4px padding ×2) | 87px | 67.6px |
+| COMMAND, post-`.530` | ~47px | ~47px |
+| **Safety margin** | **1.85×** | **1.44×** |
+
+`.530` states the label was sized so it **"would still fit if the device rendered it 50% wider than
+measured here."** Five slots put it at **1.44×** — under its own stated design point, on the one
+label already proven to truncate on real hardware, in a font this box cannot measure (`--orb`
+resolves to San Francisco on iOS and Helvetica/Arial in the harness, and the two disagree).
+
+⭐ **COMMAND is the only label longer than five characters.** BUILD, SCAN, TOOLS and SHIFT are 4–5.
+Shortening it to **DECK** makes five the longest and returns the margin to **~2.4×** — better
+headroom than the nav has today.
+
+⛔ **Only the label moves.** `showMode('command')`, `#bn-command`, `_bnIdx.command` and the
+`aria-label` are untouched — the same discipline as the OPTICS → OPTIC LEDGER rename at `.559`,
+where renaming the identifier would have broken every door at once. The surface is already the
+**Command Deck** (`#cmd-shell`); DECK is the aisle half of its own name.
+
+**Rejected alternatives:** shrink the type (8.97px is at the legibility floor, and `.560` just
+proved chrome-dimming in this nav computes under the contrast bar) · two-line labels
+(`white-space:nowrap` is *why* Option C "can't wrap") · ship-and-see (tuning to a measurement that
+cannot be taken on this box is precisely what `.530` refused).
+
+### BOUNDS ON THIS AMENDMENT
+
+- ⛔ **The margin figures are arithmetic off `.530`'s recorded numbers, not device measurements.**
+  No iPhone was measured for this amendment. The M4 ship must still device-verify the label at
+  75.6px, on all five pillars, before its stamp.
+- ⛔ **Still paper.** No anchors were re-verified for the patches these rulings imply; the M4 ship
+  needs its own anchor pass against the then-current stamp.
+- 📌 **Open questions 3 and 4 below are stale as written** — both were closed by `.559` (the 1→2
+  tap trade accepted, OPTIC LEDGER approved). The section is left as the 2026-08-31 record; this
+  line is the correction.
 
 ---
 
@@ -194,6 +288,8 @@ Each its own handoff, each held for owner slotting. **No self-scheduling.**
 ---
 
 ## OPEN QUESTIONS — owner rules, I do not
+
+⚠ **Read Amendment 1 first — 3 and 4 were closed by `.559`.** This section records what was open on 2026-08-31.
 
 1. ✅ **CLOSED — V-1.** VERIFY is a band inside Build.
 2. ✅ **CLOSED — 1a.** The Build tool door, with `ops_init` repaired first.
