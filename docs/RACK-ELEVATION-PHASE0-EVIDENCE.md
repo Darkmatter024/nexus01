@@ -1,16 +1,17 @@
 # RACK-ELEVATION-DEMOTE — PHASE 0 EVIDENCE
 
-**Commission:** `SHIP-HANDOFF-RACK-ELEVATION-DEMOTE.md` Phase 0 (E-1…E-5).
+**Commission:** `SHIP-HANDOFF-RACK-ELEVATION-DEMOTE.md` Phase 0 (E-1…E-5), plus E-6/E-7 added by
+Addendum A.
 **Baseline:** `main` @ `f28b0b3`, **`phantom-v1.14.563`** — ⛔ **not** the `.562` the handoff names.
 **Method:** verified source, direct grep against the live file. No graph, no probe, no device.
 **Status:** EVIDENCE ONLY — no design, no patches, nothing shipped. Ship 1 is not started.
-⏳ **E-6 and E-7, added by Addendum A, are NOT answered here.** They gate Ship 3 only.
+✅ **E-6 and E-7 are answered** (appended below, same baseline). `forge.html` WAS read for E-6.
 
 ---
 
-## ⛔ HEADLINE: SHIP 1 IS MOSTLY ALREADY SHIPPED, AND S-14 CANNOT BE EXECUTED
+## ⛔ HEADLINE: MOST OF THIS SPEC IS ALREADY BUILT, AND TWO ITEMS CANNOT BE EXECUTED
 
-Two findings outrank everything below.
+Three findings outrank everything below.
 
 **1. The U information the spec is built to preserve is already on screen.** S-1 asks that every
 device row gain a U-position element. `:41800` already emits it. What actually remains of Ship 1 is
@@ -21,6 +22,11 @@ say so rather than narrowed quietly.
 **2. S-14's grep gate is unreachable.** Addendum A directs that the renderer be deleted with *"zero
 references."* It has **five** call sites and only two are rack-detail; the other two are the Command
 Deck hero's fallback and a **public method on `RackEngine`**, which is under R-05. See E-1.
+
+**3. Ship 3's door already exists, and its premise names the wrong app.** S-10's `SEE IN AISLE`
+is `OPEN AISLE` at `:41699`, shipped `.353`. `forge.html` reads **zero** `phantom_*` keys and is
+not the "Forge" the addendum means — the aisle is an in-app sheet. **0 doors need opening; one
+existing door needs an argument.** See E-6/E-7.
 
 ---
 
@@ -169,6 +175,95 @@ stored state to honour.
 
 ---
 
+## E-6 · HOW FORGE AND dct-ios.html SHARE A MASTER
+
+⛔ **First, "Forge" names two different things, and the addendum means the second.**
+
+| | what it is |
+|---|---|
+| `forge.html` | separate 1.9 MB page at repo root — the NEXUS/FORGE-01 demo (boot sequence, runbooks, CRT co-pilot, fault briefing) |
+| **FORGE · 3D AISLE** | an **in-app sheet inside `dct-ios.html`** — `#forge3d-sheet` `:13667`, `#forge3d-mount`, opened by `forge3d_open()` `:19669` |
+
+**Proven, not assumed:** S-13 quotes Forge's *"SAVED … · RESTORED FROM CACHE"* line. That string
+appears **twice in `dct-ios.html`** (`:20050`, `:36873`) and **zero times in `forge.html`**.
+
+### `forge.html` holds no Master
+
+Its entire storage surface, across 1.9 MB:
+
+```js
+localStorage.getItem('nexus_el_key')
+localStorage.setItem('nexus_el_key', k)
+localStorage.removeItem('cw_api_key')      // FORGE-WORKER-CUTOVER credential cleanup
+```
+
+**Zero `phantom_*` keys.** No Master, no racks, no elevation. It is not a rack viewer.
+
+### ⭐ E-6's STOP CONDITION CANNOT FIRE
+
+Addendum A halts Ship 3 if the two apps hold divergent data. **There is only one app.** The aisle is
+`dct-ios.html`, reading the same `PHANTOM_MASTER`. The freshness line at **`:20049`** reads
+`m.restoredFromStorage`, `m.savedAt`/`m.ingestedAt` and `m.sourceFile` off that same object:
+
+```js
+el.textContent = deploy_forge_siteLabel() + ' · ' + src + ' · '
+  + (restored ? 'SAVED ' + ts + ' · RESTORED FROM CACHE' : 'LOADED ' + ts);
+```
+
+**S-13 is already satisfied by construction** — a surface cannot go stale against itself.
+
+⛔ **S-12 is moot.** *"OPEN IN PHANTOM (Forge → phone rack-detail)"* describes returning from a
+separate app. You never left one. `forge3d_close()` (`:19696`) already returns to rack-detail.
+
+---
+
+## E-7 · FORGE'S EXISTING FOCUS MECHANISM
+
+**No URL param.** `forge3d_open()` takes **no argument** — verified at all four call sites:
+`:13583` (header menu), `:22174` (Build workspace), `:41699` (rack-detail), plus the definition.
+
+| mechanism | anchor |
+|---|---|
+| `LOADOUT` — up to 5 rack IDs, `.slice(0, 5)` | `:20772`, `:20774` |
+| persisted / restored | `store.set('deploy_forge_loadout_v1', LOADOUT)` `:20779` · `:20844` |
+| key registry entry | `:54896` — *"Forge loadout — hand-built rack layout"* |
+| the focused rack's id | `focused.userData.label` |
+| stepping between racks | walks `LOADOUT` by index, `:20992-20994` |
+| pickers | `#loadoutBtn` *"pick up to 5 racks"* `:13680` · `#searchBtn` |
+
+Owner ruling quoted in-file at `:13682-13684`: *"Forge is RACK-CENTRIC by default — the camera holds one
+deterministic framing per rack and navigation moves between canonical rack positions."*
+
+### ⛔ S-10 ALREADY EXISTS
+
+Rack-detail has had the door since `.353`, at **`:41699`**:
+
+```html
+<button type="button" class="reh-aisle-door" onclick="forge3d_open()"
+        aria-label="Open the 3D aisle walk-through">OPEN AISLE ›</button>
+```
+
+Adding `SEE IN AISLE` would be a **second door to the same surface** — Contract A2, and more
+pointedly the addendum's **own** new doctrine: *two paths to the same fact is a defect.*
+
+⭐ **What is actually missing is only S-11's focus carry.** `forge3d_open()` does not seed `LOADOUT`
+or focus from the rack you came from, so it lands on whatever loadout was last saved. **That is a
+parameter, not a door.**
+
+### REVISED DOOR LEDGER
+
+| Addendum A says | measured reality |
+|---|---|
+| open `SEE IN AISLE` | ⛔ already open as `OPEN AISLE` `:41699` |
+| open `OPEN IN PHANTOM` | ⛔ moot — same app, `forge3d_close()` returns |
+| keep the freshness line | ✅ already built `:20049` |
+| S-11 focus carry | ⭐ **the only real work** |
+
+The addendum's ledger claims **2 doors opened**. The honest count is **0 opened, 1 existing door
+gains an argument** — a better outcome by the addendum's own principle than the ship it describes.
+
+---
+
 ## ⚠ WHAT S-5 WILL FIND, AND IT IS NOT A BUG
 
 S-5 keeps both surfaces for one ship so the phone check can confirm *"the list agrees with the
@@ -190,9 +285,11 @@ as a defect.
   label are the owner's observations; this pass found a plausible mechanism for each and **proved
   neither**.
 - ⛔ **E-2's label attribution is unresolved** and is the one open question in this report.
-- ⛔ **E-6 / E-7 are not answered.** Forge's Master sharing and its focus mechanism gate Ship 3 only,
-  and Addendum A requires Ship 3 to **stop and report** if the two apps hold divergent data.
-- 📌 **`forge.html` was not read.** It carries no version stamp and ships outside `version.json`'s
-  scope; E-6/E-7 are where it enters this spec.
+- ⛔ **E-6/E-7 were answered from source, not from a running aisle.** `forge3d_open()` was read,
+  never invoked. That the door lands unfocused is read off the absence of a parameter and of any
+  seeding call — it was **not** observed on a device.
+- 📌 **`forge.html` was read only for its storage surface** (a grep of every `localStorage` call
+  and every `phantom_*` occurrence). Its behaviour, rendering and AI paths were not examined and
+  are out of scope for this spec.
 - ⛔ **Nothing here is design.** Where a spec item is measured as already-shipped or unexecutable,
   the finding is reported for owner amendment — it is not narrowed, resequenced or rewritten.
