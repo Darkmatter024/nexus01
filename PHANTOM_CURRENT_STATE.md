@@ -5,8 +5,8 @@ recorded here and **nowhere else**. Before this file took that role, five docume
 different live version and none of them was correct. If another doc disagrees with this one, that
 doc is stale — fix the doc, do not fork the fact.
 
-**Last updated: 2026-08-31, after `v1.14.558`.
-✅ **NO VERIFY DEBT AND NO GAP.** `main` = `release` = served = `VERIFIED` = **`.558`**, every ship
+**Last updated: 2026-09-01, after `v1.14.559`.
+✅ **NO VERIFY DEBT AND NO GAP.** `main` = `release` = served = `VERIFIED` = **`.559`**, every ship
 device-verified in both houses as it landed. ⭐ **LEGACY-RETIRE IS COMPLETE** (owner ruling
 2026-08-29): stages 0,1,2,3,4,6,7 shipped across `.533`–`.554`; stage 5 pulled to IA-SHIFTNAV;
 stage 8 permanently deferred. ⭐ **FORGE-WORKER-CUTOVER IS COMPLETE** — forge.html holds no
@@ -24,6 +24,14 @@ force. ⛔ **AN INTENDED DEFERRAL LANDED AS A DELETION.** ⭐ **THE SESSION'S DU
 OVER:** `.531` and `.473` both had a stated intent their bytes did not carry, and **neither threw**.
 The absence of a control is indistinguishable from a control you have not reached yet. Both were
 found by MEASURING FOR the thing, never by waiting for a failure.
+⭐ **`.559` IS IA-SHIFTNAV SHIP 1 — the tenth tool, and the name collision.** ISOLATE joins the OPS
+row (it was in `DEPLOY_TOOLS` and the Command Deck but not in `OPS_PANELS_CONFIG`, so it was the one
+tool the owner-accepted tap trade never paid off for), and the deployment-scoped optic surface
+becomes **OPTIC LEDGER** while the Tools **reference** keeps **OPTICS**. ⛔ **SCOPE WAS CORRECTED BY
+MEASUREMENT BEFORE ANY EDIT:** Phase 1 wrote Ship 1 as *"the ten OPS tools gain a findable entry
+point"*, but `.558` had already delivered that for NINE — the row sits at `top:94px`, on-screen with
+zero scrolling, and two taps produced nine panels at depth 0. **Re-shipping that would have been
+churn**, so the ship was narrowed and the narrowing was reported rather than performed quietly.
 
 ⛔ **THE QUEUE IS NOT EMPTY.** ⭐ **IA-SHIFTNAV is now SPEC'D AND RULED**, superseding the board's
 "spec unwritten" line: base spec + Addendum A exist, Phase 0 census and Phase 1 proposal are in
@@ -95,9 +103,9 @@ the ship that changes the fact, not in the one that happens to have room.
 
 | | |
 |---|---|
-| **Version** | **`phantom-v1.14.558`** — on `main`, on `release`, served, and stamped in `VERIFIED`. Gap 0. `forge.html` carries NO version stamp and ships outside `version.json`'s scope. |
+| **Version** | **`phantom-v1.14.559`** — on `main`, on `release`, served, and stamped in `VERIFIED`. Gap 0. `forge.html` carries NO version stamp and ships outside `version.json`'s scope. |
 | Commits | `.481–.486` Phase Next work (2026-08-23) · `.487–.518` iOS SW lifecycle + cache hardening (2026-08-24 → 08-27) · `.519`+`.524` photo capture / gallery (`.520`–`.523` are **burned numbers**, committed straight onto `release` and orphaned by a reset — they survive only as `recovery-v1.14.52x` tags) · `.525`–`.532` nav, dock and rack-detail (2026-08-29) |
-| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.558`, and `curl` of the Pages URL agrees on all three (`version.json`, `PHANTOM_APP_VERSION`, `CACHE_VERSION`), checked 2026-08-31. ⭐ **BOTH SHIPS WERE CONFIRMED IN THE SERVED BYTES, NOT ONLY BY STAMP** — `.557`'s `#reh3dMount` guard, and `.558`'s deferred `ops_init()` call plus the `min-height:var(--tap-s)` tap floor, were each grepped out of the live `dct-ios.html`. **A stamp proves delivery of a number; grepping the fix proves delivery of the fix.** ⚠ This row once read `.532` while the Version row read `.556` — a stale row nobody re-read for 24 versions; that is why it now records what was checked, not just which number. |
+| Stamps | `dct-ios.html` · `sw.js` · `version.json` — all three at `.559`, and `curl` of the Pages URL agrees on all three (`version.json`, `PHANTOM_APP_VERSION`, `CACHE_VERSION`), checked 2026-08-31. ⭐ **BOTH SHIPS WERE CONFIRMED IN THE SERVED BYTES, NOT ONLY BY STAMP** — `.557`'s `#reh3dMount` guard, and `.558`'s deferred `ops_init()` call plus the `min-height:var(--tap-s)` tap floor, were each grepped out of the live `dct-ios.html`. **A stamp proves delivery of a number; grepping the fix proves delivery of the fix.** ⚠ This row once read `.532` while the Version row read `.556` — a stale row nobody re-read for 24 versions; that is why it now records what was checked, not just which number. |
 | Shipped | ✅ **v1.14.532 NAV CLEARANCE IS MEASURED** — `--rd-navclear` was a hardcoded `calc(96px + safe-bottom)` while `#rd-botnav` measures **122px** at 390; six rules read that token, so one stale constant under-paid all of them (visible symptom: the phase dock's lowest 14px sat behind the nav). `rd_syncNavClear` now measures the box and writes the token, re-running on a `ResizeObserver` and `orientationchange`. ⭐ **Second occurrence of this exact class** — `:1151` records `--tabnav-h` freezing at 72 while the nav grew to 96. **The box writes the token; a constant that merely DESCRIBES a measured box drifts the moment the box changes.** |
 | Verified | ✅ **`.519`–`.532` CLEARED ON HARDWARE 2026-08-29/30** — verified one at a time, not as a batch: the campaign now in force forbids stacking. `VERIFIED` stamped `.532` at 01:01 on 08-30. **Verify debt is zero for the first time since `.483`.** |
 | Verified | ✅ **`.438`–`.453` CLEARED ON HARDWARE 2026-08-12** — owner: *"clear"*, six-check walk in `BATCH-VERIFY.md`, run against his real Master. Prior served-byte checks retained below. **`.438` confirmed in the SERVED bytes 2026-08-11** — merge step 2 present, with the QR door referenced from BOTH the detail and Build (the additive state this step is meant to be in). `.425`–`.437` each confirmed the same way; `.434` was verified by ORDERING rather than presence — `rackElevation_render3D` release@1013 acquire@7629, `forge3d_render` release@845 acquire@1548, both reversed before that ship |
@@ -112,6 +120,7 @@ the ship that changes the fact, not in the one that happens to have room.
 | Phase Next-3 | ✅ **Discovery complete** — `PHASE-NEXT-3-DISCOVERY.md` — Shift handoff storage & device transfer audit. Finds: Current usage 1.36 MB (27% of 5 MB quota), multi-shift approaches wall (50KB–6MB per shift), no pruning strategy, no device transfer flow. 5 gaps: no volume measurement, no pruning, no photo storage policy, no device transfer UX, no IndexedDB migration. Recommends 3.1 (measurement LOW), 3.2 (export LOW-MEDIUM), 3.3 (pruning MEDIUM), 3.4 (device transfer HIGH), 3.5 (IndexedDB MEDIUM) sequence. |
 | Next Ship | **NONE — awaiting owner direction.** Two things are parked, both needing the owner rather than Claude Code: (1) ⛔ **`SHIP-HANDOFF-IA-SHIFTNAV.md` does not exist on this machine**, which blocks the single stranded surface — Deploy Optics, and `docs/LEGACY-RETIRE-STRANDED.md` shows it needs **a door, not a rebuild**: `showOpsTab('optics')` already renders into `#wk-deploy` under the redesign; (2) the **Grok-icon provenance conflict**. |
 | Stage 2b result | ✅ **`.535` — TODAY Pulse card removed.** 30 lines, −2,765 bytes. ⛔ **NOT dead code, unlike 2a:** it rendered under `?legacy=1` as part of the legacy NOW dashboard. ⭐ **The census row was wrong** — it called this RETIRED under a definition of *"no working entry point ANYWHERE"*, and the entry point was the legacy house. Shipped as a deliberate visible legacy change under the Contract 17 revocation. Safe to cut because its two locals (`contextName`, `contextSite`) were used nowhere else and its 14 opening divs were matched by 14 closers. |
+| ✅ Closed `.559` | **The tenth tool, and the name collision** (IA-SHIFTNAV Ship 1; rulings V-1, 1a, tap trade accepted, OPTIC LEDGER approved). ⛔ **SCOPE CORRECTED BY MEASUREMENT BEFORE ANY EDIT** — `.558` had already made nine of the ten tools two taps away with zero scrolling, so Ship 1 as written by Phase 1 would have re-delivered done work. **What remained was ISOLATE and the name.** ISOLATE was in `DEPLOY_TOOLS` (`:32176`) and the Command Deck row but **not** in `OPS_PANELS_CONFIG`, so when `.558` made that row Build's door, nine tools came close and ISOLATE alone stayed ~2.9 screens down — **the one tool the accepted trade never paid off for.** It joins in registry order, icon and accent taken from `DEPLOY_TOOLS` rather than invented. ⭐ **Its statistic is written out, not defaulted, and Contract B10 is why:** `0` = no open isolations (a measurement), `—` = not measured. Different facts; rendering the second as the first is fabricated telemetry. ⭐ **THE COLLISION:** two surfaces answered to *OPTICS* — this deployment scanner and the fiber/MPO **reference** in Tools — so a tester told to *find the optics tool* reached the reference and believed they had succeeded. Deployment tool → **OPTIC LEDGER** in three label sites; reference keeps **OPTICS**. ⛔ **Only labels moved** — the `optics` key, `OPS_TABS` entry and the single live `rd_openOpsTool('optics')` call are untouched; renaming the identifier would have broken every door at once. ⚠ **`#cs-fieldtools` deliberately LEFT** (D-1 default on an unruled question): both entry points call the one canonical door, so Contract A2 holds, and removing it would break `03-tools`' order-sensitive wall assertion **and** strip desktop tool access at ≥1024. Pinned by `48-ops-row-exists` (5/5), which now asserts the **count is ten** so the next tool that joins the registry and not the row is caught. ⭐ **Neutrality proven: `03-tools` = 10 failed / 19 passed at `.557`, `.558` AND `.559`.** |
 | ✅ Closed `.558` | **Build's tool door comes back.** It had not existed since `.473`. That ship removed the `ops_init()` call from `showMode('work')` and wrote that OPS *"will be triggered on-demand when user taps the OPS control"* — ⛔ **that trigger was never wired.** `ops_init` had **ZERO callers for 85 versions**, so the banner was never inserted, the ten OPS tools it fronts had no door on Build, and the 2026-08-19 ruling was quietly not in effect. ⭐ **AN INTENDED DEFERRAL LANDED AS A DELETION**, and it hid perfectly: the absence of a control looks exactly like a control you have not navigated to yet — no throw, no warning, no failing test. The IA-SHIFTNAV Phase 0 census found it by measuring FOR the banner. ⚠ **`.473`'S OWN DIAGNOSIS WAS WRONG AND IS CORRECTED BY MEASUREMENT:** it blamed *"phantom-api CORS errors"*; inserting a DOM node cannot cause CORS. The identical access-control pageerror was measured at `.557` with `ops_init` NOT armed — it comes from `phantomCheckApi` (`:55227`), a health-strip OPTIONS probe. The real cause was the second half of `.473`'s own note: the banner went in as first child of `#bw-shell` while `bw_render`'s WebGL was still settling. **The fix is the timing `.473` prescribed and never applied** — a double `rAF`. 📌 **A second defect fell out of the new test:** the OPS button measured **28px**, under the 44px Cold Aisle floor; it shipped that way in `.465` and was never caught **because it never rendered for anything to measure**. Now `min-height:var(--tap-s)`. Pinned by `test/e2e/48-ops-row-exists.spec.js`, 4 tests, mutation-proven. ⭐ **Neutrality proven by direct comparison, not asserted:** `03-tools` returns **10 failed / 19 passed at BOTH `.557` and `.558`**. |
 | ✅ Closed `.557` | **The rack comes back after the aisle** (board Q-1, RACK-DETAIL BUG HUNT). Reach a rack detail from anywhere Build's 3D preview never mounted — the deep-link/back-nav restore, which calls `deploy_showRackDetail` from wherever the operator is — then OPEN AISLE and close: the elevation was **gone**, a 51px control rail over an empty box. ⛔ **THE CAUSE IS A CALLER SHIP A DID NOT AUDIT.** `.531` deleted `#reh3dMount` and the `reh3d_restore` call inside `deploy_showRackDetail`, but `reh3d_activate3D` has a SECOND caller — `forge3d_close`'s no-lender branch at `:19693`. After `.531` the rack detail registers **nothing** with RackEngine (`rackElevation_render3D` `:40773` is the only non-aisle registrar and this page no longer calls it), so from Build a lender exists and close hands the context back — **it looks fine** — but from Home there is no lender, close falls through, and the old order added `.is-3d` **before** looking for the mount. `:11119` then hides the flat wrap, the only rack visual since `.531`. ⭐ **`.531`'s OWN COMMIT BODY PREDICTED THIS EXACT FAILURE** for the wrong fix; it removed the caller it could see. **The fix is the ORDER** — resolve the mount first, return if absent — which closes the CLASS, not the instance. ⚠ **Why it hid: nothing throws, and the `.461` instrument measures the OPS host, which survives at 51px, above its own 8px floor** — so the zero-size instrument watched the rack go to 0px and said nothing. It also self-heals on re-render, so it presented as intermittent. Pinned by `test/e2e/47-rack-detail-aisle-return.spec.js`, 4 tests, mutation-proven. ⛔ **HONEST BOUND: this fixes A defect that emptied the elevation, NOT provably the one behind sandbox gate 2.** Evidence in `docs/RACK-DETAIL-BUG-HUNT-EVIDENCE.md`. |
 | 📌 `.557` measurement trap | ⛔ **`#rehFlatWrap` is `display: contents` (`:11117`) and therefore has NO BOX** — measuring it for height reports a **false zero even when the rack renders perfectly**. This failed the first probe of the bug and briefly looked like a much larger defect. The honest instrument is its child `#rackCanvas` (`:40794`). **Any future rack-elevation test or probe measures the child, never the wrapper.** Recorded because this is the second time the display:contents class has cost real time. |
@@ -1112,6 +1121,18 @@ githubstatus is all-green — a transient repo-side lock, **not code**. An empty
 
 ## 8 · Last physical-iPhone verification
 
+✅ **2026-09-01, against `v1.14.559`.** Owner confirmed the device carried `.559` and reported the
+pass, then directed the stamp.
+
+⚠ **A STAMP WAS REFUSED FIRST, AND THE REFUSAL IS THE RECORD WORTH KEEPING.** The first "stamp
+verified" arrived while Pages was still serving `.558` — checked three times. Per the branch
+ruling, Claude Code never stamps a version the served bytes have not carried, so whatever the phone
+showed then was `.558`: nine tools in the row and a tile still reading OPTICS. The stamp was taken
+only after `.559` was confirmed live **and** its two changes were grepped out of the served
+`dct-ios.html`. ⭐ **Promote lag is not delivery.**
+
+### Historical
+
 ✅ **2026-08-31, against `v1.14.558`.** Build's OPS control: present at the top of the Build
 workspace, expands to the ten tools with OPTICS among them, tapped with gloves at its new 44px
 height. Owner reported the pass and directed the `VERIFIED` stamp.
@@ -1174,8 +1195,15 @@ sustained thermals across a ten-rack aisle walk.
 
 ## 9 · Next action
 
-**PARKED ON `.558`, VERIFIED AND STAMPED. Nothing autonomous, nothing in flight.** Verify debt is
-zero and the ship gate is re-armed.
+**PARKED ON `.559`, VERIFIED AND STAMPED. Nothing autonomous, nothing in flight.** Verify debt is
+zero and the ship gate is re-armed. ⭐ **IA-SHIFTNAV SHIP 1 IS COMPLETE** — Deploy Optics went from
+"stranded" in the notes to reachable, named and unambiguous, and ISOLATE joined its nine siblings
+two taps from launch.
+
+⏳ **NEXT, none started, all owner-slotted:** **Ship 2** the five-pillar dock (gated on SHIFT having
+data — D-1/M3 — and on confirming the SCAN/SHIFT art on disk is the approved cut) · **Ship 3** the
+VERIFY band in Build per V-1 · **Q-3 BOOT-TAPGATE** (authored, approved, held) · **O-2** the
+Grok-icon provenance ruling · **`#cs-fieldtools`**, still defaulted rather than ruled.
 
 ⭐ **THE NEXT SHIP IS IA-SHIFTNAV SHIP 1, and it is unblocked** — `.558` restored the Build door it
 lands on. ⏳ It needs two owner answers first, neither of which gates anything else: the **1→2 tap
