@@ -36,8 +36,6 @@ re-derive them.
 
 ---
 
----
-
 ## ⛔ READ THIS BEFORE ANYTHING ELSE: THIS SHIP REVERSES PART OF A COMPLETED CAMPAIGN
 
 **`pg-scan` existed. `v1.14.552` deleted it** — LEGACY-RETIRE **Stage 6.7**, *"SCAN decoupled and
