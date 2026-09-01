@@ -12835,7 +12835,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.560';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.561';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -21726,7 +21726,32 @@ function ops_ensureContainer() {
   gridHost.innerHTML = '<div class="ops-grid-header"><button class="ops-grid-back" onclick="ops_toggle()" aria-label="Collapse OPS panel">←</button><div class="ops-grid-title">OPS</div><div class="ops-grid-spacer"></div></div><div class="ops-grid" id="ops-grid-inner"></div>';
   container.appendChild(banner);
   container.appendChild(gridHost);
-  bwShell.insertBefore(container, bwShell.firstChild);
+  // ⛔ v1.14.561 — THE BANNER GOES BELOW THE RACK, NOT ABOVE IT. As `bwShell.firstChild` this
+  // container measured 69px and pushed #bw-mount from top 647 to 731 against a nav top of 722 — so
+  // the rack went from 75px visible to ZERO, entirely behind the bottom nav. Measured at `.556` and
+  // `.560` with the same probe; `.558` caused it and this repairs it.
+  // ⭐ TWO OWNER RULINGS COLLIDED and both still stand: SHIP-OPS-IN-PLACE (Build's tool door IS the
+  // OPS row) and R1-D `.442` (the rack comes above the fold in Field Mode). Ordering satisfies both
+  // — the door keeps its home on Build, one scroll-free tap below the thing the shift is about.
+  // ⚠ ANCHORED ON THE MOUNT, NOT ON A CLASS NAME. The rack lives in `.bw-card.bw-prev`, but that is
+  // bw_render's private markup; keying on it would break silently the next time that card is
+  // reshaped. Resolving the mount's own top-level ancestor survives a rename.
+  var _opsAfter = null;
+  var _mount = document.getElementById('bw-mount');
+  if (_mount) {
+    for (var _n = _mount; _n && _n !== bwShell; _n = _n.parentNode) {
+      if (_n.parentNode === bwShell) { _opsAfter = _n; break; }
+    }
+  }
+  if (_opsAfter && _opsAfter.nextSibling) bwShell.insertBefore(container, _opsAfter.nextSibling);
+  else if (_opsAfter) bwShell.appendChild(container);
+  else {
+    // No rack preview on this render (host-less deployment, or bw_render took another branch).
+    // Falling back to the old position is correct: with no rack to sit below, first-child is
+    // simply where the door goes, and it cannot push a rack that is not there.
+    try { console.warn('[OPS] no #bw-mount to anchor below — banner placed at the top of Build'); } catch (_) {}
+    bwShell.insertBefore(container, bwShell.firstChild);
+  }
   return true;
 }
 function ops_init() {

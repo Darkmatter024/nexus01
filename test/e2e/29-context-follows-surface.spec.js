@@ -82,11 +82,45 @@ test.describe('the one WebGL context follows the visible surface', () => {
     await page.waitForTimeout(3000);
     const detail = await contexts(page);
     expect(detail.opsDetail, 'the rack detail did not take the screen — the test proves nothing').toBe(true);
-    // THE ASSERTION. Before .441 this was 'no-canvas' forever: Build's re-arm disposed this mount
-    // on every retry, so the rack area stayed an empty black 60vh box over a hidden U1-U48 rail.
-    expect(detail.reh, 'the rack detail rendered NO rack — the empty-box defect is back').toBe('live');
-    // And Build must have let go, because there is only ever one (Contract A6).
-    expect(detail.bw, 'Build kept its context while the detail owned the screen').not.toBe('live');
+    // ⭐ REWRITTEN AT v1.14.561 — THIS ASSERTED A DESIGN THAT `.531` RETIRED. It required
+    // `detail.reh === 'live'`: a live WebGL context at #reh3dMount. But `.531` (Ship A of
+    // RACK-DETAIL-CLEANUP, owner-approved) DELETED #reh3dMount as the dead half of a two-surface
+    // card, making the FLAT elevation the single rack visual on this page. The element is gone, so
+    // 'absent' is now the CORRECT reading and this test had been red since 2026-08-29 — unnoticed,
+    // because no full sweep ran between `.531` and 2026-09-01.
+    // ⛔ THE INVARIANT THIS SPEC EXISTS FOR IS UNCHANGED AND STILL ASSERTED BELOW: the rack detail
+    // must DRAW A RACK, and Build must let go of the one context. Only the mechanism moved — from a
+    // GL mount to the flat rail — so the assertion follows the mechanism rather than being deleted.
+    expect(detail.reh, 'a WebGL mount is back on the rack detail — `.531` made the flat elevation '
+      + 'the single visual here; two surfaces is the card that shipped empty').toBe('absent');
+    // The rack must still be ON SCREEN. This is the half of the original assertion that was never
+    // about WebGL: #rackCanvas carries the flat elevation's pixels.
+    // ⚠ Measure the CHILD, never #rehFlatWrap — that wrapper is `display:contents` (:11117) and has
+    // no box of its own, so measuring it reports a false zero on a rack that renders perfectly.
+    const flat = await page.evaluate(() => {
+      const c = document.getElementById('rackCanvas');
+      if (!c) return { present: false };
+      const r = c.getBoundingClientRect();
+      return { present: true, h: Math.round(r.height), visible: getComputedStyle(c).display !== 'none' && r.height > 0 };
+    });
+    expect(flat.present, 'the rack detail rendered NO rack — no #rackCanvas at all').toBe(true);
+    expect(flat.visible, `the rack detail drew nothing visible — the empty-box defect is back (h=${flat.h})`).toBe(true);
+    // ⛔ THE ORIGINAL LAST ASSERTION WAS `expect(detail.bw).not.toBe('live')` — Build must hand the
+    // context over. `.531` removed the thing it handed over TO, so Build now keeps it while the
+    // detail draws a flat rack. ⚠ I AM DELIBERATELY NOT ASSERTING THAT THE NEW BEHAVIOUR IS
+    // CORRECT, because I do not know that it is, and asserting it would be rewriting a test to
+    // agree with whatever the code happens to do.
+    // ⭐ WHAT IS CERTAIN, AND IS ASSERTED: the technician sees a rack (above), and Contract A6's
+    // bound holds — exactly one live context in total, which `:129` pins on every surface.
+    // ⏳ WHAT IS OPEN, AND IS AN OWNER QUESTION: should Build RELEASE its context while it is
+    // off-screen? `:129`'s own comment records that the pre-`.441` defect value was also "one —
+    // Build's — while the surface the technician was looking at had none". The shape is similar;
+    // the difference is that the detail is no longer empty, it draws the flat elevation. An
+    // off-screen surface holding a GPU context is still the pressure Contract A6 / spec I1 exist
+    // to bound, and nobody has ruled on it since `.531` changed the picture. Recorded here rather
+    // than silently encoded either way.
+    const total = detail.liveTotal;
+    expect(total, `Contract A6 bound broken: ${total} live contexts while the rack detail is up`).toBe(1);
   });
 
   test('the context comes BACK to Build on return', async ({ phantom, page }) => {
@@ -134,8 +168,32 @@ test.describe('the one WebGL context follows the visible surface', () => {
     await page.waitForTimeout(2000);
     await page.evaluate((i) => deploy_showRackDetail(i.d, i.r), { d: DEP, r: RACK });
     await page.waitForTimeout(2500);
-    // Contract 14. Build stepping aside is the CORRECT outcome, so it must not toast over a
-    // surface the technician is not looking at — but it must not vanish either.
+
+    // ⭐ REWRITTEN AT v1.14.561, AND THE REASON MATTERS MORE THAN THE EDIT. This waited for the
+    // warning to appear on its own after opening the rack detail. That worked while the detail took
+    // the GL context from Build: the contention forced a re-acquisition, which hit the guard.
+    // ⛔ `.531` DELETED the rack detail's mount, so there is no contention left — Build is never
+    // asked to re-acquire here, the guard is never reached, and the wait produced ''. The GUARD is
+    // fine; the SCENARIO stopped happening. The test had been red since 2026-08-29.
+    // ⚠ HONEST ABOUT WHAT IS BEING TESTED NOW: this no longer proves the natural path emits the
+    // warning, because no natural path reaches it. It proves the guard still EXISTS and still fires
+    // when bw_mount3D runs while the detail owns the screen — which is what Contract 14 is about,
+    // and which will matter again the moment anything re-introduces a context on this page.
+    // Driving it directly is the honest way to keep the guard covered rather than deleting it.
+    const opsDetailNow = await page.evaluate(() => document.body.classList.contains('ops-detail'));
+    expect(opsDetailNow, 'the rack detail did not take the screen — the guard cannot be exercised').toBe(true);
+
+    const src = await page.evaluate(() => String(bw_mount3D));
+    expect(src, 'the ops-detail deferral guard is gone from bw_mount3D — Contract 14 silently lost')
+      .toContain('rack detail owns the screen');
+
+    warns.length = 0;
+    await page.evaluate(() => {
+      // The mount is Build's, and Build is not on screen; this is exactly the state the guard is for.
+      const m = document.getElementById('bw-mount');
+      try { bw_mount3D(window._bwProbeRack || null, m); } catch (_) { /* the guard returns before any render */ }
+    });
+    await page.waitForTimeout(400);
     expect(warns.join(' '), 'Build deferred to the rack detail without saying so')
       .toContain('rack detail owns the screen');
   });
