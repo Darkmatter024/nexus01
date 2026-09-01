@@ -69,7 +69,7 @@ test.describe("build's tool door exists", () => {
     expect(door.h, 'the OPS control is under the 44px tap floor — h=' + door.h).toBeGreaterThanOrEqual(44);
   });
 
-  test('⛔ THE TOOLS: expanding the row reveals the OPS panels, Optics among them', async ({ phantom, page }) => {
+  test('⛔ THE TOOLS: expanding the row reveals all TEN tools, correctly named', async ({ phantom, page }) => {
     test.setTimeout(180000);
     await gotoBuild(phantom, page);
     await page.locator('.ops-banner-btn').click();
@@ -81,7 +81,34 @@ test.describe("build's tool door exists", () => {
       return { names, hostDisplay: host ? getComputedStyle(host).display : '(absent)' };
     });
     expect(panels.names.length, 'the OPS row expanded but rendered no panels').toBeGreaterThan(0);
-    expect(panels.names, 'OPTICS is not among the OPS panels').toContain('OPTICS');
+
+    // v1.14.559 — TEN, not nine. ISOLATE was in DEPLOY_TOOLS and in the Command Deck row but not in
+    // OPS_PANELS_CONFIG, so when .558 made this row Build's tool door, nine tools came two taps
+    // close and ISOLATE alone stayed ~2.9 screens down the Command Deck. Asserting the COUNT is
+    // what catches the next tool that joins the registry and not the row.
+    expect(panels.names.length, 'the OPS row does not carry all ten registry tools').toBe(10);
+    expect(panels.names, 'ISOLATE is missing from the OPS row — the .558 gap has reopened').toContain('ISOLATE');
+
+    // v1.14.559 — the deployment tool is OPTIC LEDGER; the fiber/MPO REFERENCE in Tools keeps
+    // OPTICS. ⛔ Both assertions matter: the rename is only worth its ship if the two stop
+    // colliding, so a bare OPTICS here would mean the collision is back.
+    expect(panels.names, 'the deployment tool is not labelled OPTIC LEDGER').toContain('OPTIC LEDGER');
+    expect(panels.names, 'a bare OPTICS is back in the OPS row — the name collision has returned').not.toContain('OPTICS');
+  });
+
+  // ── The other half of the split. Renaming the deployment tool is only correct if the REFERENCE
+  // kept its own name; otherwise the ship traded one collision for a different confusion.
+  test('⛔ THE SPLIT: the Tools reference card still reads OPTICS', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: seed() });
+    await page.locator('#bn-ref').click();
+    await page.waitForTimeout(1200);
+    const names = await page.evaluate(() => Array.from(
+      document.querySelectorAll('#ref-grid .rf-card .rf-cname')).map((n) => n.textContent.trim()));
+    expect(names, 'the Tools reference card lost its OPTICS name — the rename hit the wrong surface')
+      .toContain('OPTICS');
+    expect(names, 'OPTIC LEDGER leaked into the Tools reference bay; it is a deployment tool')
+      .not.toContain('OPTIC LEDGER');
   });
 
   // ── CONTROL. The whole reason .473 pulled this call was that inserting the banner during

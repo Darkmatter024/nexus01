@@ -175,7 +175,9 @@ const OPS_TOOLS = [
   // proving on it would be a bad-selector failure, not a defect. Prove on the button.
   { tab: 'audits', title: 'AUDITS', proof: '#ops-tool-host button[onclick="AUDIT.showNewForm()"]', text: 'Optic Audits' },
   { tab: 'blast', title: 'BLAST RADIUS', proof: '#ops-tool-host .br-wrap', text: 'BLAST RADIUS' },
-  { tab: 'optics', title: 'OPTICS', proof: '#ops-tool-host', text: 'Optic' },
+  // v1.14.559 — the deployment tool is OPTIC LEDGER; the Tools REFERENCE card (line ~149) keeps
+  // OPTICS. `tab` is untouched: only the human-facing label moved.
+  { tab: 'optics', title: 'OPTIC LEDGER', proof: '#ops-tool-host', text: 'Optic' },
   { tab: 'isolate', title: 'ISOLATE', proof: '#ops-tool-host .iso', text: 'Down-link' },
 ];
 

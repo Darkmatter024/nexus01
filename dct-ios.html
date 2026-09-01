@@ -12823,7 +12823,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.558';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.559';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -13916,7 +13916,7 @@ if (typeof window !== 'undefined') {
             <button type="button" class="cs-tool" onclick="rd_openOpsTool('burndown')" aria-label="Burndown"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-burndown-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Burndown</span></button>
             <button type="button" class="cs-tool" onclick="rd_openOpsTool('audits')" aria-label="Audits"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-audits-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Audits</span></button>
             <button type="button" class="cs-tool" onclick="rd_openOpsTool('blast')" aria-label="Blast"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-power-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Blast</span></button>
-            <button type="button" class="cs-tool" onclick="rd_openOpsTool('optics')" aria-label="Optics"><span class="cs-tool-art" style="background-image:url(icons/phantom-ref-optics-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Optics</span></button>
+            <button type="button" class="cs-tool" onclick="rd_openOpsTool('optics')" aria-label="Optic Ledger"><span class="cs-tool-art" style="background-image:url(icons/phantom-ref-optics-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Optic Ledger</span></button>
             <button type="button" class="cs-tool" onclick="rd_openOpsTool('isolate')" aria-label="Isolate"><span class="cs-tool-art" style="background-image:url(icons/phantom-tool-isolate-768.webp)" aria-hidden="true"></span><span class="cs-tool-scrim" aria-hidden="true"></span><span class="cs-tool-k">Isolate</span></button>
             </div>
           </div>
@@ -21541,7 +21541,19 @@ const OPS_PANELS_CONFIG = [
   { tool: 'burndown', name: 'BURNDOWN', meta: 'PROGRESS', icon: '📊', accent: '#ffcb45' },
   { tool: 'audits', name: 'AUDITS', meta: 'SERIALS', icon: '✓', accent: '#ff8a00' },
   { tool: 'blast', name: 'BLAST RADIUS', meta: 'POWER MAP', icon: '⚡', accent: '#ff453a' },
-  { tool: 'optics', name: 'OPTICS', meta: 'FIBER · MPO', icon: '◎', accent: '#1fffd0' }
+  // v1.14.559 — OPTIC LEDGER, not OPTICS. Two surfaces answered to one word: this deployment-scoped
+  // scanner/inventory, and the fiber/MPO REFERENCE card in Tools. A tester told to "find the optics
+  // tool" reached the reference, saw something plausibly optic-shaped, and believed they had
+  // succeeded. ⛔ Only the LABEL moves: `tool` stays 'optics', OPS_TABS keeps its 'optics' key, and
+  // every rd_openOpsTool('optics') call is untouched — renaming the identifier would break every
+  // door at once. The reference card keeps OPTICS, which is the entire point of the split.
+  { tool: 'optics', name: 'OPTIC LEDGER', meta: 'FIBER · MPO', icon: '◎', accent: '#1fffd0' },
+  // v1.14.559 — THE TENTH TOOL. ISOLATE was in DEPLOY_TOOLS (:32176) and in the Command Deck row,
+  // but NOT here — so when .558 restored this row as Build's tool door, nine tools became two taps
+  // away and ISOLATE alone stayed 2.9 screens down the Command Deck. It was the one tool the
+  // owner-accepted tap trade never paid off for. Icon and accent are DEPLOY_TOOLS' own values, not
+  // new choices; registry order is preserved so the row and the registry read the same.
+  { tool: 'isolate', name: 'ISOLATE', meta: 'DOWN-LINK', icon: '⊣', accent: '#5cf2ff' }
 ];
 function ops_toggle() {
   _opsRowExpanded = !_opsRowExpanded;
@@ -21652,6 +21664,20 @@ function ops_getStatistic(tool, activeDep) {
         if (typeof loadOpticInventory === 'function') {
           var inv = loadOpticInventory() || [];
           value = String(inv.length); label = 'scans';
+        } else {
+          value = '—'; label = 'unavailable';
+        }
+        break;
+      // v1.14.559 — ISOLATE's statistic. ⛔ CONTRACT B10, and the distinction is the whole reason
+      // this branch is written out rather than defaulted: '0' means NO OPEN ISOLATIONS — a
+      // measurement — while '—' means NOT MEASURED. They are different facts and a panel that
+      // renders the second as the first is fabricating telemetry. So the em-dash is only reached
+      // when iso_load is genuinely absent, never as a stand-in for an empty result.
+      case 'isolate':
+        if (typeof iso_load === 'function') {
+          var _isoSessions = (iso_load() || {}).sessions || [];
+          var _isoOpen = _isoSessions.filter(function (s) { return s && s.status !== 'closed'; });
+          value = String(_isoOpen.length); label = 'open';
         } else {
           value = '—'; label = 'unavailable';
         }
@@ -32172,7 +32198,7 @@ var DEPLOY_TOOLS = [
   // Registry-only addition: nothing ITERATES DEPLOY_TOOLS any more (deploy_showTools was
   // deleted in .179; the Ref platform picker at :20015 renders RD_PLATFORMS, not this), so
   // this adds a title lookup and paints no new card anywhere.
-  { tab:'optics',    name:'OPTICS',     meta:'FIBER · MPO', ac:'#1fffd0', img:'icons/phantom-ref-optics-768.webp', icon:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>' },
+  { tab:'optics',    name:'OPTIC LEDGER', meta:'FIBER · MPO', ac:'#1fffd0', img:'icons/phantom-ref-optics-768.webp', icon:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>' },
   { tab:'isolate',   name:'ISOLATE',    meta:'DOWN-LINK',  ac:'#5cf2ff', img:'icons/phantom-tool-isolate-768.webp', icon:'<path d="M4 12h6M14 12h6"/><circle cx="12" cy="12" r="3"/>' }
 ];
 function _deploy_toolsBackHdr(title, backOnclick) {
