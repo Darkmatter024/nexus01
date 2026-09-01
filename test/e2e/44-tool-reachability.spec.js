@@ -9,7 +9,13 @@
 // that exists in the markup and cannot be tapped is not a door.
 const { test, expect } = require('./fixtures');
 
-const TOOLS = ['bom', 'manifest', 'portmap', 'rackmap', 'sops', 'burndown', 'audits', 'blast', 'optics'];
+// v1.14.560+ — ISOLATE joined this row at `.469` and was never added here, so the reachability
+// sweep below has been checking 9 of the 10 doors ever since. ⚠ Since `.559` isolate ALSO has a
+// panel in Build's OPS row — but countReachableDoors only measures doors reachable on COMMAND,
+// and the OPS row lives on Build, so this does not create a second door for the two-door check.
+// That was VERIFIED by running this spec after the change, not assumed: the header of this file
+// records three hand-rolled hit-tests that got exactly this kind of reasoning wrong in a row.
+const TOOLS = ['bom', 'manifest', 'portmap', 'rackmap', 'sops', 'burndown', 'audits', 'blast', 'optics', 'isolate'];
 
 // ⚠ THE DOORS LIVE ON COMMAND, NOT WORK, and that had to be measured to be believed. The Field
 // tools card sits inside #pg-cmd, which is the scrollable page (2867 / 776 at 390). An INACTIVE
@@ -51,7 +57,7 @@ const countReachableDoors = (page, tool) => page.evaluate((t) => {
 
 test.describe('ops tool reachability', () => {
 
-  test('⛔ all nine tools are reachable, and none has two doors', async ({ phantom, page }) => {
+  test('⛔ all ten tools are reachable, and none has two doors', async ({ phantom, page }) => {
     test.setTimeout(120000);   // up to 9 actionability trials plus boot
     await phantom.boot();
     await openTools(page);
@@ -66,13 +72,21 @@ test.describe('ops tool reachability', () => {
     expect(doubled, `two doors for: ${doubled.join(', ')} — counts ${JSON.stringify(found)}`).toEqual([]);
   });
 
-  test('the tool row meets the gloved floor', async ({ phantom, page }) => {
+  test('the tool row is complete and meets the gloved floor', async ({ phantom, page }) => {
     await phantom.boot();
     await openTools(page);
     const sizes = await page.evaluate(() => Array.from(document.querySelectorAll('.cs-tool'))
       .map((el) => { const r = el.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) }; })
       .filter((s) => s.w > 0));
-    expect(sizes.length, 'no tool buttons rendered at all').toBe(9);
+    // v1.14.560+ — TEN, not nine. This asserted 9 from .464, and `.469` (SHIP-ISOLATE-OPS-380
+    // Phase 1) added ISOLATE as a tenth .cs-tool without updating it, so the spec failed for 91
+    // versions unnoticed — no full sweep ran between .469 and 2026-09-01. ⛔ THE APP WAS RIGHT AND
+    // THE TEST WAS STALE: the tenth button is a deliberate owner-approved ship.
+    // ⚠ The label below reads "no tool buttons rendered at all" because it was written for the
+    // ZERO case, but it fires on ANY mismatch — so a count drift reported itself as a total render
+    // failure, and the sweep line read as a gloved-floor failure when the floor was never in
+    // question. All ten measure 159x95. Message now states the real condition.
+    expect(sizes.length, `expected the ten registry tools, found ${sizes.length}`).toBe(10);
     for (const s of sizes) expect(s.h, `a tool button is ${s.h}px tall`).toBeGreaterThanOrEqual(44);
   });
 
