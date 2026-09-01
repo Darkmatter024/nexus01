@@ -143,8 +143,19 @@ test.describe('bottom nav — routing', () => {
       await expect
         .poll(() => activeSlots(page), { message: `nav highlight did not follow to ${mode}` })
         .toEqual([SLOTS[mode]]);
-      // The highlight and the page must never disagree.
-      expect(await activePages(page)).toEqual([mode]);
+      // The highlight and the page must never disagree — but they do not land in the SAME FRAME,
+      // and this read used to assume they did. ⛔ MEASURED at both `.556` and `.562`, identically:
+      // the nav highlight is synchronous (correct at +0ms) while the page's .active class lands
+      // between +150ms and +400ms. Reading activePages without polling caught the app mid-swap and
+      // reported `command` when the tech had tapped BUILD. THE APP WAS CORRECT AND SETTLED; the
+      // test was racing it, which is why the sibling routing test above — which polls — passes on
+      // the same code. ⭐ Poll for CONVERGENCE, then assert. The invariant is unchanged: the two
+      // must agree once the swap completes, and a genuine disagreement still fails here.
+      await expect
+        .poll(() => activePages(page), { message: `the page never became ${mode} while the nav said it had` })
+        .toEqual([mode]);
+      // And they must still agree AFTER settling — a highlight that drifts back is a real defect.
+      expect(await activeSlots(page), `the highlight left ${SLOTS[mode]} after the page settled`).toEqual([SLOTS[mode]]);
     }
   });
 
