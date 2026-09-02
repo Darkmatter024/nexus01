@@ -133,12 +133,21 @@ ruling is probably moot (recorded, not assumed).
 not re-measured at `.563`.** Phase 0's own table is the named baseline. **The ship that lands any
 of this re-measures before and after** — every number here is a design target, not evidence.
 
-⚠ **`03-tools:499` pins a stricter promise than the accepted trade.** It asserts ops tools are *one
-tap from the Build landing* and is still an expected-failure at `.563`, because `48-ops-row-exists`
-confirms the row is **collapsed at boot** — its doors are not visible until the tech taps OPS. The
-owner accepted the 1→2 tap trade at `.559`. **The pin therefore encodes a promise the ruling has
-superseded, and will stay red forever describing a defect that is no longer one.** It should be
-re-pinned to the accepted standard or retired — an owner call, flagged here, not taken.
+✅ **RULED (owner, 2026-09-01) — `03-tools`' reachability pin is RETIRED.** It asserted ops tools
+were *one tap from the Build landing* and was an expected-failure at `.563`, because
+`48-ops-row-exists:136` confirms the row is **collapsed at boot BY DESIGN** — its doors are
+correctly invisible until the tech taps OPS. The owner accepted the 1→2 tap trade at `.559`, so the
+pin encoded a **superseded** standard and would have stayed red forever describing intended
+behaviour.
+
+⭐ **Retired, not re-pointed, because the accepted trade is already pinned canonically in
+`48-ops-row-exists`** — `:54` the door (tap 1), `:72` the ten tools on expand (tap 2), `:136` the
+collapsed-boot control. Re-asserting it in `03-tools` would have been a second test for one fact:
+the one-canonical violation in test form. ⚠ **The old test's own guard is honoured** — it read *"Do
+not repoint this at Command to make it green… weakening the test to fit the code."* Nothing was
+repointed and no assertion was weakened; **the standard changed by ruling, and the test holding the
+new standard already existed.** **Measured: `03-tools` 29 → 28 tests; 10 failed / 23 passed with
+`48` — the ten F-1 failures byte-for-byte unchanged.**
 
 ---
 
@@ -147,7 +156,7 @@ re-pinned to the accepted standard or retired — an owner call, flagged here, n
 | path today | after |
 |---|---|
 | Command first screen (status museum) | **closed** — picker is first |
-| `#cs-fieldtools` → ten tools (`:13912`) | **closed** |
+| `#cs-fieldtools` → ten tools (`:13912`) | **closed on phone, KEPT on desktop** (ruled) |
 | Build → OPS row → ten tools | kept — the one canonical tool door |
 | Build workspace | kept, reached from the rack/picker |
 | Tools bay (`pg-ref`) | kept — reference, zero-state |
@@ -157,19 +166,22 @@ re-pinned to the accepted standard or retired — an owner call, flagged here, n
 | `OPEN AISLE` `:41699` | kept — **not re-opened as `SEE IN AISLE`** |
 | Rack picker | **new** — but it replaces the Command first screen, not an addition |
 
-**Net: −3** (Command-as-first-screen, `#cs-fieldtools`, EXIT's slot) **against +1** (the picker,
-which replaces what it closes). **Honest net: −2, and one of those is a slot rather than a
+**Net: −2** (Command-as-first-screen, EXIT's slot) **against +1** (the picker, which replaces what
+it closes). ✅ **RULED: the desktop keeps a path**, so `#cs-fieldtools` is a **re-home off the
+phone, not a close** — it does not score. **Honest net: −1, and it is a slot rather than a
 destination.**
 
 ⛔ **THIS IS THE ACHIEVABLE NET, AND IT IS SMALLER THAN v2 IMAGINED — SAID PLAINLY PER §7.** The
 E-8 ruling keeps eight tool doors, so the closable set is duplicate *paths*, not the tools. **No
 number is manufactured to satisfy P-4's own rule.**
 
-⚠ **`#cs-fieldtools` is the only genuine tool-door close, and it has a measured cost** recorded at
-`.559`: removing it *"would break `03-tools`' order-sensitive wall assertion **and** strip desktop
-tool access at ≥1024."* **So it cannot simply be deleted.** Either the desktop keeps a path (making
-this a re-home, not a close, and the net drops to −1), or the owner rules desktop tool access
-expendable. **That is P-4's one open question.**
+✅ **RULED (owner, 2026-09-01): THE DESKTOP KEEPS A PATH.** `.559` measured the cost of deleting
+`#cs-fieldtools` outright — it *"would break `03-tools`' order-sensitive wall assertion **and**
+strip desktop tool access at ≥1024."* The ruling preserves that access: **the phone loses the
+duplicate, the desktop keeps its door.** ⛔ **That makes it a re-home, not a close, and P-4 scores
+it as one — honest net −1.** ⭐ **Contract A2 was never at risk either way:** both entry points
+already call the one canonical `rd_openOpsTool`, and **two compositions reaching one door is not
+two doors.**
 
 ---
 
@@ -201,7 +213,9 @@ deviation from §5's suggestion rather than silently reordered.**
   device.
 - ⛔ **P-2's layout is a sketch of order and grouping, not a visual design.** Spacing, type and
   materials come from `PHANTOM_DESIGN_SYSTEM.md`, which is the lock.
-- ⚠ **P-4 has one open question** (`#cs-fieldtools` versus desktop tool access) and **P-3 has one**
-  (whether `03-tools:499` is re-pinned or retired). Both are owner calls and neither is taken here.
+- ✅ **P-3's and P-4's open questions were both RULED on 2026-09-01** and are folded in above: the
+  desktop keeps a path (so the net is −1, not −2), and the `03-tools` pin is retired in favour of
+  `48-ops-row-exists`. **The pin retirement is the only change in this document that touched code** —
+  a test file, no product source, no stamp.
 - 📌 **The picker's one hard rule is in §0 above:** scope the search to the active deployment, or owe
   a disambiguation. It is repeated in P-5's Ship 2 risk column because that is where it bites.

@@ -470,56 +470,36 @@ test.describe('ops tool doors (rd_openOpsTool)', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// REACHABILITY — the doors a tech can actually reach with a thumb
+// REACHABILITY — RETIRED 2026-09-01 BY OWNER RULING
 // ═══════════════════════════════════════════════════════════════════════════
-test.describe('ops tool reachability', () => {
-  test('the OPS wall keeps its nine tools one tap from the Build landing', async ({ phantom, page }) => {
-    // ⛔ EXPECTED FAILURE — GENUINE APP DEFECT (reachability regression, v1.14.385).
-    // bw_render() adds `bw-on` to #pg-work on EVERY path (:20458, :20471, :20489) and
-    // never removes it; CSS :54055 `body.rd #pg-work.bw-on #work-grid {display:none}`
-    // then hides #work-grid — which is where the OPS row (:13485) and its nine-cell
-    // wall (:13487-13498) live. showMode('work') calls bw_render (:18815), so the wall
-    // is hidden the first time Build is ever opened and stays hidden.
-    // Net effect on a fresh phone: ZERO visible doors call rd_openOpsTool. The four
-    // bw-tabs (:20632) only exist in the populated branch, which needs a Master + a
-    // resolved rack. The comment the wall shipped with (:13459) states the contract
-    // this breaks: "every tool stays ONE tap from this landing".
-    // ── UPDATED v1.14.464. THE CAUSE CHANGED; THE DEFECT THIS ASSERTS DID NOT. ──
-    // The wall is no longer hidden — it is GONE. Owner ruled 2026-08-19 that #bw-shell replaced
-    // the banner landing, so the stack was deleted and its nine tools were restored into the
-    // Field tools row FIRST (SOPS and BURNDOWN had no other caller in the file and were
-    // unreachable in shipped .463; deleting the stack without restoring them would have removed
-    // two tools from the product).
-    // ⛔ THAT ROW LIVES IN #pg-cmd — COMMAND, NOT BUILD. So every tool is reachable again, but
-    // NOT "one tap from the Build landing", which is what this test asserts and what the wall's
-    // own shipped comment promised. Contract A7 says Build is the operational centre, so the pin
-    // STAYS: a tech standing on Build still has zero ops-tool doors under the thumb.
-    // ⚠ Do not repoint this at Command to make it green. That would be weakening the test to fit
-    // the code, and this block's own header forbids it. It flips only when Build has a door.
-    test.fail(true, 'ops tools live on Command (#cs-fieldtools), not the Build landing — Contract A7 unmet');
-
-    await phantom.boot();
-    await gotoMode(page, 'work');
-    await page.waitForFunction(() => document.getElementById('pg-work').classList.contains('active'));
-
-    const doors = await page.evaluate(() => {
-      const out = [];
-      document.querySelectorAll('[onclick]').forEach((el) => {
-        if ((el.getAttribute('onclick') || '').indexOf('rd_openOpsTool') === -1) return;
-        const r = el.getBoundingClientRect();
-        let hidden = false;
-        for (let p = el; p && p !== document.documentElement; p = p.parentElement) {
-          const cs = getComputedStyle(p);
-          if (cs.display === 'none' || cs.visibility === 'hidden') { hidden = true; break; }
-        }
-        if (!hidden && r.width > 0 && r.height > 0) out.push(el.getAttribute('aria-label') || el.textContent.trim().slice(0, 20));
-      });
-      return out;
-    });
-
-    expect(doors.length, 'no visible door on the Build landing calls rd_openOpsTool — the nine ops tools are unreachable').toBeGreaterThan(0);
-  });
-});
+// This block held ONE test:
+//   'the OPS wall keeps its nine tools one tap from the Build landing'
+// pinned with test.fail(true, 'ops tools live on Command (#cs-fieldtools), not the
+// Build landing — Contract A7 unmet'). It counted visible rd_openOpsTool doors on the
+// Build landing at depth 0 and asserted ONE tap.
+//
+// ⛔ WHY IT WENT. The owner ACCEPTED the 1→2 tap trade at v1.14.559 — the ten tools are
+// two taps from Build with zero scrolling, bought by removing ~2.9 screens of blind
+// scroll. This pin encoded the SUPERSEDED one-tap standard, so it would have stayed red
+// forever describing a defect that is no longer one. The row is collapsed at boot BY
+// DESIGN (48-ops-row-exists:136 asserts exactly that), so its doors are correctly
+// invisible at depth 0 — the old assertion was measuring intended behaviour and calling
+// it a regression.
+//
+// ⛔ THE COVERAGE DID NOT MOVE — it was already canonical elsewhere, which is why this
+// was RETIRED rather than re-pointed. 48-ops-row-exists asserts the accepted trade
+// positively and in full:
+//   :54   THE DOOR   — tapping BUILD produces a visible, tappable OPS control   (tap 1)
+//   :72   THE TOOLS  — expanding the row reveals all TEN tools, correctly named (tap 2)
+//   :136  CONTROL    — a collapsed row renders no panels at boot
+// Re-asserting that here would be a second test for one fact: the one-canonical
+// violation in test form, and the exact class of duplicate the same day's rulings
+// closed elsewhere.
+//
+// ⚠ THE OLD TEST'S OWN GUARD IS HONOURED. Its header read "Do not repoint this at
+// Command to make it green. That would be weakening the test to fit the code." Nothing
+// was repointed at Command and no assertion was weakened to fit the code — the STANDARD
+// changed by owner ruling, and the test holding the new standard already existed.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // KNOWN DEAD DOORS — every test below is expected to FAIL until the app is fixed.
