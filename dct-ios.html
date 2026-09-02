@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.567';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.568';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -18270,7 +18270,16 @@ function phantomAPI(body, _retryCtx) {
       });
     }
     // ── Diagnostic error classification for auth / spend / worker failures ──
-    if (resp.status === 401 || resp.status === 402 || resp.status === 403 || resp.status === 500 || resp.status === 502 || resp.status === 503) {
+    // ⭐ v1.14.568 (PUNCHLIST P-1, second half) — 400 JOINS THE LIST. It was the one error
+    // status this classifier did not handle, so it fell through to `return resp` below and
+    // every caller rendered a bare code: vaAsk (:50964) turned it into 'API 400' and a tech
+    // in an aisle saw a number instead of a reason, while the server's explanation sat
+    // unread in the body. P-1: the real error on screen, not a code.
+    // ⛔ 400 MUST GET A `friendly` BRANCH BELOW, NOT JUST A SEAT IN THIS GUARD. The line
+    // `if (diag && friendly.indexOf(diag) === -1)` runs unconditionally, so a status that
+    // enters here with no branch assigned leaves `friendly` undefined and throws a
+    // TypeError on .indexOf — turning a readable server error into a crash.
+    if (resp.status === 400 || resp.status === 401 || resp.status === 402 || resp.status === 403 || resp.status === 500 || resp.status === 502 || resp.status === 503) {
       return resp.text().then(function(txt) {
         var diag = '';
         try {
@@ -18281,7 +18290,16 @@ function phantomAPI(body, _retryCtx) {
           diag = (txt || '').slice(0, 200);
         }
         var friendly;
-        if (resp.status === 401) {
+        if (resp.status === 400) {
+          // ⚠ DELIBERATELY THIN. The server's own words are the payload here and
+          // `· server: …` below carries them; a longer guess would be inventing a
+          // diagnosis for an error we have not read. Contract B10.
+          // ⚠ An empty body SAYS SO rather than showing a bare code with nothing after
+          // it — 'the server rejected this and told us nothing' is itself the finding.
+          friendly = diag
+            ? 'Request rejected (400)'
+            : 'Request rejected (400) — and the server sent no body to explain it';
+        } else if (resp.status === 401) {
           // Three likely causes — check body text for hints
           var lower = (diag || '').toLowerCase();
           if (lower.indexOf('spend') !== -1 || lower.indexOf('cap') !== -1 || lower.indexOf('budget') !== -1 || lower.indexOf('quota') !== -1) {
