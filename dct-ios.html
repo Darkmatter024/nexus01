@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.569';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.570';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -27447,8 +27447,19 @@ function deploy_getRelevantSOPs(rack, dep) {
 }
 
 // ━━━ FEATURE: ANOMALY DETECTION ━━━
-// Phase time baselines (minutes) — conservative estimates for first builds
-var PHASE_BASELINE_MINS = { mechanical: 90, power: 60, network: 120, compute: 45, validation: 60 };
+// ⛔ v1.14.570 (PUNCHLIST P-2) — THIS IS A TRIGGER, NOT A BENCHMARK, AND IT IS NEVER SHOWN.
+// These numbers are invented — the previous comment said so itself, 'conservative estimates
+// for first builds' — and the nudge used to render '(typical: 60 min)' beside a MEASURED
+// elapsed time. One number was real and one was made up, side by side, in the same sentence,
+// with nothing telling a tech which was which. Contract B10.
+// ⭐ THE DISTINCTION THAT KEEPS THIS CONSTANT ALIVE: a threshold deciding WHEN TO ASK A
+// QUESTION is not a claim about what is typical. Asking 'unlogged blocker?' after an
+// arbitrary-but-sane interval is honest; printing that interval as though it were measured
+// history is not. So the trigger stays and the display goes.
+// ⚠ RENAMED ON PURPOSE. It was PHASE_BASELINE_MINS, and 'baseline' is exactly the word that
+// invited it to be rendered as data. A misleading name with a careful comment twenty lines
+// away is how the original defect happened; the name now carries the meaning itself.
+var PHASE_STALL_TRIGGER_MINS = { mechanical: 90, power: 60, network: 120, compute: 45, validation: 60 };
 
 function deploy_checkPhaseAnomaly(deployId, rackId, phaseType) {
   var audit = deploy_loadAuditFor(deployId);
@@ -27467,9 +27478,13 @@ function deploy_checkPhaseAnomaly(deployId, rackId, phaseType) {
   }
   if (!startEvent) return null;
   var elapsedMins = Math.round((Date.now() - startEvent.ts) / 60000);
-  var baseline = PHASE_BASELINE_MINS[phaseType] || 90;
-  if (elapsedMins > baseline * 2) {
-    return { elapsedMins: elapsedMins, baseline: baseline };
+  var trigger = PHASE_STALL_TRIGGER_MINS[phaseType] || 90;
+  if (elapsedMins > trigger * 2) {
+    // ⛔ v1.14.570 — `baseline` IS NO LONGER RETURNED. Dropping it from the rendered string
+    // alone would have left a fabricated number in the data flow for the next consumer to
+    // pick up and print. It does not leave this function. `elapsedMins` is genuinely
+    // measured — audit PHASE_STARTED ts to now — and is the only number that ships.
+    return { elapsedMins: elapsedMins };
   }
   return null;
 }
@@ -55970,7 +55985,7 @@ function nerve_buildRackCard(deployId, rackId, dep, rack, ru, rackPhases) {
     if (anomaly) {
       html += '<div style="background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.2);border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:flex-start;gap:8px">';
       html += '<div style="font-size:12px;flex-shrink:0">⏱</div>';
-      html += '<div style="font-family:var(--raj);font-size:12px;color:var(--gold);line-height:1.4">' + anomaly.elapsedMins + ' min on ' + (activeP ? DEPLOY_PHASE_LABELS_FULL[activeP.type] : 'this phase') + ' (typical: ' + anomaly.baseline + ' min). Unlogged blocker?</div>';
+      html += '<div style="font-family:var(--raj);font-size:12px;color:var(--gold);line-height:1.4">' + anomaly.elapsedMins + ' min on ' + (activeP ? DEPLOY_PHASE_LABELS_FULL[activeP.type] : 'this phase') + ' · no baseline yet. Unlogged blocker?</div>';
       html += '</div>';
     }
 
