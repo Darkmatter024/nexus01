@@ -1,4 +1,42 @@
 # SHIP-HANDOFF-PUNCHLIST-0901.md
+
+> ⭐ **STATUS ANNEX — repo-side, added 2026-09-02. THE BODY BELOW IS THE OWNER'S TEXT, UNCHANGED.**
+> This file was imported verbatim at `1cd3078` (9384 bytes, sha256 `02f0a446…8b0422`). This annex is
+> the only addition, so that sha no longer matches the Downloads copy — the original is recorded in
+> the import commit and in this line. Nothing in the items below was edited, reworded or removed.
+>
+> ⚠ **P-11 AND P-12 ARE NOT IN THIS LIST.** The body is a ten-item list, P-1…P-10. Those two numbers
+> were assigned later, in the owner's 2026-09-02 sync, and are recorded here rather than inserted
+> into his numbering.
+>
+> **✅ CLOSED**
+> - **P-1 (with P-11) — assistant "API 400". CLOSED**, owner-verified on device 2026-09-02. It was
+>   **four stacked bugs**: the `x-phantom-key` preflight header (`.567`), an illegible error (`.568`,
+>   plus Worker v2.2 upstream logging), an invalid model string (`.569`), and an
+>   **org/all-workspaces API key fixed OUT OF BAND** — the owner swapped a Default-workspace-scoped
+>   key into the Worker secret. ⛔ **No code change, no header, no commit.** If the assistant ever dies
+>   again, **check the Worker's key scope before touching `dct-ios.html`** — three of the four bugs
+>   were invisible from the client source. Full record in `PHANTOM_CURRENT_STATE.md`.
+> - **P-4 — CLOSED** at `.566` (`19684e5`). `30-rack-above-the-fold:79` is green for the first time
+>   since `.462`, and the 150px bar was **not** re-pinned — the owner ruled to chase the cause, which
+>   turned out to be this list's own PASTE door costing R1-D 98 of its measured 176px.
+> - **O-3 — CLOSED.** Worker streaming pass-through (v2.1) deployed and confirmed.
+>
+> **⏳ PARTIAL**
+> - **P-5 —** both imports are done (`bcd0205` v2, `1cd3078` this file); the **restart is the owner's**
+>   and is still pending.
+> - **P-3 —** its Phase 0 is already answered: the references blocking S-14 are `cmd_rackHeroFlat`
+>   (`:23705`) and `RackEngine.renderFlat` (`:38841`, under R-05) — recorded in
+>   `docs/RACK-ELEVATION-PHASE0-EVIDENCE.md`. **What remains is the owner's amendment, not more
+>   measurement.**
+>
+> **⛔ STILL OPEN, UNSTARTED:** P-2, P-6, P-7, P-8, P-9, P-10, **P-12** (`forge.html` carries four
+> hardcoded `claude-sonnet-4-20250514` strings at `:4571`, `:4772`, `:6286`, `:9143` — a **Deprecated**
+> ID, same bug class as P-11, its own ship), and **Ship 2b** (four orphaned functions, `.rack-hybrid*`
+> CSS, five permanently-null `#reh3dCanvasHost` guards).
+>
+> ⚠ **BASELINE:** this list was written against `v1.14.565`. Live is `.569`. Any `file:line` quoted
+> from it must be re-verified before use.
 **Owner walk-through of the live app, 2026-09-01 evening, v1.14.565. Ten items. Evidence-first, one visible change per ship, door ledger on every ship.**
 
 - **Status:** APPROVED as a punch list. Each item becomes its own ship (or folds into the named spec). Owner sequences; no self-scheduling.
