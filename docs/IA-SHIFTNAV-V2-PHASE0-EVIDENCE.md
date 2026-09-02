@@ -38,7 +38,22 @@ is on *this* rack."*
 deployment, a job, an audit, or nothing at all. Rendering them "for this rack" is a **data-model
 change**, not an information-architecture move — which sits directly against §7's *"No rebuilds."*
 
-That is the single fact most likely to change Phase 1's shape, and it is reported rather than
+✅ **RULED (owner, 2026-09-01): THE TOOLS STAY DOORS, NO DATA CHANGE.** §1's *"rack-scoped
+views"* wording is **STRUCK** for OPTIC LEDGER, AUDITS, BURNDOWN, BLAST RADIUS, MANIFEST, BOM,
+PORT MAP and SOPs — they keep their existing scope and entry. ⭐ Still rack-scoped at zero data
+cost: **ISOLATE** (carries `rackId`), **RACK MAP** (rack-addressed by input, seedable with the
+current rack), and everything already on the rack screen — devices + U, the five phases, assign,
+QR, log note, photos, flags, and `SEE IN AISLE` at `:41699`.
+
+⚠ **§7 REQUIRES THIS BE SAID PLAINLY, SO IT IS:** the ruling **keeps eight doors**, and §0
+promises the tech does not leave the rack to find a tool. **§0 is narrowed, not honored, for
+those eight** — because their data is not keyed by rack and re-keying is not authorised.
+
+⚠ **Phase 1 P-4 consequence:** the closable set becomes duplicate *paths* (`#cs-fieldtools`
+versus the OPS row), not the tools. **P-4 reports the achievable net and names what it could not
+close.** It does not manufacture a number to satisfy its own rule.
+
+That was the single fact most likely to change Phase 1's shape, and it was reported rather than
 designed around.
 
 ---
