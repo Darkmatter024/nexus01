@@ -7,6 +7,10 @@ evidence base; `docs/IA-SHIFTNAV-V2-PHASE0-EVIDENCE.md` is the anchor of record.
 **Owner rulings this proposal is built on (all 2026-09-01):** E-8 — the tools stay doors, no data
 change · model depth — the deployment step stays, the picker resolves it · ISOLATE is not dangerous ·
 SCAN is v2 §2 · SCAN-PILLAR retired.
+**Amended 2026-09-02 by `SHIP-HANDOFF-IA-SHIFTNAV-v2-ADDENDUM-B.md`** — the Build-screen worked
+example. It changes no ruling; it supplies the concrete anchor P-1 lacked, a real path for P-3's
+table, and the stranger test's named task. It also carries **P-9**, which the punch list asked be
+recorded here as a hard requirement.
 
 ---
 
@@ -27,7 +31,7 @@ allRacks.push({
 ```
 
 ⭐ **This resolves the residual in the picker's favour, with one condition.** `deploy_loadRacksFor(deployId)`
-filters by `deploymentId`, and the working precedent at `:24005` searches **only the active
+filters by `deploymentId`, and the working precedent at `:24075` searches **only the active
 deployment's racks**. Inside one deployment a duplicate label is a Master data defect, not an app
 defect. **So the picker is safe exactly as long as it scopes its search to the active deployment.**
 
@@ -44,11 +48,38 @@ scanned `s4:099` that exists in two deployments must ask, not choose.
 | surface | why it qualifies at zero data cost |
 |---|---|
 | Five phases (MECH → PWR → NET → COMP → VAL) + checks | already rack-scoped |
-| Devices list + U per row | `slot.uStart`/`uEnd` already render at `:41800` |
+| Devices list + U per row | `slot.uStart`/`uEnd` already render at `:41902` |
 | Assign · QR · log note · photo evidence · flags | already on the rack screen |
 | **ISOLATE** | sessions carry `rackId` — the only rack-keyed tool |
 | **RACK MAP** | rack-*addressed by input*; seedable with the current rack, no store touched |
-| `SEE IN AISLE` | **already exists** as `OPEN AISLE` `:41699` |
+| `SEE IN AISLE` | **already exists** as `OPEN AISLE` `:41784` |
+
+### ⭐ THE NINE BUILD DOORS — ADDENDUM B'S ANCHOR, ASSIGNED
+
+Addendum B counts what the Build overview presents as separate destinations at `.570`. **P-1 said
+"nothing unassigned"; this is the list it was missing.**
+
+| Build door today | Assignment | Basis |
+|---|---|---|
+| Rack List | **short-list door** — half of the one picker | §1 |
+| Floor Map | **short-list door** — the picker's other view | *how you pick*, not a second destination |
+| Acceptance | **rack-scoped view** | ⚠ rack-keying **unmeasured** |
+| Handoff | **rack-scoped view** + the one fleet handoff | ⚠ rack-keying **unmeasured** |
+| History | **rack-scoped view** | ⚠ rack-keying **unmeasured** |
+| Audits | ⛔ **STAYS A DOOR** | **already measured: `phantom_audits_v1` / `phantom_active_audit`, no `rackId`** — E-8 |
+| Burndown | **fleet door** | job-keyed (`dct_burndown_v1`), measured in E-8 |
+| Phase Pipeline (fleet) | **fleet door**; the actionable pipeline is on the rack | Addendum B |
+| Pause Deployment | **fleet door** | genuinely fleet-wide |
+
+⛔ **AUDITS IS THE ONE ADDENDUM B AND A RULING DISAGREE ON, AND THE RULING WINS.** Addendum B makes it
+a view on the rack; **E-8 measured that it carries no `rackId` and the owner ruled that such tools stay
+doors with no data change.** The two documents agree on the *mechanism* — Addendum B's own guardrail
+says an item with no rack-keyed data is a fleet/shift door, flagged, never silently dropped — so this
+is that flag, raised early rather than at design time.
+
+⚠ **THREE CELLS ABOVE ARE UNMEASURED AND MUST NOT BE BUILT ON.** Acceptance, Handoff and History have
+**not** had E-8's treatment. Each needs the same question asked — *does its data carry a rack?* — and
+each may land where Audits did. **A ship that assumes they are rack-scoped is assuming the finding.**
 
 ### Short-list doors (§1's list, kept)
 
@@ -118,6 +149,7 @@ ruling is probably moot (recorded, not assumed).
 
 | action | now | after | note |
 |---|---|---|---|
+| ⭐ **Reach one rack's long-phase warning** | **4 screens** | **2** | Addendum B: the owner hunted it across 3D aisle → phases panel → Build overview → rack detail and could not land on it directly |
 | Reach a rack from cold launch | 3 | **2** | picker is the first screen |
 | Devices + U for this rack | 3 | **2** | expanded by default |
 | ISOLATE for this rack | 4 | **3** | on the rack, not the row |
@@ -128,6 +160,20 @@ ruling is probably moot (recorded, not assumed).
 | Scan a device into this rack | 4 | **2** | on the rack |
 | Scan a rack label to open it | — | **2** | new capability, on the picker |
 | Exit / freeze | 1 hold | 1 hold | unchanged |
+
+### ⭐ THE STRANGER TEST NOW HAS A NAMED TASK
+
+From Addendum B, drawn from the failure that produced it:
+
+> **"Rack S3:171 has been on POWER too long — get to that warning."** Count taps and seconds.
+
+⛔ **This is the acceptance bar, and it is not a formality.** The owner — who built PHANTOM — took
+**four screens** to find that banner on `.570`. If the author cannot land on it, a gloved tech at
+2am cannot. ⭐ **The banner in question is the one `.570` repaired** (`:55988`): it carried **two**
+independent defects — it stated a fabricated *"typical"*, and it is unreachable. `.570` closed the
+honesty half; **this ship closes the findability half**, and neither surfaced the other.
+
+---
 
 ⛔ **The "now" column is projected from the `.557` Phase 0 census plus the `.558`/`.559` changes,
 not re-measured at `.563`.** Phase 0's own table is the named baseline. **The ship that lands any
@@ -163,7 +209,7 @@ new standard already existed.** **Measured: `03-tools` 29 → 28 tests; 10 faile
 | Shift handoff | kept, promoted to a dock slot |
 | SYS | kept, promoted to a dock slot |
 | EXIT dock slot | **closed as a slot** — stays as a hold gesture |
-| `OPEN AISLE` `:41699` | kept — **not re-opened as `SEE IN AISLE`** |
+| `OPEN AISLE` `:41784` | kept — **not re-opened as `SEE IN AISLE`** |
 | Rack picker | **new** — but it replaces the Command first screen, not an addition |
 
 **Net: −2** (Command-as-first-screen, EXIT's slot) **against +1** (the picker, which replaces what
@@ -191,7 +237,7 @@ Smallest honest sequence. One visible change each. **None is authorised by this 
 
 | # | ship | why here | risk |
 |---|---|---|---|
-| **1** | **DEVICES defaults expanded, sorted U-descending, Cold Aisle sizing, explicit `U —`** | RACK-ELEVATION-DEMOTE Ship 1, already specced and measured; the U ranges already render at `:41800`. Closes no door but makes the rack screen the place the U data lives | **low** — one `<details>` attribute, a comparator that already exists at `:41086`, and sizing |
+| **1** | **DEVICES defaults expanded, sorted U-descending, Cold Aisle sizing, explicit `U —`** | RACK-ELEVATION-DEMOTE Ship 1, already specced and measured; the U ranges already render at `:41902`. Closes no door but makes the rack screen the place the U data lives | **low** — one `<details>` attribute, a comparator that already exists at `:41171`, and sizing |
 | **2** | **Rack picker becomes the first screen after Master load** | the single biggest §0 move; retires the status museum | **medium** — new surface, must scope search to the active deployment |
 | **3** | **Dock → `RACKS · SHIFT · SYS`** | three slots, EXIT loses its slot and keeps the gesture | **medium** — nav change, one device verify, `01-nav` re-pins |
 | **4** | **ISOLATE + RACK MAP onto the rack screen, seeded** | the only two tools that can be rack-scoped at zero data cost | low-medium |
@@ -219,3 +265,10 @@ deviation from §5's suggestion rather than silently reordered.**
   a test file, no product source, no stamp.
 - 📌 **The picker's one hard rule is in §0 above:** scope the search to the active deployment, or owe
   a disambiguation. It is repeated in P-5's Ship 2 risk column because that is where it bites.
+- ⚠ **ADDENDUM B IS FOLDED IN, BUT IT IS AN ILLUSTRATION, NOT A MEASUREMENT.** Its nine-door count
+  is an owner walkthrough of `.570` on device; the doors were confirmed to exist in source, but
+  **their data scoping was not measured except where E-8 already had.** Acceptance, Handoff and
+  History remain unmeasured and are the next Phase 0 pass this proposal owes.
+- ⛔ **The four-screen figure is the owner's count, not an instrumented one.** It is recorded as
+  reported. The ship that lands this re-measures both columns, as P-3 already requires.
+- ⛔ **EVERY `file:line` IN THIS DOCUMENT WAS RE-SWEPT AT `.570` AND FOUR HAD DRIFTED.** The proposal was written at `.563`; `.564`–`.570` moved the file. `:24005`→`:24075`, `:41086`→`:41171`, `:41699`→`:41784`, `:41800`→`:41902` (the last also *rewritten* by `.564`, so it is a different statement, not just a different line). **This is F-4b: an anchor is only valid against a stamp.** Re-sweep before using any of them.
