@@ -54,6 +54,30 @@ function seed() {
 
 // What the technician can actually see of the rack. Measures #rackCanvas, never the
 // display:contents wrapper — see the header note.
+// v1.14.565 (Ship 2a) — THE INSTRUMENT MOVED, THE INTENT DID NOT.
+// This spec exists for one defect: the aisle round trip used to take the rack detail with it.
+// It measured that through the flat elevation (#rackCanvas), because the elevation WAS the rack
+// visual. Ship 2a removed the elevation and the minimap from this surface by owner ruling, so
+// every flatVisible assertion below would now be red while describing INTENDED behaviour — the
+// exact failure mode that made 03-tools' reachability pin worthless.
+// ⛔ The assertions follow the mechanism rather than being deleted: what a tech can see of the
+// rack on this surface is now the DEVICES list, which .564 made the primary home of the U data.
+// If the aisle ever takes the rack detail with it again, THIS is what goes blank.
+const devices = (page) => page.evaluate(() => {
+  const sum = Array.from(document.querySelectorAll('summary'))
+    .find((el) => (el.textContent || '').trim().indexOf('DEVICES') === 0);
+  if (!sum || !sum.parentElement) return { present: false, open: false, rows: 0, h: -1, visible: false };
+  const d = sum.parentElement;
+  const r = d.getBoundingClientRect();
+  return {
+    present: true,
+    open: d.hasAttribute('open'),
+    rows: d.querySelectorAll('.gsk').length,
+    h: Math.round(r.height),
+    visible: getComputedStyle(d).display !== 'none' && r.height > 0,
+  };
+});
+
 const elevation = (page) => page.evaluate(() => {
   const wrap = document.getElementById('rehFlatWrap');
   const host = document.getElementById('reh3dCanvasHost');
@@ -84,7 +108,7 @@ test.describe('the rack comes back after the aisle', () => {
 
   // ── CONTROL 1. Proves the fixture reaches a real rack detail before anything is asserted about
   // losing it. Passes before and after the fix; a failure here means the test is broken, not the app.
-  test('CONTROL: the flat elevation is the single rack visual and it renders', async ({ phantom, page }) => {
+  test('CONTROL: rack detail renders its device list, and no 3D mount is back', async ({ phantom, page }) => {
     test.setTimeout(180000);
     await phantom.boot({ seed: seed() });
     await page.evaluate(() => showWorkTab('deploy'));
@@ -94,8 +118,13 @@ test.describe('the rack comes back after the aisle', () => {
 
     const e = await elevation(page);
     expect(e.mountPresent, '#reh3dMount is back — .531 removed it and nothing should re-add it').toBe(false);
-    expect(e.flatVisible, 'the flat elevation did not render at all').toBe(true);
-    expect(e.hostIs3d, 'the host started in .is-3d with no mount to draw into').toBe(false);
+    // v1.14.565 — the elevation and the minimap left this surface by owner ruling. Their
+    // ABSENCE is now the contract: if either returns, the demote was reverted by accident.
+    expect(e.flatVisible, 'the flat elevation is back on rack detail — Ship 2a removed it').toBe(false);
+    const d = await devices(page);
+    expect(d.present, 'rack detail rendered no DEVICES list at all').toBe(true);
+    expect(d.open, 'DEVICES is collapsed — .564 made it open by default; it is the U data\'s home').toBe(true);
+    expect(d.rows, 'DEVICES rendered zero device rows on a seeded rack').toBeGreaterThan(0);
   });
 
   // ── THE DEFECT, through the real door. FAILS without the guard.
@@ -109,8 +138,8 @@ test.describe('the rack comes back after the aisle', () => {
     await page.evaluate((ids) => deploy_showRackDetail(ids.d, ids.r), { d: DEP, r: RACK });
     await page.waitForTimeout(1600);
 
-    const before = await elevation(page);
-    expect(before.flatVisible, 'precondition: the elevation must be up before the aisle opens').toBe(true);
+    const before = await devices(page);
+    expect(before.visible, 'precondition: the device list must be up before the aisle opens').toBe(true);
 
     const lender = await page.evaluate(() => {
       try { const a = RackEngine.active(); return a ? { kind: a.kind } : null; } catch (e) { return 'threw'; }
@@ -118,13 +147,13 @@ test.describe('the rack comes back after the aisle', () => {
     expect(lender, 'this path is supposed to have NO lender — if it gained one the test no longer covers the branch').toBeNull();
 
     await aisleRoundTrip(page);
-    const after = await elevation(page);
+    const after = await devices(page);
 
-    expect(after.hostIs3d,
-      'forge3d_close put the host into .is-3d with no mount — hostHeight=' + after.hostHeight).toBe(false);
-    expect(after.flatVisible,
-      'THE DEFECT: the rack elevation is gone after the aisle round trip. flatHeight='
-      + after.flatHeight + ' wrapDisplay=' + after.flatWrapDisplay).toBe(true);
+    expect(after.visible,
+      'THE DEFECT: the rack detail is gone after the aisle round trip. h='
+      + after.h + ' rows=' + after.rows).toBe(true);
+    expect(after.rows,
+      'the device list survived the round trip but rendered empty — rows=' + after.rows).toBeGreaterThan(0);
   });
 
   // ── THE GUARD ITSELF. FAILS without the fix. Calls the function the way forge3d_close's
@@ -136,16 +165,20 @@ test.describe('the rack comes back after the aisle', () => {
     await page.waitForTimeout(1200);
     await page.evaluate((ids) => deploy_showRackDetail(ids.d, ids.r), { d: DEP, r: RACK });
     await page.waitForTimeout(1600);
-    expect((await elevation(page)).flatVisible, 'precondition: elevation must be visible first').toBe(true);
+    expect((await devices(page)).visible, 'precondition: the device list must be visible first').toBe(true);
 
     await page.evaluate(() => reh3d_activate3D());
     await page.waitForTimeout(600);
-    const after = await elevation(page);
+    const after = await devices(page);
+    const host = await elevation(page);
 
-    expect(after.hostIs3d,
-      '.is-3d was added with #reh3dMount absent — the class must be gated on the mount').toBe(false);
-    expect(after.flatVisible,
-      'the flat elevation was hidden by a 3D view that never mounted. flatHeight=' + after.flatHeight).toBe(true);
+    // v1.14.565 — #reh3dCanvasHost no longer exists on this surface, so the guard's job is
+    // now STRICTLY that activating 3D against nothing is a safe no-op which does not damage
+    // what the tech is actually looking at.
+    expect(host.hostIs3d,
+      '.is-3d was added with no host present — the class must be gated on the mount').toBe(false);
+    expect(after.visible,
+      'reh3d_activate3D wiped the device list on a surface with no 3D host. h=' + after.h).toBe(true);
   });
 
   // ── CONTROL 2. The lender path was never broken; the fix must not disturb it. Passes before and
@@ -165,8 +198,8 @@ test.describe('the rack comes back after the aisle', () => {
     expect(lender, 'the Build path lost its lender — forge3d_close would now fall to the no-lender branch').not.toBeNull();
 
     await aisleRoundTrip(page);
-    const after = await elevation(page);
-    expect(after.flatVisible, 'the Build round trip lost the rack. flatHeight=' + after.flatHeight).toBe(true);
-    expect(after.hostIs3d, 'the Build round trip left the host in .is-3d').toBe(false);
+    const after = await devices(page);
+    expect(after.visible, 'the Build round trip lost the rack detail. h=' + after.h).toBe(true);
+    expect((await elevation(page)).hostIs3d, 'the Build round trip left the host in .is-3d').toBe(false);
   });
 });

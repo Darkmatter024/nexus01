@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.564';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.565';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -41699,36 +41699,33 @@ function deploy_showRackDetail(deployId, rackId) {
                   '<button type="button" class="reh-aisle-door" onclick="forge3d_open()" aria-label="Open the 3D aisle walk-through">OPEN AISLE <span class="rad-arrow" aria-hidden="true">›</span></button>' +
                 '</div>';
       }
-      rehHybridHtml += '<div class="rack-hybrid">';
-      if (_rehRd) {
-        // v1.14.531 — #reh3dMount REMOVED. It was the dead half of a two-surface card: the flat
-        // elevation beside it renders, the 3D mount did not, and a technician got a control rail
-        // over an empty box. The flat wrap is now the single rack visual here and is no longer a
-        // fallback — with nothing adding .is-3d, the .is-3d rules at :11276-11277 never fire, so
-        // #rehFlatWrap simply stays visible. #reh3dCanvasHost KEEPS its id: rackElevation_ensure3D
-        // and the .390-.405 diagnostics both guard on it, and those paths are shared.
-        rehHybridHtml += '<div class="rack-hybrid-canvas" id="reh3dCanvasHost">' +
-                  '<div id="rehFlatWrap" class="reh-flat-wrap">' + rackElevation_buildHtml(rack) + '</div>' +
-                '</div>';
-      } else {
-        rehHybridHtml += '<div class="rack-hybrid-canvas">' + rackElevation_buildHtml(rack) + '</div>';
-      }
-      rehHybridHtml += '<div class="rack-hybrid-minimap">' + scrubbar_buildHtml(rack) + '</div>';
-      rehHybridHtml += '</div>';
-      requestAnimationFrame(function() { requestAnimationFrame(function() {
-        rackHybrid_initSync(rack);
-        rackFlat_applyFit(rack.totalU || 42);
-      railSel_bindFlat();
-        // v1.14.531 — the reh3d_restore(rack) call is GONE with the mount it fed. Leaving it would
-        // have been a silent no-op (rackElevation_ensure3D early-returns on a null mountEl) and,
-        // worse, reh3d_activate3D adds .is-3d BEFORE it looks for the mount — which would have
-        // hidden the flat elevation via :11276 and left the card genuinely empty. Removing the
-        // call is what keeps the elevation on screen, not merely tidier.
-        // reh3d_restore / reh3d_activate3D are now orphaned (window._reh3dRack had no other
-        // reader) and are left on disk per repo precedent. rackElevation_ensure3D/_render3D STAY
-        // LIVE — the Build preview (:23030), the Command hero (:24251) and the RackEngine
-        // re-acquire paths all still call them.
-      }); });
+      // v1.14.565 (Ship 2a) — THE DRAWINGS LEAVE THE DEFAULT PATH. Owner ruling: the rack
+      // elevation as rendered on the phone does not earn its screen — a clipped 48U showing ~7U
+      // beside an unreadable full-height strip, conveying nothing the U position does not.
+      // ⭐ THE INFORMATION STAYED, AND IT SHIPPED FIRST. .564 put the U position on every DEVICES
+      // row, sorted top-of-rack down, open by default, with `U —` where the Master has none. The
+      // list carried the fact for one VERIFIED ship before the picture left — that overlap is the
+      // slicing working, not an accident.
+      // WHAT WENT: the .rack-hybrid wrapper, both .rack-hybrid-canvas branches (the redesign
+      // #reh3dCanvasHost/#rehFlatWrap pair and the legacy fallback), the .rack-hybrid-minimap
+      // scrubbar, and the double-rAF that drove rackHybrid_initSync, rackFlat_applyFit and
+      // railSel_bindFlat. OPEN AISLE above is UNTOUCHED and is now the only rack picture door.
+      //
+      // ⛔ SHIP 2b OWES THE DELETIONS AND THIS COMMENT IS THE RECEIPT. Four functions are now
+      // ORPHANED — rackHybrid_initSync (:38556), railSel_bindFlat (:41010), rackFlat_applyFit
+      // (:41037) and scrubbar_buildHtml (:41073). Each had exactly ONE caller and it was here.
+      // The .rack-hybrid* CSS block goes with them.
+      // ⚠ #reh3dCanvasHost no longer exists in the DOM, but FIVE external paths still look it up
+      // (:19619, :19650, :22189, :23719, :39244). They are null-guards, so they fail safe — but
+      // they are now permanently-null lookups, which is exactly the .473 shape, and 2b must
+      // resolve them rather than leave them to be re-wired by a future session.
+      //
+      // ⚠ WHAT IS *NOT* DEAD, so 2b does not over-reach: rackElevation_buildHtml stays LIVE —
+      // the Command hero (:23705) and RackEngine.renderFlat (:38841) both still call it, and
+      // RackEngine is under R-05. Those two rely on the --u-h CSS DEFAULT the renderer emits
+      // itself at :40927; rackFlat_applyFit only ever OVERRODE it with a measured value, so
+      // losing it costs them nothing. Deleting the renderer is NOT in scope for 2b either —
+      // S-14 asks for zero references and that is unreachable while those two callers exist.
     }
   } catch (rhErr) {
     if (typeof console !== 'undefined') console.warn('[rack-hybrid] render skipped:', rhErr);

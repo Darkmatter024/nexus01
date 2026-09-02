@@ -93,17 +93,23 @@ test.describe('the one WebGL context follows the visible surface', () => {
     // GL mount to the flat rail — so the assertion follows the mechanism rather than being deleted.
     expect(detail.reh, 'a WebGL mount is back on the rack detail — `.531` made the flat elevation '
       + 'the single visual here; two surfaces is the card that shipped empty').toBe('absent');
-    // The rack must still be ON SCREEN. This is the half of the original assertion that was never
-    // about WebGL: #rackCanvas carries the flat elevation's pixels.
-    // ⚠ Measure the CHILD, never #rehFlatWrap — that wrapper is `display:contents` (:11117) and has
-    // no box of its own, so measuring it reports a false zero on a rack that renders perfectly.
+    // The rack detail must still show SOMETHING of the rack. This is the half of the original
+    // assertion that was never about WebGL.
+    // ⚠ v1.14.565 (Ship 2a) — THE INSTRUMENT MOVED FOR THE SECOND TIME, AND FOR THE SAME REASON.
+    // It was a WebGL mount until `.531`, then #rackCanvas (the flat elevation) until here. Ship 2a
+    // removed the elevation and the minimap from this surface by owner ruling, so what a tech can
+    // see of the rack is now the DEVICES list — which `.564` made the primary home of the U data.
+    // The assertion follows the mechanism rather than being deleted; only the mechanism moved.
     const flat = await page.evaluate(() => {
-      const c = document.getElementById('rackCanvas');
-      if (!c) return { present: false };
-      const r = c.getBoundingClientRect();
-      return { present: true, h: Math.round(r.height), visible: getComputedStyle(c).display !== 'none' && r.height > 0 };
+      const sum = Array.from(document.querySelectorAll('summary'))
+        .find((el) => (el.textContent || '').trim().indexOf('DEVICES') === 0);
+      if (!sum || !sum.parentElement) return { present: false };
+      const d = sum.parentElement;
+      const r = d.getBoundingClientRect();
+      return { present: true, h: Math.round(r.height), rows: d.querySelectorAll('.gsk').length,
+               visible: getComputedStyle(d).display !== 'none' && r.height > 0 };
     });
-    expect(flat.present, 'the rack detail rendered NO rack — no #rackCanvas at all').toBe(true);
+    expect(flat.present, 'the rack detail rendered NO device list — nothing of the rack is on screen').toBe(true);
     expect(flat.visible, `the rack detail drew nothing visible — the empty-box defect is back (h=${flat.h})`).toBe(true);
     // ⛔ THE ORIGINAL LAST ASSERTION WAS `expect(detail.bw).not.toBe('live')` — Build must hand the
     // context over. `.531` removed the thing it handed over TO, so Build now keeps it while the
