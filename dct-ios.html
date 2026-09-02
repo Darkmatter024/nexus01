@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.566';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.567';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -18214,8 +18214,22 @@ function phantom_logErr(ctx, err, opts) {
 // The Worker holds the API key in encrypted env vars — no key needed client-side.
 // Security: Worker enforces Origin allowlist (rejects non-GitHub-Pages requests).
 // No token is sent from the client — protection is origin-based + server-enforced spend cap.
+// ⭐ v1.14.567 — AND THAT LINE IS TRUE AGAIN. It had been false since `.199`: S-1 added
+// PHANTOM_PROXY_KEY directly beneath it and sent x-phantom-key on every request, two lines apart,
+// in the file that IS the product. The constant and the header are both gone.
+// ⛔ WHY IT WENT — IT WAS BREAKING THE ASSISTANT, NOT PROTECTING IT. The Worker never read the
+// token; its origin check replaced token auth, and its CORS allows the Content-Type request header
+// ONLY. A non-listed header makes Safari send a preflight the Worker will not clear, so the POST
+// never left the phone. Symptom on device: 'Could not reach assistant: Load failed', and NOTHING
+// in the Cloudflare log because nothing arrived.
+// ⛔ THE CLIENT HALF SHIPPED AND THE SERVER HALF NEVER DID. `.199`'s own note says the key is
+// public by design and 'inert until the owner pastes the grace-mode Worker and later flips
+// ENFORCE_KEY'. That Worker never landed, so the key was inert-by-accident for 368 versions and
+// then became load-bearing in the wrong direction the moment the Worker's CORS tightened.
+// ⚠ DO NOT RE-ADD IT. A shared secret in a public source file is not a lock; it was cited as an
+// abuse-cost raiser alongside the origin allowlist, rate limit and spend cap — all three of which
+// still stand and are server-enforced, which is where enforcement belongs.
 const PHANTOM_PROXY_URL = 'https://phantom-api.wfj6t2fk7w.workers.dev/v1/messages';
-const PHANTOM_PROXY_KEY = '30f3479c8cffdebe9525794cc0fbda997499062217fa9e97'; // S-1 shared secret - must match Worker PHANTOM_KEY. Not secrecy (public source); raises drive-by abuse cost alongside origin check + rate limit + spend cap.
 
 const PHANTOM_API_MAX_BODY = 300000; // 300KB max request body — bumped for real EDP files
 function phantomAPI(body, _retryCtx) {
@@ -18235,9 +18249,13 @@ function phantomAPI(body, _retryCtx) {
   var timeoutId = setTimeout(function() { controller.abort(); }, timeoutMs);
   return fetch(PHANTOM_PROXY_URL, {
     method: 'POST',
+    // v1.14.567 — Content-Type ONLY, because it is the one request header the Worker's CORS
+    // lists. ⚠ THIS DOES NOT REMOVE THE PREFLIGHT AND MUST NOT BE READ AS DOING SO:
+    // application/json is NOT a CORS-safelisted Content-Type (only x-www-form-urlencoded,
+    // multipart/form-data and text/plain are), so Safari still sends OPTIONS. The difference is
+    // that the preflight now PASSES — every header it declares is one the Worker allows.
     headers: {
-      'Content-Type': 'application/json',
-      'x-phantom-key': PHANTOM_PROXY_KEY
+      'Content-Type': 'application/json'
     },
     body: payload,
     signal: controller.signal
