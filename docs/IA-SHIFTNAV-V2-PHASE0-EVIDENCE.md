@@ -146,8 +146,13 @@ without carrying that forward would re-open a defect that has already been paid 
 - ⛔ **Nothing here is design.** Where v2 asks for something the data cannot currently support, the
   finding is reported for owner amendment — it is not narrowed, resequenced or rewritten.
 - 📌 **Collisions with existing repo work are recorded in commit `bcd0205`**, not repeated here:
-  COMMAND→DECK probably moot, `SEE IN AISLE` already built at `:41699`, and the three-way SCAN
-  disagreement between v2 §2, board v2, and the held SCAN-PILLAR handoff.
+  COMMAND→DECK probably moot, and `SEE IN AISLE` already built at `:41699`.
+- ✅ **SCAN IS RULED (owner, 2026-09-01): v2 §2 wins, the board line is STALE and STRUCK.** SCAN is
+  **not** a dock destination; it lives on the rack and on the picker. ⛔ Phase 1 must not propose a
+  SCAN dock slot — the target is §3's *scan reachable in ≤1 tap from wherever the tech is*, which
+  a dock slot was only ever a means to. ⚠ The SCAN-PILLAR handoff was not named in the ruling and
+  is left standing; its premise is contradicted but retiring it is the owner's word, not an
+  inference. See `PHANTOM_CURRENT_STATE.md`.
 - ✅ **ONE COLLISION IS NOW CLOSED.** v2 §1's *"ISOLATE is dangerous"* was ruled against by the
   owner on 2026-09-01: **ISOLATE stays as-is, it is not dangerous, and §1's confirm/red/full-width
   prescription is STRUCK.** Recorded in `PHANTOM_CURRENT_STATE.md`. Phase 1 must not assign ISOLATE
