@@ -113,10 +113,26 @@ toast + fall back to `deploy_showDetail(deployId)`.
 A rack is only addressable **within a deployment**: `deploy_loadRacksFor(deployId)` then
 `racks.find(r => r.id === rackId)`.
 
-⛔ **§0 states three moves — load Master → pick rack → work the rack. The code has four levels:
-Master → deployment → rack → work.** Either the picker resolves the deployment silently (and the
-spec should say so), or §0's model needs a deployment step. **That is an owner ruling, not an
-implementation detail**, and Phase 1 cannot draw the picker without it.
+§0 states three moves — load Master → pick rack → work the rack. The code has four levels:
+Master → deployment → rack → work.
+
+✅ **RULED (owner, 2026-09-01): THE DEPLOYMENT STEP STAYS, THE PICKER RESOLVES IT.** §0's three
+moves stay true *for the tech*; the picker collapses the fourth level. ⛔ `deploy_showRackDetail`'s
+signature does not change and **no entry path is refactored** — all thirteen keep working.
+
+⭐ **The mechanism exists and is already proven in-file, so the picker reuses it rather than
+authoring a second (Contract A2):** `ACTIVE_DEPLOYMENT_KEY` `:29686` · `deploy_getActiveId()`
+`:29688` · `deploy_getActive()` `:29702`. **The working precedent is `:24005`** — it takes the
+active id, scans that deployment's racks, matches `rs[i].rackId || rs[i].id`, and calls
+`deploy_showRackDetail(aid, rs[i].id)`.
+
+⚠ **Two fields, and confusing them is the trap.** `rackId` is the human label a tech reads and
+scans (`s4:099`); `id` is the record id the entry matches on. `:24005` accepts **either** and
+passes **`r.id`** onward. A picker that forwards the label lands on *"Rack not found"*.
+
+⚠ **Residual for Phase 1, not blocking:** `deploy_getActiveId()` returns one deployment, so a
+label present in two resolves to the active one **silently**. Whether labels can collide is
+**unmeasured**. If they can, the picker owes a disambiguation, not a silent pick — Contract B14.
 
 ---
 
