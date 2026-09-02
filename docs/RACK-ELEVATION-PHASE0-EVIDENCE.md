@@ -279,6 +279,49 @@ as a defect.
 
 ---
 
+## SHIP 1 · ANCHOR PASS — re-verified at `e948aac` / `v1.14.563`
+
+The base spec's BOUNDS require it: *"Ship 1 needs its own anchor pass against the then-current stamp
+before any edit."* `dct-ios.html` has not moved since `.563`, but these were **re-read, not carried**.
+⛔ **All eight resolve.**
+
+| S- | change | anchor | measured state |
+|---|---|---|---|
+| **S-3** | `<details>` gains `open` | `:41794` | one attribute; no JS handler exists to disturb |
+| **S-2** | sort U-descending | insert before `:41796` (`rack.slots.forEach`) | ⭐ **comparator already exists at `:41086`** — `slots.sort((a,b) => (b.uStart\|\|0) - (a.uStart\|\|0))`. **Reuse it; do not author a second** |
+| **S-4** | row ≥44px, U text ≥14px | `:41797` (row `div`) | today `padding:6px 10px`, `font-size:var(--fs-caption)` |
+| **S-1** | explicit `U —`, en-dash | `:41800` | today the element is **omitted entirely** when `uStart == null` |
+| **S-5** | elevation + strip untouched | — | no edit; `:41794-41808` is the whole surface |
+
+Supporting anchors: `:41795` (list wrapper), `:41799` (model), `:41805` (TAG), `:41808` (close).
+
+### ⭐ TWO THINGS THE PASS FOUND CHEAPER THAN THE SPEC ASSUMED
+
+1. **The U ranges already render** at `:41800` — S-1's core is shipped (recorded in E-3).
+2. **Both tokens S-4 needs already exist:** `--tap-s: 44px` (`:198`) and `--fs-caption: 11px`
+   (`:205`). **S-4 is a token swap, not a new scale** — no addition to the design system, which is
+   locked.
+
+### ⚠ THE ONE REAL DECISION INSIDE S-1
+
+Today a slot with no `uStart` renders **no U element at all**. S-1 asks for `U —`. That is the
+honest-blank change and **the only part of Ship 1 that alters what a tech sees for existing data** —
+absent and not-recorded currently look identical, which is the defect. Everything else in Ship 1
+reorders, resizes, or expands what is already on screen.
+
+### ⛔ GATE — WHY THIS IS AN ANCHOR PASS AND NOT A SHIP
+
+`tools/hooks/phantom-guard.js:checkVerifiedGate` reads `oldVersion` from `HEAD:version.json`
+(`.563`) and `VERIFIED` (`.562`). Any commit staging `version.json` returns:
+
+> `GATE: phantom-v1.14.563 not stamped in VERIFIED. Owner must verify on device and update VERIFIED before the next ship.`
+
+**The hook and the doctrine agree: one unverified ship at a time, and `.563` is it.** Ship 1 commits
+only after the owner clears `.563` on the iPhone and stamps `VERIFIED` — which is owner-only, and the
+same gate blocks Claude Code from committing that file at all.
+
+---
+
 ## BOUNDS
 
 - ⛔ **Source only.** Nothing was run, rendered, or measured on a device. The `~7U` and the clipped
@@ -293,3 +336,6 @@ as a defect.
   are out of scope for this spec.
 - ⛔ **Nothing here is design.** Where a spec item is measured as already-shipped or unexecutable,
   the finding is reported for owner amendment — it is not narrowed, resequenced or rewritten.
+- 📌 **The Ship 1 anchor pass above is valid at `e948aac` / `.563` and nowhere else.** If any
+  ship lands on `dct-ios.html` before Ship 1 does, **re-run it** — the offset table at the top of
+  this document exists because that drift has already cost a wrong citation once this session.
