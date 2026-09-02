@@ -1,8 +1,28 @@
 # SHIP-HANDOFF-SCAN-PILLAR.md
 **SCAN becomes a navigable pillar — R-02's fourth slot**
 
-- **Status:** ⛔ **HELD UNTIL M4 — owner ruling, 2026-09-01.** Nothing is edited. This document is
-  the record; it does not authorise work.
+- **Status:** ⛔ **RETIRED — owner ruling, 2026-09-01.** This document's central proposal is dead.
+  `SHIP-HANDOFF-IA-SHIFTNAV-v2.md` §2 rules that SCAN is **not a dock destination** — it lives
+  where scanning happens, on the rack and on the picker. **SCAN does not become R-02's fourth
+  slot at M4 or at any other time.** The board line that wanted a SCAN dock slot
+  (`PHANTOM-BOARD-NEXT-OPS-v2.md:40`) was struck as stale in the same ruling.
+
+  ⭐ **ITS PARENT IS GONE TOO, AND THAT IS THE CLEANER REASON.** The line below names
+  `SHIP-HANDOFF-IA-SHIFTNAV.md` + Addendum A as this document's parent, and **v2 supersedes both
+  in full.** A handoff split out of a superseded ship cannot outlive it, independently of §2.
+
+  📌 **KEPT AS EVIDENCE, NOT AS TASKING — this is why the file is not deleted.** The measured
+  material below survives the retirement and is still true: the ten routes at A-5, the `pg-scan`
+  history (it existed; `.552` deleted it in LEGACY-RETIRE Stage 6.7), the `#wk-scan` markup, and
+  the SCAN/SHIFT art provenance (the approved cut, tracked at `a328a10`). A future SCAN ship —
+  on the rack and picker, per v2 §3's *scan reachable in ≤1 tap* — reads this for the anchors
+  and re-verifies them against the then-current stamp.
+
+  ⛔ **DO NOT EXECUTE ANY SHIP, STAGE, OR PROPOSAL IN THIS DOCUMENT.** Anchors are `.562`-era and
+  the live stamp is `.563` or later; the offset table in `docs/RACK-ELEVATION-PHASE0-EVIDENCE.md`
+  applies. Superseded status line, kept for the record:
+  ⛔ *HELD UNTIL M4 — owner ruling, 2026-09-01. Nothing is edited. This document is the record;
+  it does not authorise work.*
 
 - **Parent:** `SHIP-HANDOFF-IA-SHIFTNAV.md` + Addendum A. Split out of Ship 2 (B-1) because the work
   is structural, not a nav tweak, and the back half of another ship is the wrong place for it.
