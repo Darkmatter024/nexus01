@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.568';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.569';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -18351,7 +18351,19 @@ function phantomAPI(body, _retryCtx) {
 }
 
 // Centralized AI feature config — single place to change model or token budgets
-const PHANTOM_MODEL = 'claude-sonnet-4-6';
+// ⛔ v1.14.569 — THE MODEL STRING WAS THE 400. Owner verified against Anthropic's live model
+// list (platform.claude.com) on 2026-09-02, twice: the prior value — Sonnet 4.6's bare alias —
+// is not a valid API model ID, and the endpoint rejects an unknown model with a 400. Every surface
+// in this file routes through this one constant, so every one of them had been failing.
+// ⭐ PINNED, NOT ALIASED, AND THAT IS A DATA-HONESTY CHOICE. A pinned dated ID does not
+// silently migrate to a new snapshot later, so the model cannot change under the app without
+// the owner choosing it — the same posture as every other 'no drift the owner did not pick'
+// rule in this file.
+// ⚠ RECORDED BECAUSE IT WAS CONTESTED: Claude Code's bundled model reference (cached
+// 2026-06-24) lists that same bare alias as current, and said so before this ship. The owner's
+// live check is dated 2026-09-02 and is the more recent source, so it governs. If a future
+// session sees that cached table and doubts this line, the live list decides — not the cache.
+const PHANTOM_MODEL = 'claude-sonnet-4-5-20250929';
 const AI_TOKENS = {
   va: 600, bom: 7000, parser: 4000, rack: 2000, portmap: 4000, optic_id: 500,
   // Chunked EDP parser budgets — each section sized for its typical output
