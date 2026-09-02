@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.565';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.566';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -22183,6 +22183,28 @@ function bw_render() {
   var mount = E('div', 'bw-mount'); mount.id = 'bw-mount';
   pv.appendChild(mount);
   host.appendChild(pv);
+  // ⛔ v1.14.566 — THE PASTE DOOR MOVES BELOW THE RACK. Measured at 390x844: .pasterow is 98px
+  // and sat THIRD in #bw-shell, above the preview, so #bw-mount started at top 647 against a
+  // nav top of 722 — only 75px of rack on screen against R1-D's 150px bar. R1-D was calibrated
+  // at .442 against a MEASURED 176px; .462 built the PASTE door into the shell above the rack
+  // and quietly spent 98 of those 176. Nobody caught it because 30-rack-above-the-fold:79 was
+  // already red for the .560 reason and the red dot looked identical — F-4 exactly.
+  // ⭐ THIRD TIME TWO OWNER RULINGS HAVE WANTED THE SAME 390px, AND THE THIRD TIME ORDERING
+  // SATISFIES BOTH. SHIP-OPS-IN-PLACE vs R1-D was resolved this way at .561; PASTE-in-shell vs
+  // R1-D is resolved the same way here. Neither feature is removed and neither ruling is
+  // narrowed — only the stacking order changes.
+  // ⚠ THE DOOR IS STILL BUILT ABOVE THE THREE ROUTING BRANCHES, and that is deliberate: its
+  // own comment records that classifying a paste needs no Master, so it must exist in every
+  // state including "No Master loaded". Only its POSITION moves, and only on the branch that
+  // actually renders a rack. The no-Master branch never reaches this line, so the door keeps
+  // its original placement exactly where it is most needed.
+  // ⚠ ANCHORED ON `pv` ITSELF, not on `.bw-card.bw-prev`. .561 had to resolve the mount's
+  // top-level ancestor by walking the DOM because it runs later, from ops_init; here the live
+  // reference is in scope, so there is no class name to go stale.
+  // 📌 ops_init still lands its OPS row at the mount ancestor's nextSibling on the double-rAF
+  // AFTER this, so the final order is rack -> OPS tool row -> PASTE. Both doors stay one
+  // scroll-free reach below the thing the shift is about.
+  if (pasteRow && pasteRow.parentNode === host) host.insertBefore(pasteRow, pv.nextSibling);
   // rackElevation_render3D builds its own FRONT/ISO/TOP/CABLES controls and owns the
   // GL lifecycle + flat fallback. Scene internals are untouched per the ruling.
   // three.js is lazy-loaded and SW-precached. rackElevation_ensure3D() cannot be used

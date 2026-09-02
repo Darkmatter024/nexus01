@@ -194,11 +194,23 @@ test.describe('the one WebGL context follows the visible surface', () => {
       .toContain('rack detail owns the screen');
 
     warns.length = 0;
-    await page.evaluate(() => {
+    // ⛔ v1.14.566 — THIS DRIVER WAS PASSING null AND COULD NEVER REACH THE GUARD.
+    // The global it read is set NOWHERE in the app or this suite, so `|| null` always won, and
+    // bw_mount3D's `if (!rack)` bail (:22517) returns 77 lines BEFORE the ops-detail guard
+    // (:22594). The assertion below was passing on a COINCIDENCE: Build's own re-arm loop
+    // (:22531) fired a real-rack draw() inside the 400ms window while ops-detail was up, and
+    // that emitted the warning this test then took credit for.
+    // ⭐ .566 moved the PASTE door below the rack, so the mount is measurable sooner, the
+    // re-arm resolves before the window, and the coincidence stopped. The ship EXPOSED this;
+    // it did not cause it. The guard itself is fine — the src assertion above still passes.
+    // ⚠ Driving it with a REAL rack is what the block comment above always claimed was
+    // happening. Now it is.
+    await page.evaluate((d) => {
       // The mount is Build's, and Build is not on screen; this is exactly the state the guard is for.
       const m = document.getElementById('bw-mount');
-      try { bw_mount3D(window._bwProbeRack || null, m); } catch (_) { /* the guard returns before any render */ }
-    });
+      const r = (typeof deploy_loadRacksFor === 'function') ? (deploy_loadRacksFor(d)[0] || null) : null;
+      try { bw_mount3D(r, m); } catch (_) { /* the guard returns before any render */ }
+    }, DEP);
     await page.waitForTimeout(400);
     expect(warns.join(' '), 'Build deferred to the rack detail without saying so')
       .toContain('rack detail owns the screen');
