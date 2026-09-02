@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.563';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.564';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -41789,15 +41789,38 @@ function deploy_showRackDetail(deployId, rackId) {
   var _phDockOn = (typeof redesign_isOn === 'function' && redesign_isOn());
   if (!_phDockOn) html += _phCardsHtml;
 
-  // ── Device List (collapsed) ──
+  // ── Device List (open by default since v1.14.564 — it is the primary home of the U data) ──
   if (rack.slots && rack.slots.length) {
-    html += '<details style="margin-top:12px"><summary style="font-family:var(--orb);font-size: var(--fs-micro);letter-spacing:3px;color:var(--slate);cursor:pointer;padding:8px 0;text-transform:uppercase">DEVICES (' + rack.slots.length + ')</summary>';
+    html += '<details open style="margin-top:12px"><summary style="font-family:var(--orb);font-size: var(--fs-micro);letter-spacing:3px;color:var(--slate);cursor:pointer;padding:8px 0;text-transform:uppercase">DEVICES (' + rack.slots.length + ')</summary>';
     html += '<div style="margin-top:6px">';
-    rack.slots.forEach(function(slot) {
-      html += '<div class="gsk" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:6px 10px;margin:3px 0;font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate)">';
+    // v1.14.564 (S-2) — TOP OF RACK FIRST, matching how a tech reads a rack standing in front
+    // of it. ⛔ Sorts a COPY: rack.slots is the PERSISTED array off deploy_loadRacksFor, and
+    // reordering it in place would rewrite stored order as a side effect of rendering.
+    // ⭐ Same comparator as scrubbar_buildHtml (:41086) — one ordering rule for this data, not
+    // two. Slots with no uStart fall to 0 and land at the bottom, which is where an unknown
+    // position belongs.
+    var _devRows = (rack.slots || []).slice().sort(function(a, b) { return (b.uStart || 0) - (a.uStart || 0); });
+    _devRows.forEach(function(slot) {
+      // v1.14.564 (S-4) — Cold Aisle floor: the row clears --tap-s (44px) via min-height +
+      // border-box, not by growing the font. ⛔ Display stays BLOCK on purpose: the row's
+      // contents are concatenated inline (name · model · U), and a flex container would
+      // promote each fragment to its own flex item and stack them vertically.
+      html += '<div class="gsk" style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:12px 10px;margin:3px 0;min-height:var(--tap-s);box-sizing:border-box;font-family:var(--mono);font-size: var(--fs-caption);color:var(--slate)">';
       html += '<strong style="color:var(--white)">' + escHtml(slot.name || 'Unknown') + '</strong>';
       if (slot.model) html += ' · ' + escHtml(slot.model);
-      if (slot.uStart != null) html += ' · U' + slot.uStart + (slot.uEnd && slot.uEnd !== slot.uStart ? '-' + slot.uEnd : '');
+      // v1.14.564 (S-1) — THE U POSITION IS ALWAYS STATED, AND STATED IN ONE VOCABULARY.
+      // ⭐ Format matches rackElevation_buildHtml (:40944) and scrubbar_buildHtml (:41188)
+      // exactly — en dash, U on both ends. Three renderers, one label; the old hyphenated
+      // single-U form here was the odd one out.
+      // ⛔ CONTRACT B10. An absent uStart used to render NOTHING, so "no position recorded"
+      // and "this device has no U" looked identical to a tech. `U —` says the second thing
+      // out loud and never guesses a number.
+      // ⚠ 14px is the Cold Aisle floor for this value and is set here rather than on the row,
+      // because the U position is the one field a gloved tech reads at arm's length.
+      var _u = (slot.uStart != null)
+        ? ('U' + slot.uStart + (slot.uEnd && slot.uEnd !== slot.uStart ? '–U' + slot.uEnd : ''))
+        : 'U —';
+      html += ' · <span style="font-size:14px;color:var(--white);letter-spacing:.04em">' + _u + '</span>';
       // v1.6.97: surface the asset tag (slot.serial) frozen at scope time — stored since
       // Ship 2A but never rendered. dns is already the device name above, so only the TAG
       // adds new info; long-press-selectable for a gloved copy. Legacy EDP slots (no serial)
