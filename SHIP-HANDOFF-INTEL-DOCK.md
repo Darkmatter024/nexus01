@@ -1,4 +1,34 @@
 # SHIP-HANDOFF-INTEL-DOCK.md
+
+> ⭐ **IMPORT RECORD — repo-side, added 2026-09-03. THE BODY BELOW IS THE OWNER'S TEXT, UNCHANGED.**
+> Imported byte-identical to the Downloads original: **8226 bytes, sha256 `f27b19c43d6948bf…`**.
+>
+> ⚠ **CORRECTION, RECORDED RATHER THAN QUIETLY FIXED.** The import commit message quotes
+> `24b0dd9c…`. **That is wrong** — it was written before the digest was computed and never updated.
+> The value on this line is the measured one and is the record of truth; the commit message is not.
+> The commit was already pushed and a force-push is forbidden by the branch topology rules, so it is
+> corrected here instead of rewritten. ⛔ **A verbatim-import note whose digest is wrong records
+> nothing at all** — the digest IS the record — which is why this is worth its own line.
+>
+> ⛔ **NOT STARTED, AND SEQUENCED BY ITS OWN TEXT:** *"can ship as its own slice once Ship A
+> completes."* Ship A is **not** complete — A-2b, A-3 and A-4 remain — and `.574` is unverified,
+> which is the ship gate at its limit. No Phase 0 has been run.
+>
+> ⛔ **A DOCK COLLISION IS OPEN AND IS REPORTED, NOT ABSORBED.** This is the **third** dock shape in
+> the repo and the three disagree on both count and contents:
+>
+> | Source | Dock | Status |
+> |---|---|---|
+> | Contract A8 / R-02 (`CLAUDE.md`) | `Command · Build · Scan · Tools · Shift` — five pillars, EXIT not a slot | contract, but **M4-gated**; CLAUDE.md itself calls the shipped 3-slot nav a *"pre-M4 checkpoint, not a specification"* |
+> | IA-SHIFTNAV v2 **P-3** (`docs/…V2-PHASE1-PROPOSAL.md:141`) | `RACKS · SHIFT · SYS` — three slots | **proposal only** — *"None is authorised by this document"* |
+> | **INTEL-DOCK §1** (this file) | `COMMAND · BUILD · TOOLS · GHOST` — four slots, EXIT → SYS | ⭐ **APPROVED owner ruling, 2026-09-03** — the newest and the only approved one |
+>
+> ⚠ **The sharpest disagreement is SHIFT.** A8 makes it a pillar and P-3 gives it a dock slot;
+> **INTEL-DOCK has no SHIFT slot** — the fourth slot is the ghost. ⭐ **That may be reconcilable
+> rather than contradictory:** SHIFT keeps a *door* either way, and `.574` just gated that door
+> (`#cs-shiftbar`) on the Master while leaving it in `#cs-grid`, honouring the 2026-08-14 ruling. A
+> pillar slot and a door are not the same claim. **But the reconciliation is an owner ruling, not an
+> inference, and nothing is built until it is made.**
 **The ghost takes the dock. Exit moves under SYS. Intelligence gets one door that tells you if it's open.**
 
 - **Status:** APPROVED — owner ruling 2026-09-03. Slots into IA-SHIFTNAV v2 Phase 1 as a hard requirement; can ship as its own slice once Ship A completes.
