@@ -124,17 +124,51 @@ the E-8 ruling, and its "ISOLATE is dangerous" line was struck twice. Neither su
 | 16 | `.sig-h` + `#cc-sig` — OPS SIGNAL | `:14054`, `:14055` | **closed — both signals re-home** | it renders exactly two rows (`:23426`–`:23427`): *handoff waiting* → SHIFT door; *Pod N%* → the picker line |
 | 17 | `#cc-foot` | `:14057` | **deleted — no phone home** | desktop footer |
 
-### ⛔ ONE FLAG THE TABLE CANNOT CLOSE BY ITSELF — `cmd_nba()` LOSES BOTH ITS FACES
+### ✅ RULED (a) — THE PICKER LINE CARRIES THE NBA VERB. ⚠ AND MEASURING IT FOUND A GAP.
 
-`cmd_nba()` (`:23734`) has exactly **two** rendering consumers: the phone `.nba` (`:23418`) and
-`#cs-hero`’s CTA (`:23695`). **Rows 3 and 6 delete both.** The markup at `:13854` says so itself —
-*"the SAME cmd_nba() recommendation the phone NBA uses — one brain, two faces."*
+Rows 3 and 6 delete `cmd_nba()`’s only two faces — the phone `.nba` (`:23418`) and `#cs-hero`’s CTA
+(`:23695`); the markup at `:13854` calls them *"one brain, two faces."* **Owner ruled (a): the picker
+line (#10) carries the NBA verb**, so the brain keeps a face and does not become dead code.
 
-⛔ **So Ship A as assigned turns `cmd_nba()` into dead code** — the `.473` shape exactly: an intended
-removal that leaves a function with zero callers and nothing failing loudly. **Two honest options, and
-the owner rules:** **(a)** the picker line (#10) carries the NBA verb, so the brain keeps one face; or
-**(b)** `cmd_nba()` is retired **in the same ship**, with a grep gate proving zero callers.
-⚠ **What must NOT happen is (c): delete the faces, leave the brain, and say nothing.**
+⛔ **THE GAP, FOUND BY READING ALL NINE BRANCHES RATHER THAN ASSUMING: NOT ONE OF THEM POINTS AT THE
+RACK PICKER.** `cmd_nba()` (`:23734`–`:23747`) returns nine `{h, p, label, act}` shapes:
+
+| Branch | Headline | Label | Destination |
+|---|---|---|---|
+| `:23738` | Set up your site profile. | `SET UP PROFILE` | `cmd_route('profile')` |
+| `:23740` | Load your Master. | `LOAD MASTER` | `cmd_loadMaster()` |
+| `:23741` | Start a deployment. | `SELECT RACKS` | `mscope_open()` |
+| `:23742` | Capture your first rack. | `GO TO SCAN` | `cmd_route('work','scan')` |
+| `:23743` | Resolve N open blockers. | `GO TO HANDOFF` | `cmd_route('work','handoff')` |
+| `:23744` | Finish your shift handoff. | `GO TO HANDOFF` | `cmd_route('work','handoff')` |
+| `:23745` | Continue *dep* — N% deployed. | `GO TO DEPLOY` | `cmd_continueWork()` → `showMode('work')` |
+| `:23746` | Capture your first rack. | `GO TO SCAN` | `cmd_route('work','scan')` |
+| `:23747` | Start a rack trace before deploy. | `GO TO SCAN` | `cmd_route('work','scan')` |
+
+⚠ **The closest, `:23745`, lands on Build's WORKSPACE via `showMode('work')` — not on the deployment
+detail where `.571` put the picker.** So "carries the NBA verb" and "points to the picker" are two
+different destinations in every one of the nine states.
+
+✅ **A FALSE POSITIVE I ALMOST FILED, RECORDED SO NOBODY RE-FILES IT:** `:23743` reads *"Resolve N open
+blockers"* under a `GO TO HANDOFF` label, which scans as a wrong door. **It is correct.** Its own body
+text is *"A blocker bites the next shift first. Capture the proof note and route it into a handoff,"*
+so the label matches the action and the name says what the door opens. ⛔ **Do not "fix" it.**
+
+### ⛔ THREE WAYS TO IMPLEMENT (a). OWNER PICKS — THEY ARE NOT EQUIVALENT.
+
+- **(a-i) The line IS the NBA, relocated.** It renders `nba.label` and runs `nba.act`. Honest, names
+  match doors, `cmd_nba()` keeps a real face. ⚠ **But the Master-loaded first screen then does not
+  reliably point at the picker** — it points at whatever the next best action is.
+- **(a-ii) The line always opens the picker; the NBA supplies only the sentence.** The rule holds and
+  the destination is fixed. ⚠ **But `nba.label` and `nba.act` become unused**, so the brain is half-
+  dead and its own labels are discarded — a quieter version of the problem (a) was meant to solve.
+- ⭐ **(a-iii) ADD A TENTH BRANCH — RECOMMENDED.** `cmd_nba()` gains a steady-state branch (Master
+  loaded, deployment active, no blockers, no handoff draft) returning *"Pick a rack"* → the Build
+  picker. Then the line **always says what it opens**, and in the state Ship A actually cares about it
+  **is** the picker line. The other eight branches keep pointing where they correctly point.
+  ⚠ It is the only option that satisfies BOTH halves of the ruling without a lie or a dead field —
+  and it is a change to `cmd_nba()`, so it needs saying out loud rather than slipping in under a
+  markup strip.
 
 ### ⭐ AGREED — THE DOM CHECK RUNS BEFORE ANY DELETION
 
