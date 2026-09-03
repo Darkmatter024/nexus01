@@ -93,6 +93,23 @@ test.describe('pg-cmd DOM census — the real first screen', () => {
 // The census above proved the phone had NO two-state first screen: data-master
 // flipped and nothing moved. A-1 creates the distinction, so it gets asserted.
 // ─────────────────────────────────────────────────────────────────────────────
+// A live active deployment - what makes cs_renderHero take the "Tap one" branch.
+function deploymentSeed() {
+  const now = 1750000000000, DEP = 'dep_a1', RACK = 'rack_a1_0';
+  const P = ['mechanical','power','network','compute','validation'];
+  return {
+    phantom_deployments_v1: JSON.stringify([{ id: DEP, name: 'AUS-01 BUILD', status: 'active',
+      buildLead: 'J. Hamilton', created: now, updated: now, createdAt: now, updatedAt: now,
+      rackCount: 1, phaseCount: 5 }]),
+    phantom_deploy_racks_v1: JSON.stringify([{ id: RACK, deploymentId: DEP, rackId: 's1:001',
+      room: 'HALL-1', totalU: 48, slots: [], notes: '', powerCircuits: [], currentPhase: 'network', hosts: [] }]),
+    phantom_deploy_phases_v1: JSON.stringify(P.map((ty, i) => ({
+      id: 'phase_' + RACK + '_' + ty, deploymentId: DEP, rackId: RACK, type: ty, seqOrder: i + 1,
+      status: i < 2 ? 'complete' : 'pending', tasksTotal: 0, tasksDone: 0,
+      signedOffBy: null, signedOffAt: null, _gateOverride: false, _notes: '' }))),
+    phantom_active_deployment: DEP, phantom_manifest_last_deploy: DEP,
+  };
+}
 const hero = (page) => page.evaluate(() => {
   const g = (id) => { const e = document.getElementById(id); return e ? (e.textContent || '').trim() : null; };
   const cta = document.getElementById('cs-hero-cta');
@@ -141,5 +158,70 @@ test.describe('A-1 — the first screen answers one question', () => {
     await page.waitForTimeout(1000);
     const withMaster = await hero(page);
     expect(withMaster.title, 'the first screen reads identically with and without a Master - the pre-A-1 defect').not.toBe(noMaster.title);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v1.14.573 — THE DEFECT THE OWNER CAUGHT ON DEVICE AT .572.
+// "98 racks on US-SPK03. Tap one." rendered above a button reading GO TO HANDOFF.
+// The headline promised the picker; the button opened somewhere else. This pins
+// the pairing, not the wording: whatever the headline promises, the button opens.
+// ⛔ EXACT, not a bound. .572 passed every other test in this file.
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe('the hero button opens what the headline promises', () => {
+  test('⛔ ACTIVE DEPLOYMENT: headline says "Tap one" -> the CTA is the picker, whatever the NBA wants',
+    async ({ phantom, page }) => {
+      test.setTimeout(180000);
+      // ⛔ THIS FIXTURE IS THE OWNER'S SCREEN, AND THE FIRST VERSION OF IT WAS VACUOUS.
+      // It seeded only a Master, so `live` was false, the headline never said "Tap one", and the
+      // assertion below was skipped while the test reported PASS. Two corrections: an ACTIVE
+      // DEPLOYMENT is seeded so the headline reaches the "Tap one" branch, and the handoff key is
+      // `phantom_handoff_v1` - what cmd_render actually reads - not the invented name used first.
+      await phantom.boot({ seed: Object.assign({}, masterSeed(), deploymentSeed()) });
+      await page.evaluate(() => {
+        window._lastPhantomMaster = JSON.parse(localStorage.getItem('phantom_master_v1'));
+        // An open handoff draft drives cmd_nba to the GO TO HANDOFF branch, ABOVE the picker
+        // branch - so the NBA and the headline genuinely disagree. That disagreement is the defect.
+        try { localStorage.setItem('phantom_handoff_v1', JSON.stringify({ open: true, summary: '' })); } catch (_) {}
+        if (typeof showMode === 'function') showMode('command');
+        if (typeof cmd_render === 'function') cmd_render();
+      });
+      await page.waitForTimeout(1200);
+      const h = await page.evaluate(() => {
+        const g = (id) => { const e = document.getElementById(id); return e ? (e.textContent || '').trim() : null; };
+        const sub = document.getElementById('cs-hero-sub');
+        return {
+          title: g('cs-hero-title'), cta: g('cs-hero-cta'),
+          subShown: !!(sub && getComputedStyle(sub).display !== 'none'),
+          subText: sub ? (sub.textContent || '').trim() : null,
+        };
+      });
+      console.log('573 hero:', JSON.stringify(h));
+      // ⛔ UNCONDITIONAL. The first cut wrapped this in `if (/Tap one/...)` and the fixture never
+      // reached that state, so it passed while asserting nothing - the tolerant-bound failure this
+      // repo keeps getting bitten by. If the fixture stops producing the "Tap one" headline, THIS
+      // line fails and says so, which is the correct outcome: the reproduction is gone.
+      expect(h.title, 'fixture did not reach the "Tap one" state - the reproduction is broken, not the code')
+        .toContain('Tap one');
+      expect(h.cta, 'the headline promised the picker and the button opened something else - the .572 defect')
+        .toBe('PICK A RACK');
+      // And the NBA is not lost: it moved to the secondary line rather than being displaced.
+      expect(h.subShown, 'the NBA verb vanished instead of moving to the secondary line').toBe(true);
+      expect(h.subText, 'the secondary line is blank while the NBA had something to say').toBeTruthy();
+    });
+
+  test('the NBA is not silently dropped - it survives as the secondary line', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+    await page.waitForTimeout(1000);
+    const sub = await page.evaluate(() => {
+      const e = document.getElementById('cs-hero-sub');
+      return { exists: !!e, display: e ? getComputedStyle(e).display : null, text: e ? (e.textContent || '').trim() : null };
+    });
+    expect(sub.exists, 'the secondary NBA line is missing from the hero').toBe(true);
+    // No Master: nothing to say, so it must be hidden AND empty - never a tap target that does nothing.
+    expect(sub.display, 'an empty secondary line is still on screen wearing a tap target').toBe('none');
+    expect(sub.text, 'a hidden line still carries text').toBe('');
   });
 });

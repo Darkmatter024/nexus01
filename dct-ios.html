@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.572';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.573';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -13841,6 +13841,20 @@ if (typeof window !== 'undefined') {
             <div class="cs-kpi"><div class="cs-kpi-n" id="cs-kpi-pct">0%</div><div class="cs-kpi-k">Complete</div></div>
           </div>
           <button class="cs-hero-cta" id="cs-hero-cta" type="button" onclick="cmd_continueWork()">Continue deployment</button>
+          <!-- v1.14.573 — the NBA's SECONDARY line. The primary button always opens what the
+               headline promises (owner ruling); this carries the shift's next-best-action when
+               that action points somewhere else, so an open handoff or a blocker is still on the
+               first screen instead of being silently displaced by the picker door.
+               Filled by cs_renderHero(); hidden with no text and no handler when there is nothing
+               to say, so it is never a tap target that does nothing (Contract B14).
+               ⚠ Styled inline rather than in a CSS block: this is one element on one surface, and
+               the shell's card rules are id-scoped enough that a new class would have to fight
+               them. Cold Aisle floor is met by min-height, not by padding. -->
+          <div class="cs-hero-sub" id="cs-hero-sub" role="button" tabindex="0"
+               style="display:none;min-height:var(--tap-s,44px);box-sizing:border-box;
+                      align-items:center;margin-top:10px;padding:10px 2px;cursor:pointer;
+                      font-family:var(--mono);font-size:var(--fs-caption);letter-spacing:.06em;
+                      color:var(--cyan)"></div>
         </div>
         <!-- v1.14.460 — SHIFT'S DOOR (owner ruling 2026-08-14). It lives HERE, in the deck's own
              flow container, because that is the one place its visibility is STRUCTURAL rather than
@@ -23716,12 +23730,53 @@ function cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba, maste
   var bcell = E('cs-kpi-block-cell');
   if (blockerCount > 0) bcell.classList.add('hot'); else bcell.classList.remove('hot');
 
-  // v1.14.476: use NBA-emitted label so hero button matches NBA state
-  var btnLabel = (nba && nba.label) ? nba.label : (live ? 'Continue deployment' : 'Start a deployment');
-  E('cs-hero-cta').textContent = btnLabel;
-  // v1.14.478: bind onclick to nba.act (the rung-canonical door), not hard-coded cmd_continueWork.
-  // Mirrors cc-nbar (:23762) and cs-intel (:23822) pattern — label and action must pair.
-  E('cs-hero-cta').onclick = (nba && nba.act) ? nba.act : cmd_continueWork;
+  // ⛔ v1.14.573 — THE BUTTON OPENS WHAT THE HEADLINE PROMISES. OWNER RULING, FROM A DEVICE FAIL.
+  // .572 computed the headline from masterLoaded/live and the CTA from cmd_nba() INDEPENDENTLY, so
+  // the two could disagree — and on the owner's phone they did: "98 racks on US-SPK03. Tap one."
+  // sat above a button reading GO TO HANDOFF. The headline promised the picker and the button
+  // opened the handoff. That is names-say-what-the-door-opens, broken inside a single card, and
+  // .572's own comment had predicted the risk ("this renderer does not predict which door") without
+  // preventing it. Predicting a hazard is not mitigating it.
+  //
+  // ⭐ THE RULE: where the headline promises a SPECIFIC surface, the CTA IS that surface and the NBA
+  // gets no vote. Where the headline promises nothing specific, the NBA supplies the door — which is
+  // what it is for. One card, one primary door, and the label names it.
+  var ctaLabel, ctaAct;
+  if (!masterLoaded) {
+    ctaLabel = 'LOAD MASTER'; ctaAct = cmd_loadMaster;
+  } else if (live) {
+    ctaLabel = 'PICK A RACK'; ctaAct = cmd_openPicker;
+  } else {
+    // "Nothing deploying yet" promises no surface, so the NBA's computed verb IS the right door.
+    ctaLabel = (nba && nba.label) ? nba.label : 'Start a deployment';
+    ctaAct   = (nba && nba.act) ? nba.act : cmd_continueWork;
+  }
+  E('cs-hero-cta').textContent = ctaLabel;
+  E('cs-hero-cta').onclick = ctaAct;
+
+  // ⛔ AND THE NBA DOES NOT SILENTLY VANISH — THAT WOULD BE A REGRESSION, NOT A FIX.
+  // The .571 DOM census proved `.nba` paints NOTHING on the phone (it lives inside #cc-rail, which
+  // does not render), so the hero CTA was the NBA's ONLY face. Taking the primary button away from
+  // it in the "Tap one" state would drop the shift's next-best-action — an open handoff draft, a
+  // blocker — off the first screen entirely, and the technician would never learn it was there.
+  // ⭐ So it moves to a SECONDARY line, per the owner's ruling that the NBA "can appear as the
+  // secondary line but the primary door matches the headline". Shown only when the NBA is pointing
+  // somewhere the primary button is not, so the card never states one destination twice.
+  var sub = E('cs-hero-sub');
+  if (sub) {
+    var showSub = !!(live && masterLoaded && nba && nba.h && nba.act !== cmd_openPicker);
+    if (showSub) {
+      sub.textContent = String(nba.h).replace(/<br>/g, ' ') + '  ›';
+      sub.onclick = nba.act;
+      // ⚠ 'flex', not '' — clearing the inline display would fall back to a div's block default and
+      // the align-items in the markup would never apply. The element is inline-styled, so the JS has
+      // to name the display mode the style was written for.
+      sub.style.display = 'flex';
+    } else {
+      // Contract B14: a control with nothing to do is not left on screen wearing a tap target.
+      sub.textContent = ''; sub.onclick = null; sub.style.display = 'none';
+    }
+  }
 }
 
 function cmd_telemetry(activeDep, activePct, handoffDraft) {
