@@ -46,153 +46,85 @@ live active deployment. **That is exactly Ship A's "anyone who does land there."
 
 ---
 
-## §2 · A-E2 — WHAT ACTUALLY RENDERS ON A PHONE, **NO MASTER** ⚠ REV-2
+## §2 · A-E2 / A-E3 — ⭐ **REVISION 3: MEASURED ON THE REAL DOM. THE SOURCE CENSUS WAS WRONG.**
 
-Three CSS layers decide this. **Rev 1 knew the first and third and missed the second.**
+⛔ **THE OWNER RULED THE DOM CHECK, AND THE DOM CHECK OVERTURNED THIS DOCUMENT.** Rev 1 read a code
+comment instead of the cascade. Rev 2 read the cascade but resolved one media-block boundary with a
+heuristic instead of counting braces. **Rev 3 is what the phone actually paints**, captured by
+`test/e2e/98-cmd-census.spec.js` at **390x844 / WebKit** (the `phone-webkit` project - verified as the
+real viewport, not assumed from the project name).
 
-1. `#pg-cmd[data-master="0"]` `:9769` — hides **19** `cc-*` elements, `display:none!important`.
-2. ⚠ **REV-2 — `body.rd.cshell` IS ON BY DEFAULT.** `cshell_isOn()` (`:19347`) returns true unless the
-   `?cshell=0` rip-cord is pulled, and **`body.rd.cshell #cmd-shell { display:block }`** at `:58616`
-   sits inside `@media (min-width:0px)` (`:58567`) — **the Deck renders at every width.** The same
-   block hides the legacy band: **`body.rd.cshell #pg-cmd .cc-z0 { display:none }`** at **`:58626`**.
-   ⛔ **Rev 1 listed the `.cc-z0` site label as visible. It is not, at any width.**
-3. `.cs-dpanel { display:none }` `:59200`, re-enabled only ≥1024 (`:59352`, inside `:59326`).
+### THE MEASUREMENT — BOTH STATES, IDENTICAL
 
-### ✅ Corrected visible set — phone, no Master: **FIVE groups**
+```
+=== NO MASTER ===      data-master=0   body="rd cshell"
+=== MASTER LOADED ===  data-master=1   master_hasMaster=true
 
-| # | Element | file:line | Renderer / state | ✅ Assignment (same as §3) |
-|---|---|---|---|---|
-| 1 | `.cs-hd` — Deck header (brand lockup + `#cs-sitepill`) | `:13816` | markup; hidden only ≥1024 (`:59334`) | **lockup deleted — no home**; **site absorbed into A-S1/A-S2 headline** |
-| 2 | `.cs-microbar` — *"🔒 Secure session · On device"* | `:13826` | markup | **deleted — no home** |
-| 3 | **`#cs-hero`** — Deck hero card | `:13832` | `cs_renderHero()` `:23668` | **deleted — no home.** ⚠ In THIS state it is the *"Nothing deploying yet"* zero-state card, so nothing covers it — it simply goes |
-| 4 | `#cc-rail` — **empty container** | `:13964` | every child hidden by `:9769` | delete — it has no content |
-| 5 | **`.cc-ingest-zone`** | `:14029` | shown by `:9770`; door `cmd_loadMaster()`; label `LOAD MASTER` `:14031` | ⭐ **KEEP — it becomes A-S1's button** |
+  #cmd-shell                                   [2849px]
+    #cs-grid                                   [1279px]
+      #cs-hero        .cs-card.cs-hero          [425px]
+      #cs-shiftbar    .cs-card.cs-shiftbar      [ 83px]
+      #cs-intel       .cs-card.cs-dpanel        [225px]
+      #cs-health      .cs-card.cs-dpanel        [377px]
+      #cs-build       .cs-card.cs-dpanel         [109px]
+    #cs-lower         .cs-dpanel                [1437px]
+      #cs-fieldops    .cs-card.cs-dpanel        [497px]
+      #cs-fieldtools  .cs-card.cs-dpanel        [601px]
+      #cs-ready       .cs-card.cs-dpanel        [309px]
+```
 
-⛔ **Hidden (rev 1 got some of these wrong or missed them):** `.cc-z0` `:58626` (**all widths**) ·
-`#cs-shiftbar` `:13852` (inline `style="display:none"`) · `#cs-intel` `:13858` · `#cs-health` `:13874` ·
-`#cs-build` `:13883` · `#cs-lower` `:13890` — **all four `.cs-dpanel`, phone-hidden** · `#cs-side` /
-`#cs-top` `:59525` (≤1023) · plus the 19 `cc-*` from `:9769`.
+⛔ **THE TWO STATES PAINT IDENTICALLY.** `data-master` flips 0 to 1 and **not one painted element
+changes**. That single fact invalidates the premise both earlier revisions were built on.
 
-### ⭐ THE FINDING THAT CHANGES A-S1
+### ⛔ FOUR THINGS THIS OVERTURNS
 
-**`#cs-hero` renders with no Master and is NOT gated by `data-master`.** `cs_renderHero()` sets
-`:23677` eyebrow → **`No active deployment`**, `:23678` title → **`Nothing deploying yet`**, `:23681`
-hides the progress bar, and `:23692`/`:23695` take the CTA's label **and** action from `cmd_nba()`.
+**1. THE ENTIRE `cc-*` LEGACY COMMAND PAGE IS DEAD ON THE PHONE.** `.cc-z0`, `#cc-rail`, `#cc-center`
+and everything inside them paint at **zero height**. The Deck replaced them. ⛔ **So the 19-selector
+`#pg-cmd[data-master="0"]` hide rule at `:9769` - the rule rev 1 and rev 2 built their lists from -
+governs elements that DO NOT PAINT AT ALL on a phone.** It is dead CSS on this surface.
 
-✅ **IT IS HONEST — NO A-S6 VIOLATION.** No fake CTA, no invented number; the zero-state says what is
-true. ⛔ **BUT IT IS EXACTLY WHAT A-S1 FORBIDS:** *"Nothing else competes for the eye above the fold."*
-A hero card announcing *"Nothing deploying yet"* above a `LOAD MASTER` zone is a second thing to read
-before the one action.
+**2. `.cc-ingest-zone` DOES NOT RENDER.** Rev 1 called it *"already A-S1's button"* and recommended
+keeping it. **It paints nothing.** The load-Master door on the phone today is `#cs-hero`'s CTA, which
+`cmd_nba()` labels `LOAD MASTER` and points at `cmd_loadMaster()` (branch `:23740`).
 
-⚠ **So the no-Master screen is NOT "already there", which is what rev 1 concluded.** It is **five
-groups**, three of them Deck chrome rev 1 did not know rendered on a phone at all.
+**3. C-3 WAS WRONG - SHIFT READINESS IS ON THE PHONE, AT 309px.** Rev 2 concluded `#cs-ready` was
+desktop-only because `body.rd.cshell .cs-dpanel { display:flex }` (`:59352`) looked like it sat inside
+`@media (min-width:1024px)` (`:59326`). **Counted properly, that block CLOSES before `:59352`** - brace
+depth returns to 0 - so the rule is unscoped by width and every `.cs-dpanel` paints on the phone.
+⭐ **A-E5 still holds and the ruling still stands** (indeterminate gate, no deletion) - but it is a
+**phone-visible** panel, not a desktop-only one, so it is squarely inside Ship A's surface.
 
----
+**4. `#cs-fieldtools` PAINTS AT 601px** - and that is **P-4's duplicate ten-tool path**, the one the
+door ledger wants closed on the phone. It is live, on the first screen, 601px tall.
 
-## §3 · A-E3 — WHAT RENDERS ON A PHONE, **MASTER LOADED** ⚠ REV-2
+### ✅ THE REAL LIST SHIP A MUST ACT ON — NINE PAINTED GROUPS, ONE SURFACE
 
-`:9769` stops applying so all 19 `cc-*` return; `.cc-ingest-zone` goes (base rule `:9768`); `.cc-z0`
-**stays hidden** (`:58626`); the four `.cs-dpanel` panels **stay hidden** on a phone.
-
-⭐ **COMPLETED 2026-09-03 BY OWNER RULING.** Every cell is assigned per **IA-SHIFTNAV v2 §1**:
-rack-keyed → the rack · identity → SYS · everything else **deleted — no home**.
-⚠ **v2 §1 is applied AS RULED, NOT AS WRITTEN** — its "tools as rack-scoped views" line was struck by
-the E-8 ruling, and its "ISOLATE is dangerous" line was struck twice. Neither superseded clause is used.
-
-| # | Group | file:line | ✅ Assignment | Basis |
-|---|---|---|---|---|
-| 1 | `.cs-hd` brand lockup (PHANTOM / Field Intelligence System) | `:13816` | **deleted — no home** | decoration; not rack-keyed, not a §1 door |
-| 1b | `#cs-sitepill` — the site | `:13824` | **absorbed into A-S2 headline** | A-S2 already reads `N racks on <site>`; the site survives as the headline, not a pill |
-| 2 | `.cs-microbar` — "Secure session · On device" | `:13826` | **deleted — no home** | reassurance text; no function, no door |
-| 3 | `#cs-hero` — Deck hero + CTA | `:13832` | **deleted — covered by #10** | its CTA is `cmd_nba()`; the one line to the picker replaces it |
-| 4 | `#cs-shiftbar` | `:13852` | **→ SHIFT door** | §1 short list: *shift handoff keeps a door* |
-| 5 | `.cc-asst` — assistant card | `:13972` | **deleted — duplicate** | `openVaSheet(` has **8** call sites; the assistant keeps its own doors |
-| 6 | `.nba` — next-best-action | `:13981` | **deleted — no home** | ⚠ **not free — see the flag below** |
-| 7a | `.cc-qtools` → `SCAN` | `:13994` | **→ rack + picker** | §1, and FIRST-DOOR B-2: one SCAN, two contexts |
-| 7b | `.cc-qtools` → `LOG` | `:13995` | **→ rack** | §1: *log note* is rack-scoped |
-| 7c | `.cc-qtools` → `BLOCKER` | `:13996` | **→ rack** | §1: *flags / blockers for this rack* |
-| 8 | `#cc-sugg` · `#cc-chat` · `#cc-aistat` | `:14002`, `:14009`, `:14011` | **deleted — no phone home** | desktop rail, base `display:none` |
-| 9 | `.stats` — fleet stat cards | `:14015` | **deleted — no home** | fleet tallies; not rack-keyed, not a §1 door |
-| 10 | `.cc-rackline` | `:14017` | ✅ **KEEP — re-point `cmd_heroPickRack()` at the Build picker** | ⭐ **owner ruling: it IS the one line the Master-loaded screen needs. Do not write a new one.** |
-| 11 | `.cc-rackhero` | `:14020` | ⛔ **OUT OF SHIP A → `RACKHERO-RELOCATE`** | ⭐ **owner ruling:** under the rack model it belongs in the **Forge 3D aisle view**, not the first screen. New board item, **and it carries its disposal path**. |
-| 12 | `.cc-rackvitals` — RACKED / OPEN / BLOCKERS / NEXT-U | `:14025` | **→ rack** | rack-keyed. ⚠ verify it does not duplicate what the rack screen already shows |
-| 13 | `#cc-openbay` | `:14027` | **deleted — covered by the rack OPEN AISLE** | §1 *SEE IN AISLE* is rack-scoped **and already exists there** — a genuine door closed, not moved |
-| 14 | `.lens` — clocks | `:14034` | **deleted — no home** | not rack-keyed, not a door; iOS already shows the time |
-| 15a | `.trow` → `#tt-deploy` | `:14049` | **deleted — covered by #10** | same destination as the picker line |
-| 15b | `.trow` → `#tt-scan` | `:14050` | **→ rack + picker** | merges into the one SCAN (7a) |
-| 15c | `.trow` → `#tt-handoff` | `:14051` | **→ SHIFT door** | §1 short list |
-| 16 | `.sig-h` + `#cc-sig` — OPS SIGNAL | `:14054`, `:14055` | **closed — both signals re-home** | it renders exactly two rows (`:23426`–`:23427`): *handoff waiting* → SHIFT door; *Pod N%* → the picker line |
-| 17 | `#cc-foot` | `:14057` | **deleted — no phone home** | desktop footer |
-
-### ✅ RULED (a) — THE PICKER LINE CARRIES THE NBA VERB. ⚠ AND MEASURING IT FOUND A GAP.
-
-Rows 3 and 6 delete `cmd_nba()`’s only two faces — the phone `.nba` (`:23418`) and `#cs-hero`’s CTA
-(`:23695`); the markup at `:13854` calls them *"one brain, two faces."* **Owner ruled (a): the picker
-line (#10) carries the NBA verb**, so the brain keeps a face and does not become dead code.
-
-⛔ **THE GAP, FOUND BY READING ALL NINE BRANCHES RATHER THAN ASSUMING: NOT ONE OF THEM POINTS AT THE
-RACK PICKER.** `cmd_nba()` (`:23734`–`:23747`) returns nine `{h, p, label, act}` shapes:
-
-| Branch | Headline | Label | Destination |
+| # | Painted element | Height | Assignment |
 |---|---|---|---|
-| `:23738` | Set up your site profile. | `SET UP PROFILE` | `cmd_route('profile')` |
-| `:23740` | Load your Master. | `LOAD MASTER` | `cmd_loadMaster()` |
-| `:23741` | Start a deployment. | `SELECT RACKS` | `mscope_open()` |
-| `:23742` | Capture your first rack. | `GO TO SCAN` | `cmd_route('work','scan')` |
-| `:23743` | Resolve N open blockers. | `GO TO HANDOFF` | `cmd_route('work','handoff')` |
-| `:23744` | Finish your shift handoff. | `GO TO HANDOFF` | `cmd_route('work','handoff')` |
-| `:23745` | Continue *dep* — N% deployed. | `GO TO DEPLOY` | `cmd_continueWork()` → `showMode('work')` |
-| `:23746` | Capture your first rack. | `GO TO SCAN` | `cmd_route('work','scan')` |
-| `:23747` | Start a rack trace before deploy. | `GO TO SCAN` | `cmd_route('work','scan')` |
+| 1 | `#cs-hero` | 425px | **KEEP, reshaped** - it already carries the NBA verb and the LOAD-MASTER door. This is where A-S1/A-S2 land |
+| 2 | `#cs-shiftbar` | 83px | **-> SHIFT door** |
+| 3 | `#cs-intel` | 225px | deleted - no home (assistant keeps its own doors) |
+| 4 | `#cs-health` | 377px | **-> SYS** (diagnostics) |
+| 5 | `#cs-build` | 109px | **-> the picker line** (it is the Build summary) |
+| 6 | `#cs-lower` | 1437px | container - goes with its three children |
+| 7 | `#cs-fieldops` | 497px | **-> rack** (field ops metadata is rack-keyed) |
+| 8 | `#cs-fieldtools` | 601px | ⭐ **deleted - P-4's duplicate ten-tool path; the OPS row on Build is the canonical door** |
+| 9 | `#cs-ready` | 309px | **KEEP** - A-E5 ruled: indeterminate gate for unset, no deletion |
 
-⚠ **The closest, `:23745`, lands on Build's WORKSPACE via `showMode('work')` — not on the deployment
-detail where `.571` put the picker.** So "carries the NBA verb" and "points to the picker" are two
-different destinations in every one of the nine states.
+⭐ **SHIP A IS NOW A DECK SHIP, NOT A `cc-*` SHIP.** Every element it must remove or re-home is a
+`cs-*` Deck card. **The `cc-*` work in revisions 1 and 2 was aimed at markup that does not paint.**
 
-✅ **A FALSE POSITIVE I ALMOST FILED, RECORDED SO NOBODY RE-FILES IT:** `:23743` reads *"Resolve N open
-blockers"* under a `GO TO HANDOFF` label, which scans as a wrong door. **It is correct.** Its own body
-text is *"A blocker bites the next shift first. Capture the proof note and route it into a handoff,"*
-so the label matches the action and the name says what the door opens. ⛔ **Do not "fix" it.**
+⚠ **AND THE TWO-STATE RULE HAS TO BE BUILT, NOT RESTORED.** A-S1/A-S2 assume the first screen already
+distinguishes no-Master from Master-loaded. **On the phone it does not** - the Deck is identical in
+both. Ship A does not *strip down to* two states; it **creates** them.
 
-### ✅ RULED (a-iii) — AND MEASURING IT FOUND THE TENTH BRANCH ALREADY EXISTS
+⚠ **`.cc-rackline` (row 10 of the old table) DOES NOT PAINT EITHER**, so "keep it and re-point
+`cmd_heroPickRack()`" cannot be implemented as written. **The one line to the picker has to live in
+`#cs-hero`** - which is also where ruling (a-iii)'s re-pointed NBA verb lands. ⭐ **The two rulings
+converge on the same element, which is the first thing in this campaign that has gotten SIMPLER.**
 
-Owner ruled **(a-iii): add a tenth `cmd_nba()` branch for the steady state, returning "Pick a rack"
-at the Build picker.** ⛔ **Measured before writing a line: THAT STATE ALREADY HAS A BRANCH.**
-
-The chain short-circuits in order, so by the time control reaches `:23745` the blocker branch
-(`:23743`) and the handoff branch (`:23744`) have already returned. **"No blockers, no handoff draft"
-is therefore implicit**, and `:23745` reads:
-
-    if (st.activeDep && st.activePct < 100)   ->   "Continue <dep> - N% deployed."  GO TO DEPLOY
-
-⭐ **That IS the steady state the ruling describes** — Master loaded, deployment active, no blockers,
-no handoff draft. So a genuinely new tenth branch has nowhere to stand:
-
-- placed **before** `:23745`, it shadows it and `:23745` becomes unreachable — **dead code, the `.473`
-  shape**, which is the exact defect this campaign keeps correcting;
-- placed **after** `:23745`, the new branch is itself unreachable.
-
-✅ **SO (a-iii) IS IMPLEMENTED BY RE-POINTING `:23745`, NOT BY ADDING A TENTH.** Its label becomes the
-picker verb and its `act` opens the Build picker instead of `cmd_continueWork()` -> `showMode('work')`,
-which today lands on Build's workspace rather than the deployment detail where `.571` put the picker.
-**The ruling's intent is served exactly; only the mechanism narrows.** Reported rather than performed
-quietly - the same correction shape as `.559`, `.564` and `.571`.
-
-⚠ **AND IT SHOULD NOT SHIP ON ITS OWN.** `cmd_nba()` has exactly two faces today, the phone `.nba`
-(`:23418`) and `#cs-hero`'s CTA (`:23695`) - **and Ship A deletes both (rows 6 and 3).** Shipping the
-re-point standalone would produce one visible change that Ship A then removes, and the durable face
-(`.cc-rackline`, row 10) does not exist until Ship A builds it. ⭐ **Recommendation: the re-point lands
-INSIDE Ship A, in the same stroke that gives it its face.** Owner rules.
-
-### ⭐ AGREED — THE DOM CHECK RUNS BEFORE ANY DELETION
-
-Owner ruling: **Generator takes a Playwright look at the real first screen — BOTH states — at
-iPhone 15 / WebKit before any deletion, and diffs it against this source census. Discrepancies are
-reported, not absorbed.**
-
-⭐ **This is the direct answer to rev 1’s failure.** A source census read a comment instead of the
-cascade and got two of five no-Master elements wrong. **The census is now a hypothesis the DOM
-confirms — not a list to delete from.**
+⛔ **THE OLD §2/§3 SOURCE LISTS ARE SUPERSEDED AND MUST NOT BE PATCHED FROM.** They are kept only in
+git history, as the record of how a source census can be read wrong twice in a row.
 
 ## §4 · A-E5 — READINESS: ✅ RULED, NO DELETION
 
