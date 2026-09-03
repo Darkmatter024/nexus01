@@ -39,6 +39,19 @@
 >   `docs/RACK-ELEVATION-PHASE0-EVIDENCE.md`. **What remains is the owner's amendment, not more
 >   measurement.**
 >
+> ⭐ **P-8 CONFIRMED AND LOCATED 2026-09-02, on the `.571` device pass — still open, and now with an
+> owner.** The owner saw the empty **RACK PREVIEW** card rendering on `.571`'s new first screen and asked
+> whether it is the same component. **It is, and it was measured rather than assumed:** the card has
+> exactly ONE construction site in the file — `var pv = E('div', 'bw-card bw-prev')` at
+> `dct-ios.html:22266`, inside `bw_render()` (`:22076`), carrying the `Rack preview` header and the
+> `Open aisle` button P-8 describes. **One renderer, reached by two paths:** the BOM path
+> (`rd_openOpsTool` → `showMode('work')` → `bw_render()`) and, since `.571`, the boot landing
+> (`deploy_showDetail` → `deploy_ensureDeployPanelVisible` → `showMode('work')` → `bw_render()`).
+> ⛔ **`.571` DID NOT CREATE THIS CARD — IT GAVE IT A THIRD AUDIENCE**, which is exactly *two paths to
+> the same fact is a defect*. ✅ **IT CLOSES IN `SHIP-HANDOFF-FIRST-DOOR.md` SHIP A** (owner, 2026-09-02),
+> whose A-S1 removes every competing element from the first screen; P-8 is not its own ship.
+> ⚠ **Do not "fix" it by hiding it** — FIRST-DOOR §6 is *remove, do not hide*.
+>
 > **⛔ STILL OPEN, UNSTARTED:** P-6, P-7, P-8, P-9, P-10, **P-12** (`forge.html` carries four
 > hardcoded `claude-sonnet-4-20250514` strings at `:4571`, `:4772`, `:6286`, `:9143` — a **Deprecated**
 > ID, same bug class as P-11, its own ship), and **Ship 2b** (four orphaned functions, `.rack-hybrid*`
