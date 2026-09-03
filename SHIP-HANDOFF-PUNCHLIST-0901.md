@@ -17,26 +17,47 @@
 >   key into the Worker secret. ⛔ **No code change, no header, no commit.** If the assistant ever dies
 >   again, **check the Worker's key scope before touching `dct-ios.html`** — three of the four bugs
 >   were invisible from the client source. Full record in `PHANTOM_CURRENT_STATE.md`.
+> - **P-2 — CLOSED** at `.570` (`415807f`), **ruling (a)**. The nudge read *"404 min on POWER (typical:
+>   60 min)"* and now reads *"404 min on POWER · no baseline yet"*. ⭐ **Phase 0 changed the ruling's
+>   shape:** the constant did **two jobs** — the stall TRIGGER and the displayed comparison. Labelling
+>   the nudge *"no baseline yet"* while an invented baseline still decided **when the app speaks** would
+>   have been a worse honesty position, so the trigger stays and only the display goes. ⛔ **Do not
+>   remove the trigger on a later "finish the job" pass** — that is not what (a) asked for. Ruling (b)
+>   (compute from real history) remains open and its true prerequisite is proving the start-to-complete
+>   pairing is sound, not "five completions".
 > - **P-4 — CLOSED** at `.566` (`19684e5`). `30-rack-above-the-fold:79` is green for the first time
 >   since `.462`, and the 150px bar was **not** re-pinned — the owner ruled to chase the cause, which
 >   turned out to be this list's own PASTE door costing R1-D 98 of its measured 176px.
 > - **O-3 — CLOSED.** Worker streaming pass-through (v2.1) deployed and confirmed.
 >
 > **⏳ PARTIAL**
-> - **P-5 —** both imports are done (`bcd0205` v2, `1cd3078` this file); the **restart is the owner's**
->   and is still pending.
+> - **P-5 — CLOSED 2026-09-02.** Both imports were done (`bcd0205` v2, `1cd3078` this file) and the
+>   **owner performed the restart**; this file was re-supplied from Downloads on the far side of it,
+>   which is the import step the item asks for.
 > - **P-3 —** its Phase 0 is already answered: the references blocking S-14 are `cmd_rackHeroFlat`
 >   (`:23705`) and `RackEngine.renderFlat` (`:38841`, under R-05) — recorded in
 >   `docs/RACK-ELEVATION-PHASE0-EVIDENCE.md`. **What remains is the owner's amendment, not more
 >   measurement.**
 >
-> **⛔ STILL OPEN, UNSTARTED:** P-2, P-6, P-7, P-8, P-9, P-10, **P-12** (`forge.html` carries four
+> **⛔ STILL OPEN, UNSTARTED:** P-6, P-7, P-8, P-9, P-10, **P-12** (`forge.html` carries four
 > hardcoded `claude-sonnet-4-20250514` strings at `:4571`, `:4772`, `:6286`, `:9143` — a **Deprecated**
 > ID, same bug class as P-11, its own ship), and **Ship 2b** (four orphaned functions, `.rack-hybrid*`
 > CSS, five permanently-null `#reh3dCanvasHost` guards).
 >
-> ⚠ **BASELINE:** this list was written against `v1.14.565`. Live is `.569`. Any `file:line` quoted
+> ⚠ **BASELINE:** this list was written against `v1.14.565`. Live is **`.571`**. Any `file:line` quoted
 > from it must be re-verified before use.
+>
+> ⭐ **ANNEX CORRECTED 2026-09-02 (second pass, at `.571`), AND THE CORRECTION IS THE POINT.** This annex
+> was written at `.569` and listed **P-2 as STILL OPEN — it was already CLOSED at `.570`** ("no invented
+> number shown as a benchmark", ruling (a); the trigger stayed, only the displayed comparison went).
+> A status line that reports finished work as unstarted is how shipped work gets re-shipped, which is
+> the churn `.559`, `.564` and `.571` each had to correct by measurement. **A status annex is itself a
+> claim and goes stale exactly like a `file:line`.**
+>
+> ⚠ **NOT ON THIS LIST, AND NOT A PUNCH-LIST ITEM:** `.571` shipped **IA-SHIFTNAV v2 Ship 2** — boot
+> lands on the rack picker. It bears on **P-9**, whose consolidation this list already assigns to
+> IA-SHIFTNAV Phase 1. ⛔ **`.571` IS UNVERIFIED — one unverified ship is the gate maximum, so nothing
+> below starts until the owner stamps it from the iPhone.**
 **Owner walk-through of the live app, 2026-09-01 evening, v1.14.565. Ten items. Evidence-first, one visible change per ship, door ledger on every ship.**
 
 - **Status:** APPROVED as a punch list. Each item becomes its own ship (or folds into the named spec). Owner sequences; no self-scheduling.
