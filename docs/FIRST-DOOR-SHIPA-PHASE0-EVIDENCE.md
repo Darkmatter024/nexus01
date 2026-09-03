@@ -60,11 +60,11 @@ Three CSS layers decide this. **Rev 1 knew the first and third and missed the se
 
 ### ✅ Corrected visible set — phone, no Master: **FIVE groups**
 
-| # | Element | file:line | Renderer / state | Destination — owner fills |
+| # | Element | file:line | Renderer / state | ✅ Assignment (same as §3) |
 |---|---|---|---|---|
-| 1 | `.cs-hd` — Deck header | `:13816` | markup; hidden only ≥1024 (`:59334`) | ? |
-| 2 | `.cs-microbar` — *"🔒 Secure session · On device"* | `:13826` | markup | ? |
-| 3 | **`#cs-hero`** — Deck hero card | `:13832` | `cs_renderHero()` `:23668` | ? |
+| 1 | `.cs-hd` — Deck header (brand lockup + `#cs-sitepill`) | `:13816` | markup; hidden only ≥1024 (`:59334`) | **lockup deleted — no home**; **site absorbed into A-S1/A-S2 headline** |
+| 2 | `.cs-microbar` — *"🔒 Secure session · On device"* | `:13826` | markup | **deleted — no home** |
+| 3 | **`#cs-hero`** — Deck hero card | `:13832` | `cs_renderHero()` `:23668` | **deleted — no home.** ⚠ In THIS state it is the *"Nothing deploying yet"* zero-state card, so nothing covers it — it simply goes |
 | 4 | `#cc-rail` — **empty container** | `:13964` | every child hidden by `:9769` | delete — it has no content |
 | 5 | **`.cc-ingest-zone`** | `:14029` | shown by `:9770`; door `cmd_loadMaster()`; label `LOAD MASTER` `:14031` | ⭐ **KEEP — it becomes A-S1's button** |
 
@@ -94,34 +94,57 @@ groups**, three of them Deck chrome rev 1 did not know rendered on a phone at al
 `:9769` stops applying so all 19 `cc-*` return; `.cc-ingest-zone` goes (base rule `:9768`); `.cc-z0`
 **stays hidden** (`:58626`); the four `.cs-dpanel` panels **stay hidden** on a phone.
 
-| # | Group | file:line | Renderer | Destination — owner fills |
+⭐ **COMPLETED 2026-09-03 BY OWNER RULING.** Every cell is assigned per **IA-SHIFTNAV v2 §1**:
+rack-keyed → the rack · identity → SYS · everything else **deleted — no home**.
+⚠ **v2 §1 is applied AS RULED, NOT AS WRITTEN** — its "tools as rack-scoped views" line was struck by
+the E-8 ruling, and its "ISOLATE is dangerous" line was struck twice. Neither superseded clause is used.
+
+| # | Group | file:line | ✅ Assignment | Basis |
 |---|---|---|---|---|
-| 1 | `.cs-hd` + `.cs-microbar` | `:13816`, `:13826` | markup | ? |
-| 2 | `#cs-hero` (live: name, %, KPIs, CTA) | `:13832` | `cs_renderHero()` `:23668` | ? |
-| 3 | `#cs-shiftbar` | `:13852` | JS-shown when a shift end is set | ? |
-| 4 | `.cc-asst` — assistant card | `:13972` | `#cc-asst-summary` via `cmd_render` | ? |
-| 5 | `.nba` — next-best-action | `:13981` | `#cc-nbah/p/r` `:13984`–`:13986`; copy `:23738`–`:23741` | ? |
-| 6 | `.cc-qtools` — SCAN · LOG · BLOCKER | `:13991` | `:13995`–`:13997` | ? |
-| 7 | `#cc-sugg` · `#cc-chat` · `#cc-aistat` | `:14002`, `:14009`, `:14011` | base `display:none`, desktop rail | delete — no phone home |
-| 8 | `.stats` | `:14015` | `cmd_render` | ? |
-| 9 | `.cc-rackline` | `:14017` | door `cmd_heroPickRack()` | ⭐ **candidate for the "one line to the picker"** |
-| 10 | `.cc-rackhero` | `:14020` | `cmd_mountRackHero()` `:23884` | ⛔ **WebGL — see below** |
-| 11 | `.cc-rackvitals` | `:14025` | fed from the elevation | ? |
-| 12 | `#cc-openbay` | `:14027` | `cmd_openHeroBay()` `:24110` | ? |
-| 13 | `.lens` — clocks | `:14034` | `cmd_clock()`, 15s interval `:19442` | ? |
-| 14 | `.trow` | `:14048` | markup | ? |
-| 15 | `.sig-h` + `#cc-sig` — OPS SIGNAL | `:14054`, `:14055` | `cmd_render` | ? |
-| 16 | `#cc-foot` | `:14057` | desktop footer | delete — no phone home |
+| 1 | `.cs-hd` brand lockup (PHANTOM / Field Intelligence System) | `:13816` | **deleted — no home** | decoration; not rack-keyed, not a §1 door |
+| 1b | `#cs-sitepill` — the site | `:13824` | **absorbed into A-S2 headline** | A-S2 already reads `N racks on <site>`; the site survives as the headline, not a pill |
+| 2 | `.cs-microbar` — "Secure session · On device" | `:13826` | **deleted — no home** | reassurance text; no function, no door |
+| 3 | `#cs-hero` — Deck hero + CTA | `:13832` | **deleted — covered by #10** | its CTA is `cmd_nba()`; the one line to the picker replaces it |
+| 4 | `#cs-shiftbar` | `:13852` | **→ SHIFT door** | §1 short list: *shift handoff keeps a door* |
+| 5 | `.cc-asst` — assistant card | `:13972` | **deleted — duplicate** | `openVaSheet(` has **8** call sites; the assistant keeps its own doors |
+| 6 | `.nba` — next-best-action | `:13981` | **deleted — no home** | ⚠ **not free — see the flag below** |
+| 7a | `.cc-qtools` → `SCAN` | `:13994` | **→ rack + picker** | §1, and FIRST-DOOR B-2: one SCAN, two contexts |
+| 7b | `.cc-qtools` → `LOG` | `:13995` | **→ rack** | §1: *log note* is rack-scoped |
+| 7c | `.cc-qtools` → `BLOCKER` | `:13996` | **→ rack** | §1: *flags / blockers for this rack* |
+| 8 | `#cc-sugg` · `#cc-chat` · `#cc-aistat` | `:14002`, `:14009`, `:14011` | **deleted — no phone home** | desktop rail, base `display:none` |
+| 9 | `.stats` — fleet stat cards | `:14015` | **deleted — no home** | fleet tallies; not rack-keyed, not a §1 door |
+| 10 | `.cc-rackline` | `:14017` | ✅ **KEEP — re-point `cmd_heroPickRack()` at the Build picker** | ⭐ **owner ruling: it IS the one line the Master-loaded screen needs. Do not write a new one.** |
+| 11 | `.cc-rackhero` | `:14020` | ⛔ **OUT OF SHIP A → `RACKHERO-RELOCATE`** | ⭐ **owner ruling:** under the rack model it belongs in the **Forge 3D aisle view**, not the first screen. New board item, **and it carries its disposal path**. |
+| 12 | `.cc-rackvitals` — RACKED / OPEN / BLOCKERS / NEXT-U | `:14025` | **→ rack** | rack-keyed. ⚠ verify it does not duplicate what the rack screen already shows |
+| 13 | `#cc-openbay` | `:14027` | **deleted — covered by the rack OPEN AISLE** | §1 *SEE IN AISLE* is rack-scoped **and already exists there** — a genuine door closed, not moved |
+| 14 | `.lens` — clocks | `:14034` | **deleted — no home** | not rack-keyed, not a door; iOS already shows the time |
+| 15a | `.trow` → `#tt-deploy` | `:14049` | **deleted — covered by #10** | same destination as the picker line |
+| 15b | `.trow` → `#tt-scan` | `:14050` | **→ rack + picker** | merges into the one SCAN (7a) |
+| 15c | `.trow` → `#tt-handoff` | `:14051` | **→ SHIFT door** | §1 short list |
+| 16 | `.sig-h` + `#cc-sig` — OPS SIGNAL | `:14054`, `:14055` | **closed — both signals re-home** | it renders exactly two rows (`:23426`–`:23427`): *handoff waiting* → SHIFT door; *Pod N%* → the picker line |
+| 17 | `#cc-foot` | `:14057` | **deleted — no phone home** | desktop footer |
 
-⛔ **SIXTEEN GROUPS — not the fifteen rev 1 said, and not §1's nine.** A-S2 replaces all of it with a
-headline plus **one line pointing to the picker on Build**.
+### ⛔ ONE FLAG THE TABLE CANNOT CLOSE BY ITSELF — `cmd_nba()` LOSES BOTH ITS FACES
 
-⛔ **`.cc-rackhero` (#10) IS THE ONE WITH TEETH, AND IT IS NOT MARKUP.** `cmd_mountRackHero()`
-(`:23884`) mounts the INSPECT-3D WebGL scene, and `showMode()` disposes it on leaving Command
-(`:19258`–`:19260`). **Removing it removes a live WebGL attachment and its disposal path** — Contract
-A6 territory. ⭐ **It should be its own slice, verified separately from the markup strip.**
+`cmd_nba()` (`:23734`) has exactly **two** rendering consumers: the phone `.nba` (`:23418`) and
+`#cs-hero`’s CTA (`:23695`). **Rows 3 and 6 delete both.** The markup at `:13854` says so itself —
+*"the SAME cmd_nba() recommendation the phone NBA uses — one brain, two faces."*
 
----
+⛔ **So Ship A as assigned turns `cmd_nba()` into dead code** — the `.473` shape exactly: an intended
+removal that leaves a function with zero callers and nothing failing loudly. **Two honest options, and
+the owner rules:** **(a)** the picker line (#10) carries the NBA verb, so the brain keeps one face; or
+**(b)** `cmd_nba()` is retired **in the same ship**, with a grep gate proving zero callers.
+⚠ **What must NOT happen is (c): delete the faces, leave the brain, and say nothing.**
+
+### ⭐ AGREED — THE DOM CHECK RUNS BEFORE ANY DELETION
+
+Owner ruling: **Generator takes a Playwright look at the real first screen — BOTH states — at
+iPhone 15 / WebKit before any deletion, and diffs it against this source census. Discrepancies are
+reported, not absorbed.**
+
+⭐ **This is the direct answer to rev 1’s failure.** A source census read a comment instead of the
+cascade and got two of five no-Master elements wrong. **The census is now a hypothesis the DOM
+confirms — not a list to delete from.**
 
 ## §4 · A-E5 — READINESS: ✅ RULED, NO DELETION
 
@@ -164,17 +187,29 @@ hardcodes three more ids. **Move the element or parameterize the host — never 
 
 ---
 
-## §7 · WHAT THE OWNER IS ASKED TO CONFIRM
+## §7 · ✅ ASSIGNED — WHAT REMAINS FOR THE OWNER
 
-1. **§2 — five visible groups with no Master**, not the two rev 1 claimed. Specifically that
-   **`.cs-hd`, `.cs-microbar` and `#cs-hero` render on the phone** and must be removed or re-homed.
-2. **§3 — sixteen groups with a Master**, each needing a destination or an explicit
-   *"deleted — no home."* **The `?` cells are the ones only the owner can fill.**
-3. **`.cc-rackhero` (#10) as its own slice** — a live WebGL attachment with a disposal path, not markup.
-4. **`.cc-rackline` (#9) as the "one line pointing to the picker"** — it already exists and its door is
-   `cmd_heroPickRack()`. **Re-point it at the Build picker, or write a new line?**
+⭐ **Every cell in §2 and §3 is now assigned.** Four rulings closed the table (2026-09-03):
+`.cc-rackhero` leaves Ship A as **RACKHERO-RELOCATE** · `.cc-rackline` is **kept and re-pointed** and
+is *the* one line · every other cell follows **v2 §1** · and **Generator diffs the real DOM before any
+deletion**.
 
----
+### Confirm before patching
+
+1. **The completed §3 table** — 23 assignment rows. Read the *Basis* column; it is where a wrong
+   assignment would hide.
+2. ⛔ **The `cmd_nba()` flag** — rows 3 and 6 delete its only two faces, which makes it dead code
+   (`.473` shape). **(a)** the picker line carries the NBA verb, or **(b)** retire `cmd_nba()` in the
+   same ship with a zero-caller grep gate. **This is the one open decision in the table.**
+3. **`.cc-rackvitals` (#12)** — assigned to the rack, but flagged: verify it does not duplicate what
+   the rack screen already shows before it is moved there.
+
+### Sequenced next, not now
+
+- **RACKHERO-RELOCATE** — `.cc-rackhero` (`:14020`) to the Forge 3D aisle view, **carrying its
+  disposal path** (`cmd_mountRackHero()` `:23884`; `showMode` disposal `:19258`–`:19260`). Contract A6.
+- **Generator writes T1/T2 and the DOM diff** at iPhone 15 / WebKit — **before** any deletion.
+- **Readiness indeterminate-gate** (§4) — desktop Deck, outside Ship A.
 
 ## BOUNDS
 
