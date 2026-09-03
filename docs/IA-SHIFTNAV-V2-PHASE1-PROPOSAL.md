@@ -138,7 +138,16 @@ The eight stay one level up, on Build's OPS row.
 
 ## P-3 · DOCK AND TAP COUNTS
 
-**Proposed dock:** `RACKS` · `SHIFT` · `SYS` — three slots, per §2. Exit stays a hold gesture.
+⛔ **SUPERSEDED — OWNER RULING 2026-09-03: `SHIP-HANDOFF-INTEL-DOCK.md` GOVERNS THE DOCK.** The dock
+is `COMMAND · BUILD · TOOLS · GHOST` — four slots — and EXIT moves to the last item of the SYS menu.
+**Do not build the three-slot dock below, and do not cite it as a target.** It is kept only so the
+reasoning that produced it stays legible.
+
+⚠ **What SURVIVES the supersession, because it was never about slot count:** the tap-count table in
+this section, the `.530` label-risk note, and the stranger test's named task. Those measure reach,
+not layout.
+
+~~**Proposed dock:** `RACKS` · `SHIFT` · `SYS` — three slots, per §2. Exit stays a hold gesture.~~
 Scan lives on the rack and on the picker, never as a slot (ruled).
 
 ⚠ **Three slots at 390px is 126px each** — far above the 44px floor and *better* than today's 95px.

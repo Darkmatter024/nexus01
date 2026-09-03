@@ -14,7 +14,20 @@
 > completes."* Ship A is **not** complete — A-2b, A-3 and A-4 remain — and `.574` is unverified,
 > which is the ship gate at its limit. No Phase 0 has been run.
 >
-> ⛔ **A DOCK COLLISION IS OPEN AND IS REPORTED, NOT ABSORBED.** This is the **third** dock shape in
+> ✅ **COLLISION RULED, 2026-09-03: THIS DOCUMENT GOVERNS THE DOCK. P-3's dock proposal is
+> SUPERSEDED** and is struck in `docs/IA-SHIFTNAV-V2-PHASE1-PROPOSAL.md`.
+>
+> ⚠ **WHAT THE RULING DOES AND DOES NOT REACH, stated so it is not over-read.** It settles the DOCK.
+> Contract A8 also calls SHIFT a **primary product pillar**, and that claim is not a dock claim —
+> `CLAUDE.md` already distinguishes them in A8's own words: *"Removing that slot removes the slot,
+> **not the feature**."* ⭐ **So SHIFT keeps a door and loses a slot**, which is exactly the state
+> `.574` shipped: `#cs-shiftbar` stays in `#cs-grid`, gated on the Master, under the 2026-08-14
+> ruling. **No contract is broken and none is quietly rewritten.**
+> ⛔ **The one thing left genuinely open:** if M4 ever arrives wanting a SHIFT dock slot, it collides
+> with the ghost. That is a future ruling, not a present contradiction — recorded so it is not
+> re-discovered as a surprise.
+>
+> **The collision as first reported:** this was the **third** dock shape in
 > the repo and the three disagree on both count and contents:
 >
 > | Source | Dock | Status |
