@@ -132,7 +132,7 @@ loader is written. The surviving label is the single string `LOAD MASTER`.
 
 ⚠ **What the surviving door must SHOW is not yet built.** P-6 requires *"loaded Master filename +
 saved date + source (uploaded / restored from cache)"*. The banner today renders
-`siteCode · totalRacks racks · loaded ts` (`:37015`) plus a provenance extra, and the Master object
+`siteCode · totalRacks racks · loaded ts` (`:37017`, banner opens `:37015`) plus a provenance extra, and the Master object
 carries `sourceFile`, `savedAt`/`ingestedAt` and `restoredFromStorage` (seen at `:34483`, `:34781`).
 **The fields exist; the composition does not.** That is Ship work, not evidence, and it is flagged so
 the ship is not scoped as "move a button".
