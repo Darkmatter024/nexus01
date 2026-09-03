@@ -225,3 +225,64 @@ test.describe('the hero button opens what the headline promises', () => {
     expect(sub.text, 'a hidden line still carries text').toBe('');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v1.14.574 — A-2a. SHIFT's door is KEPT and GATED (owner ruling).
+// ⛔ The first cut of the gate sat INSIDE shift_renderHero's signature guard,
+// which only fires when the SHIFT STATE changes - so loading a Master left the
+// door hidden until the clock ticked. Present, wired, correct and dead: the
+// exact failure the 2026-08-14 ruling put this door in #cs-grid to prevent.
+// The DOM census caught it. This pins both halves so it cannot come back.
+// ─────────────────────────────────────────────────────────────────────────────
+const shiftbar = (page) => page.evaluate(() => {
+  const e = document.getElementById('cs-shiftbar');
+  if (!e) return { exists: false };
+  return { exists: true, display: getComputedStyle(e).display, h: Math.round(e.getBoundingClientRect().height) };
+});
+
+test.describe('A-2a — SHIFT door kept, gated on the Master', () => {
+  test('NO MASTER: the shift door is hidden - A-S1 says nothing else competes', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+    await page.waitForTimeout(1200);
+    const s = await shiftbar(page);
+    expect(s.exists, 'the shift door was deleted - it must be KEPT and gated, per the 2026-08-14 ruling').toBe(true);
+    expect(s.display, 'a shift-end control on a device with no Master is a job that does not exist').toBe('none');
+  });
+
+  test('⛔ MASTER LOADED: the shift door RETURNS - it must not stay dead after a Master arrives',
+    async ({ phantom, page }) => {
+      test.setTimeout(180000);
+      await phantom.boot({ seed: {} });
+      await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+      await page.waitForTimeout(800);
+      // Load the Master AFTER first paint. This is the ordering that broke: the signature guard had
+      // already run once, so a gate inside it never re-evaluated and the door stayed hidden forever.
+      await page.evaluate(() => {
+        window._lastPhantomMaster = { siteCode: 'AUS-01', racksByCab: { 'x': {} } };
+        if (typeof cmd_render === 'function') cmd_render();
+        if (typeof shift_renderHero === 'function') shift_renderHero();
+      });
+      await page.waitForTimeout(800);
+      const s = await shiftbar(page);
+      expect(s.display, 'the shift door stayed hidden after a Master loaded - present, wired, correct and dead')
+        .not.toBe('none');
+      expect(s.h, 'the shift door has no height - it is not structurally visible').toBeGreaterThan(40);
+    });
+
+  test('the two deleted panels are gone, markup and all', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+    await page.waitForTimeout(800);
+    const gone = await page.evaluate(() => ({
+      intel: !!document.getElementById('cs-intel'),
+      build: !!document.getElementById('cs-build'),
+      body:  !!document.getElementById('cs-build-body'),
+    }));
+    expect(gone.intel, '#cs-intel is still in the DOM - removed, not hidden (section 6)').toBe(false);
+    expect(gone.build, '#cs-build is still in the DOM - removed, not hidden').toBe(false);
+    expect(gone.body,  '#cs-build-body survived its panel - a permanently-null host is the .473 shape').toBe(false);
+  });
+});

@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.573';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.574';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -13865,22 +13865,6 @@ if (typeof window !== 'undefined') {
              Filled by shift_renderHero(); one writer, one door onto shift_openSheet(). -->
         <div class="cs-card cs-shiftbar" id="cs-shiftbar" role="button" tabindex="0"
              aria-label="Set shift end time" style="display:none"></div>
-        <!-- §9.9 PHANTOM Intelligence. Renders the SAME cmd_nba() recommendation the
-             phone NBA uses - one brain, two faces. The orb is the approved assistant
-             ghost. "Defer" from the spec is NOT built: the app has no defer state and
-             a button that silently does nothing is worse than an absent one. -->
-        <div class="cs-card cs-dpanel" id="cs-intel">
-          <div class="cs-ph"><span class="cs-pt">Phantom Intelligence</span><button type="button" class="cs-pa" onclick="openVaSheet('intent')">Open AI</button></div>
-          <div class="cs-irow">
-            <img class="cs-iorb" src="phantom-ghost-v3.webp" alt="" aria-hidden="true" width="107" height="122" loading="lazy">
-            <div style="min-width:0">
-              <div class="cs-ik">Next best action</div>
-              <div class="cs-ititle" id="cs-intel-title">&mdash;</div>
-              <div class="cs-ip" id="cs-intel-p">&mdash;</div>
-            </div>
-          </div>
-          <div class="cs-iact"><button type="button" class="cs-ibtn" id="cs-intel-btn">&mdash;</button></div>
-        </div>
         <!-- §9.10 Site Health. The rows are the signals this app ACTUALLY has -
              connection, storage, site profile, open blockers. The spec's power
              domains / network fabric / documentation rows have no data source in
@@ -13889,14 +13873,6 @@ if (typeof window !== 'undefined') {
           <div class="cs-ph"><span class="cs-pt">Local system state</span></div>
           <div class="cs-pcap">Read from this device. PHANTOM receives no facility telemetry.</div>
           <div id="cs-health-rows"></div>
-        </div>
-        <!-- §9.11 Build Progress. Five-step rail over the REAL DEPLOY_PHASE_TYPES
-             aggregate from deploy_computeDeployRollup - the same numbers the deploy
-             screens read. State colours only (complete=teal, active=cyan): the phase
-             IDENTITY palette contains --green, which is retired as a status channel. -->
-        <div class="cs-card cs-dpanel" id="cs-build">
-          <div class="cs-ph"><span class="cs-pt">Build progress</span><button type="button" class="cs-pa" onclick="cmd_route('work','deploy')">Timeline</button></div>
-          <div id="cs-build-body"></div>
         </div>
         </div>
         <!-- §9.13 lower grid. .cs-dpanel keeps the whole region off the phone, so
@@ -23500,13 +23476,14 @@ function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, on
     try { console.warn('[nav] #bn-work missing — the blocker badge has nowhere to render'); } catch (_) {}
   }
 
-  // ── §9.9 Intelligence: the same recommendation the phone NBA renders ──
-  if (nba) {
-    setText('cs-intel-title', nba.h || '');
-    setText('cs-intel-p', nba.p || '');
-    var ib = E('cs-intel-btn');
-    if (ib) { ib.textContent = nba.label || 'Open'; ib.onclick = nba.act || null; }
-  }
+  // ⛔ v1.14.574 — §9.9 PHANTOM INTELLIGENCE IS GONE, MARKUP AND RENDERER TOGETHER.
+  // FIRST-DOOR Ship A, row 3: "deleted — no home". It was the NBA's second face — its own
+  // comment called it "one brain, two faces" — and .573 gave the brain a better one: the hero
+  // CTA when the NBA owns the door, and the hero's secondary line when it does not. A third
+  // face on the same screen is the duplication §1 is written against.
+  // ⭐ THE RENDER BLOCK GOES WITH THE MARKUP, deliberately. Leaving it would make three
+  // permanently-null getElementById lookups that fail safe and say nothing — the .473 shape,
+  // and exactly the debt .565 had to book as Ship 2b. Not repeating that here.
 
   // ── §9.10 Site Health: only signals that actually exist ──
   // Every row below is a value PHANTOM can answer from LOCAL state. There is no
@@ -23542,67 +23519,14 @@ function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, on
   // when there was no active deployment - which is exactly the cold-start case.
   cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handoffDraft);
 
-  // ── §9.11 Build Progress: the real DEPLOY_PHASE_TYPES aggregate ──
-  var bb = E('cs-build-body');
-  if (!bb) return;
-  bb.textContent = '';
-  var ru = null;
-  if (activeDep) {
-    try { ru = deploy_computeDeployRollup(activeDep.id); }
-    catch (e) { try { phantom_logErr('cs_renderDesktop:rollup', e); } catch (_) {} }
-  }
-  var _bp = document.getElementById('cs-build');
-  if (!ru || !ru.phaseAgg) {
-    // owner: "Build Progress becomes a large empty slab when no deployment is
-    // active." A panel with one sentence to say sizes to that sentence.
-    if (_bp) _bp.classList.add('is-empty');
-    var em = document.createElement('div');
-    em.className = 'cs-empty';
-    em.textContent = activeDep
-      ? 'No phase data captured for this deployment yet.'
-      : 'No active deployment. Start one to see the build rail.';
-    bb.appendChild(em);
-    return;
-  }
-  if (_bp) _bp.classList.remove('is-empty');
-  var rail = document.createElement('div'); rail.className = 'cs-rail';
-  var curLabel = 'Complete', curPct = 0;
-  DEPLOY_PHASE_TYPES.forEach(function(t) {
-    var a = ru.phaseAgg[t] || { total: 0, complete: 0, inProgress: 0, blocked: 0 };
-    var pct = a.total ? Math.round(a.complete / a.total * 100) : 0;
-    var state = '';
-    if (a.blocked > 0) state = 'blocked';
-    else if (a.total > 0 && a.complete === a.total) state = 'done';
-    else if (a.inProgress > 0 || a.complete > 0) state = 'active';
-    if (!state || state === 'active' || state === 'blocked') {
-      if (curLabel === 'Complete') {
-        curLabel = (typeof DEPLOY_PHASE_LABELS === 'object' && DEPLOY_PHASE_LABELS[t]) ? DEPLOY_PHASE_LABELS[t] : t.toUpperCase();
-        curPct = pct;
-      }
-    }
-    var step = document.createElement('div'); step.className = 'cs-step' + (state ? ' ' + state : '');
-    var bar = document.createElement('div'); bar.className = 'cs-stepbar';
-    var fill = document.createElement('div'); fill.className = 'cs-stepfill'; fill.style.width = pct + '%';
-    bar.appendChild(fill);
-    var k = document.createElement('div'); k.className = 'cs-stepk';
-    // SHELL-LOCAL short forms. DEPLOY_PHASE_LABELS is shared with the phone Build
-    // workspace and the deploy screens, so it is NOT touched - five full labels simply
-    // do not fit a 320px rail and were truncating to MECHAN... / VALIDAT...
-    // The full label still renders under the rail as the current-phase line.
-    k.textContent = CS_STEP_SHORT[t] || t.toUpperCase();
-    k.title = (typeof DEPLOY_PHASE_LABELS === 'object' && DEPLOY_PHASE_LABELS[t]) ? DEPLOY_PHASE_LABELS[t] : t;
-    var num = document.createElement('div'); num.className = 'cs-stepn';
-    num.textContent = a.total ? (a.complete + '/' + a.total) : '—';
-    step.appendChild(bar); step.appendChild(k); step.appendChild(num);
-    rail.appendChild(step);
-  });
-  bb.appendChild(rail);
-  var foot = document.createElement('div'); foot.className = 'cs-bfoot';
-  var ph = document.createElement('div'); ph.className = 'cs-bphase'; ph.textContent = curLabel;
-  var pc = document.createElement('div'); pc.className = 'cs-bpct';
-  pc.textContent = (ru.phasePct != null ? ru.phasePct : curPct) + '%';
-  foot.appendChild(ph); foot.appendChild(pc);
-  bb.appendChild(foot);
+  // ⛔ v1.14.574 — §9.11 BUILD PROGRESS IS GONE, MARKUP AND RENDERER TOGETHER.
+  // FIRST-DOOR Ship A, row 5: "deleted — covered by the hero". The hero already carries the
+  // deployment percentage and the rack count, and the picker it points at carries the per-rack
+  // truth. A second aggregate on the same screen is a second place for one fact to disagree.
+  // ⚠ THIS BLOCK WAS THE TAIL OF cs_renderDesktop AND ENDED IN `if (!bb) return;`. Verified
+  // before cutting that NOTHING ran after it — the function ended with the rail — so the early
+  // return was never swallowing later work. Had anything followed, deleting #cs-build would have
+  // silently killed it: a null host turning into a skipped render with no warn and no toast.
 }
 
 // v1.14.383 §9.14/§9.16 — Field Operations metadata and Shift Readiness.
@@ -24383,8 +24307,26 @@ function shift_renderHero() {
       bar.innerHTML = '<div class="csb-k">Shift</div>'
                     + '<div class="csb-v">' + txt + '</div>'
                     + '<div class="csb-s">' + sub + '</div>';
-      bar.style.display = '';
+      // ⛔ v1.14.574 — GATED ON THE MASTER (owner ruling, FIRST-DOOR Ship A row 2).
+      // The door STAYS — IA-SHIFTNAV §1 keeps a shift-handoff door and this IS it, placed here
+      // by the ruling of 2026-08-14 because #cs-grid is the one container that cannot be hidden
+      // by a composition rule. ⛔ Do not "re-home" it: that was tried twice, into `.lens` and
+      // into `.cs-microbar`, and both were "present, wired, correct and dead" at 390.
+      // ⭐ WHAT CHANGES IS ONLY WHEN IT SPEAKS. A-S1 says the no-Master screen shows one headline
+      // and one action and NOTHING ELSE; a shift-end control on a device with no Master is a job
+      // that does not exist yet. With a Master there is a shift to run and the door is right.
     }
+    // ⛔ THE GATE SITS OUTSIDE THE SIGNATURE GUARD, AND THE FIRST CUT OF IT DID NOT — CAUGHT BY THE
+    // DOM CENSUS BEFORE IT SHIPPED. The block above is guarded by `bar.dataset.seSig !== bsig`, which
+    // only fires when the SHIFT STATE changes. Visibility depends on a different input entirely —
+    // whether a Master is loaded — and that input is not in the signature. Inside the guard, a
+    // technician who loaded a Master would have kept a hidden SHIFT door until the shift clock
+    // happened to tick to a new state: present, wired, correct and dead, which is the exact failure
+    // the 2026-08-14 ruling put this door in #cs-grid to prevent. Re-introducing it while
+    // implementing that ruling would have been a poor joke.
+    // ⭐ Cheap to set every call; the expensive innerHTML rebuild stays behind the signature.
+    var _mL = (typeof master_hasMaster === 'function') ? master_hasMaster() : true;
+    bar.style.display = _mL ? '' : 'none';
   }
 
   // The legacy `.lens` pill is still written for the ?legacy / pre-deck composition. It is inert
@@ -59475,10 +59417,17 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
        loose cards rather than one operating environment. */
     align-items: stretch;
   }
-  body.rd.cshell #cs-grid .cs-hero { grid-column: 1; grid-row: 1 / span 3; }
-  body.rd.cshell #cs-intel  { grid-column: 2; grid-row: 1; min-height: 0; }
+  /* ⛔ v1.14.574 — THE RIGHT COLUMN LOST TWO OF ITS THREE CARDS, SO IT IS REDEFINED HERE
+     RATHER THAN LEFT WITH HOLES. #cs-intel held column 2 row 1 and #cs-build held row 3; both
+     are deleted by FIRST-DOOR Ship A. Deleting them without touching this block would have left
+     #cs-health floating at row 2 with an empty cell above and below it, and the hero still
+     spanning three rows beside it.
+     ⭐ THIS IS WHY THE SLICE IS CUT BY CONTAINER AND NOT BY ROW NUMBER: the deletions are markup,
+     so they apply at EVERY width, while these placements are positional and desktop-only. The
+     hole would have been INVISIBLE on the phone the ship was verified on. */
+  body.rd.cshell #cs-grid .cs-hero { grid-column: 1; grid-row: 1 / span 2; }
+  body.rd.cshell #cs-shiftbar { grid-column: 2; grid-row: 1; min-height: 0; }
   body.rd.cshell #cs-health { grid-column: 2; grid-row: 2; min-height: 0; }
-  body.rd.cshell #cs-build  { grid-column: 2; grid-row: 3; min-height: 0; }
 
   /* §9.8 desktop hero — same artwork, larger scale, crop and overlay only */
   body.rd.cshell #cmd-shell .cs-hero { min-height: 425px; padding: 25px; border-radius: var(--r-sheet); }
