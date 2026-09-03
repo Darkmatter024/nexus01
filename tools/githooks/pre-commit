@@ -32,6 +32,15 @@ GUARD="$ROOT/tools/hooks/phantom-guard.js"
 [ -f "$GUARD" ] || exit 0
 command -v node >/dev/null 2>&1 || exit 0
 
+# PHANTOM_GUARD_VIA marks THIS path: a real commit typed by a human at a terminal.
+# The guard uses it for exactly one decision — whether a commit may include VERIFIED.
+# The owner stamps VERIFIED; an agent never does, and an agent never reaches this
+# line, because a Claude Code tool call is intercepted by the PreToolUse guard before
+# git runs, in a process that does not inherit this variable. Every other gate is
+# unaffected and still runs identically on both paths.
+PHANTOM_GUARD_VIA=githook
+export PHANTOM_GUARD_VIA
+
 printf '{"tool_name":"Bash","tool_input":{"command":"git commit"}}' | node "$GUARD"
 STATUS=$?
 

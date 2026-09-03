@@ -207,9 +207,27 @@ function checkVerifiedGate(cmd) {
     // What this commit would include — not merely what happens to be staged right now.
     const staged = [...filesInCommit(cmd)];
 
-    // Block any attempt to commit changes to VERIFIED
-    if (staged.includes('VERIFIED')) {
-      return 'GATE: VERIFIED is owner-only. Never commit changes to this file.';
+    // ⭐ 2026-09-03 (owner ruling) — VERIFIED IS OWNER-ONLY, AND THAT NOW MEANS WHAT IT SAYS.
+    // This rule exists to stop an AGENT stamping its own work. It was enforced as "nobody may
+    // commit VERIFIED", which made the owner-only file uncommittable BY ITS OWNER: the git-hook
+    // path added later runs this same guard for every local commit, so the owner's own terminal
+    // commit hit an agent rule, and the only way through was --no-verify — which disables EVERY
+    // other gate in this file at once. Trading eight mechanical checks for one stamp is a worse
+    // position than this rule was ever meant to create.
+    //
+    // THE TWO-KEY PROPERTY IS PRESERVED, NOT WEAKENED:
+    //   agent commit -> Claude Code's PreToolUse hook fires FIRST and spawns this guard with no
+    //     PHANTOM_GUARD_VIA in its environment, so it blocks before git ever runs;
+    //   owner commit -> PreToolUse never fires (not a tool call); git runs tools/githooks/pre-commit,
+    //     which sets PHANTOM_GUARD_VIA=githook, and the stamp lands.
+    // An agent cannot reach the allowing branch by exporting the variable in its own shell: the
+    // PreToolUse guard is a separate process spawned BEFORE that shell exists.
+    //
+    // ⚠ STATED PLAINLY: an env var is spoofable in principle and is deliberately not hardened
+    // further. This file's own posture is "a seatbelt, not an immobiliser", and the bypass this
+    // replaces (--no-verify) was strictly weaker because it removed every other gate with it.
+    if (staged.includes('VERIFIED') && process.env.PHANTOM_GUARD_VIA !== 'githook') {
+      return 'GATE: VERIFIED is owner-only. An agent never commits it; the owner commits it from a terminal.';
     }
 
     // If version.json is being modified, check that VERIFIED matches the old version
