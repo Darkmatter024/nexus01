@@ -248,8 +248,28 @@ function checkVerifiedGate(cmd) {
         verified = read(VERIFIED_FILE).trim();
       }
 
-      if (verified !== oldVersion) {
-        return `GATE: ${oldVersion} not stamped in VERIFIED. Owner must verify on device and update VERIFIED before the next ship.`;
+      // ⭐ 2026-09-03 (owner ruling) — VERIFIED RECORDS AN ADJUDICATION, NOT ONLY A PASS.
+      // THE GAP THIS CLOSES, FOUND BY WALKING INTO IT: this gate compared VERIFIED to the old
+      // version and demanded they match, which silently assumed every ship EVENTUALLY PASSES.
+      // v1.14.572 was device-verified and FAILED (the hero headline promised the picker while the
+      // button opened the handoff). A failed version can never be honestly stamped as passed — so
+      // .573, which existed only to FIX .572, was blocked behind it forever. A gate that forbids
+      // shipping the fix for the defect it just caught is inverted.
+      //
+      // ⛔ THE FIX IS NOT TO WEAKEN THE GATE. The intent — never stack an UNADJUDICATED ship — is
+      // unchanged and still enforced. What changes is that VERIFIED may now record either outcome:
+      //
+      //     phantom-v1.14.572            -> verified on device, PASSED
+      //     phantom-v1.14.572 FAILED     -> verified on device, FAILED; the next ship is its fix
+      //
+      // Both mean "the owner put this on a phone and ruled on it", which is the only question this
+      // gate is entitled to ask. ⚠ FAILED is NOT a pass and must never be read as one: it does not
+      // license promoting that version, and nothing else in this repo treats it as a stamp.
+      // ⛔ It also does not let an agent self-adjudicate — writing this line is still a VERIFIED
+      // edit, and VERIFIED is still owner-only on the agent path (see the gate above).
+      const verifiedToken = (verified || '').split(/\s+/)[0] || '';
+      if (verifiedToken !== oldVersion) {
+        return `GATE: ${oldVersion} not adjudicated in VERIFIED. The owner verifies on device, then writes either "${oldVersion}" (passed) or "${oldVersion} FAILED" (failed; next ship is the fix).`;
       }
     }
   } catch (e) {
