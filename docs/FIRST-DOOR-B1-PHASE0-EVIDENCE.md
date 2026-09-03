@@ -186,7 +186,62 @@ first is the shape this repo has been bitten by.
 
 ---
 
-## §7 · RULINGS OWED BEFORE ANY PATCH
+## §7 · ✅ RULED BY THE OWNER, 2026-09-02 — B-1 IS UNBLOCKED
+
+All three questions below were ruled the same day this document was written. **The rulings are
+recorded verbatim in substance; the questions are kept so a later reader sees what was asked.**
+
+### ✅ C-1 — REPLACE IS PRIMARY, DELETE IS SECONDARY. BOTH EXIST.
+
+> **REPLACE (PIN) is the primary action** — purges old, loads new **in one motion**, because the real
+> scenario is *"wrong Master at the site, corrected one ready."* **DELETE (PIN) is secondary**, for
+> clearing a device. **Both under SYS → MASTER.**
+
+⭐ **This answers C-1 in the affirmative and then some: Delete IS built, and it is a new action.** The
+ship therefore adds a destructive control that did not exist, which is why §5's test ruling below is
+not optional. ⚠ **REPLACE must stay ONE MOTION** — today `master_onReplaceTap` (`:37306`) already has
+this shape (picker → guard → `PHANTOM_MASTER.clear()` → commit), so the ruling matches the existing
+mechanism rather than asking for a new one. **Do not split it into delete-then-load**; a half-applied
+replace is exactly the split-brain Contract A1 forbids.
+
+### ✅ C-2 — THE PIN IS STANDING, NOT OPT-IN
+
+> **PIN is STANDING, not opt-in.** Set on first use if none exists; **always required after.**
+> **Protect it with the PIN, not by hiding it** — a tech with the PIN does replace in under 30
+> seconds from any screen.
+
+⛔ **THIS INVERTS `deviceLead_requireForMaster` (`:27315`).** It opens `if (!deviceLead_hasPin()) return
+true;` — *no PIN means allow*. Under this ruling **no PIN means PROMPT TO SET ONE, then require it**.
+The confirm-dialog fallback in `master_onReplaceTap` (its *"v1.6.71 option C"* branch) and the
+unprotected `master_purgeCached` (`:34779`) both come under the gate.
+⭐ **"Protect it with the PIN, not by hiding it" is a DISCOVERABILITY ruling as much as a security one**
+— it forbids the tempting mitigation of burying the destructive action, and sets a **≤30s from any
+screen** bar that the stranger test must measure, not assume.
+
+### ✅ B-E4 — THE FIVE NON-MASTER IMPORTS GO RACK-SCOPED; THE BUILD ROW CLOSES
+
+> The five non-Master imports are **rack-scoped** — they become actions on the rack that owns the
+> data (port map, BOM). **Build `MASTER FILE` row closes; it becomes SYS → MASTER.**
+
+⚠ **`IMPORT FILE` (audit, `:53921`) and `IMPORT FILE` (assistant, `:50968`) have no obvious rack that
+"owns" them** — an audit is deployment-keyed (E-8 measured `phantom_audits_v1` carries no `rackId`)
+and the assistant attach is conversational. **Flagged rather than assumed:** the ruling names port map
+and BOM explicitly; those two are raised at design time rather than silently re-homed to a rack that
+does not own them. This is the same flag Addendum B's guardrail requires.
+
+### ✅ TWO PROCESS POINTS, ALSO RULED
+
+- **Tests come FIRST.** *"Generator writes B-1's Playwright tests BEFORE the edit. A destructive path
+  gets a guard before it exists."* ⭐ This closes §5's zero-coverage finding as a **requirement**, not
+  a recommendation.
+- **Ship A owns the shared elements.** `#cc-ingest-zone` (`:14029`) and the Build CTA (`:22159`)
+  **belong to Ship A's removal list; B-1 does not touch them.** ⭐ This resolves the BOUNDS overlap at
+  the foot of this document — **it is no longer unresolved.**
+- **Order: Ship A first, then B-1.**
+
+---
+
+## §7a · THE ORIGINAL QUESTIONS, KEPT FOR THE RECORD
 
 1. **C-1 — Delete.** Does B-1 ship a real `Delete (PIN)`, which is a NEW destructive action, or does the
    surviving door carry **Replace + Purge cache** with Delete deferred to its own ship?
@@ -206,6 +261,6 @@ decide whether Generator writes B-1 coverage first per §5.
 - ⛔ **Every `file:line` is valid at `.571` only** and must be re-swept by the ship that uses it (F-4b).
 - ⛔ **Counts in §1 are label instances found by grep of the working tree**, not a rendered-DOM census.
   A label that renders twice from one code path counts once here.
-- ⚠ **Ship A overlap is real and unresolved:** `#cc-ingest-zone` (`:14029`) and the Build CTA
+- ✅ **Ship A overlap — RULED 2026-09-02, no longer open. Ship A deletes them; B-1 does not touch them.** The finding as first written read: `#cc-ingest-zone` (`:14029`) and the Build CTA
   (`:22159`) are both on Ship A's removal list AND in this family. **A/B sequencing must decide which
   ship deletes them; deleting in both is a merge conflict waiting to happen.**
