@@ -107,7 +107,7 @@ door ledger wants closed on the phone. It is live, on the first screen, 601px ta
 | 4 | `#cs-health` | 377px | **-> SYS** (diagnostics) |
 | 5 | `#cs-build` | 109px | **-> the picker line** (it is the Build summary) |
 | 6 | `#cs-lower` | 1437px | container - goes with its three children |
-| 7 | `#cs-fieldops` | 497px | **-> rack** (field ops metadata is rack-keyed) |
+| 7 | `#cs-fieldops` | 497px | **deleted - its two doors re-home.** ⛔ **MEASURED, NOT ASSUMED:** it is NOT rack-keyed metadata - it is a launcher row of two buttons, *Universal Scan* -> `cmd_route('work','scan')` and *Shift Handoff* -> `cmd_route('work','handoff')`. SCAN goes to the one SCAN (rack + picker, FIRST-DOOR B-2); HANDOFF goes to the SHIFT door. **A genuine door closure, not a move.** |
 | 8 | `#cs-fieldtools` | 601px | ⭐ **deleted - P-4's duplicate ten-tool path; the OPS row on Build is the canonical door** |
 | 9 | `#cs-ready` | 309px | **KEEP** - A-E5 ruled: indeterminate gate for unset, no deletion |
 
