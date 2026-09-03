@@ -286,3 +286,70 @@ test.describe('A-2a — SHIFT door kept, gated on the Master', () => {
     expect(gone.body,  '#cs-build-body survived its panel - a permanently-null host is the .473 shape').toBe(false);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v1.14.575 — A-2b. Local system state re-homed to SYS -> DIAGNOSTICS.
+// ⛔ THE TRAP: rd_renderErrors RETURNS EARLY when the crash log is empty, which
+// is the common case. A block appended only to the entries path would render
+// exclusively on devices that had already crashed. Both branches are asserted.
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe('A-2b — local system state lives in SYS, not on Command', () => {
+  test('it is GONE from Command', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+    await page.waitForTimeout(900);
+    const g = await page.evaluate(() => ({
+      card: !!document.getElementById('cs-health'),
+      rows: !!document.getElementById('cs-health-rows'),
+    }));
+    expect(g.card, '#cs-health is still on Command - removed, not hidden').toBe(false);
+    expect(g.rows, '#cs-health-rows survived its card - a permanently-null host is the .473 shape').toBe(false);
+  });
+
+  test('⛔ EMPTY CRASH LOG: system state still renders - the early-return trap', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    const out = await page.evaluate(() => {
+      try { localStorage.removeItem('phantom_crash_log'); } catch (_) {}
+      if (typeof rd_renderErrors === 'function') rd_renderErrors();
+      const b = document.getElementById('rd-errors-body');
+      return { html: b ? b.innerHTML : null, txt: b ? (b.textContent || '') : '' };
+    });
+    expect(out.html, 'the diagnostics body does not exist').toBeTruthy();
+    expect(out.txt, 'local system state is missing when the crash log is empty - it would only ever '
+      + 'appear on a device that had already crashed').toContain('LOCAL SYSTEM STATE');
+    expect(out.txt, 'the honesty caption did not travel with the rows')
+      .toContain('receives no facility telemetry');
+    expect(out.txt, 'the Master row is missing').toContain('Master file');
+  });
+
+  test('WITH CRASH ENTRIES: system state renders alongside them', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    const out = await page.evaluate(() => {
+      try {
+        localStorage.setItem('phantom_crash_log', JSON.stringify([
+          { ts: '2026-09-03T10:00:00Z', type: 'error', ctx: 'probe', msg: 'seeded for the census' }
+        ]));
+      } catch (_) {}
+      if (typeof rd_renderErrors === 'function') rd_renderErrors();
+      const b = document.getElementById('rd-errors-body');
+      return b ? (b.textContent || '') : '';
+    });
+    expect(out, 'system state vanished once the log had entries').toContain('LOCAL SYSTEM STATE');
+    expect(out, 'the crash entry itself stopped rendering').toContain('seeded for the census');
+  });
+
+  test('the SYS row reads DIAGNOSTICS, the name INTEL-DOCK assigns it', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    const name = await page.evaluate(() => {
+      const r = document.getElementById('hdr-agg-errors-row');
+      const n = r ? r.querySelector('.hdr-agg-row-name') : null;
+      return n ? (n.textContent || '').trim() : null;
+    });
+    expect(name, 'the SYS row still says ERRORS - system state would be hidden behind the wrong word')
+      .toBe('DIAGNOSTICS');
+  });
+});

@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.574';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.575';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -13570,7 +13570,7 @@ if (typeof window !== 'undefined') {
             <!-- v1.14.221 DIAGNOSTICS: crash-log entry count; tap opens the ERRORS sheet (redesign-only, gated in CSS). -->
             <div class="hdr-agg-row" id="hdr-agg-errors-row" onclick="event.stopPropagation();var _p=document.getElementById('hdr-agg-panel');if(_p)_p.style.display='none';rd_openErrors()" style="cursor:pointer">
               <span class="hdr-agg-row-dot" id="hdr-agg-errors-dot" style="background:#666"></span>
-              <span class="hdr-agg-row-name">ERRORS</span>
+              <span class="hdr-agg-row-name">DIAGNOSTICS</span>
               <span class="hdr-agg-row-val" id="hdr-agg-errors-val" style="color:var(--slate)">&mdash;</span>
             </div>
             <!-- v1.14.156: overflow ACTIONS relocated into SYS panel (redesign only; legacy still uses the medallion menu). -->
@@ -13865,15 +13865,6 @@ if (typeof window !== 'undefined') {
              Filled by shift_renderHero(); one writer, one door onto shift_openSheet(). -->
         <div class="cs-card cs-shiftbar" id="cs-shiftbar" role="button" tabindex="0"
              aria-label="Set shift end time" style="display:none"></div>
-        <!-- §9.10 Site Health. The rows are the signals this app ACTUALLY has -
-             connection, storage, site profile, open blockers. The spec's power
-             domains / network fabric / documentation rows have no data source in
-             PHANTOM, and inventing them would be fake telemetry. -->
-        <div class="cs-card cs-dpanel" id="cs-health">
-          <div class="cs-ph"><span class="cs-pt">Local system state</span></div>
-          <div class="cs-pcap">Read from this device. PHANTOM receives no facility telemetry.</div>
-          <div id="cs-health-rows"></div>
-        </div>
         </div>
         <!-- §9.13 lower grid. .cs-dpanel keeps the whole region off the phone, so
              the approved mobile Command Deck is unchanged. -->
@@ -19585,6 +19576,52 @@ function errors_refreshCount() {
     if (dot) { dot.style.background = n > 0 ? '#ff3b3b' : '#666'; }
   } catch (_) {}
 }
+// ⭐ v1.14.575 — LOCAL SYSTEM STATE, re-homed from the Command Deck (FIRST-DOOR Ship A row 4).
+// ⛔ EVERY ROW IS A VALUE PHANTOM CAN ANSWER FROM LOCAL STATE, and that constraint is inherited
+// verbatim from the panel this replaces: there is no power-domain, cooling or network-fabric row
+// because the app receives no such telemetry, and a panel that implies otherwise is worse than a
+// smaller panel. The caption says so on screen rather than leaving it to be inferred.
+function _rd_systemStateHtml() {
+  var online = (typeof navigator === "undefined") || navigator.onLine !== false;
+  var storageOk = true;
+  try { localStorage.setItem("_rd_probe", "1"); localStorage.removeItem("_rd_probe"); } catch (_) { storageOk = false; }
+  var confirmed = (typeof siteProfile_isConfirmed === "function") && siteProfile_isConfirmed();
+  var masterLoaded = (typeof master_hasMaster === "function") ? master_hasMaster() : false;
+  var activeDep = null;
+  try { if (typeof nowtab_resolveDep === "function") activeDep = nowtab_resolveDep(); } catch (_) {}
+  var blockerCount = 0;
+  try {
+    var deps = (typeof deploy_loadAll === "function") ? (deploy_loadAll() || []) : [];
+    deps.forEach(function(d) {
+      try { if (typeof deploy_countBlockers === "function") blockerCount += deploy_countBlockers(d.id) || 0; } catch (_) {}
+    });
+  } catch (_) {}
+
+  var rows = [
+    ["Connection", online ? "Reachable" : "Working offline", online ? "ONLINE" : "OFFLINE", !online],
+    ["Local store", storageOk ? "Writable on this device" : "Blocked on this device", storageOk ? "READY" : "FAULT", !storageOk],
+    ["Site profile", confirmed ? "Confirmed for this device" : "Not set up yet", confirmed ? "SET" : "UNSET", !confirmed],
+    ["Master file", masterLoaded ? "Ingested on this device" : "Not loaded yet", masterLoaded ? "LOADED" : "NONE", !masterLoaded],
+    ["Active deployment", activeDep ? (activeDep.name || "Selected") : "None selected", activeDep ? "SET" : "NONE", false],
+    ["Open blockers", blockerCount > 0 ? "Resolve before handoff" : "Nothing blocking", String(blockerCount || 0), blockerCount > 0]
+  ];
+
+  var html = "<div style=\"font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--slate);margin:2px 0 6px\">LOCAL SYSTEM STATE</div>";
+  html += "<div style=\"font-family:var(--mono);font-size:10px;color:var(--slate);margin-bottom:10px\">Read from this device. PHANTOM receives no facility telemetry.</div>";
+  rows.forEach(function(r) {
+    var warn = r[3];
+    html += "<div style=\"display:flex;align-items:center;gap:10px;border:1px solid rgba(120,150,200,0.14);border-radius:9px;padding:9px 12px;margin-bottom:6px\">"
+      + "<span style=\"width:7px;height:7px;border-radius:50%;flex:0 0 7px;background:" + (warn ? "var(--gold)" : "var(--teal)") + "\"></span>"
+      + "<div style=\"min-width:0;flex:1\">"
+        + "<div style=\"font-family:var(--raj);font-size:13px;color:var(--white)\">" + escHtml(r[0]) + "</div>"
+        + "<div style=\"font-family:var(--mono);font-size:10px;color:var(--slate)\">" + escHtml(r[1]) + "</div>"
+      + "</div>"
+      + "<div style=\"font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:" + (warn ? "var(--gold)" : "var(--teal)") + "\">" + escHtml(r[2]) + "</div>"
+      + "</div>";
+  });
+  return html + "<div style=\"height:14px\"></div>";
+}
+
 function rd_renderErrors() {
   var body = document.getElementById('rd-errors-body');
   if (!body) return;
@@ -19595,7 +19632,7 @@ function rd_renderErrors() {
     + '<button class="hdr-menu-item" onclick="errors_clear()" style="flex:1;color:#ff3b3b;justify-content:center">CLEAR</button>'
     + '</div>';
   if (!entries.length) {
-    body.innerHTML = actions + '<div style="text-align:center;color:var(--slate);font-family:var(--mono);font-size:13px;padding:26px 0">No errors recorded.</div>';
+    body.innerHTML = actions + _rd_systemStateHtml() + '<div style="text-align:center;color:var(--slate);font-family:var(--mono);font-size:13px;padding:26px 0">No errors recorded.</div>';
     return;
   }
   var rows = entries.map(function(e) {
@@ -19608,7 +19645,11 @@ function rd_renderErrors() {
       + '<div style="font-size:10px;color:var(--slate)">' + escHtml(when) + (meta ? ' &middot; ' + meta : '') + '</div>'
       + '</div>';
   }).join('');
-  body.innerHTML = actions + rows;
+  // ⛔ BOTH BRANCHES CARRY IT, AND THAT IS NOT BELT-AND-BRACES. The empty-log path above returns
+  // EARLY, and an empty crash log is the COMMON case — appending only here would have shown local
+  // system state exclusively on devices that had already crashed. Same shape as the #cs-build
+  // early return checked in A-2a; this one would have been much easier to miss.
+  body.innerHTML = actions + _rd_systemStateHtml() + rows;
 }
 function rd_openErrors() {
   var sheet = document.getElementById('rd-errors-sheet');
@@ -23485,35 +23526,13 @@ function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, on
   // permanently-null getElementById lookups that fail safe and say nothing — the .473 shape,
   // and exactly the debt .565 had to book as Ship 2b. Not repeating that here.
 
-  // ── §9.10 Site Health: only signals that actually exist ──
-  // Every row below is a value PHANTOM can answer from LOCAL state. There is no
-  // power-domain, cooling, or network-fabric row because the app receives no such
-  // telemetry, and a panel that implies otherwise is worse than a smaller panel.
-  var rows = [
-    ['Connection', online ? 'Reachable' : 'Working offline', online ? 'ONLINE' : 'OFFLINE', online ? '' : 'warn'],
-    ['Local store', storageOk ? 'Writable on this device' : 'Blocked on this device', storageOk ? 'READY' : 'FAULT', storageOk ? '' : 'bad'],
-    ['Site profile', confirmed ? 'Confirmed for this device' : 'Not set up yet', confirmed ? 'SET' : 'UNSET', confirmed ? '' : 'warn'],
-    ['Master file', masterLoaded ? 'Ingested on this device' : 'Not loaded yet', masterLoaded ? 'LOADED' : 'NONE', masterLoaded ? '' : 'warn'],
-    ['Active deployment', activeDep ? (activeDep.name || 'Selected') : 'None selected', activeDep ? 'SET' : 'NONE', activeDep ? '' : 'warn'],
-    ['Open blockers', blockerCount > 0 ? 'Resolve before handoff' : 'Nothing blocking', String(blockerCount || 0), blockerCount > 0 ? 'bad' : '']
-  ];
-  var host = E('cs-health-rows');
-  if (host) {
-    host.textContent = '';
-    rows.forEach(function(r) {
-      var d = document.createElement('div');
-      d.className = 'cs-hrow' + (r[3] ? ' ' + r[3] : '');
-      var dot = document.createElement('span'); dot.className = 'cs-hdot'; dot.setAttribute('aria-hidden', 'true');
-      var mid = document.createElement('div'); mid.style.minWidth = '0';
-      var k = document.createElement('div'); k.className = 'cs-hk'; k.textContent = r[0];
-      var s = document.createElement('div'); s.className = 'cs-hs'; s.textContent = r[1];
-      mid.appendChild(k); mid.appendChild(s);
-      var v = document.createElement('div'); v.className = 'cs-hv'; v.textContent = r[2];
-      d.appendChild(dot); d.appendChild(mid); d.appendChild(v);
-      host.appendChild(d);
-    });
-  }
-
+  // ⛔ v1.14.575 — §9.10 LOCAL SYSTEM STATE HAS LEFT COMMAND FOR SYS -> DIAGNOSTICS.
+  // FIRST-DOOR Ship A row 4. The panel was honest and stayed honest; what changed is WHERE it
+  // lives. Its six rows are now built by _rd_systemStateHtml() and rendered into the ERRORS sheet,
+  // whose own subtitle already reads "CRASH LOG · DIAGNOSTICS" — so this is a re-home into an
+  // existing surface, not a new one, and the SYS short list grows by ZERO rows. That matters:
+  // INTEL-DOCK §2 rules that "SYS is a short list of rare actions; it does not grow a tool row",
+  // and six loose status rows would have broken exactly that.
   // Readiness runs BEFORE the build rail on purpose: the rail has two early
   // returns (no host, no rollup) and a call placed after them silently never ran
   // when there was no active deployment - which is exactly the cold-start case.
@@ -59427,7 +59446,9 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
      hole would have been INVISIBLE on the phone the ship was verified on. */
   body.rd.cshell #cs-grid .cs-hero { grid-column: 1; grid-row: 1 / span 2; }
   body.rd.cshell #cs-shiftbar { grid-column: 2; grid-row: 1; min-height: 0; }
-  body.rd.cshell #cs-health { grid-column: 2; grid-row: 2; min-height: 0; }
+  /* ⛔ v1.14.575 — #cs-health left #cs-grid for SYS → DIAGNOSTICS, so its placement goes with it.
+     Column 2 now holds only the shift door; the hero keeps column 1. Left in place, this rule
+     would have reserved row 2 of a column with nothing to put in it. */
 
   /* §9.8 desktop hero — same artwork, larger scale, crop and overlay only */
   body.rd.cshell #cmd-shell .cs-hero { min-height: 425px; padding: 25px; border-radius: var(--r-sheet); }
