@@ -21,8 +21,12 @@ const TOOLS = ['bom', 'manifest', 'portmap', 'rackmap', 'sops', 'burndown', 'aud
 // tools card sits inside #pg-cmd, which is the scrollable page (2867 / 776 at 390). An INACTIVE
 // .page still reports real box dimensions in this app, so a naive width>0 check reads those
 // buttons as visible from Work too — they are not. Activate the surface, then hit-test.
+// ⛔ v1.14.576 — THE TYPO. This called showMode('cmd'), and 'cmd' IS NOT A MODE: showMode's map is
+// {command, work, ref} and it returns early on anything else. THIS HELPER HAS ALWAYS BEEN A NO-OP.
+// It only ever appeared to work because boot already lands on Command, so the surface this spec
+// wanted happened to be the surface it got. Fixed to the real mode name.
 const openTools = async (page) => {
-  await page.evaluate(() => { if (typeof showMode === 'function') showMode('cmd'); });
+  await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
   await page.waitForTimeout(2000);
 };
 
@@ -56,6 +60,32 @@ const countReachableDoors = (page, tool) => page.evaluate((t) => {
 }, tool);
 
 test.describe('ops tool reachability', () => {
+
+  // ⛔ v1.14.576 — THIS SPEC IS NOW DESKTOP-SCOPED, BY OWNER RULING, AND THE INTENT IS UNCHANGED.
+  // FIRST-DOOR Ship A row 8 takes #cs-fieldtools off the PHONE and keeps it on the DESKTOP — the
+  // ruling of 2026-09-01, in its own words: "the phone loses the duplicate, the desktop keeps its
+  // door. It is a re-home, not a close." This spec measures THAT door: its whole apparatus is the
+  // Field tools card — countReachableDoors hit-tests on Command, and the row-completeness test
+  // counts .cs-tool elements, which live inside #cs-fieldtools. So the question it asks — every
+  // tool has exactly ONE reachable door, none has two — survives whole; only the composition it
+  // must be asked in has moved.
+  //
+  // ⛔ RE-POINTING IT AT BUILD'S OPS ROW WAS TRIED FIRST AND DOES NOT WORK, so it is recorded here
+  // rather than left for the next person to re-attempt. Measured at .576: after clicking
+  // .ops-banner-btn, #ops-grid-host stays display:none at 500/1500/3000ms, seeded and unseeded,
+  // while its ten panels render into it — so a Command-shaped hit-test finds ZERO doors there.
+  // ⚠ 48-ops-row-exists passes on that same path because it asserts only that the ten NAMES exist
+  // in the DOM and never that they are VISIBLE. That gap is a real finding and is NOT fixed here;
+  // the owner has device-verified the OPS row works, so the harness is the likelier suspect, but
+  // an instrument that cannot tell a rendered panel from a reachable one is worth its own ship.
+  //
+  // ⭐ Below 1024 this skips rather than fails: a skipped test says "not measured here", while a
+  // failing one would say "the app is broken", and only one of those is true.
+  test.beforeEach(({ page }) => {
+    const vw = page.viewportSize() ? page.viewportSize().width : 0;
+    test.skip(vw < 1024, 'Field tools is desktop-only since v1.14.576 (FIRST-DOOR Ship A row 8); '
+      + 'the phone reaches the ten tools through Build\'s OPS row, pinned by 48-ops-row-exists.');
+  });
 
   test('⛔ all ten tools are reachable, and none has two doors', async ({ phantom, page }) => {
     test.setTimeout(120000);   // up to 9 actionability trials plus boot

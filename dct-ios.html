@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.575';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.576';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -13869,27 +13869,6 @@ if (typeof window !== 'undefined') {
         <!-- §9.13 lower grid. .cs-dpanel keeps the whole region off the phone, so
              the approved mobile Command Deck is unchanged. -->
         <div id="cs-lower" class="cs-dpanel">
-          <div class="cs-card cs-dpanel" id="cs-fieldops">
-            <div class="cs-ph"><span class="cs-pt">Field operations</span></div>
-            <div class="cs-ops">
-              <button type="button" class="cs-op" onclick="cmd_route('work','scan')" aria-label="Universal scan">
-                <span class="cs-op-art" style="background-image:url(icons/OPS-phone@3x.webp)" aria-hidden="true"></span>
-                <span class="cs-op-scrim" aria-hidden="true"></span>
-                <span class="cs-op-chip">Ready</span>
-                <span class="cs-op-body"><span class="cs-op-t">Universal Scan</span><span class="cs-op-m" id="cs-op-scan-m">Capture a rack</span></span>
-              </button>
-              <button type="button" class="cs-op" onclick="cmd_route('work','handoff')" aria-label="Shift handoff">
-                <!-- v1.14.462: the approved technician-to-technician tablet handoff replaces the
-                     portal/transfer-machine art. This tile is on the Command Deck (Home), which is
-                     the surface the directive names, and .cs-op-scrim already supplies the dark
-                     gradient the card text needs. -->
-                <span class="cs-op-art" style="background-image:url(icons/phantom-feat-handoff-v3.webp)" aria-hidden="true"></span>
-                <span class="cs-op-scrim" aria-hidden="true"></span>
-                <span class="cs-op-chip" id="cs-op-hof-chip">Open</span>
-                <span class="cs-op-body"><span class="cs-op-t">Shift Handoff</span><span class="cs-op-m" id="cs-op-hof-m">Close out the shift</span></span>
-              </button>
-            </div>
-          </div>
           <div class="cs-card cs-dpanel" id="cs-fieldtools">
             <div class="cs-ph"><span class="cs-pt">Field tools</span><button type="button" class="cs-pa" onclick="showMode('ref')">All tools</button></div>
             <div class="cs-tools">
@@ -23555,11 +23534,11 @@ function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, on
 // so the number moves when the shift moves.
 function cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handoffDraft) {
   var E = function(id) { return document.getElementById(id); };
-  var scanM = E('cs-op-scan-m');
-  if (scanM) scanM.textContent = rackCount ? (rackCount + (rackCount === 1 ? ' rack captured' : ' racks captured')) : 'No racks captured yet';
-  var hofChip = E('cs-op-hof-chip'), hofM = E('cs-op-hof-m');
-  if (hofChip) hofChip.textContent = handoffDraft ? 'Draft' : 'Not started';
-  if (hofM) hofM.textContent = handoffDraft ? 'Draft in progress' : 'Close out the shift';
+  // ⛔ v1.14.576 — THE FIELD OPERATIONS FILLERS WENT WITH THEIR MARKUP (FIRST-DOOR Ship A row 7).
+  // They wrote into #cs-op-scan-m, #cs-op-hof-chip and #cs-op-hof-m, all children of #cs-fieldops.
+  // Each was `if (x)` guarded, so leaving them would have failed SAFE and said NOTHING — which is
+  // exactly why they are gone: a permanently-null lookup that never complains is the .473 shape.
+  // ⚠ cs_renderReady ITSELF STAYS — it renders #cs-ready, which is row 9 and is KEPT.
 
   var gates = [
     ['Site profile', !!confirmed],
@@ -59620,6 +59599,21 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
      stack above them, a visible 17px step in a single column. The padding belongs to the
      cards, not their container. */
   body.rd.cshell #cs-lower { grid-template-columns: minmax(0, 1fr); padding: 0; }
+
+  /* ⛔ v1.14.576 — FIRST-DOOR Ship A ROW 8: THE PHONE LOSES THE DUPLICATE, THE DESKTOP KEEPS ITS
+     DOOR. #cs-fieldtools is P-4's second path to the same ten tools, and row 8 reads "deleted — no
+     home ON THE FIRST SCREEN". The first screen is the phone, so the close is a COMPOSITION close.
+     ⛔ DELETING THE MARKUP WOULD HAVE BROKEN A STANDING RULING. The owner ruled on 2026-09-01, after
+     .559 measured it: deleting it outright "would strip desktop tool access at ≥1024 and break
+     03-tools' order-sensitive wall assertion… the phone loses the duplicate, the desktop keeps its
+     door. It is a re-home, not a close."
+     ⭐ I DELETED IT OUTRIGHT FIRST AND CAUGHT IT BEFORE COMMIT — walking straight into the lesson
+     A-2a had already written down: DELETION IS MARKUP, SO IT APPLIES AT EVERY WIDTH, while the
+     surface a ship is scoped to is one composition. This rule IS the re-home, and it is CSS by
+     necessity rather than by preference.
+     ⚠ Contract A2 is untouched: this and Build's OPS row both call the one canonical
+     rd_openOpsTool, and two compositions reaching one door is not two doors. */
+  body.rd.cshell #cs-fieldtools { display: none; }
 
   /* AND THE CHILDREN HAVE TO COME WITH IT. Narrowing the template alone is not enough: the
      right-column cards carry an explicit `grid-column: 2`, and a child placed in column 2 of a

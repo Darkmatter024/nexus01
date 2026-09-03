@@ -353,3 +353,70 @@ test.describe('A-2b — local system state lives in SYS, not on Command', () => 
       .toBe('DIAGNOSTICS');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v1.14.576 — A-3. Rows 7 and 8 close: #cs-fieldops and #cs-fieldtools.
+// ⛔ These are DOOR closures, not feature removals, and the difference has to be
+// asserted or it is just a claim in a commit message. Both functions #cs-fieldops
+// carried must still be reachable, and every tool behind #cs-fieldtools must
+// still be one tap from Build's OPS row - its canonical door since .558/.559.
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe('A-3 — duplicate doors close, functions survive', () => {
+  test('both panels are gone from the Deck', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+    await page.waitForTimeout(900);
+    const g = await page.evaluate(() => ({
+      ops: !!document.getElementById('cs-fieldops'),
+      tools: !!document.getElementById('cs-fieldtools'),
+      toolsShown: (function(){var e=document.getElementById('cs-fieldtools');return e?getComputedStyle(e).display!=='none':null;})(),
+      ready: !!document.getElementById('cs-ready'),
+      lower: !!document.getElementById('cs-lower'),
+    }));
+    expect(g.ops, '#cs-fieldops is still in the DOM - removed, not hidden').toBe(false);
+    // ⛔ CORRECTED: #cs-fieldtools is NOT deleted. The owner ruling of 2026-09-01 keeps the DESKTOP
+    // door - "the phone loses the duplicate, the desktop keeps its door. It is a re-home, not a
+    // close." Deleting the markup would strip it at every width. It must be PRESENT and HIDDEN.
+    expect(g.tools, '#cs-fieldtools was DELETED - that strips desktop tool access and breaks the 2026-09-01 ruling').toBe(true);
+    expect(g.toolsShown, '#cs-fieldtools is visible on the phone - it is P-4 duplicate ten-tool path').toBe(false);
+    expect(g.ready, '#cs-ready was taken with them - it is row 9 and is KEPT').toBe(true);
+    expect(g.lower, '#cs-lower was removed - it still holds readiness').toBe(true);
+  });
+
+  test('⛔ readiness still RENDERS after losing its two siblings', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+    await page.waitForTimeout(1000);
+    const r = await page.evaluate(() => {
+      const rows = document.getElementById('cs-ready-rows');
+      const k = document.getElementById('cs-ready-k');
+      return { rowCount: rows ? rows.children.length : -1, k: k ? (k.textContent || '').trim() : null };
+    });
+    // cs_renderReady kept its gate loop; only the fieldops fillers left it. If removing those lines
+    // had broken the function, the four gates would be missing and this is where it shows.
+    expect(r.rowCount, 'the readiness gates stopped rendering - cs_renderReady was damaged by the cut')
+      .toBeGreaterThan(0);
+  });
+
+  test('⛔ THE LEDGER CLAIM: both #cs-fieldops functions are still reachable', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    const doors = await page.evaluate(() => {
+      const all = Array.from(document.querySelectorAll('[onclick]'));
+      const has = (frag) => all.some((el) => (el.getAttribute('onclick') || '').indexOf(frag) !== -1);
+      return { scan: has("'scan'"), handoff: has("'handoff'") };
+    });
+    expect(doors.scan, 'deleting #cs-fieldops removed the last SCAN door - that is a feature loss, not a door closure').toBe(true);
+    expect(doors.handoff, 'deleting #cs-fieldops removed the last HANDOFF door').toBe(true);
+  });
+
+  test('⛔ THE LEDGER CLAIM: the ten tools are still reachable from Build', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    const canOpen = await page.evaluate(() => typeof rd_openOpsTool === 'function');
+    expect(canOpen, 'rd_openOpsTool is gone - #cs-fieldtools was a duplicate PATH, not the tools themselves')
+      .toBe(true);
+  });
+});
