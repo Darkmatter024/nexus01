@@ -191,6 +191,67 @@ deletion**.
 - **Generator writes T1/T2 and the DOM diff** at iPhone 15 / WebKit — **before** any deletion.
 - **Readiness indeterminate-gate** (§4) — desktop Deck, outside Ship A.
 
+
+---
+
+## §8 · SLICE BOUNDARY, REVISED AT `.573` (owner-directed, 2026-09-03)
+
+**Census re-run at `.573`: BYTE-IDENTICAL to `.571`.** Same nine groups, same heights, both Master
+states. A-1 changed only content inside `#cs-hero` (still 425px) and added a secondary line that is
+`display:none` until the NBA has something to say, so it paints nothing. ⭐ **The baseline the nine
+rows were confirmed against is unchanged, so the confirmed dispositions all still stand.**
+
+### ⛔ THE CONSTRAINT I FLAGGED WAS THE WRONG ONE
+
+I warned that rows 6-9 had to move together because `#cs-lower`'s children carry explicit
+`grid-column: 2` placements. **Measured: on the phone that cannot bite.** `:59652` sets
+`#cs-lower { grid-template-columns: minmax(0,1fr) }` and the surrounding `@media (max-width: 1023px)`
+block forces every child to one column. **The phone is a single column and is safe.**
+
+⛔ **THE REAL CONSTRAINT IS THE ONE I MISSED, AND IT IS BIGGER: DELETION IS MARKUP, SO IT HITS THE
+DESKTOP TOO.** Ship A is scoped to the phone first screen, but removing an element removes it at
+every width — and the desktop composition places these cards **positionally**:
+
+```
+@media (min-width: 1024px)                          -- :59434
+  #cs-grid   .cs-hero   grid-column 1, grid-row 1/span 3   -- :59478
+             #cs-intel  grid-column 2, grid-row 1          -- :59479
+             #cs-health grid-column 2, grid-row 2          -- :59480
+             #cs-build  grid-column 2, grid-row 3          -- :59481
+  #cs-lower  grid-template-columns 1fr 1fr                 -- :59557
+             #cs-ready  grid-column 1 / span 2             -- :59558
+```
+
+**Deleting by ROW NUMBER guts the desktop grid a hole at a time.** A-2 as originally scoped (rows 3,
+5, 7, 8) would remove `#cs-intel` (col 2 row 1) and `#cs-build` (col 2 row 3) while leaving
+`#cs-health` at col 2 row 2 — **a card floating in the middle of the right column with an empty cell
+above and below it.** Then A-3 removes `#cs-health` and the entire right column is empty while the
+hero still spans three rows on the left. ⚠ **Neither state is visible on the owner's phone, which is
+exactly why it would ship.**
+
+✅ **`#cs-lower` is the benign half:** removing `#cs-fieldops` and `#cs-fieldtools` leaves `#cs-ready`,
+which carries `grid-column: 1 / span 2` and still spans a 2-column grid correctly. No hole.
+
+### ⭐ REVISED BOUNDARY — SLICE BY GRID CONTAINER, NOT BY ROW NUMBER
+
+The row numbers were assigned by **disposition** (where each card goes). The CSS is organised by
+**container**. Slicing on disposition cuts across the containers; slicing on container leaves each
+one coherent at **both** widths after every ship.
+
+| Slice | Container | Content | Rows | Why it is whole |
+|---|---|---|---|---|
+| **A-2** | `#cs-grid` | delete `#cs-intel` + `#cs-build`; re-home `#cs-shiftbar` → SHIFT and `#cs-health` → SYS; **update `#cs-grid`'s desktop placements so the hero owns the space** | 2, 3, 4, 5 | one visible change — *"the top of Command is the hero and nothing else"* — and the desktop grid is redefined in the same stroke that empties it |
+| **A-3** | `#cs-lower` | delete `#cs-fieldops` + `#cs-fieldtools`; update `#cs-lower`'s desktop grid | 6, 7, 8 | `#cs-ready` survives and still spans correctly; the container is left with one card and a template that fits it |
+| **A-4** | `#cs-ready` | indeterminate gate state per A-E5 | 9 | an honesty change, no layout, no deletion |
+
+⭐ **This MERGES the old A-2 and A-3 into a container-shaped A-2 and moves `#cs-lower` to A-3.** Same
+nine rows, same confirmed dispositions, same order of arrival — only the cut lines move, and they
+move onto the seams the CSS already has.
+
+⚠ **A-2 is now the biggest slice of the ship** (four rows, two deletions, two re-homes, one grid
+redefinition). It is still ONE visible change on the phone, but it is the one to device-verify at
+**both** widths — the desktop hole is invisible on the surface Ship A is written about.
+
 ## BOUNDS
 
 - ⛔ **Paper. No code, no anchors re-cut, nothing staged.**
