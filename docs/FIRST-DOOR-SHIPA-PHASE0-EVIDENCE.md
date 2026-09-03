@@ -154,21 +154,35 @@ blockers"* under a `GO TO HANDOFF` label, which scans as a wrong door. **It is c
 text is *"A blocker bites the next shift first. Capture the proof note and route it into a handoff,"*
 so the label matches the action and the name says what the door opens. ⛔ **Do not "fix" it.**
 
-### ⛔ THREE WAYS TO IMPLEMENT (a). OWNER PICKS — THEY ARE NOT EQUIVALENT.
+### ✅ RULED (a-iii) — AND MEASURING IT FOUND THE TENTH BRANCH ALREADY EXISTS
 
-- **(a-i) The line IS the NBA, relocated.** It renders `nba.label` and runs `nba.act`. Honest, names
-  match doors, `cmd_nba()` keeps a real face. ⚠ **But the Master-loaded first screen then does not
-  reliably point at the picker** — it points at whatever the next best action is.
-- **(a-ii) The line always opens the picker; the NBA supplies only the sentence.** The rule holds and
-  the destination is fixed. ⚠ **But `nba.label` and `nba.act` become unused**, so the brain is half-
-  dead and its own labels are discarded — a quieter version of the problem (a) was meant to solve.
-- ⭐ **(a-iii) ADD A TENTH BRANCH — RECOMMENDED.** `cmd_nba()` gains a steady-state branch (Master
-  loaded, deployment active, no blockers, no handoff draft) returning *"Pick a rack"* → the Build
-  picker. Then the line **always says what it opens**, and in the state Ship A actually cares about it
-  **is** the picker line. The other eight branches keep pointing where they correctly point.
-  ⚠ It is the only option that satisfies BOTH halves of the ruling without a lie or a dead field —
-  and it is a change to `cmd_nba()`, so it needs saying out loud rather than slipping in under a
-  markup strip.
+Owner ruled **(a-iii): add a tenth `cmd_nba()` branch for the steady state, returning "Pick a rack"
+at the Build picker.** ⛔ **Measured before writing a line: THAT STATE ALREADY HAS A BRANCH.**
+
+The chain short-circuits in order, so by the time control reaches `:23745` the blocker branch
+(`:23743`) and the handoff branch (`:23744`) have already returned. **"No blockers, no handoff draft"
+is therefore implicit**, and `:23745` reads:
+
+    if (st.activeDep && st.activePct < 100)   ->   "Continue <dep> - N% deployed."  GO TO DEPLOY
+
+⭐ **That IS the steady state the ruling describes** — Master loaded, deployment active, no blockers,
+no handoff draft. So a genuinely new tenth branch has nowhere to stand:
+
+- placed **before** `:23745`, it shadows it and `:23745` becomes unreachable — **dead code, the `.473`
+  shape**, which is the exact defect this campaign keeps correcting;
+- placed **after** `:23745`, the new branch is itself unreachable.
+
+✅ **SO (a-iii) IS IMPLEMENTED BY RE-POINTING `:23745`, NOT BY ADDING A TENTH.** Its label becomes the
+picker verb and its `act` opens the Build picker instead of `cmd_continueWork()` -> `showMode('work')`,
+which today lands on Build's workspace rather than the deployment detail where `.571` put the picker.
+**The ruling's intent is served exactly; only the mechanism narrows.** Reported rather than performed
+quietly - the same correction shape as `.559`, `.564` and `.571`.
+
+⚠ **AND IT SHOULD NOT SHIP ON ITS OWN.** `cmd_nba()` has exactly two faces today, the phone `.nba`
+(`:23418`) and `#cs-hero`'s CTA (`:23695`) - **and Ship A deletes both (rows 6 and 3).** Shipping the
+re-point standalone would produce one visible change that Ship A then removes, and the durable face
+(`.cc-rackline`, row 10) does not exist until Ship A builds it. ⭐ **Recommendation: the re-point lands
+INSIDE Ship A, in the same stroke that gives it its face.** Owner rules.
 
 ### ⭐ AGREED — THE DOM CHECK RUNS BEFORE ANY DELETION
 
