@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.571';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.572';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -23433,7 +23433,7 @@ function cmd_render() {
     sw.innerHTML = '<div class="sig-empty">No signals — you&rsquo;re clear.</div>';
   }
   cmd_telemetry(activeDep, activePct, handoffDraft);
-  cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba);
+  cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba, masterLoaded, site);
   cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, online, storageOk, site, masterLoaded, handoffDraft);
   cmd_setSiteLabel();
   cmd_clock();
@@ -23664,7 +23664,7 @@ function cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handof
 // textContent, never interpolated into innerHTML, so a deployment name can never
 // become markup. The CTA reuses cmd_route('work','deploy') — the same door the
 // NBA's "continue deployment" uses. One door per feature.
-function cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba) {
+function cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba, masterLoaded, site) {
   var host = document.getElementById('cs-hero');
   if (!host) {
     try { console.warn('[PHANTOM] cs_renderHero: #cs-hero is missing from #pg-cmd — the Command Shell hero cannot render'); } catch (_) {}
@@ -23674,8 +23674,37 @@ function cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba) {
   var live = !!activeDep;
   var pct = Math.max(0, Math.min(100, activePct || 0));
 
-  E('cs-hero-eyebrow').textContent = live ? 'Active deployment' : 'No active deployment';
-  E('cs-hero-title').textContent = live ? (activeDep.name || 'Deployment') : 'Nothing deploying yet';
+  // ⭐ v1.14.572 — FIRST-DOOR Ship A-1: THE FIRST SCREEN ANSWERS ONE QUESTION.
+  // A-S1 / A-S2 give the hero two states and only two. ⛔ THE PHONE HAD NEITHER: the .571 DOM
+  // census measured both Master states painting IDENTICALLY (data-master flips, nothing moves),
+  // so this CREATES the distinction rather than restoring one.
+  // ⛔ THE HEADLINE'S N IS THE PICKER'S OWN ROW COUNT, AND THAT IS THE WHOLE POINT. cmd_render's
+  // `rackCount` sums racks across EVERY deployment (:23333) — showing that beside "tap one" would
+  // be a gauge that lies, because the picker lists ONE deployment. This asks the same source the
+  // picker asks, so the number and the surface it points at can never disagree.
+  var pickN = 0;
+  try {
+    var _pid = (typeof deploy_getActiveId === 'function') ? deploy_getActiveId() : null;
+    if (_pid && typeof deploy_loadRacksFor === 'function') pickN = (deploy_loadRacksFor(_pid) || []).length;
+  } catch (_) {}
+  var siteLabel = site || 'site not set';   // A-S6: honest 'not set', never a blank or a guess
+  if (!masterLoaded) {
+    // A-S1: one headline, one action. The CTA is already LOAD MASTER via cmd_nba branch :23740.
+    E('cs-hero-eyebrow').textContent = 'No Master';
+    E('cs-hero-title').textContent = 'Load a Master to start.';
+  } else if (live) {
+    // A-S2: the one line that points at the picker. Real N, real site.
+    E('cs-hero-eyebrow').textContent = 'Active deployment';
+    E('cs-hero-title').textContent = pickN + ' rack' + (pickN === 1 ? '' : 's') + ' on ' + siteLabel + '. Tap one.';
+  } else {
+    // Master loaded, nothing deploying. ⛔ NOT "tap one" — there is nothing to tap, and a CTA that
+    // implies a job when none exists is exactly what A-S6 forbids. ⚠ MEASURED, not assumed: this
+    // state does NOT reliably label SELECT RACKS (:23741) — the harness fixture produced GO TO SCAN,
+    // because which NBA branch wins depends on rung, deployCount and rackCount together. The headline
+    // names the STATE and the NBA names the DOOR; this renderer does not predict which door that is.
+    E('cs-hero-eyebrow').textContent = 'Master loaded';
+    E('cs-hero-title').textContent = 'Nothing deploying on ' + siteLabel + ' yet.';
+  }
   // an empty state gets NO progress bar rather than a 0% one — a bar at zero
   // reads as "started and stalled", which would be a lie about the floor.
   E('cs-hero-prog').style.display = live ? '' : 'none';
@@ -23742,7 +23771,7 @@ function cmd_nba(rung, st) {
   if (rung === 'B' && st.deployCount > 0 && st.rackCount === 0) return { h: 'Capture your<br>first rack.', p: 'Deployment ready. Start your rack trace with a scan.', step: 'Step 3 of 3', label: 'GO TO SCAN', act: function() { cmd_route('work', 'scan'); } };
   if (st.blockerCount >= 1) return { h: 'Resolve ' + st.blockerCount + ' open blocker' + (st.blockerCount !== 1 ? 's' : '') + '.', p: 'A blocker bites the next shift first. Capture the proof note and route it into a handoff.', label: 'GO TO HANDOFF', act: function() { cmd_route('work', 'handoff'); } };
   if (st.handoffDraft) return { h: 'Finish your shift handoff.', p: 'A handoff draft is open. Complete the summary before your shift ends.', label: 'GO TO HANDOFF', act: function() { cmd_route('work', 'handoff'); } };
-  if (st.activeDep && st.activePct < 100) return { h: 'Continue ' + (st.activeDep.name || 'your deployment') + ' — ' + st.activePct + '% deployed.', p: 'Pick up where the build left off.', label: 'GO TO DEPLOY', act: function() { cmd_continueWork(); } };
+  if (st.activeDep && st.activePct < 100) return { h: 'Continue ' + (st.activeDep.name || 'your deployment') + ' — ' + st.activePct + '% deployed.', p: 'Pick up where the build left off.', label: 'PICK A RACK', act: function() { cmd_openPicker(); } };
   if (st.rackCount === 0) return { h: 'Capture your first rack.', p: 'Start a rack trace so deploys, blockers and handoffs have something to build on.', label: 'GO TO SCAN', act: function() { cmd_route('work', 'scan'); } };
   return { h: 'Start a rack trace before deploy.', p: 'Keep the build moving — scan the next rack.', label: 'GO TO SCAN', act: function() { cmd_route('work', 'scan'); } };
 }
@@ -24166,6 +24195,30 @@ function cmd_pulseNextU() {
  * in-Build deploy button all mean "manage deployments", and the list is the correct destination for
  * those — they are untouched. Intent decides the door, not the word "deploy" appearing in a label.
  */
+// ━━━ v1.14.572 — IA-SHIFTNAV / FIRST-DOOR Ship A-1. ONE DOOR ONTO THE PICKER.
+// ⭐ .571 made boot land on the rack picker; this is the same door reached deliberately rather
+// than at launch. It is deploy_showDetail(activeId) — NOT showMode('work'), which is where
+// cmd_continueWork() goes and which lands on Build's WORKSPACE, one surface short of the picker.
+// ⛔ THE GUARDS ARE THE SAME THREE .571 USES, AND FOR THE SAME REASONS: a stale id makes
+// deploy_showDetail toast "Deployment not found", a CLOSED deployment routes to the read-only
+// tombstone, and ACTIVE_DEPLOYMENT_KEY vs ACTIVE_CTX_KEY disagreeing would fire an UNATTENDED
+// rack-pointer reset through activeContext_setDeployment. On any of those we fall back to Build
+// rather than open a wrong or empty surface — a door that cannot open cleanly says so by
+// landing somewhere real (No-Silent-Failures).
+function cmd_openPicker() {
+  try {
+    var id  = (typeof deploy_getActiveId === 'function') ? deploy_getActiveId() : null;
+    var dep = (id && typeof deploy_getById === 'function') ? deploy_getById(id) : null;
+    var ok  = !!dep && dep.status !== 'closed' && typeof deploy_showDetail === 'function';
+    if (ok) {
+      var ctx = (typeof activeContext_load === 'function') ? (activeContext_load() || {}) : {};
+      if (ctx.deploymentId && ctx.deploymentId !== id) ok = false;
+    }
+    if (ok) return deploy_showDetail(id);
+  } catch (e) { if (typeof phantom_logErr === 'function') phantom_logErr('cmd_openPicker', e); }
+  return cmd_continueWork();
+}
+
 function cmd_continueWork() {
   try {
     if (typeof showMode === 'function') return showMode('work');

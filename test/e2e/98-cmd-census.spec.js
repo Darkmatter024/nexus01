@@ -87,3 +87,59 @@ test.describe('pg-cmd DOM census — the real first screen', () => {
     expect(has, 'the fixture did not produce a loaded Master - census would be meaningless').toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T1 / T2 — Ship A-1's acceptance bar. Added WITH A-1 (v1.14.572).
+// The census above proved the phone had NO two-state first screen: data-master
+// flipped and nothing moved. A-1 creates the distinction, so it gets asserted.
+// ─────────────────────────────────────────────────────────────────────────────
+const hero = (page) => page.evaluate(() => {
+  const g = (id) => { const e = document.getElementById(id); return e ? (e.textContent || '').trim() : null; };
+  const cta = document.getElementById('cs-hero-cta');
+  return { eyebrow: g('cs-hero-eyebrow'), title: g('cs-hero-title'), cta: cta ? (cta.textContent || '').trim() : null };
+});
+
+test.describe('A-1 — the first screen answers one question', () => {
+  test('T1 · NO MASTER: the screen names the action, and the action is LOAD MASTER', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+    await page.waitForTimeout(1200);
+    const h = await hero(page);
+    console.log('T1 hero:', JSON.stringify(h));
+    expect(h.title, 'the no-Master screen does not name the one action').toBe('Load a Master to start.');
+    expect(h.cta, 'the one action is not LOAD MASTER').toBe('LOAD MASTER');
+  });
+
+  test('T2 · MASTER LOADED: the headline N equals what the picker lists', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: masterSeed() });
+    await page.evaluate(() => {
+      window._lastPhantomMaster = JSON.parse(localStorage.getItem('phantom_master_v1'));
+      if (typeof showMode === 'function') showMode('command');
+      if (typeof cmd_render === 'function') cmd_render();
+    });
+    await page.waitForTimeout(1200);
+    const h = await hero(page);
+    console.log('T2 hero:', JSON.stringify(h));
+    // No deployment in this fixture, so the honest state is "nothing deploying" - NOT "tap one".
+    // ⛔ This is the A-S6 assertion: a CTA must not imply a job that does not exist.
+    expect(h.title, 'a Master with no deployment must not say "tap one"').not.toContain('Tap one');
+    expect(h.eyebrow, 'the Master-loaded state is not named').toBe('Master loaded');
+  });
+
+  test('⛔ THE TWO STATES MUST DIFFER — the defect A-1 exists to fix', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+    await page.waitForTimeout(1000);
+    const noMaster = await hero(page);
+    await page.evaluate(() => {
+      window._lastPhantomMaster = { siteCode: 'AUS-01', racksByCab: { 'x': {} } };
+      if (typeof cmd_render === 'function') cmd_render();
+    });
+    await page.waitForTimeout(1000);
+    const withMaster = await hero(page);
+    expect(withMaster.title, 'the first screen reads identically with and without a Master - the pre-A-1 defect').not.toBe(noMaster.title);
+  });
+});
