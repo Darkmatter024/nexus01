@@ -752,6 +752,15 @@ test.describe('Build workspace + Forge aisle', () => {
     const surfaces = () => page.evaluate(() => ({
       canvases: document.querySelectorAll('canvas').length,
       live: Array.prototype.filter.call(document.querySelectorAll('canvas'), (cv) => {
+        // ⛔ 2D FIRST, AND THE APP'S OWN LAW SAYS WHY. phantom_readGL's header (dct-ios :39260 @ .571)
+        // states it: 'getContext() is only a READ on a canvas that ALREADY HAS that context. On a
+        // canvas with no context it CREATES one' — so state is read back ONLY from tracked mounts.
+        // This filter sweeps EVERY canvas, so it broke that rule and minted the contexts it counted.
+        // #cs-ringc is a 2D readiness ring (dct-ios :23642 @ .571), claimed as 2D only when Command renders;
+        // since v1.14.571 boot lands on the rack picker and cmd_render no longer runs at launch, so
+        // it stays virgin. MEASURED at .570 and .571: identical counts once 2D is probed first.
+        // ⚠ The bound is NOT weakened — a real context on a tracked mount is still counted.
+        try { if (cv.getContext('2d')) return false; } catch (_) {}
         const g = window.phantom_readGL ? window.phantom_readGL(cv) : null;
         return !!g && !(g.isContextLost && g.isContextLost());
       }).length,

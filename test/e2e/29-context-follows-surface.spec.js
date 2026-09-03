@@ -60,6 +60,24 @@ const contexts = (page) => page.evaluate(() => {
     } catch (_) { return 'threw'; }
   };
   const all = Array.from(document.querySelectorAll('canvas')).filter((cv) => {
+    // ⛔ 2D FIRST, AND THE ORDER IS THE ENTIRE POINT — THE INSTRUMENT WAS ALLOCATING WHAT IT COUNTED.
+    // The comment above says getContext 'is a read and never a second allocation'. That is true only
+    // of a canvas something ALREADY owns. On a VIRGIN canvas, getContext('webgl') CREATES a context —
+    // so this filter manufactured the very thing it was written to detect.
+    // ⭐ MEASURED at v1.14.571, both versions, same seed: #cs-ringc is a getContext('2d') canvas
+    // (dct-ios.html :23642 @ .571, the readiness ring). At .570 Command renders at boot, claims it as 2D,
+    // and this filter correctly skips it. At .571 boot lands on the rack picker, cmd_render never
+    // runs, the ring stays VIRGIN — and this filter claimed it as WebGL and reported 'liveTotal: 2'.
+    // Probing 2D first, .570 and .571 return an IDENTICAL webgl count at every step (0 before Build,
+    // 1 after, never 2). Contract A6 was never violated; the measurement was wrong.
+    // ⚠ THE ASSERTION IS NOT WEAKENED. It stays exactly toBe(1) — only the counting stops lying. A
+    // real WebGL context on #bw-mount is still detected, which is the defect this spec exists for.
+    // ⚠ THE SAME PATTERN LIVES IN THREE MORE PLACES. Corrected in the same ship where it actually
+    // broke: 32-lod-and-resource-stress's leak COUNTER and 02-build-forge's surfaces() counter.
+    // ⛔ DELIBERATELY NOT corrected: the TARGETED reads of a known WebGL mount in 32 and 02, where
+    // a 2D guard would be noise and would return the wrong type, and 35-forge-parity, which is
+    // green — fixing a passing test is a different ship's business.
+    try { if (cv.getContext('2d')) return false; } catch (_) {}
     try { const g = cv.getContext('webgl2') || cv.getContext('webgl'); return !!g && !g.isContextLost(); }
     catch (_) { return false; }
   });
@@ -140,7 +158,24 @@ test.describe('the one WebGL context follows the visible surface', () => {
     await page.waitForTimeout(3000);
 
     const back = await contexts(page);
-    expect(back.opsDetail, 'the rack detail never released the screen').toBe(false);
+    // ⛔ RE-POINTED AT v1.14.571 BY OWNER RULING — THE STANDARD CHANGED, THE INTENT DID NOT.
+    // This asserted body.ops-detail === false, i.e. 'Back from the rack detail leaves every detail
+    // view'. .571 lands boot on the rack picker, which IS deploy_showDetail, so it pushes a nav
+    // state and Back now returns to THE PICKER rather than to Build's grid. The owner ruled that
+    // is the standard: the technician came from the picker, so Back returns there — 'navigation
+    // becomes position', the whole point of IA-SHIFTNAV. ops-detail is therefore correctly TRUE.
+    // ⭐ THE INTENT IS KEPT AND MADE STRICTER, NOT WEAKENED. The old boolean only said 'some detail
+    // is gone'. This names WHERE Back landed: the rack detail's own marker — the DEVICES disclosure
+    // that .565 made this spec's instrument — must be GONE, and the picker must be present. A Back
+    // that stranded the tech on the rack detail still fails, which is what the test exists to catch.
+    const landed = await page.evaluate(() => {
+      const dev = Array.from(document.querySelectorAll('summary'))
+        .find((el) => (el.textContent || '').trim().indexOf('DEVICES') === 0);
+      const lookup = document.getElementById('deploy-rack-lookup');
+      return { rackDetailGone: !dev, pickerUp: !!lookup && lookup.getBoundingClientRect().height > 0 };
+    });
+    expect(landed.rackDetailGone, 'Back stranded the technician on the rack detail').toBe(true);
+    expect(landed.pickerUp, 'Back left the rack detail but did not land on the picker').toBe(true);
     // The half that matters most: deferring must not COST Build its preview. A guard that made
     // Build permanently blank would trade one empty rack area for another.
     expect(back.bw, 'Build came back from the rack detail with a dead rack preview').toBe('live');

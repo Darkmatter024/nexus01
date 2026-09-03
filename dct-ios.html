@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.570';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.571';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -19389,7 +19389,55 @@ function redesign_initToggle() {
   // v1.14.382: the Command Shell paints only when both classes are present, so
   // the bare URL and ?legacy=1 are untouched by every rule this ship added.
   if (cshell_isOn()) { document.body.classList.add('cshell'); }
-  try { showMode('command'); } catch (e) { try { console.warn('[redesign] takeover failed', e); } catch (_) {} }
+  // ━━━ v1.14.571 — IA-SHIFTNAV Ship 2: boot lands on the rack picker, not the status museum.
+  // ⭐ SCOPE CORRECTED BY MEASUREMENT, BEFORE ANY EDIT — the third time this campaign, after .559
+  // and .564. P-5 wrote Ship 2 as "a new surface, medium risk — must scope its search to the active
+  // deployment". The picker ALREADY EXISTS WHOLE inside deploy_showDetail: the RACK LIST / FLOOR MAP
+  // toggle, the rackLookup_* search machine and the floor map. And it already obeys the proposal's
+  // §0 hard rule — rackLookup_init(deployId) sources deploy_computeDeployRollup(deployId) and the
+  // results filter THAT scoped array, so no cross-deployment pick is reachable and no B14
+  // disambiguation is owed. Nothing was built; the app now STARTS where the picker already lived.
+  var _bootId = null, _bootDep = null, _bootOk = false;
+  try {
+    _bootId  = (typeof deploy_getActiveId === 'function') ? deploy_getActiveId() : null;
+    _bootDep = (_bootId && typeof deploy_getById === 'function') ? deploy_getById(_bootId) : null;
+    // ⛔ THE FIRST TWO GUARDS ARE LOAD-BEARING, NOT DEFENSIVE NOISE. deploy_showDetail toasts
+    // "Deployment not found" and bounces to the list on a stale id, and routes a CLOSED deployment
+    // to the read-only tombstone. Either would be the first thing a technician sees on launch.
+    _bootOk = !!_bootDep && _bootDep.status !== 'closed' && typeof deploy_showDetail === 'function';
+    // ⛔ THE THIRD GUARD IS THE SPLIT-BRAIN ONE. ACTIVE_DEPLOYMENT_KEY and ACTIVE_CTX_KEY are two
+    // stores for one truth, and activeContext_setDeployment — which deploy_showDetail calls — nulls
+    // ctx.rackId and ctx.phaseId whenever they disagree. Today that costs a tech their rack pointer
+    // only if they deliberately tap in; landing automatically would fire that write UNATTENDED ON
+    // EVERY LAUNCH. So DECLINE the landing on genuine disagreement rather than reach into the data
+    // path to change it — a layout ship does not touch a data path. ⚠ An EMPTY ctx is not a
+    // disagreement: that is first run, and the landing is exactly right there.
+    if (_bootOk) {
+      var _ctx = (typeof activeContext_load === 'function') ? (activeContext_load() || {}) : {};
+      if (_ctx.deploymentId && _ctx.deploymentId !== _bootId) _bootOk = false;
+    }
+  } catch (e) { _bootOk = false; try { console.warn('[boot] landing check failed', e); } catch (_) {} }
+  // ⛔ EXACTLY ONE OF THESE RUNS — NEVER BOTH, AND THAT IS THE WHOLE CORRECTION. showPage drives
+  // document.startViewTransition (:24477 @ .571) and does NOT catch the returned promise's rejection, so a
+  // second transition started in the same tick aborts the first and raises an UNCAUGHT AbortError.
+  // ⭐ MEASURED, NOT REASONED: stacking the landing on top of showMode('command') threw "AbortError:
+  // Old view transition aborted by new view transition" on EVERY boot and turned 48:116, 30:79 and
+  // 29's return-to-Build test red — all green once this branched. ⚠ Those three are NAMED, not
+  // line-cited, because the spec files moved in this same ship: an anchor is only valid against a
+  // stamp (F-4b). Proven mine by stashing the ship and
+  // re-running against a clean .570, where the same three passed 13/13.
+  // ⚠ The unhandled rejection in showPage is PRE-EXISTING and is NOT fixed here: it is a shared nav
+  // helper on every navigation path, which is a blast radius this ship has no business taking. It
+  // is recorded as a finding instead.
+  // ⭐ Branching also removes a visible Command→Build flash a technician would have read as a fault.
+  if (_bootOk) {
+    try { deploy_showDetail(_bootId); }
+    catch (e) { try { console.warn('[boot] rack-picker landing failed', e); } catch (_) {} try { showMode('command'); } catch (_) {} }
+  } else {
+    // ⭐ UNCHANGED FROM .570, VERBATIM — this is the ruled zero-state for "no Master / no active
+    // deployment", and every failure path above lands here.
+    try { showMode('command'); } catch (e) { try { console.warn('[redesign] takeover failed', e); } catch (_) {} }
+  }
   cmd_setSiteLabel();
   if (typeof cmd_clock === 'function') { try { setInterval(cmd_clock, 15000); } catch (_) {} }
 }

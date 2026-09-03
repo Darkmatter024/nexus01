@@ -50,6 +50,12 @@ const census = (page) => page.evaluate(() => {
   let live = 0;
   all.forEach((cv) => {
     try {
+      // ⛔ 2D FIRST — getContext('webgl') ALLOCATES on a virgin canvas, so this filter used to
+      // manufacture the context it was counting. #cs-ringc is a 2D readiness ring (dct-ios :23642 @ .571)
+      // and is only claimed as 2D when Command renders; since v1.14.571 boot lands on the rack
+      // picker and cmd_render no longer runs at launch, so it stays virgin. MEASURED at .570 and
+      // .571 with 2D probed first: identical counts at every step. The bound is NOT weakened.
+      try { if (cv.getContext('2d')) return false; } catch (_) {}
       const g = cv.getContext('webgl2') || cv.getContext('webgl');
       if (g && !g.isContextLost()) live++;
     } catch (_) {}
