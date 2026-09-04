@@ -68,6 +68,34 @@ Two phone checks and two ships between now and handing PHANTOM to 2–3 trusted 
 
 ---
 
+## SITE-SYNC — PARKED (repo-side entry, added 2026-09-03 by owner ruling)
+
+⛔ **PARKED. IT IS AN ARCHITECTURE SPEC, NOT A SHIP.** `docs/SHIP-HANDOFF-SITE-SYNC.md` (13545 bytes,
+sha256 `6c4b34ba238718c5…`, imported verbatim at `44502bc`). **Its Phase 0 is NOT started and must
+not be started.**
+
+**Sequenced: after FIRST-DOOR and INTEL-DOCK complete.** FIRST-DOOR still owes Ship A slice A-4 and
+all of Ship B; INTEL-DOCK is itself sequenced behind Ship A and has not begun.
+
+⭐ **ONE SLICE MAY MOVE EARLY, AND ONLY ONE: `STATUS-HONESTY`.** The spec's own slice 1 — *"the strip
+says ON DEVICE / SAVED, never SYNCED, until sync exists. Ships now, no backend. One line."*
+**The `SYNCED` label lies today**, and the spec says so plainly: *"a gauge that lies is worse than no
+gauge — the SYNCED strip is fixed before anything else, so the app never claims sync it doesn't
+have."* ⭐ **That makes it a Contract B10 data-honesty fix, not sync work** — which is exactly why it
+is allowed out of order: it removes a false claim rather than adding a capability, and it needs no
+backend to be correct.
+
+⛔ **EVERYTHING ELSE WAITS.** Offline queue, conflict policy, the server side — none of it starts
+before the sequencing above. ⚠ **Do not read STATUS-HONESTY as permission to begin SITE-SYNC.** One
+slice shipping early is not the campaign starting early, and the distinction is the whole point of
+the park.
+
+⚠ **Its own Phase 0 E-4 is the prerequisite for even that slice** — *"confirm the SYNCED label's
+exact logic (file:line) for the honesty fix"*. A one-line change still needs the one line found and
+verified against the stamp first.
+
+---
+
 ## REVIEW LEDGER (what the live-app critique got right, wrong, and unproven)
 
 Supported by source: status museum, triple profile CTA, scan homeless, exit-hold on dock, Isolate buried, empty CTAs, readiness score, phone/desktop divergence.
