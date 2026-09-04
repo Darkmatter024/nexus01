@@ -96,6 +96,36 @@ verified against the stamp first.
 
 ---
 
+## GRAPH REBUILD — DEFERRED, SCHEDULED (repo-side, 2026-09-04)
+
+⛔ **A FULL `/graphify .` REBUILD IS OWED, AND IT IS SCHEDULED FOR WHEN SITE-SYNC PHASE 0 OPENS.**
+Owner ruling: batch it there, because that is when the graph must know SITE-SYNC, and a rebuild
+pays for itself against a real census rather than against two parked documents.
+
+⚠ **WHY THE INCREMENTAL PATH COULD NOT DO IT, so nobody retries it and calls it a tooling glitch:**
+`--update` shrank the graph 4615 → 4374 and the shrink-guard refused the write. The refusal was
+CORRECT and was verified rather than forced. Two causes, both real: `PHANTOM_CURRENT_STATE.md` lost
+**141 nodes** because the extracting agent read only **151 of its 1449 lines** and the thin result
+would have REPLACED a richer stored one; and `docs/A1-RECON-CENSUS-PHANTOM-STORAGE.md` lost **113**
+despite never being re-extracted, collapsed by fuzzy dedup. ⭐ An additive-only retry — AST plus the
+two new docs, nothing replaced — **still shrank**, because `build_merge`'s dedup pass collapses
+pre-existing nodes no matter what is added.
+
+⛔ **THE SEMANTIC CACHE WAS CLEARED, AND THE REBUILD DEPENDS ON IT STAYING CLEAR.** It had just been
+written with those truncated extractions, so a later rebuild would have hit the cache and silently
+reused the thin `PHANTOM_CURRENT_STATE.md` — carrying the defect into the very rebuild meant to fix
+it. **If a rebuild is run and the numbers look thin, check the cache first.**
+
+⚠ **AND THE TRUNCATION IS A STANDING CONSTRAINT, NOT A ONE-OFF:** `PHANTOM_CURRENT_STATE.md` is 1449
+lines and grows every ship. **Any future extraction of it must read it in parts**, or it will under-
+extract the single most important document in the repo and never say so.
+
+✅ **Meanwhile the graph is CURRENT for the code the next slices touch.** SITE-SYNC and
+`PHANTOM-OVERVIEW.html` are parked documents; both are committed and readable, and only the graph
+lacks them. `graph.json` sits intact at **4615 nodes** — nothing was degraded.
+
+---
+
 ## REVIEW LEDGER (what the live-app critique got right, wrong, and unproven)
 
 Supported by source: status museum, triple profile CTA, scan homeless, exit-hold on dock, Isolate buried, empty CTAs, readiness score, phone/desktop divergence.
