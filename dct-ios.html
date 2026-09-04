@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.576';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.577';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -23515,7 +23515,7 @@ function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, on
   // Readiness runs BEFORE the build rail on purpose: the rail has two early
   // returns (no host, no rollup) and a call placed after them silently never ran
   // when there was no active deployment - which is exactly the cold-start case.
-  cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handoffDraft);
+  cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handoffDraft, activeDep);
 
   // ⛔ v1.14.574 — §9.11 BUILD PROGRESS IS GONE, MARKUP AND RENDERER TOGETHER.
   // FIRST-DOOR Ship A, row 5: "deleted — covered by the hero". The hero already carries the
@@ -23532,7 +23532,7 @@ function cs_renderDesktop(activeDep, nba, rackCount, blockerCount, confirmed, on
 // readiness score is fake telemetry. The ring is four real gates the app can actually
 // answer - site profile confirmed, Master loaded, zero open blockers, handoff started -
 // so the number moves when the shift moves.
-function cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handoffDraft) {
+function cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handoffDraft, activeDep) {
   var E = function(id) { return document.getElementById(id); };
   // ⛔ v1.14.576 — THE FIELD OPERATIONS FILLERS WENT WITH THEIR MARKUP (FIRST-DOOR Ship A row 7).
   // They wrote into #cs-op-scan-m, #cs-op-hof-chip and #cs-op-hof-m, all children of #cs-fieldops.
@@ -23540,31 +23540,71 @@ function cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handof
   // exactly why they are gone: a permanently-null lookup that never complains is the .473 shape.
   // ⚠ cs_renderReady ITSELF STAYS — it renders #cs-ready, which is row 9 and is KEPT.
 
+  // ⛔ v1.14.577 — A GATE THAT CANNOT BE ANSWERED NOW SAYS SO. FIRST-DOOR Ship A row 9, and the
+  // fix board v2 Q-1 asked for: "the fix is an indeterminate state for that gate, NOT removing
+  // the ring."
+  //
+  // ⛔ THE DEFECT, PRECISELY. `No open blockers` was `!(blockerCount > 0)`, which is TRUE when
+  // there is no deployment at all — zero blockers of zero racks. So a phone with nothing set up
+  // read 25%: one gate of four "passing" on a question the app had no standing to answer. That is
+  // a gauge that lies, and it lies in the most flattering direction.
+  //
+  // ⭐ null IS THE THIRD STATE, and it is deliberately not `false`. False means "there is an open
+  // blocker" — a job to do. null means "there is nothing here to have blockers yet" — no job, no
+  // claim. Collapsing the two would trade a flattering lie for a discouraging one.
+  //
+  // ⚠ ONLY THIS GATE CHANGES, and the asymmetry is the point rather than an oversight. `Handoff
+  // started` is also false with no deployment, but false is HONEST there: the shift genuinely has
+  // not been handed off. Only the blockers gate was claiming a PASS it had not earned.
+  var hasDeployment = !!activeDep;
   var gates = [
     ['Site profile', !!confirmed],
     ['Master loaded', !!masterLoaded],
-    ['No open blockers', !(blockerCount > 0)],
+    ['No open blockers', hasDeployment ? !(blockerCount > 0) : null],
     ['Handoff started', !!handoffDraft]
   ];
-  var met = gates.filter(function(g) { return g[1]; }).length;
-  var pct = Math.round(met / gates.length * 100);
+  // ⛔ THE DENOMINATOR IS THE ANSWERABLE GATES, NOT ALL OF THEM. Scoring an unanswerable gate as a
+  // miss would be the opposite lie — the app reporting a shortfall against a question it never
+  // asked. Percent over what can actually be known, and the count below says how many that is.
+  var answerable = gates.filter(function(g) { return g[1] !== null; });
+  var indet = gates.length - answerable.length;
+  var met = answerable.filter(function(g) { return g[1]; }).length;
+  var pct = answerable.length ? Math.round(met / answerable.length * 100) : null;
 
-  var num = E('cs-ringn'); if (num) num.textContent = pct + '%';
+  // ⛔ NO NUMBER AT ALL WHEN NOTHING IS ANSWERABLE. 0% would read as 'measured, and you are failing';
+  // an em dash reads as 'not measured', which is the truth.
+  var num = E('cs-ringn'); if (num) num.textContent = (pct === null) ? '—' : (pct + '%');
   var kk = E('cs-ready-k');
   // state it as "N of 4 ready" - the score is a count, and phrasing it as a count is
   // what makes it legible as a local calculation rather than a monitoring readout.
-  if (kk) kk.textContent = met + ' of ' + gates.length + ' ready' +
-    (met === gates.length ? ' — clear to hand off.' : '.');
+  // ⭐ THE COUNT NAMES ITS OWN DENOMINATOR. It used to read "N of 4" against a fixed four; it now
+  // reads against the answerable set and says outright how many are not yet applicable, so the
+  // number and the reason for it arrive together instead of the tech inferring one from the other.
+  if (kk) {
+    kk.textContent = met + ' of ' + answerable.length + ' ready'
+      + (indet ? ' · ' + indet + ' not applicable yet' : '')
+      + ((met === answerable.length && !indet) ? ' — clear to hand off.' : '.');
+  }
 
   var host = E('cs-ready-rows');
   if (host) {
     host.textContent = '';
     gates.forEach(function(g) {
       var d = document.createElement('div');
-      d.className = 'cs-rrow' + (g[1] ? '' : ' warn');
+      // ⛔ NOT `warn` WHEN INDETERMINATE. warn is the attention channel and means "a tech must do
+      // something"; an unanswerable gate asks for nothing. Muting it is the honest treatment, and
+      // it keeps the attention channel meaning one thing (the .323 colour-lock reasoning).
+      d.className = 'cs-rrow' + (g[1] === null ? '' : (g[1] ? '' : ' warn'));
       var dot = document.createElement('span'); dot.className = 'cs-hdot'; dot.setAttribute('aria-hidden', 'true');
       var k = document.createElement('span'); k.textContent = g[0];
-      var v = document.createElement('span'); v.className = 'cs-rv'; v.textContent = g[1] ? 'OK' : 'OPEN';
+      var v = document.createElement('span'); v.className = 'cs-rv';
+      if (g[1] === null) {
+        v.textContent = '—';
+        v.title = 'No deployment yet, so this cannot be answered.';
+        d.style.opacity = '0.55';
+      } else {
+        v.textContent = g[1] ? 'OK' : 'OPEN';
+      }
       d.appendChild(dot); d.appendChild(k); d.appendChild(v);
       host.appendChild(d);
     });
@@ -23581,6 +23621,9 @@ function cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handof
     g2.lineWidth = 11; g2.lineCap = 'round';
     g2.strokeStyle = 'rgba(176,207,255,0.13)';
     g2.beginPath(); g2.arc(R, R, r, 0, Math.PI * 2); g2.stroke();
+    // ⚠ `pct > 0` is already false for null, so the gradient arc does not draw and the ring shows
+    // its track alone. Verified rather than assumed, because a null slipping through as 0 here
+    // would paint an empty ring that looks measured.
     if (pct > 0) {
       var grad = g2.createLinearGradient(0, 0, S, S);
       grad.addColorStop(0, '#5cf2ff'); grad.addColorStop(1, '#9b59ff');

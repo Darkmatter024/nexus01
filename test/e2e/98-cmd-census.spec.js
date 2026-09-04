@@ -420,3 +420,70 @@ test.describe('A-3 — duplicate doors close, functions survive', () => {
       .toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v1.14.577 — A-4. The readiness gate that could not be answered now says so.
+// ⛔ THE DEFECT: 'No open blockers' was !(blockerCount > 0), TRUE with no
+// deployment - zero blockers of zero racks - so a bare phone read 25% on a
+// question the app had no standing to answer. Board v2 Q-1: indeterminate
+// state, NOT removing the ring.
+// ─────────────────────────────────────────────────────────────────────────────
+const readiness = (page) => page.evaluate(() => {
+  const rows = Array.from(document.querySelectorAll('#cs-ready-rows .cs-rrow')).map((r) => {
+    const spans = r.querySelectorAll('span');
+    return { label: spans[1] ? spans[1].textContent.trim() : null,
+             val: spans[2] ? spans[2].textContent.trim() : null,
+             warn: r.className.indexOf('warn') !== -1 };
+  });
+  const n = document.getElementById('cs-ringn');
+  const k = document.getElementById('cs-ready-k');
+  return { rows, ring: n ? n.textContent.trim() : null, count: k ? k.textContent.trim() : null };
+});
+
+test.describe('A-4 — readiness never claims a pass it has not earned', () => {
+  test('⛔ NO DEPLOYMENT: the blockers gate is INDETERMINATE, not a pass', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: {} });
+    await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+    await page.waitForTimeout(1200);
+    const r = await readiness(page);
+    console.log('A-4 bare:', JSON.stringify(r));
+    const blockers = r.rows.find((x) => x.label === 'No open blockers');
+    expect(blockers, 'the blockers gate is missing - A-E5 ruled the ring STAYS').toBeTruthy();
+    // ⛔ EXACT. 'OK' here is the whole defect: a pass on a question with no deployment behind it.
+    expect(blockers.val, 'the blockers gate still claims OK with no deployment - the vacuous pass is back')
+      .toBe('—');
+    // ⛔ And it must not swing to the opposite lie either: nothing is asked of the tech here.
+    expect(blockers.warn, 'an unanswerable gate is painted as warn - that demands work that does not exist')
+      .toBe(false);
+  });
+
+  test('the ring shows no number it cannot justify, and the count names its denominator',
+    async ({ phantom, page }) => {
+      test.setTimeout(180000);
+      await phantom.boot({ seed: {} });
+      await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+      await page.waitForTimeout(1200);
+      const r = await readiness(page);
+      // 25% was the defect's signature: one vacuous pass out of four.
+      expect(r.ring, 'the ring still reads 25% - the vacuous pass is still in the numerator').not.toBe('25%');
+      expect(r.count, 'the count still claims four gates when one cannot be answered').not.toContain('of 4 ready');
+      expect(r.count, 'the count does not say how many gates are not yet applicable').toContain('not applicable yet');
+    });
+
+  test('WITH A DEPLOYMENT: the gate becomes answerable again and reads OK', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: deploymentSeed() });
+    await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); if (typeof cmd_render === 'function') cmd_render(); });
+    await page.waitForTimeout(1200);
+    const r = await readiness(page);
+    console.log('A-4 seeded:', JSON.stringify(r));
+    const blockers = r.rows.find((x) => x.label === 'No open blockers');
+    // ⛔ The fix must not strand the gate as permanently unanswerable - that would be a different
+    // dishonesty, and it is the failure mode an over-eager guard would produce.
+    expect(blockers.val, 'the gate stayed indeterminate even WITH a deployment - it can never pass now')
+      .toBe('OK');
+    expect(r.count, 'the count still reports a non-applicable gate once one is answerable')
+      .not.toContain('not applicable yet');
+  });
+});
