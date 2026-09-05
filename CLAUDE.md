@@ -250,6 +250,7 @@ A commit that bumps `version.json` is blocked by hook unless John has verified t
   are about to touch. The wiki is generated into a gitignored folder, so it never travels with the
   repo: the REBUILD is the requirement, not the file. If graphify is not installed, say so in the
   report and proceed — never skip this silently.
+  graphify-first is harness-enforced via SessionStart hook in `.claude/settings.json`.
 - **Match process to task size.** Localized UI/CSS is your own work: inspect → implement →
   verify → finish. Reach for specialists only at architecture boundaries, data safety, WebGL
   lifecycle, offline/storage, or independent release verification.
@@ -321,3 +322,13 @@ Rules:
 2. **Reviewer agents render verdicts, never edits.** A FAIL is fixed by a new surgical diff, re-reviewed from scratch.
 3. **Agent PASS is advisory.** It is never a substitute for John's device verify, which remains the only ship gate. No agent, and no combination of agents, authorizes a deploy.
 4. One extracted handoff at a time; agents operate only within the active handoff's scope. An agent finding outside scope is REPORTED to John, never acted on.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
