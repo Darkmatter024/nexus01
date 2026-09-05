@@ -589,6 +589,24 @@ test.describe('offline contract', () => {
     // On screen, not merely in the DOM behind the redesign shell.
     await expect(page.locator('#offline-banner')).toBeVisible();
 
+    // ⛔ PUT A REAL GATED CONTROL ON SCREEN FIRST. The connectivity gate (:11424) covers
+    // [data-requires-net="1"] and .va-btn, and the app carries EXACTLY ONE tagged element:
+    // #deploy-ai-review-btn (:37944), emitted by deploy_showDetail (:37829). A plain boot never
+    // renders it, so the assertion below could only ever fail - it asserted app-wide what is only
+    // true on one deep surface. Seeding a deployment and opening its detail makes the gate
+    // testable on the control it actually governs.
+    await page.evaluate(() => {
+      const now = 1750000000000;
+      localStorage.setItem('phantom_deployments_v1', JSON.stringify([{
+        id: 'dep_offline_gate', name: 'OFFLINE GATE', status: 'active', buildLead: 'E2E',
+        created: now, updated: now, createdAt: now, updatedAt: now, rackCount: 0, phaseCount: 0,
+      }]));
+      if (typeof deploy_showDetail === 'function') deploy_showDetail('dep_offline_gate');
+    });
+    await page.locator('#deploy-ai-review-btn')
+      .waitFor({ state: 'attached', timeout: 10000 })
+      .catch(() => {});   // swallowed: the assertion below reports WHY, with its own message
+
     // Net-dependent controls are gated by CSS, not left tappable-but-dead
     // (connectivity gate, :11069). Assert the computed effect, not the rule text.
     const gated = await page.evaluate(() => {
