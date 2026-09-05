@@ -79,6 +79,35 @@ if ($localMain -ne $originMain) {
   Stop-Promote "main ($($localMain.Substring(0,7))) does not match origin/main ($($originMain.Substring(0,7))). Push main first."
 }
 
+# ---- Guard 4: THE VERSION AT HEAD MUST BE ADJUDICATED. ----
+# Runs BEFORE the pending list, before the fast-forward check and before -DryRun returns, so a
+# refusal is identical in dry-run and in a real promote. It was missing entirely until
+# 2026-09-05, when this script promoted .580 while VERIFIED still topped out at .579.
+# Reading the working file is safe: Guard 1 has already proved the tree clean.
+$headVersion = $null
+try { $headVersion = (Get-Content -Raw version.json | ConvertFrom-Json).version }
+catch { Stop-Promote "could not read version.json: $($_.Exception.Message)" }
+
+$verifiedFirst = $null
+if (Test-Path VERIFIED) {
+  $verifiedFirst = Get-Content VERIFIED | Where-Object { $_.Trim().Length -gt 0 } | Select-Object -First 1
+}
+if (-not $verifiedFirst) { Stop-Promote 'VERIFIED is missing or empty - nothing is adjudicated.' }
+
+# Same rule the commit guard applies: the FIRST whitespace-delimited token of the newest entry.
+$verifiedFields = $verifiedFirst.Trim() -split '[ ]+'
+$verifiedTop = $verifiedFields[0]
+if ($verifiedTop -ne $headVersion) {
+  Stop-Promote "$headVersion is NOT adjudicated. VERIFIED tops out at '$verifiedTop'. Verify on device, stamp with tools/stamp.ps1, then promote."
+}
+
+# A stamp is not automatically a pass. FAILED means the owner ruled against it.
+if ($verifiedFields -contains 'FAILED') {
+  Stop-Promote "$headVersion is stamped FAILED. A failed version is never promoted - the next ship is its fix."
+}
+
+Write-Host "Adjudicated: $verifiedFirst" -ForegroundColor Green
+
 # ---- What would move ----
 $pending = Invoke-Git @('log', '--oneline', 'release..main')
 if (-not $pending) {
@@ -89,7 +118,7 @@ Write-Host 'Commits this promote would publish:' -ForegroundColor Cyan
 $pending | ForEach-Object { Write-Host "  $_" }
 Write-Host ''
 
-# ---- Guard 4: it must be a fast-forward. release must be an ancestor of main. ----
+# ---- Guard 5: it must be a fast-forward. release must be an ancestor of main. ----
 Invoke-Git @('merge-base', '--is-ancestor', 'release', 'main') -AllowFail | Out-Null
 if ($LASTEXITCODE -ne 0) {
   Stop-Promote 'release is NOT an ancestor of main - this would not be a fast-forward.'
@@ -144,7 +173,7 @@ for ($i = 1; $i -le 20; $i++) {
 
 if ($served -eq $expected) {
   Write-Host "SERVED: $served" -ForegroundColor Green
-  Write-Host 'Promoted and reachable. Verify on the phone, then stamp with tools\stamp.ps1.'
+  Write-Host "$served was adjudicated before this promote (Guard 4). Nothing further is owed here."
 }
 else {
   Write-Host "Expected $expected but live still serves $served after ~5 minutes." -ForegroundColor Yellow
