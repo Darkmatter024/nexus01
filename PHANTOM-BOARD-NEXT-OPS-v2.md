@@ -50,6 +50,31 @@ Findability of the ten-tool group (option 1), 1→2 tap trade accepted, plus the
 ### Q-4 · Forge Ship 2 confirm — *likely already done*
 Verify `#api-key-input` and `cw_api_key` plumbing are absent. Report only.
 
+### Q-5 · WEBKIT HARNESS BUMP — *queued 2026-09-04, NOT NOW*
+⛔ **The `phone-webkit` project — the primary field gate, the one `playwright.config.js` says
+everything must pass first — cannot launch on this box.** Windows **Smart App Control is ON**
+(`VerifiedAndReputablePolicyState = 1`, enforcement) and blocks
+`ms-playwright/webkit-2336/libxslt.dll`: *"An Application Control policy has blocked this file."*
+`WebCore.dll` then resolves `libxslt.dll` as **not found** and every WebKit process dies at launch,
+which surfaces as the misleading `browserType.launch: Target page, context or browser has been
+closed`. ⚠ **A forced re-download does NOT fix it** — the policy blocks the bytes, not their
+absence; the file is present and freshly downloaded and still unloadable.
+
+⛔ **TURNING SMART APP CONTROL OFF IS NOT THE FIX AND IS NOT AVAILABLE** (owner ruling
+2026-09-04): it has **no per-file exemptions**, and once disabled it **cannot be re-enabled**
+without a Windows reinstall. That door is one-way, so it stays shut.
+
+⭐ **THE REAL FIX IS THE HARNESS.** `webkit-2358` is **NOT blocked** — its `libxslt.dll` loads
+cleanly, which is how `.578` was measured on real WebKit through the `playwright-iphone` MCP
+profile. `test/` is pinned to `@playwright/test` **1.62.1**, which wants **2336**. The ship is the
+devDependency bump to a version that resolves **2358**.
+
+⚠ **IT IS ITS OWN SHIP AND MUST NOT RIDE ALONG WITH A FEATURE.** A Playwright major/minor bump can
+shift behaviour across all 50 specs, so it carries a **full 50-spec pass** as its acceptance gate,
+compared against a recorded pre-bump baseline. ⛔ **Until it lands, any suite run is Chromium at
+390×844 — that is SIGNAL, NOT THE PRIMARY GATE**, and a ship note that reports it must say so.
+⚠ **The iPhone device verify is unaffected and remains the actual gate.**
+
 ---
 
 ## SANDBOX GATE
