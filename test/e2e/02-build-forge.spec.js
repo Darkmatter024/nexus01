@@ -420,6 +420,28 @@ test.describe('Build workspace + Forge aisle', () => {
       expect(c.attachments.length, `I1 broken back in Build: ${JSON.stringify(c.attachments)}`).toBeLessThanOrEqual(1);
     }
 
+    // WAIT FOR REGISTRATION TO SETTLE BEFORE ASSERTING LIVENESS.
+    // Build re-entry builds a NEW #bw-mount every time - measured 2026-09-05 with the engine
+    // instrumented: node#1 -> node#2 -> node#3 -> node#4, one per entry. RackEngine registers
+    // the new node only after the RECLAIM BARRIER (I6): acquireOrDefer holds it two frames so
+    // no context is acquired in the same task as a release. BETWEEN THOSE TWO POINTS the engine
+    // legitimately still holds the previous, now-detached, mount.
+    //
+    // Measured: 3s after the last entry, with NO navigation at all, the census reads
+    // connected:true on the current node unaided. Asserting the instant #bw-mount became
+    // visible measured that deferral window, not a leak. Ten cycles never exceeded one
+    // attachment, so I1 was never in question - only liveness was, and only transiently.
+    //
+    // NOT WEAKENED. The poll is bounded and its rejection swallowed ON PURPOSE: an attachment
+    // that never reconnects falls through to the assertion below, which still fails and still
+    // prints the offending attachment. A real detached-host leak is caught exactly as before.
+    await page.waitForFunction(() => {
+      const E = window.RackEngine;
+      if (typeof E !== 'object' || !E) return false;
+      return E.report().every((x) => x.connected);
+    }, undefined, { timeout: 5000 }).catch(() => {});
+    c = await census(page);
+
     // Every reported attachment must still be in the document. A registered attachment on a
     // detached host is a leak with a live rAF behind it.
     for (const a of c.attachments) {
