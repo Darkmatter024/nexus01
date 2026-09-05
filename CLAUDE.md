@@ -331,4 +331,12 @@ Rules:
 - For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- After modifying code, run `graphify update .` to keep the graph current. ⛔ **It is NOT free.**
+  Corrected 2026-09-04 — this line previously read *"AST-only, no API cost"*, which is true only of
+  a pure-code corpus. PHANTOM is not one: **175 of the 256 graphed files are markdown**, and only 80
+  are code. Code goes down the AST path and genuinely costs nothing; docs and images go through LLM
+  semantic extraction, and with no `GEMINI_API_KEY` set the host session is itself the LLM, so the
+  cost lands on this session's own budget via dispatched subagents.
+  Observed in `graphify-out/cost.json`: **350k–670k input tokens per `--update`** (9–24 changed
+  files), and **2.18M** for the 2026-08-28 full build. That file is the ledger — read it before any
+  bulk rebuild, and never treat an update as a free reflex on a docs-heavy change.
