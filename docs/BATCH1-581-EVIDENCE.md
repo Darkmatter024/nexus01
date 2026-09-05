@@ -13,7 +13,7 @@
 | Batch contents | ONE ship, `.581`, two owner-ruled fixes (Q-b `--tac`, Q-c one rack engine) |
 | `VERIFIED` / version drift | `VERIFIED` head = `.580`; tree + `origin/main` = `.581`. **One unverified ship — the SHIP GATE is AT its limit, not over it.** |
 | `release` vs `main` | `release` = `4abd92f` serving `.580` (VERIFIED). `main` = `694ef3b` carrying `.581`. The phone still has `.580` until John promotes. |
-| Full suite (`phone-webkit`) | see the run block at the end of this file |
+| Full suite (`phone-webkit`) | **388 passed · 8 failed · 13 skipped** (2.8h). Baseline `.559` was **20 failed**. Of the 8: 4 flake, 1 timeout cascade, 3 reproduce — **none implicates `.581`.** Full breakdown in the run block at the end. |
 | Targeted suite | `98-cmd-census.spec.js` — **27/27 pass** at `.581` bytes |
 | Owner's private-tab checklist | §"What John actually taps", below |
 
@@ -24,7 +24,7 @@
 | Field | Content |
 |---|---|
 | **Version** | `phantom-v1.14.581` |
-| **Visible change** | **ONE.** Command stops answering "how many racks" with two different numbers: the hero KPI and the RACKS stat cell both now read the **Master's** cab count, and the headline drops its count entirely — `"Deploying on <site>. Tap one."` ⛔ **The other half of the ship (Q-b, `--tac`) is a measured NO-OP — see Deviation 1.** |
+| **Visible change** | **ONE.** Command stops answering "how many racks" with two different numbers: the hero KPI and the RACKS stat cell both now read the **Master's** cab count, and the headline drops its count entirely — `"Deploying on <site>. Tap one."` ⭐ **The other half (Q-b, `--tac`) changes no pixel but is NOT a no-op — it turned `19-design-tokens-and-picker.spec.js:24` from red to green. Its NOTE, not its fix, is what needs your ruling — see the CORRECTION block and Deviation 1.** |
 | **Anchors** | `dct-ios.html:8980-8987` Q-b note · `:8989` `--tac: var(--cyan)` inside `.opswall > div` · `:12854` app stamp · `:23425-23428` Q-c note + `var _mrc` · `:23432` stats array reads `_mrc` · `:23664-23676` engine note + `function cmd_masterRackCount()` at `:23671` · `:23695-23698` `pickN` removal note · `:23709` headline · `:23724` `cs-kpi-racks` · `sw.js:37` cache stamp · `version.json:2,4,5` |
 | **Doctrine self-review** | **44px** — no touch target added, moved or resized; PASS by non-participation. **Data honesty** — PASS on Q-c: the count now names its own source, and the headline states no number it cannot justify. ⚠ **One carry-over, NOT introduced here:** `cs-kpi-racks` still renders `"0"` with no Master where `.579`'s pattern says `"—"`. It read `"0"` before this ship too (`String(rackCount \|\| 0)`), so `.581` neither caused nor fixed it; it is already parked as a `DATA-HONESTY-COMMAND` §4 item awaiting an owner ruling. **One visible change** — PASS *as shipped*, because the second change turns out to be invisible. ⛔ It was not intended to be, and that is the finding. |
 | **Lockstep** | ✅ three stamps, all `phantom-v1.14.581`: `version.json:2`, `sw.js:37`, `dct-ios.html:12854`. Verified by `grep -o` count = exactly 1 each. |
@@ -34,7 +34,40 @@
 
 ---
 
-## Deviation 1 ⛔ — the Q-b half of `.581` changes nothing a person can see
+## ⭐ CORRECTION (same day, after the full sweep) — read this before Deviation 1
+
+**This document's first cut, and the commit message on `e88b977`, called the Q-b half of `.581`
+"a measured no-op". That is wrong, and the error was mine.** The measurement it rests on still
+holds — `--tac` changes zero rendered pixels, and everything under Deviation 1 about `.opswall`
+matching nothing is unchanged. **What it missed is that a pixel is not the only thing a fix can
+change.**
+
+`19-design-tokens-and-picker.spec.js:24` — *"EVERY design token referenced in CSS is actually
+declared somewhere"* — **was FAILING in the `.559` sweep and PASSES at `.581`.** `--tac` was the
+undeclared token it was catching. **Q-b closed a real, red repo invariant that had been red for at
+least 22 versions.** That is not a no-op; it is an invisible fix, which is a different thing and a
+legitimate one.
+
+**What survives from Deviation 1, and still needs your ruling:** the ship note's *specific* claim —
+that *"the wall had been rendering without its accent since the cells shipped"* — is still false.
+No wall ever rendered, so no accent was ever lost or restored. The note describes a visual
+restoration; what actually happened was a token-declaration gate going green. **The fix was real;
+the reason given for it was not.** ⭐ **The right correction is to the note's stated effect, not to
+the fix** — and "one visible change per ship" still holds at one (Q-c), because Q-b's effect is
+invisible by nature.
+
+⛔ **Two reading errors of mine were reported to John before this correction and are retracted
+here:** (1) mid-sweep I said "zero failures" — my filter missed Playwright's `x` marker, and
+failures were already present. (2) I read the `.559` baseline as "349 passed, 0 failed" from a
+truncated tail; **it was 20 failed.** The true comparison is **`.559` 20 failed → `.581` 8 failed**,
+an improvement, and the `.559` red list is where the `--tac` finding above came from.
+
+---
+
+## Deviation 1 ⚠ — the Q-b note describes a visual restoration that did not happen
+
+*(Read the CORRECTION above first: the fix is real and closed a red gate. What follows is why the
+note's stated reason is still wrong.)*
 
 `.581`'s note says `--tac` was dead and that *"the wall had been rendering without its accent since
 the cells shipped."* **There is no wall.** The three declarations `--tac` feeds all hang off
@@ -77,11 +110,12 @@ so no later navigation can produce these nodes. The count is 0 everywhere, alway
 | `wk_opsNilLabel` `:22877` | only `:22935`, inside the same dead chain |
 
 ⭐ **The dead code is not the defect — it is inert, harmless, and `.464` left it deliberately. The
-defect is the RECORD.** `version.json` and `dct-ios.html:8980` now both assert a user-visible
-restoration the DOM cannot produce. In a file whose comments are the institutional memory, and under
-a rule that says *never label absent telemetry*, a note claiming a fix that did not happen is the
-same class of failure the note at `:8910` was written to warn about. **`.581` has one visible change,
-not two, and the record should say so.**
+defect is the NOTE'S STATED EFFECT.** `version.json` and `dct-ios.html:8980` both describe a
+user-visible restoration the DOM cannot produce. In a file whose comments are the institutional
+memory, and under a rule that says *never label absent telemetry*, a note that names the wrong
+effect for a real fix is the same class of failure the note at `:8910` was written to warn about.
+**What the fix actually did is close `19-design-tokens-and-picker.spec.js:24` — a red invariant, now
+green.** That is the sentence the note should carry.
 
 **This is a ruling for John, not a fix I took:** amend the note in place (cheapest, honest), or fold
 the correction into the next ship. I did neither — no unrequested edit to a shipped version.
@@ -149,6 +183,48 @@ calls the engine. The parameter is still passed at `:23459`. Not a bug; not wort
 
 ---
 
-## Suite run
+## Suite run — full `phone-webkit`, `.581` bytes
 
-*(appended below once the `phone-webkit` sweep completes)*
+```
+388 passed · 8 failed · 13 skipped     (2.8h)
+```
+
+**Baseline comparison: `.559` was `349 passed · 20 failed · 10 skipped` (1.1h). `.581` more than
+halves the failures.** ⛔ The handoff's line *"suite green baseline achieved"* is **not** what the
+bytes report — 8 remain. Four of the eight are flake; three reproduce; one is a stale test.
+
+**All eight re-run targeted on an idle box:**
+
+| Failure | Reproduces? | Verdict |
+|---|---|---|
+| `21-first-run-gate:137` | ❌ passes clean | flake from the loaded 2.8h run |
+| `37-locked-rack-pose:179` | ❌ passes clean | flake |
+| `43-paste-door:64` | ❌ passes clean | flake |
+| `43-paste-door:85` | ❌ passes clean | flake |
+| `04-storage:605` | took **19.2 min** alone | timeout cascade, not a logic failure |
+| `40-shift-door:41` | ✅ reproduces | **stale test — see below** |
+| `10-site-profile-root:84` | ✅ reproduces | **pre-existing, also red at `.559`** |
+| `43-paste-door:208` | ✅ reproduces | **test-isolation defect** |
+
+⭐ **NONE of the three touches anything `.581` changed.** Traced individually:
+
+- **`40-shift-door:41`** boots with **no Master** and asserts `#cs-shiftbar` is reachable. It
+  measures **0px wide** — because `dct-ios.html:24398` reads
+  *"⛔ v1.14.574 — GATED ON THE MASTER (owner ruling, FIRST-DOOR Ship A row 2)"*. **The gate is
+  `.574`, not `.581`.** `98-cmd-census.spec.js:244` asserts the *opposite* — that the door is hidden
+  with no Master — and passes. Two specs, one ruling, one of them never updated. The `.559` sweep
+  predates `.574`, which is why the triage missed it. **Test defect, same class as the four §4
+  already cleaned up.**
+- **`10-site-profile-root:84`** — `PHANTOM_SITE.migrate()` returns `["id"]`; the test expects
+  `"siteLead"`. **It was already in the `.559` red list.** The handoff calls this one
+  *"RESOLVED — owner-only pin, do not touch"*, but **the pin was never actually applied**: the spec
+  carries no `test.fail()` and was last touched at `v1.14.418`. It is failing, not pinned.
+  ⚠ **Flagged, untouched — the `.474`/`.537` authority contract makes this yours.**
+- **`43-paste-door:208`** — a foreign warn, `[OPS] no #bw-mount to anchor below`
+  (`dct-ios.html:21875`), leaks into the assertion window and fails a
+  `toMatch(/paste|box|not/i)`. The paste path itself behaves. **Test-isolation defect.**
+
+**Bottom line for the gate: nothing in the suite implicates `.581`.** The one spec that changed
+verdict because of this ship changed it the right way — `19-design-tokens-and-picker.spec.js:24`
+went **red → green**.
+
