@@ -418,10 +418,28 @@ test.describe('ops tool doors (rd_openOpsTool)', () => {
 
       // The mount contract: the tool paints into #ops-tool-host inside the back header
       // rd_openOpsTool writes to deploy_opsHost() = #wk-deploy under rd (:29828-29830).
+      // ⛔ WAIT FOR THE SURFACE TO SETTLE, NOT MERELY FOR CONTENT. This wait used to return as
+      // soon as the host had text, and then the visibility assertions below fired ~50ms too early:
+      // rd_openOpsTool writes the tool synchronously, but showMode defers ops_init behind a DOUBLE
+      // requestAnimationFrame (dct-ios :19254), so #pg-work is still missing `active` — display:none —
+      // at that instant. Measured 2026-09-05: host is 0x0 and hidden at 0ms and 50ms, then 362x635
+      // and visible from 100ms onward, stable thereafter. Ten tool doors failed on that race.
+      //
+      // ⭐ THE ASSERTION IS NOT WEAKENED, AND THAT IS THE POINT. The wait is bounded and its
+      // rejection is swallowed ON PURPOSE: a host that never becomes visible falls straight through
+      // to the `host.rendered` assertion below, which still fails and still names the node that
+      // declared the hidden state. A genuinely dead render host is caught exactly as before — this
+      // only stops the test asserting on a mid-activation frame.
+      // `visibility` INHERITS, so an ancestor's hidden state shows up on the host itself; the box
+      // check catches display:none on an ancestor, which does not inherit.
       await page.waitForFunction(() => {
         const h = document.getElementById('ops-tool-host');
-        return !!h && (h.childElementCount > 0 || (h.textContent || '').trim().length > 0);
-      }, undefined, { timeout: 10_000 });
+        if (!h) return false;
+        const hasContent = h.childElementCount > 0 || (h.textContent || '').trim().length > 0;
+        const r = h.getBoundingClientRect();
+        const visible = getComputedStyle(h).visibility !== 'hidden' && r.width > 0 && r.height > 0;
+        return hasContent && visible;
+      }, undefined, { timeout: 10_000 }).catch(() => {});
 
       const host = await surface(page, '#ops-tool-host');
       expect(host.present, `${tool.tab}: no #ops-tool-host — the door did nothing`).toBe(true);
