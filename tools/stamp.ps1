@@ -30,10 +30,17 @@
     .\tools\stamp.ps1 VERIFIED -DryRun             show the resulting file, write nothing
 #>
 [CmdletBinding()]
+# ARGUMENTS ARE ORDER-FORGIVING ON PURPOSE. The first cut declared Outcome as a ValidateSet at
+# position 0, so the natural invocation - stamp.ps1 580 VERIFIED - failed PARAMETER BINDING before
+# the body ran. Nothing was written, and the error was a wall of PowerShell binding text that read
+# as noise rather than as a refusal. That happened for real on 2026-09-05 and the owner reasonably
+# believed the stamp had landed. A tool whose failure looks like success is worse than a strict one.
 param(
   [Parameter(Mandatory = $true, Position = 0)]
-  [ValidateSet('VERIFIED', 'FAILED')]
-  [string]$Outcome,
+  [string]$First,
+
+  [Parameter(Position = 1)]
+  [string]$Second,
 
   [string]$Version,
   [string]$Note,
@@ -60,6 +67,36 @@ function Stop-Stamp {
   Write-Host "STOP: $Reason" -ForegroundColor Red
   Write-Host 'VERIFIED was not changed.' -ForegroundColor Red
   exit 1
+}
+
+# Whichever token is VERIFIED/FAILED is the outcome; the other, if present, is the version.
+$Outcome = $null
+$versionArg = $null
+foreach ($tok in @($First, $Second)) {
+  if ([string]::IsNullOrWhiteSpace($tok)) { continue }
+  if ($tok -eq 'VERIFIED' -or $tok -eq 'FAILED') { $Outcome = $tok.ToUpper() }
+  else { $versionArg = $tok }
+}
+if (-not $Outcome) {
+  Write-Host ''
+  Write-Host 'STOP: no outcome given. Pass VERIFIED or FAILED - either position works.' -ForegroundColor Red
+  Write-Host '  tools/stamp.ps1 VERIFIED          stamp the version in version.json' -ForegroundColor Yellow
+  Write-Host '  tools/stamp.ps1 580 VERIFIED      same, naming the build number' -ForegroundColor Yellow
+  Write-Host '  tools/stamp.ps1 FAILED -Note ...  record a device failure' -ForegroundColor Yellow
+  Write-Host 'VERIFIED was not changed.' -ForegroundColor Red
+  exit 1
+}
+if (-not $Version) { $Version = $versionArg }
+
+# A bare build number is the natural thing to type, so accept it and the obvious near-misses.
+# Deliberately no regex here: an anchored numeric pattern is not worth the quoting risk.
+if ($Version) {
+  $v = $Version.Trim()
+  $asInt = 0
+  if ([int]::TryParse($v, [ref]$asInt)) { $Version = 'phantom-v1.14.' + $v }
+  elseif ($v -like '1.14.*')  { $Version = 'phantom-v' + $v }
+  elseif ($v -like 'v1.14.*') { $Version = 'phantom-' + $v }
+  else                        { $Version = $v }
 }
 
 $VerifiedFile = Join-Path $RepoRoot 'VERIFIED'
