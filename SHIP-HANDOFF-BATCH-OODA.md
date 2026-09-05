@@ -1,10 +1,14 @@
 # SHIP-HANDOFF-BATCH-OODA
 
 **Type:** standing doctrine, not a code ship.
-**Status:** ⛔ **SPEC ONLY — AWAITING OWNER RULING. Nothing executed, nothing implemented.**
+**Status:** ⛔ **NOT IN FORCE. Nothing implemented.** C-1 … C-5 ruled 2026-09-05
+(`OWNER-RULINGS.md`); §4 triage complete 2026-09-05. **Existing ship discipline still governs,**
+**including max ONE unverified ship,** until §8 is satisfied in full.
 **Author:** Claude Code, 2026-09-05, on owner instruction.
-**Touches when approved:** `CLAUDE.md` (ship discipline), `tools/stamp.ps1` (batch syntax).
-**Depends on:** the 03-tools triage in §4, which must land *first*.
+**Touches when implemented:** `CLAUDE.md` (ship discipline — CALL 0 and `BATCH-VERIFY.md` struck),
+`tools/stamp.ps1` (batch syntax).
+**Blocked on:** the six defects in §4 being fixed and the suite genuinely green, plus the sweep
+runtime regression.
 
 ---
 
@@ -67,63 +71,87 @@ Recorded explicitly so approving this cannot be read as loosening anything else.
 
 ---
 
-## 4 · ⛔ PREREQUISITE — the 20-failure triage
+## 4 · ⛔ PREREQUISITE — the suite baseline triage
+
+⭐ **TRIAGE COMPLETED 2026-09-05. Report-only, no fixes made.** Every row below was **re-verified
+against `.579`**, not carried over from the `.559` log — and that mattered: five of the twenty had
+changed state.
 
 **Batch mode is meaningless without a trustworthy green.** "Full suite green" cannot be a gate while
-the suite has never been green. This section must land and be signed off *before* the first batch.
+the suite has never been green.
 
-### What the baseline actually is
+### The numbers
 
-From `test/sweep-559.log` — the full sweep at `.559`: **20 failed / 349 passed in 1.1h.**
+| | Result |
+|---|---|
+| `.559` full sweep (`test/sweep-559.log`) | 20 failed / 349 passed · 1.1h |
+| `.579` re-run of the 10 specs carrying those 20 | **15 failed · 11 skipped · 89 passed · 17.5m** |
 
-| Spec | Failures | Test |
-|---|---:|---|
-| `03-tools.spec.js:410:5` | **10** | *"X mounts into a VISIBLE host and backs out to Build"* — bom, manifest, portmap, rackmap, sops, burndown, audits, blast, optics, isolate |
-| `29-context-follows-surface.spec.js` | 2 | rack detail draws; deferral is stated |
-| `01-nav.spec.js` | 1 | `.botitem.active` mirrors the visible page |
-| `02-build-forge.spec.js` | 1 | never more than one interactive attachment |
-| `05-offline.spec.js` | 1 | network loss reported, not swallowed |
-| `10-site-profile-root.spec.js` | 1 | migration seeds `siteLead`, keeps the actor |
-| `19-design-tokens-and-picker.spec.js` | 1 | every CSS token is actually declared |
-| `30-rack-above-the-fold.spec.js` | 1 | the rack is visible without scrolling |
-| `39-sw-update-path.spec.js` | 1 | install must not `skipWaiting` |
-| `44-tool-reachability.spec.js` | 1 | the tool row meets the gloved floor |
+### Row by row, verified at `.579`
+
+| Spec:line | Why it fails | Verdict |
+|---|---|---|
+| `03-tools:410` ×10 | `#ops-tool-host {display:block; visibility:hidden}` — **silent success** | **FIX** ×10, **one root cause** |
+| `02-build-forge:389` | RackEngine holds a **DETACHED** attachment (`connected:false`) | **FIX** |
+| `05-offline:565` | no `[data-requires-net="1"]` in the DOM — the gate has nothing to gate | **FIX** |
+| `10-site-profile-root:84` | migration did not run on a confirmed profile missing `siteLead` | **FIX** |
+| `19-design-tokens:24` | tokens referenced with no fallback, declared nowhere | **FIX** |
+| `39-sw-update-path:24` | `install()` calls `skipWaiting` — no worker ever reaches `waiting` | **FIX** |
+| `01-nav:137` | — | ✅ **already fixed** since `.559` |
+| `29-context:72` → `:90` | — | ✅ **already fixed** |
+| `29-context:128` → `:203` | — | ✅ **already fixed** |
+| `30-rack-above-the-fold:79` | — | ✅ **already fixed** |
+| `44-tool-reachability:69` → `:105` | `test.skip(vw < 1024)` — Field tools went **desktop-only** at `v1.14.576` | ⊘ **not a phone test any more** |
+
+⭐ **ZERO STALE TESTS. ZERO NEW PINS WARRANTED.** Nothing in the baseline asserts removed behaviour,
+and nothing warrants hiding behind a `test.fail()`.
 
 ### ⭐ The finding that makes this tractable
 
-**Ten of the twenty are one test**, `03-tools.spec.js:410:5`, parameterised over ten tool doors. The
-baseline is therefore **~11 distinct defects, not 20**, and half the count is a single root cause.
+**15 unpinned failures, but only SIX distinct defects:**
 
-That test asserts a tool *"mounts into a VISIBLE host"* — which is the known **dead-render-host**
-class: a door reports success into a hidden node, so nothing paints and nothing is logged.
-`44-tool-reachability` and `30-rack-above-the-fold` plausibly share that root. **If they do, one fix
-closes twelve of twenty.**
+1. **`#ops-tool-host` is `visibility:hidden`** — ten rows, one cause
+2. RackEngine detached-attachment leak
+3. the offline connectivity gate has nothing to gate
+4. `siteLead` migration does not fire
+5. undeclared design tokens
+6. SW `install()` calls `skipWaiting`
 
-⚠ That is a hypothesis from the test names, not a diagnosis. Triage proves it or discards it.
+Ten of fifteen fall to **one fix**. The prerequisite is six defects, not twenty failures.
 
-### Triage deliverable
+⚠ **Possibly larger than ten.** The four pinned DEAD-DOOR tests in `03-tools` cite `#ops-content`
+hidden at `:45908`/`:45934` — the same hidden-host family as `#ops-tool-host`. If they share a root,
+one fix governs **fourteen** tests. To be confirmed during the fix, never assumed.
 
-`docs/SUITE-BASELINE-TRIAGE.md`, one row per distinct failure:
+### ⛔ Corrections to this spec's first draft
 
-| Field | Meaning |
-|---|---|
-| Spec + line | where it fails |
-| Root cause | proven, not guessed |
-| Verdict | **REAL DEFECT** (fix it) · **PINNED DEFECT** (`test.fail()` + why) · **STALE TEST** (asserts something doctrine has since revoked) |
-| Owner ruling | required for every PINNED and every STALE verdict |
+Both errors were mine, and both are corrected above.
+
+1. **The first draft said `03-tools.spec.js` has "zero `test.fail()` pins". That is WRONG — it has
+   FOUR**, at `:519 :539 :560 :615`, written as `test.fail(true, 'reason')`. The original grep only
+   matched the no-argument form `test.fail()`. Those four are the "KNOWN DEAD DOORS" block, each
+   pinned with a stated reason, and they are why twenty failure marks reconcile to fifteen counted
+   failures. **Any future pin audit must match `test.fail(` , not `test.fail()`.**
+2. **The first draft guessed `44-tool-reachability` and `30-rack-above-the-fold` share the
+   dead-render-host root, and that "one fix closes twelve of twenty". DISPROVED.** `30-rack` passes
+   at `.579`; `44-tool` is skipped on phone entirely. The real figure is **ten of fifteen**, and it
+   is measured rather than inferred.
+
+### Pinning discipline
 
 ⛔ **A failure may only be pinned by the owner, never by Claude Code.** Pinning is how a real defect
-becomes invisible; `03-tools.spec.js` currently has **zero** `test.fail()` pins, and the four specs
-that do carry pins (`01-nav` 2, `02-build-forge` 1, `05-offline` 1, `06-composition` 5) are the
-pattern to follow — a pin with a stated reason.
+becomes invisible. The existing pins are the pattern to follow — a pin with a stated reason:
+`01-nav` 2, `02-build-forge` 1, `03-tools` **4**, `05-offline` 1, `06-composition` 5.
 
-### Also blocking: the suite is 9× slower than its own baseline
+### Also blocking: the suite is far slower than its own baseline
 
-`.559` swept in **1.1h**. The 2026-09-04 sweep reached spec 37 of 50 in **9.7 hours** before it was
-stopped. Unexplained, and unrelated to any ship. **A batch gate that costs a 9-hour sweep is not a
-gate anyone will run**, so the cause has to be found as part of this prerequisite. First suspect:
-specs carry `test.setTimeout(180000)` and with `retries: 0` each timing-out failure can burn three
-minutes — but that arithmetic does not reach 9 hours on its own.
+`.559` swept 369 tests in **1.1h**. The 2026-09-04 sweep reached spec 37 of 50 in **9.7 hours**
+before it was stopped. Unexplained, and unrelated to any ship. **A batch gate that costs a 9-hour
+sweep is not a gate anyone will run**, so the cause has to be found as part of this prerequisite.
+
+⚠ New data point: the 2026-09-05 ten-spec run did 115 tests in **17.5m** — a healthy rate. So the
+slowdown is **not** uniform, which argues against a blanket cause (machine load, a global timeout)
+and for something specific to the specs the 9.7-hour sweep was grinding through.
 
 ---
 
