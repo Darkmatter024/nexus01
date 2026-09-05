@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.577';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.578';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -23594,14 +23594,19 @@ function cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handof
       // ⛔ NOT `warn` WHEN INDETERMINATE. warn is the attention channel and means "a tech must do
       // something"; an unanswerable gate asks for nothing. Muting it is the honest treatment, and
       // it keeps the attention channel meaning one thing (the .323 colour-lock reasoning).
-      d.className = 'cs-rrow' + (g[1] === null ? '' : (g[1] ? '' : ' warn'));
+      // ⛔ v1.14.578 — INDETERMINATE GETS ITS OWN CLASS, `na`. `.577` gave the row an em dash and
+      // muted it, but left the DOT on the default `var(--ok)` GREEN with a green glow — so the
+      // fastest signal on the row still said 'pass' while the text said 'cannot be answered'.
+      // Caught on the device precheck at arm's length, which is the only distance that matters.
+      d.className = 'cs-rrow' + (g[1] === null ? ' na' : (g[1] ? '' : ' warn'));
       var dot = document.createElement('span'); dot.className = 'cs-hdot'; dot.setAttribute('aria-hidden', 'true');
       var k = document.createElement('span'); k.textContent = g[0];
       var v = document.createElement('span'); v.className = 'cs-rv';
       if (g[1] === null) {
         v.textContent = '—';
         v.title = 'No deployment yet, so this cannot be answered.';
-        d.style.opacity = '0.55';
+        // ⚠ The muting moved to the `.na` rule with the dot colour. One class now carries the whole
+        // treatment, so the row cannot end up half-styled the way it did at `.577`.
       } else {
         v.textContent = g[1] ? 'OK' : 'OPEN';
       }
@@ -59680,6 +59685,16 @@ body.rd .bw-wl-done.is-partial { background: rgba(16,22,32,0.9); border: 1px sol
   /* the health rows are .cs-hrow and these are .cs-rrow - the warn dot needs its
      OWN rule or every open gate renders a healthy mint dot, which is a lie. */
   body.rd.cshell .cs-rrow.warn .cs-hdot { background: var(--gold); box-shadow: 0 0 7px var(--gold); }
+  /* ⛔ v1.14.578 — AN UNANSWERABLE GATE IS SLATE, AND IT DOES NOT GLOW.
+     `.577` made the text honest — em dash, muted label — and left the dot green, because green is
+     the DEFAULT `.cs-hdot` fill. On the device precheck the row read as a pass at arm's length
+     while its own text said the opposite, and the dot wins that race in a cold aisle.
+     ⭐ THE GLOW GOES TOO, AND THAT IS NOT COSMETIC. Every other dot here glows because it is
+     reporting a live, known state; the design lock is explicit that inactive state carries no
+     decorative glow. A gate the app cannot answer is not reporting anything, so it should not
+     look lit. Slate, flat, muted — visibly a non-answer rather than a quiet yes. */
+  body.rd.cshell .cs-rrow.na { opacity: 0.55; }
+  body.rd.cshell .cs-rrow.na .cs-hdot { background: var(--slate); box-shadow: none; }
   body.rd.cshell .cs-rrow.warn .cs-rv { color: var(--gold); }
   body.rd.cshell .cs-rbtn {
     margin-top: auto; min-height: var(--tap-s); border-radius: var(--r-ctl); cursor: pointer; width: 100%;

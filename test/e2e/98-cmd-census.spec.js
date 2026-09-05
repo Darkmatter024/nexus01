@@ -487,3 +487,63 @@ test.describe('A-4 — readiness never claims a pass it has not earned', () => {
       .not.toContain('not applicable yet');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v1.14.578 — THE DOT MUST NOT SAY PASS WHEN THE TEXT SAYS UNANSWERABLE.
+// ⛔ THIS IS THE TEST THAT DID NOT EXIST AT .577, WHICH IS WHY .577 SHIPPED THE
+// DEFECT. Every string assertion passed - em dash, not warn, right counts - and
+// the row still rendered a GREEN, GLOWING dot inherited from the .cs-hdot
+// default. The tests checked text and class; the lie was in a colour.
+// Found by looking at a screenshot, which is why the assertion is now geometry
+// and colour rather than another string.
+// ─────────────────────────────────────────────────────────────────────────────
+const dots = (page) => page.evaluate(() => {
+  const out = {};
+  Array.from(document.querySelectorAll('#cs-ready-rows .cs-rrow')).forEach((r) => {
+    const s = r.querySelectorAll('span');
+    const label = s[1] ? s[1].textContent.trim() : null;
+    const dot = r.querySelector('.cs-hdot');
+    if (!label || !dot) return;
+    const cs = getComputedStyle(dot);
+    out[label] = { bg: cs.backgroundColor, shadow: cs.boxShadow, rowOpacity: getComputedStyle(r).opacity };
+  });
+  return out;
+});
+
+test.describe('A-4 follow-up — an unanswerable gate does not look like a pass', () => {
+  test('⛔ NO DEPLOYMENT: the blockers dot is NOT the OK colour and does NOT glow',
+    async ({ phantom, page }) => {
+      test.setTimeout(180000);
+      await phantom.boot({ seed: {} });
+      await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); });
+      await page.waitForTimeout(1200);
+      const d = await dots(page);
+      console.log('578 dots:', JSON.stringify(d));
+      const na = d['No open blockers'];
+      const ok = d['Site profile'];
+      expect(na, 'the blockers row is missing').toBeTruthy();
+      expect(ok, 'the site-profile row is missing - needed as the OK reference colour').toBeTruthy();
+      // ⛔ THE ASSERTION IS RELATIVE, not a hardcoded hex: it must not match whatever the OK dot is.
+      // Pinning a literal colour would break on a token change and prove nothing about the pairing.
+      expect(na.bg, 'the unanswerable gate wears the same dot colour as a genuine pass - the .577 defect')
+        .not.toBe(ok.bg);
+      // ⛔ AND IT MUST NOT BE LIT. Every other dot glows because it reports a live known state; the
+      // design lock forbids decorative glow on inactive state.
+      expect(na.shadow === 'none' || na.shadow === '', 'the unanswerable gate still glows - shadow=' + na.shadow)
+        .toBe(true);
+      expect(ok.shadow, 'the OK dot lost its glow - this ship should not have touched it').not.toBe('none');
+    });
+
+  test('WITH A DEPLOYMENT: the dot returns to the OK colour and lights again', async ({ phantom, page }) => {
+    test.setTimeout(180000);
+    await phantom.boot({ seed: deploymentSeed() });
+    await page.evaluate(() => { if (typeof showMode === 'function') showMode('command'); if (typeof cmd_render === 'function') cmd_render(); });
+    await page.waitForTimeout(1200);
+    const d = await dots(page);
+    const na = d['No open blockers'];
+    const ok = d['Site profile'];
+    // The treatment must be a STATE, not a permanent demotion of this row.
+    expect(na.bg, 'the gate stayed slate even with a deployment - the row is permanently demoted').toBe(ok.bg);
+    expect(na.rowOpacity, 'the row stayed muted with a deployment present').toBe('1');
+  });
+});
