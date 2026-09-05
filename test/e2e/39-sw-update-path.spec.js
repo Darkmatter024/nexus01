@@ -21,7 +21,28 @@ const { test, expect } = require('./fixtures');
 // day it shipped, and they hold in any browser.
 test.describe('SW update path — structure', () => {
 
-  test('⛔ install must NOT skipWaiting, and a message handler must exist to promote on demand', async ({ phantom, page }) => {
+  // ==========================================================================
+  // PINNED BY OWNER RULING 2026-09-05 - .513 STANDS AND THIS ASSERTION DOES NOT.
+  //
+  // This assertion encodes the .458 P0 contract: install must not skipWaiting, so a worker
+  // reaches waiting and the SW UPDATE badge has something to promote. A LATER DEVICE FAILURE
+  // OVERTURNED IT. .513 found that iOS Safari does not reliably process message-based
+  // skipWaiting(), so sw.js calls it directly in install (sw.js :171). The phone therefore
+  // auto-updates on install rather than waiting for a badge tap - a behaviour change, ruled
+  // deliberately, not a regression.
+  //
+  // THE TEST IS KEPT, NOT DELETED. If sw.js ever stops calling skipWaiting in install,
+  // Playwright reports 'expected to fail but passed' - the signal that .513's workaround is no
+  // longer in force and this ruling needs revisiting.
+  // Only THIS assertion is pinned. The message-handler contract below is NOT: .513 did not
+  // overturn it, and it is the half of .458 that fixed a listener which did not exist at all.
+  // ==========================================================================
+  test('install must NOT skipWaiting', async ({ phantom, page }) => {
+    // Scoped inside the body on purpose: at describe scope this would annotate every sibling.
+    test.fail(true, 'v1.14.513 - iOS Safari does not reliably process message-based skipWaiting(), '
+      + 'so install() calls it directly (sw.js :171). Owner ruling 2026-09-05: .513 stands, the '
+      + 'phone auto-updates, and the badge no longer owns promotion.');
+
     await phantom.boot();
     const sw = await page.evaluate(async () => (await fetch('./sw.js')).text());
     const code = sw.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');
@@ -34,6 +55,17 @@ test.describe('SW update path — structure', () => {
     const installBody = code.slice(iStart, iNext === -1 ? code.length : iNext);
     expect(/skipWaiting\s*\(/.test(installBody),
       '⛔ install() calls skipWaiting — a worker will never reach `waiting` and the UPDATE badge will have nothing to promote').toBe(false);
+
+  });
+
+  // NOT PINNED. This is the receiving half of the .458 activation contract - the listener that
+  // did not exist at all, which is why the tap could never promote anything. .513 changed WHO
+  // triggers activation, not whether the message door exists, so this stays enforced.
+  test('a message handler must exist to promote on demand', async ({ phantom, page }) => {
+
+    await phantom.boot();
+    const sw = await page.evaluate(async () => (await fetch('./sw.js')).text());
+    const code = sw.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');
 
     expect(/addEventListener\(\s*'message'/.test(code),
       '⛔ sw.js has no message listener — SKIP_WAITING has no receiver').toBe(true);
