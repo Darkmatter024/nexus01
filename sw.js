@@ -34,7 +34,7 @@
 // a clean v1.13.3 — dropping the prior -N cache-iteration suffix — so this real
 // version bump busts every client's cache and the three stamps (app const /
 // version.json / this key) line up again. Patch bumps continue from here.
-const CACHE_VERSION = 'phantom-v1.14.579';
+const CACHE_VERSION = 'phantom-v1.14.580';
 
 // Assets to precache on install. Keep this minimal — single-file PWA means
 // most of PHANTOM is in dct-ios.html itself.
@@ -163,11 +163,23 @@ function isCacheableScheme(req) {
 // ── INSTALL ───────────────────────────────────────────────────────────
 // v1.6.29: Per-URL adds via Promise.allSettled. One failing URL no longer
 // aborts the entire install — failed entries are logged but tolerated.
-// ⛔ v1.14.458: the old note here read "skipWaiting() at the end so upgrades activate immediately
-// on next page load". That is no longer true and was the P0: activating immediately meant no
-// worker ever reached `waiting`, so the SW UPDATE badge had nothing to promote. A new worker now
-// INSTALLS AND WAITS; the user's tap posts SKIP_WAITING and the message handler below promotes it.
 self.addEventListener('install', (event) => {
+  // ⛔ v1.14.513 — skipWaiting() IS CALLED HERE ON PURPOSE, AND IT OVERTURNS v1.14.458.
+  // .458 removed this call as its P0 fix: activating immediately meant no worker ever reached
+  // `waiting`, so the SW UPDATE badge had nothing to promote. .513 then found the OPPOSITE
+  // failure on the device — iOS Safari does not reliably process message-based skipWaiting(),
+  // so a worker that waits for a badge tap can wait forever. Calling it directly here is what
+  // makes an upgrade actually land on the phone.
+  //
+  // ⚠ THE TRADE, STATED PLAINLY: the phone AUTO-UPDATES on install. The badge no longer owns
+  // promotion. That is a behaviour decision, not a regression.
+  //
+  // ⭐ OWNER RULING 2026-09-05 — .513 STANDS. test/e2e/39-sw-update-path.spec.js pins the .458
+  // assertion with this reason. If that test ever reports "expected to fail but passed", this
+  // call has gone and the ruling needs revisiting.
+  //
+  // The message handler below still exists and still promotes on SKIP_WAITING: .513 changed WHO
+  // triggers activation, not whether the message door works.
   self.skipWaiting();
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_VERSION);
@@ -184,9 +196,6 @@ self.addEventListener('install', (event) => {
       console.log('[PHANTOM SW] Precache: all ' + PRECACHE_URLS.length +
                   ' URLs cached for ' + CACHE_VERSION);
     }
-    // v1.14.513: skipWaiting() called unconditionally for iOS Safari reliability.
-    // iOS Safari does not reliably process message-based skipWaiting() calls, so it must
-    // be called directly in the install event to ensure new worker activates on upgrade.
   })());
 });
 
