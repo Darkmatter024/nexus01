@@ -19,6 +19,9 @@
     Put an older version first and the next version.json bump is blocked with a message that does
     not explain why. This script always PREPENDS.
 
+  ! IT COMMITS VERIFIED AND NOTHING ELSE, even when other files are staged. A stamp that quietly
+    carries a ship defeats the two-key gate. See the commit block at the bottom for how.
+
   A FAILED stamp is not a pass. It records that the owner put the version on a phone and ruled on
   it, which is the only question the gate asks. It does not license promoting that version.
   (Owner ruling 2026-09-03, quoted in phantom-guard.js.)
@@ -158,14 +161,54 @@ Set-Content -Path $VerifiedFile -Value $new -Encoding ascii
 $msg = "stamp: $Version $Outcome"
 if ($Note) { $msg = "$msg - $Note" }
 
-Invoke-Git @('add', 'VERIFIED') | Out-Null
-try { Invoke-Git @('commit', '-m', $msg) | Out-Null }
+# ---- Commit VERIFIED, AND NOTHING ELSE. ----
+# `git commit -m ...` commits THE WHOLE INDEX, so whatever the owner already had staged rides along
+# under the stamp's message. That happened for real on 2026-09-05: commit f32e49a, subject
+# "stamp: phantom-v1.14.580 VERIFIED", also carried dct-ios.html, sw.js and version.json. A ship
+# inside an adjudication is the one pairing the two-key gate exists to keep apart, and `git log
+# --oneline` shows it as a stamp, so nothing about the subject line reveals it.
+#
+# `git commit -- VERIFIED` is a PARTIAL COMMIT: git builds a TEMPORARY index of HEAD plus this one
+# path, commits the WORKING-TREE content of it, and leaves every other staged file staged and
+# untouched. Two consequences, both verified in a scratch repo before this was written:
+#   - the pre-commit hook runs against that temporary index, so the `git diff --cached --name-only`
+#     inside phantom-guard.js sees exactly one file, which is the truth of the commit. The
+#     version.json gate therefore cannot misfire on a stamp, and PHANTOM_GUARD_VIA=githook is still
+#     exported by tools/githooks/pre-commit, so the owner-only check works exactly as before.
+#   - the owner's staged work is not consumed. It is still staged when this returns.
+$stagedOthers = @(Invoke-Git @('diff', '--cached', '--name-only') |
+  Where-Object { $_.Trim().Length -gt 0 -and $_.Trim() -ne 'VERIFIED' })
+if ($stagedOthers.Count -gt 0) {
+  Write-Host ''
+  Write-Host 'These files are staged. They are NOT part of the stamp, and stay staged:' -ForegroundColor Yellow
+  $stagedOthers | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
+}
+
+# A partial commit needs the path to be KNOWN to git, so a first-ever VERIFIED has to be added.
+# A tracked one is deliberately NOT added: if the commit is then refused, the change stays in the
+# working tree where `git diff VERIFIED` shows it, instead of sitting in the index waiting to be
+# swept into somebody else's commit - which is the very failure this block is fixing.
+$tracked = @(Invoke-Git @('ls-files', '--', 'VERIFIED') | Where-Object { $_.Trim().Length -gt 0 })
+if ($tracked.Count -eq 0) { Invoke-Git @('add', '--', 'VERIFIED') | Out-Null }
+
+try { Invoke-Git @('commit', '-m', $msg, '--', 'VERIFIED') | Out-Null }
 catch {
   Write-Host ''
   Write-Host 'The commit was refused. If the message mentions VERIFIED being owner-only, this ran' -ForegroundColor Yellow
   Write-Host 'through the agent path rather than your terminal. VERIFIED is left modified but' -ForegroundColor Yellow
   Write-Host 'uncommitted - inspect with: git diff VERIFIED' -ForegroundColor Yellow
   Stop-Stamp $_.Exception.Message
+}
+
+# Assert the property this block exists for, rather than trusting it. Cheap, and the failure it
+# catches is one that reads as success everywhere else.
+$committed = @(Invoke-Git @('show', '--name-only', '--format=', 'HEAD') |
+  Where-Object { $_.Trim().Length -gt 0 })
+if ($committed.Count -ne 1 -or $committed[0].Trim() -ne 'VERIFIED') {
+  Write-Host ''
+  Write-Host 'WARNING: the stamp commit carries more than VERIFIED:' -ForegroundColor Red
+  $committed | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+  Write-Host 'Do not push it. Unwind with:  git reset --soft HEAD~1' -ForegroundColor Red
 }
 
 Write-Host ''
