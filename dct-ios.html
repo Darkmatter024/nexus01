@@ -12842,7 +12842,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.578';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.579';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -23695,10 +23695,26 @@ function cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba, maste
   E('cs-hero-fill').style.width = pct + '%';
 
   E('cs-kpi-racks').textContent = String(rackCount || 0);
-  E('cs-kpi-block').textContent = String(blockerCount || 0);
+  // ⛔ v1.14.579 — THE BLOCKERS KPI STOPS COUNTING WHAT IT CANNOT KNOW. Owner ruling from the
+  // `.578` cold-launch FAIL: on a fresh device this cell rendered "0", which reads as "none open"
+  // when the truth is "there is no deployment, so the question has no answer". `.577`/`.578` fixed
+  // that same lie on the readiness row and the stat row, and never reached this surface.
+  // ⭐ THE COUNT COMES FROM THE ACTIVE DEPLOYMENT ONLY (owner ruling 2026-09-04). The aggregate
+  // `blockerCount` param sums EVERY deployment, so it could report blockers this hero is not about.
+  // Aggregate counts never drive this cell — that is why the param is deliberately left unread here.
+  var _blkOk = !!activeDep;
+  var _blkN = 0;
+  if (_blkOk && typeof deploy_countBlockers === 'function') {
+    try { _blkN = deploy_countBlockers(activeDep.id) || 0; } catch (e) { phantom_logErr('cs_renderHero:blockers', e); }
+  }
+  E('cs-kpi-block').textContent = _blkOk ? String(_blkN) : '—';
   E('cs-kpi-pct').textContent = pct + '%';
   var bcell = E('cs-kpi-block-cell');
-  if (blockerCount > 0) bcell.classList.add('hot'); else bcell.classList.remove('hot');
+  // `na` and `hot` are mutually exclusive: a cell that cannot answer must never also shout. The
+  // aggregate could previously set `hot` with no active deployment, so the two could co-exist.
+  bcell.classList.toggle('na', !_blkOk);
+  bcell.title = _blkOk ? '' : 'No active deployment, so this cannot be answered.';
+  if (_blkOk && _blkN > 0) bcell.classList.add('hot'); else bcell.classList.remove('hot');
 
   // ⛔ v1.14.573 — THE BUTTON OPENS WHAT THE HEADLINE PROMISES. OWNER RULING, FROM A DEVICE FAIL.
   // .572 computed the headline from masterLoaded/live and the CTA from cmd_nba() INDEPENDENTLY, so
@@ -58830,6 +58846,14 @@ body.rd.cshell .cs-kpi-k { font-size: var(--fs-micro); letter-spacing: .16em; te
    invalidates the whole declaration outside it. */
 body.rd.cshell .cs-kpi.hot .cs-kpi-n { color: #ff2bd6; }
 body.rd.cshell .cs-kpi.hot { border-color: rgba(255,43,214,0.45); }
+/* ⛔ v1.14.579 — AN UNANSWERABLE KPI IS SLATE, AND IT DOES NOT COUNT. Sibling of the `.578`
+   `.cs-rrow.na` rule, and it sits beside `.hot` because that is where the next person will look.
+   ONE class carries opacity AND number colour together, so this cell cannot end up half-styled
+   the way the readiness row did at `.577` — honest text over a dishonest colour.
+   `--slate` is :root-scoped, NOT #boot-scoped like `--mag`, so it survives outside the boot
+   subtree and the declaration does not silently invalidate. Verified before use. */
+body.rd.cshell .cs-kpi.na { opacity: 0.55; }
+body.rd.cshell .cs-kpi.na .cs-kpi-n { color: var(--slate); }
 body.rd.cshell .cs-hero-cta {
   min-height: var(--tap-l); border-radius: var(--r-ctl); width: 100%; margin-top: var(--sp-3);
   background: linear-gradient(180deg, rgba(92,242,255,0.14), rgba(92,242,255,0.04)); color: var(--cyan); border: 1px solid rgba(92,242,255,0.45); box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 0 18px rgba(92,242,255,0.15);

@@ -547,3 +547,109 @@ test.describe('A-4 follow-up — an unanswerable gate does not look like a pass'
     expect(na.rowOpacity, 'the row stayed muted with a deployment present').toBe('1');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// v1.14.579 — THE BLOCKERS KPI FAIL THE OWNER CAUGHT ON A COLD LAUNCH AT .578.
+// A fresh device with no Master rendered a counted "0" in the hero Blockers cell.
+// A zero reads as "none open"; the truth was "no deployment, so no answer exists".
+// .577/.578 fixed this on the readiness row and the stat row and never reached the
+// hero — a third renderer for one concept.
+//
+// ⛔ THESE ASSERT THE PAINT, NOT THE CLASS. `.577` shipped an honest STRING over a
+// dishonest COLOUR and passed every string assertion it had. A class is not proof of
+// what paints, so the slate fill and the muting are read from getComputedStyle.
+// ─────────────────────────────────────────────────────────────────────────────
+const SLATE_RGB = 'rgb(138, 175, 191)';   // --slate #8AAFBF, :root-scoped
+
+const blockCell = (page) => page.evaluate(() => {
+  const n = document.getElementById('cs-kpi-block');
+  const cell = document.getElementById('cs-kpi-block-cell');
+  if (!n || !cell) return { missing: true };
+  const r = cell.getBoundingClientRect(), cs = getComputedStyle(cell);
+  return {
+    text: (n.textContent || '').trim(),
+    na: cell.classList.contains('na'),
+    hot: cell.classList.contains('hot'),
+    opacity: cs.opacity,
+    numColor: getComputedStyle(n).color,
+    painted: cs.display !== 'none' && cs.visibility !== 'hidden' && r.height > 0,
+  };
+});
+
+// The active deployment carries 2 blockers; a SECOND deployment carries 3 and is not
+// the active one. Aggregate would say 5. The cell must say 2 — owner ruling 2026-09-04.
+function blockerSeed() {
+  const base = deploymentSeed();
+  const deps = JSON.parse(base.phantom_deployments_v1);
+  deps[0].reviewIssues = [{ id: 'i1', triage: 'blocking' }, { id: 'i2', triage: 'untriaged' }];
+  deps.push({ id: 'dep_other', name: 'NOT THE ACTIVE ONE', status: 'active', created: 1750000000000,
+    updated: 1750000000000, createdAt: 1750000000000, updatedAt: 1750000000000, rackCount: 0, phaseCount: 0,
+    reviewIssues: [{ id: 'i3', triage: 'blocking' }, { id: 'i4', triage: 'blocking' }, { id: 'i5', triage: 'blocking' }] });
+  base.phantom_deployments_v1 = JSON.stringify(deps);
+  return base;
+}
+
+const renderCmd = (page) => page.evaluate(() => {
+  if (typeof showMode === 'function') showMode('command');
+  if (typeof cmd_render === 'function') cmd_render();
+});
+
+test.describe('the blockers KPI never counts what it cannot know', () => {
+  test('⛔ B1 · COLD LAUNCH, NO MASTER: the cell reads an em dash, muted and slate — not "0"',
+    async ({ phantom, page }) => {
+      test.setTimeout(180000);
+      await phantom.boot({ seed: {} });
+      await renderCmd(page);
+      await page.waitForTimeout(1200);
+      const b = await blockCell(page);
+      console.log('B1 blockers cell:', JSON.stringify(b));
+      expect(b.missing, 'the blockers KPI is not in the DOM').toBeFalsy();
+      expect(b.painted, 'the blockers KPI does not paint — the assertion would be vacuous').toBe(true);
+      expect(b.text, 'THE .578 FAIL: a counted zero where no answer exists').toBe('—');
+      expect(b.na, 'the unanswerable cell did not take the na class').toBe(true);
+      expect(b.hot, 'an unanswerable cell must never also shout').toBe(false);
+      expect(b.numColor, 'the number is not slate — .577 shipped honest text over a dishonest colour').toBe(SLATE_RGB);
+      expect(Number(b.opacity), 'the cell is not muted').toBeCloseTo(0.55, 2);
+    });
+
+  test('B2 · MASTER LOADED, NO DEPLOYMENT: still an em dash — the gate is the deployment, not the Master',
+    async ({ phantom, page }) => {
+      test.setTimeout(180000);
+      await phantom.boot({ seed: masterSeed() });
+      await page.evaluate(() => { window._lastPhantomMaster = JSON.parse(localStorage.getItem('phantom_master_v1')); });
+      await renderCmd(page);
+      await page.waitForTimeout(1200);
+      const b = await blockCell(page);
+      console.log('B2 blockers cell:', JSON.stringify(b));
+      expect(b.text, 'a Master without a deployment cannot answer the blockers question').toBe('—');
+      expect(b.na, 'the na treatment did not land with a Master present').toBe(true);
+    });
+
+  test('B3 · ACTIVE DEPLOYMENT, NO BLOCKERS: a real, earned zero — numeric and unmuted',
+    async ({ phantom, page }) => {
+      test.setTimeout(180000);
+      await phantom.boot({ seed: deploymentSeed() });
+      await renderCmd(page);
+      await page.waitForTimeout(1200);
+      const b = await blockCell(page);
+      console.log('B3 blockers cell:', JSON.stringify(b));
+      expect(b.text, 'an answerable zero must render as a number, not an em dash').toBe('0');
+      expect(b.na, 'an answerable cell must not be muted').toBe(false);
+      expect(b.hot, 'zero blockers must not read as hot').toBe(false);
+    });
+
+  test('⛔ B4 · THE COUNT IS THE ACTIVE DEPLOYMENT ONLY — an aggregate never drives this cell',
+    async ({ phantom, page }) => {
+      test.setTimeout(180000);
+      await phantom.boot({ seed: blockerSeed() });
+      await renderCmd(page);
+      await page.waitForTimeout(1200);
+      const b = await blockCell(page);
+      console.log('B4 blockers cell:', JSON.stringify(b));
+      // 2 on the active deployment, 3 on another. The aggregate answer (5) is the wrong one.
+      expect(b.text, 'the cell is reporting blockers from a deployment the hero is not about').toBe('2');
+      expect(b.na, 'an answerable cell must not be muted').toBe(false);
+      expect(b.hot, 'open blockers on the active deployment must read hot').toBe(true);
+    });
+});
+
