@@ -8977,7 +8977,16 @@ body.rd #work-grid .brow-stack { display:flex; flex-direction:column; gap:12px; 
    cells, which keeps the cell's class name a pure markup hook occurring exactly once per
    cell and nowhere else in the file — that count is this ship's acceptance check. Don't
    "tidy" this into a class selector without re-reading that check. */
+/* v1.14.581 (Q-b) - DECLARE --tac. It was referenced by three declarations here and declared
+   NOWHERE: no stylesheet, no element, no setProperty. Under Contract 15 an undefined var()
+   invalidates the WHOLE declaration silently, so the cell border, the :active border and the
+   .oc-n label colour were all dead. The :8910 note asserts the opposite - that --tac is set
+   inline per cell so nothing can silently die here - and that inline write was never
+   implemented. A comment is not a declaration.
+   Declared on the cell, not :root, so an inline per-cell accent still wins if one is ever
+   added. Precedent: .iso .card{--rfac:var(--cyan)} at :8763. */
 .opswall > div { position:relative; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end; gap:1px;
+  --tac: var(--cyan);
   aspect-ratio:1/1; padding:0 8px 9px 10px; border-radius:10px; overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent;
   border:1px solid color-mix(in srgb, var(--tac) 34%, transparent);
   /* v1.14.368 — THE RENDER IS THE TILE. Two background layers only: the art, and a flat near-black
@@ -12842,7 +12851,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.580';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.581';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -23413,10 +23422,14 @@ function cmd_render() {
     }
   }
 
+  // v1.14.581 (Q-c): RACKS is the MASTER's rack count on BOTH surfaces - this card and the hero
+  // KPI - so the screen answers "how many racks" once. rung and the NBA keep using the
+  // deployment-scoped rackCount; the ruling governs what is shown, not where the shift is routed.
+  var _mrc = cmd_masterRackCount();
   // ── earned-count stats (zero until earned; — when unconfigured) ──
   var stats = (rung === 'A')
     ? [['—', 'RACKS', 'racks', 1], ['—', 'BLOCKERS', 'block', 1], ['—', 'DEPLOYS', 'dep', 1]]
-    : [[_cc_pad(rackCount), 'RACKS', 'racks', rackCount === 0], [_cc_pad(blockerCount), 'BLOCKERS', 'block', blockerCount === 0], [_cc_pad(deployCount), 'DEPLOYS', 'dep', deployCount === 0]];
+    : [[_cc_pad(_mrc), 'RACKS', 'racks', _mrc === 0], [_cc_pad(blockerCount), 'BLOCKERS', 'block', blockerCount === 0], [_cc_pad(deployCount), 'DEPLOYS', 'dep', deployCount === 0]];
   // v1.14.225 — Command Lens stat cards → tap-through (re-home don't rebuild): RACKS → Rack Map floor
   // (rd_openOpsTool('rackmap'), the canonical Work door), BLOCKERS → issues/blockers list (navigates +
   // empty-states on 0, never a dead tap), DEPLOYS → Work→Deploy command center. Full-card hit area +
@@ -23648,6 +23661,19 @@ function cs_renderReady(rackCount, blockerCount, confirmed, masterLoaded, handof
 // textContent, never interpolated into innerHTML, so a deployment name can never
 // become markup. The CTA reuses cmd_route('work','deploy') — the same door the
 // NBA's "continue deployment" uses. One door per feature.
+// v1.14.581 (Q-c) - ONE ENGINE FOR "HOW MANY RACKS". Owner ruling 2026-09-05: the CELL shows the
+// MASTER rack count, the HERO names the deployment state. Before this, Command answered the same
+// question twice: the hero counted the ACTIVE deployment (pickN) and the cells summed rack rows
+// across EVERY deployment (rackCount), so a torture Master read "0 racks ... Tap one" beside a
+// cell reading 60. Neither number was the Master's.
+// The deployment-scoped rackCount still drives rung and the NBA - this ruling is about what the
+// SURFACES say, not about rewiring which branch the shift lands on.
+function cmd_masterRackCount() {
+  try {
+    var m = (typeof window !== 'undefined') ? window._lastPhantomMaster : null;
+    return (m && m.racksByCab && typeof m.racksByCab === 'object') ? Object.keys(m.racksByCab).length : 0;
+  } catch (_) { return 0; }
+}
 function cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba, masterLoaded, site) {
   var host = document.getElementById('cs-hero');
   if (!host) {
@@ -23666,11 +23692,10 @@ function cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba, maste
   // `rackCount` sums racks across EVERY deployment (:23333) — showing that beside "tap one" would
   // be a gauge that lies, because the picker lists ONE deployment. This asks the same source the
   // picker asks, so the number and the surface it points at can never disagree.
-  var pickN = 0;
-  try {
-    var _pid = (typeof deploy_getActiveId === 'function') ? deploy_getActiveId() : null;
-    if (_pid && typeof deploy_loadRacksFor === 'function') pickN = (deploy_loadRacksFor(_pid) || []).length;
-  } catch (_) {}
+  // pickN is GONE with the count it fed. It resolved the active deployment via
+  // deploy_getActiveId() while `live` above resolves it via nowtab_resolveDep() - two engines for
+  // "which deployment is active" that could disagree, which is how the headline reached "0 racks
+  // ... Tap one" on a device holding 60. Removing the count removes the divergence with it.
   var siteLabel = site || 'site not set';   // A-S6: honest 'not set', never a blank or a guess
   if (!masterLoaded) {
     // A-S1: one headline, one action. The CTA is already LOAD MASTER via cmd_nba branch :23740.
@@ -23679,7 +23704,9 @@ function cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba, maste
   } else if (live) {
     // A-S2: the one line that points at the picker. Real N, real site.
     E('cs-hero-eyebrow').textContent = 'Active deployment';
-    E('cs-hero-title').textContent = pickN + ' rack' + (pickN === 1 ? '' : 's') + ' on ' + siteLabel + '. Tap one.';
+    // No count here by ruling. 'Tap one' STAYS - the .573 contract pairs that promise with the
+    // picker CTA, and dropping it would break the pairing this file already had a device fail over.
+    E('cs-hero-title').textContent = 'Deploying on ' + siteLabel + '. Tap one.';
   } else {
     // Master loaded, nothing deploying. ⛔ NOT "tap one" — there is nothing to tap, and a CTA that
     // implies a job when none exists is exactly what A-S6 forbids. ⚠ MEASURED, not assumed: this
@@ -23694,7 +23721,7 @@ function cs_renderHero(activeDep, activePct, rackCount, blockerCount, nba, maste
   E('cs-hero-prog').style.display = live ? '' : 'none';
   E('cs-hero-fill').style.width = pct + '%';
 
-  E('cs-kpi-racks').textContent = String(rackCount || 0);
+  E('cs-kpi-racks').textContent = String(cmd_masterRackCount());
   // ⛔ v1.14.579 — THE BLOCKERS KPI STOPS COUNTING WHAT IT CANNOT KNOW. Owner ruling from the
   // `.578` cold-launch FAIL: on a fresh device this cell rendered "0", which reads as "none open"
   // when the truth is "there is no deployment, so the question has no answer". `.577`/`.578` fixed
