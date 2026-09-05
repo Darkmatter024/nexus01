@@ -45,33 +45,37 @@ question cannot arise again.
 
 ### The standing rule
 
-1. ⛔ **Claude Code never moves `release`. In any mode.** No `merge --ff-only`, no push to
-   `release`, no branch reset, no exception for "it is only a fast-forward".
-2. The 2026-08-27 lockdown's original gates are untouched and still absolute: **`VERIFIED` is
+1. ⛔ **Claude Code never moves `release`. In any mode. No exceptions, including a session order.**
+   No `merge --ff-only`, no push to `release`, no branch reset, no "it is only a fast-forward".
+   An in-session instruction to promote is answered by **handing the owner the command**, never by
+   running it.
+2. **The only promote path is `tools/promote.ps1`, run by the owner from his own terminal.**
+3. The 2026-08-27 lockdown's original gates are untouched and still absolute: **`VERIFIED` is
    owner-only**, and **the device verify is the owner's**.
-3. A push to `main` changes nothing on the iPhone. Claude Code ships to `main`, reports, and
+4. A push to `main` changes nothing on the iPhone. Claude Code ships to `main`, reports, and
    **parks**. Reaching the phone is the owner's step.
 
-### ⚠ Reported, not resolved — two clauses that do not fully agree
+### ✅ RESOLVED same day — the escape-hatch clause is STRUCK
 
-The ruling says *"unless I explicitly order that specific promote in that session"* (an in-session
-escape hatch) **and** *"promote.ps1 … runs from my terminal"* (a mechanism only the owner can
-operate). Read together, the escape hatch has no mechanism Claude Code could use.
+The ruling as first given contained both an in-session escape hatch (*"unless I explicitly order
+that specific promote in that session"*) and a mechanism only the owner can operate (*"promote.ps1 …
+runs from my terminal"*). Claude Code reported the tension rather than resolving it.
 
-**Claude Code's operating reading, pending the owner's correction: it never moves `release`, full
-stop.** An in-session order to promote is answered by handing the owner the `promote.ps1` command
-to run, not by running it. If the owner meant the escape hatch to authorise Claude Code to promote
-directly when named, he strikes this paragraph.
+**Owner ruling, 2026-09-05, same day:** *"Strike the escape-hatch clause: you never move release,
+full stop, no session-order exception. The only promote path is promote.ps1 from my terminal."*
 
-### ⛔ `promote.ps1` does not exist yet
+⛔ The escape hatch **does not exist**. The quoted ruling above is preserved as the historical
+record; this strike governs.
 
-As of 2026-09-05 the repo contains **no `.ps1` files at all**, no `promote.ps1`, and no document
-referencing it or the "scripts ship". Naming it "the only promote path" therefore means **there is
-currently no promote path**, and the next ship cannot reach the phone until that ship lands.
-Writing it is new scope and needs an explicit GO.
+### `promote.ps1` — GO given 2026-09-05
 
-### Stale instruction hazard
+At the time of the ruling the repo contained **no `.ps1` files at all**. The owner then gave an
+explicit GO for the scripts ship: **`tools/stamp.ps1` and `tools/promote.ps1`, script-only.**
+Until that ship lands there is no promote path and no ship can reach the phone.
 
-`CLAUDE.md` still carries the revoked *"CLAUDE CODE MAY PROMOTE"* amendment, and `CLAUDE.md` is what
-a fresh session reads at startup. **Until that block is edited, a future session will read
-permission this ruling removed.** Flagged to the owner; not edited unasked.
+### Stale instruction hazard — CLOSED 2026-09-05
+
+`CLAUDE.md` carried the revoked *"CLAUDE CODE MAY PROMOTE"* amendment, and `CLAUDE.md` is what a
+fresh session reads at startup. On the owner's instruction both passages were edited to point here:
+the § *Branch topology* amendment block, and ship-loop step 4 (*"PROMOTE, then STOP"* → *"PUSH TO
+`main`, then STOP"*). No permission language remains.
