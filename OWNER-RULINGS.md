@@ -6,6 +6,43 @@ is stale until edited. Newest first.
 
 ---
 
+## 2026-09-05 · BATCH-OODA — C-1 … C-5 RULED
+
+Spec: `SHIP-HANDOFF-BATCH-OODA.md`. The owner ruled all five conflicts in one message, each
+matching Claude Code's recommendation.
+
+| # | Conflict | Ruling |
+|---|---|---|
+| **C-1** | SHIP GATE 2026-08-23, *"max ONE unverified ship"*, vs batches of 3–5 | **AMEND** |
+| **C-2** | Ship discipline 0 (CALL 0) already batches, cap 6 | **SUPERSEDE** |
+| **C-3** | LEGACY-RETIRE forbids stacking | **CARVE OUT** |
+| **C-4** | Private-tab pass fails mid-batch | **Option 2** |
+| **C-5** | Does batch approval authorise scope? | **CONFIRM** |
+
+### What each ruling means concretely
+
+- **C-1 AMEND.** The 2026-08-23 SHIP GATE is amended **by name, not revoked** — the `.483/.484/.485`
+  incident stays on the record as the reason the rule existed. The amendment is **conditional on a
+  genuinely green suite** (spec §4). Until that lands, max ONE unverified ship still governs.
+- **C-2 SUPERSEDE.** BATCH-OODA replaces CALL 0. **CALL 0 and `BATCH-VERIFY.md` are struck in the
+  same edit** — two live batching rules is the failure mode this repo already knows.
+- **C-3 CARVE OUT.** ⛔ **BATCH-OODA does not apply inside LEGACY-RETIRE.** That campaign keeps one
+  visible change per ship and a phone verify between stages, per its own ruling.
+- **C-4 OPTION 2.** Per-ship adjudication at the batch boundary: the evidence table carries a
+  PASS/FAIL column and `VERIFIED` records the batch with any failing version named. **Fallback to
+  Option 1 (whole batch FAILED) when the defect is structural rather than localised.**
+- **C-5 CONFIRM.** Batch approval is **not** scope approval. Each batch's contents still need an
+  explicit GO. BATCH-OODA changes adjudication cadence only.
+
+### ⛔ NOT YET IN FORCE
+
+These rulings settle the *conflicts*. They do **not** start batch mode. BATCH-OODA becomes standing
+doctrine only when spec §8 is satisfied — the §4 suite triage landed and signed off, the sweep
+runtime regression resolved, `CLAUDE.md` rewritten, `stamp.ps1` given batch syntax, and one batch
+run end to end. **Until then the existing ship discipline governs unchanged.**
+
+---
+
 ## 2026-09-05 · PROMOTE IS OWNER-ONLY. The 2026-08-30 amendment is REVOKED.
 
 **Ruling, verbatim:**
