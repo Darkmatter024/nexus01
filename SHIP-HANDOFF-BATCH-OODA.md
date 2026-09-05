@@ -7,8 +7,8 @@
 **Author:** Claude Code, 2026-09-05, on owner instruction.
 **Touches when implemented:** `CLAUDE.md` (ship discipline — CALL 0 and `BATCH-VERIFY.md` struck),
 `tools/stamp.ps1` (batch syntax).
-**Blocked on:** the six defects in §4 being fixed and the suite genuinely green, plus the sweep
-runtime regression.
+**Blocked on:** the **five** defects remaining in §4 being fixed and the suite genuinely green,
+plus the sweep runtime regression. One of the original six is already closed (`9078534`).
 
 ---
 
@@ -73,9 +73,10 @@ Recorded explicitly so approving this cannot be read as loosening anything else.
 
 ## 4 · ⛔ PREREQUISITE — the suite baseline triage
 
-⭐ **TRIAGE COMPLETED 2026-09-05. Report-only, no fixes made.** Every row below was **re-verified
-against `.579`**, not carried over from the `.559` log — and that mattered: five of the twenty had
-changed state.
+⭐ **TRIAGE COMPLETED 2026-09-05. Every row re-verified against `.579`**, not carried over from the
+`.559` log — and that mattered: five of the twenty had changed state.
+
+⭐ **FIRST DEFECT CLOSED 2026-09-05 — and it was never an app defect.** See the `03-tools` row.
 
 **Batch mode is meaningless without a trustworthy green.** "Full suite green" cannot be a gate while
 the suite has never been green.
@@ -85,13 +86,14 @@ the suite has never been green.
 | | Result |
 |---|---|
 | `.559` full sweep (`test/sweep-559.log`) | 20 failed / 349 passed · 1.1h |
-| `.579` re-run of the 10 specs carrying those 20 | **15 failed · 11 skipped · 89 passed · 17.5m** |
+| `.579` re-run of the 10 specs carrying those 20 | 15 failed · 11 skipped · 89 passed · 17.5m |
+| **after the `03-tools` fix (`9078534`)** | **5 unpinned failures remain** |
 
 ### Row by row, verified at `.579`
 
 | Spec:line | Why it fails | Verdict |
 |---|---|---|
-| `03-tools:410` ×10 | `#ops-tool-host {display:block; visibility:hidden}` — **silent success** | **FIX** ×10, **one root cause** |
+| `03-tools:410` ×10 | **NOT a hidden host — a ~50ms TEST RACE.** The wait returned as soon as the host had text; `showMode` defers `ops_init` behind a double `rAF` (`:19254`), so `#pg-work` still lacked `active` (`display:none`). Host measured 0×0 at 0/50ms, **362×635 and visible from 100ms**, stable after. | ✅ **CLOSED `9078534`** — test waits for a settled surface; **app untouched** |
 | `02-build-forge:389` | RackEngine holds a **DETACHED** attachment (`connected:false`) | **FIX** |
 | `05-offline:565` | no `[data-requires-net="1"]` in the DOM — the gate has nothing to gate | **FIX** |
 | `10-site-profile-root:84` | migration did not run on a confirmed profile missing `siteLead` | **FIX** |
@@ -104,38 +106,47 @@ the suite has never been green.
 | `44-tool-reachability:69` → `:105` | `test.skip(vw < 1024)` — Field tools went **desktop-only** at `v1.14.576` | ⊘ **not a phone test any more** |
 
 ⭐ **ZERO STALE TESTS. ZERO NEW PINS WARRANTED.** Nothing in the baseline asserts removed behaviour,
-and nothing warrants hiding behind a `test.fail()`.
+and nothing warranted hiding behind a `test.fail()` — including the ten that turned out to be a race.
 
-### ⭐ The finding that makes this tractable
+### ⭐ What is actually left
 
-**15 unpinned failures, but only SIX distinct defects:**
+**FIVE unpinned failures, five distinct defects:**
 
-1. **`#ops-tool-host` is `visibility:hidden`** — ten rows, one cause
-2. RackEngine detached-attachment leak
-3. the offline connectivity gate has nothing to gate
-4. `siteLead` migration does not fire
-5. undeclared design tokens
-6. SW `install()` calls `skipWaiting`
+1. RackEngine detached-attachment leak
+2. the offline connectivity gate has nothing to gate
+3. `siteLead` migration does not fire
+4. undeclared design tokens
+5. SW `install()` calls `skipWaiting`
 
-Ten of fifteen fall to **one fix**. The prerequisite is six defects, not twenty failures.
+Each is now one row, one defect — no remaining multiplier. **The prerequisite is five defects.**
 
-⚠ **Possibly larger than ten.** The four pinned DEAD-DOOR tests in `03-tools` cite `#ops-content`
-hidden at `:45908`/`:45934` — the same hidden-host family as `#ops-tool-host`. If they share a root,
-one fix governs **fourteen** tests. To be confirmed during the fix, never assumed.
+⚠ **A latent risk found while diagnosing, not scheduled:** the tool renderers execute while the host
+is still 0×0. Nothing fails on it today, but any renderer that measures layout in that window reads
+zero. That is the shape that bites later.
 
-### ⛔ Corrections to this spec's first draft
+### ⛔ Corrections to this spec's earlier drafts
 
-Both errors were mine, and both are corrected above.
+All three errors were mine. All are corrected above rather than quietly overwritten.
 
-1. **The first draft said `03-tools.spec.js` has "zero `test.fail()` pins". That is WRONG — it has
-   FOUR**, at `:519 :539 :560 :615`, written as `test.fail(true, 'reason')`. The original grep only
-   matched the no-argument form `test.fail()`. Those four are the "KNOWN DEAD DOORS" block, each
-   pinned with a stated reason, and they are why twenty failure marks reconcile to fifteen counted
-   failures. **Any future pin audit must match `test.fail(` , not `test.fail()`.**
-2. **The first draft guessed `44-tool-reachability` and `30-rack-above-the-fold` share the
-   dead-render-host root, and that "one fix closes twelve of twenty". DISPROVED.** `30-rack` passes
-   at `.579`; `44-tool` is skipped on phone entirely. The real figure is **ten of fifteen**, and it
-   is measured rather than inferred.
+1. **"`03-tools.spec.js` has zero `test.fail()` pins" — WRONG. It has FOUR**, at `:519 :539 :560
+   :615`, written `test.fail(true, 'reason')`. The original grep only matched the no-argument form.
+   They are the "KNOWN DEAD DOORS" block, and they are why twenty failure marks reconcile to fifteen
+   counted failures. **Any future pin audit must match `test.fail(` , not `test.fail()`.**
+2. **"`44-tool-reachability` and `30-rack-above-the-fold` share the dead-render-host root; one fix
+   closes twelve of twenty" — DISPROVED.** `30-rack` passes at `.579`; `44-tool` skips on phone.
+3. ⭐ **"Ten rows are one app defect: `#ops-tool-host` is `visibility:hidden`" — WRONG, AND IT IS THE
+   MOST INSTRUCTIVE ERROR HERE.** It was a test race; the app was always correct. **The failure
+   message itself is what misled two versions of this document:** `visibility` is an INHERITED
+   property, so the probe's ancestor walk broke on `#ops-tool-host` itself and never named
+   `#pg-work` — the node that actually declared `display:none`. The message was accurate and
+   useless. ⛔ **A probe that reports an inherited property must name the DECLARING node — the first
+   ancestor whose computed value differs from its parent's — or it will confidently blame the wrong
+   element.** Both earlier drafts, and the first triage table, repeated that mistake.
+
+⚠ The earlier note that the four pinned DEAD DOORs might "share the root" and make it fourteen tests
+is **withdrawn**: there is no shared root, because there was no app defect to share. Those four cite
+`#ops-content` inside the never-active `#pg-sop`, which is hidden *by construction* — a genuinely
+different condition, still pinned, still real.
 
 ### Pinning discipline
 
