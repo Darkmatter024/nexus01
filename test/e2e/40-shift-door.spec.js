@@ -91,12 +91,25 @@ test.describe('SHIFT door', () => {
     expect(p.h, `the shift row is ${p.h}px tall, under the 44px gloved floor`).toBeGreaterThanOrEqual(44);
   });
 
+  // ⛔ v1.14.581 — THIS TEST WAS PASSING AGAINST A NODE NO GLOVED HAND COULD REACH, which is the
+  // exact defect the header of this file was written about. It booted with no Master, so since
+  // `.574` the bar is 0x0, and `el.click()` DISPATCHES FINE ON A 0x0 NODE — a programmatic click
+  // is not a tap. Green here meant nothing about whether a technician can open this sheet.
+  // ⭐ The Master is seeded so the click lands on the reachable bar the test above just measured,
+  // and `page.tap()` is deliberately NOT used: this test is about what the sheet contains once
+  // opened, and the reachability of the row is the previous test's single responsibility.
   test('one tap opens the shift sheet, and every control in it clears the gloved floor', async ({ phantom, page }) => {
-    await phantom.boot();
+    await withMaster(phantom, page);
     await page.waitForTimeout(1200);
     const opened = await page.evaluate(() => {
       const el = document.getElementById('cs-shiftbar');
       if (!el) return { sheet: false, reason: 'no shift row' };
+      // ⛔ Refuse to click a node with no box. Without this the assertions below can pass on a
+      // hidden row and report a healthy sheet the tech can never reach.
+      const r0 = el.getBoundingClientRect();
+      if (!(r0.width > 0 && r0.height > 0)) {
+        return { sheet: false, reason: 'the shift row measured ' + Math.round(r0.width) + 'x' + Math.round(r0.height) + ' — a click on it would not be a tap' };
+      }
       el.click();
       const s = document.getElementById('shiftend-sheet');
       if (!s) return { sheet: false, reason: 'no sheet in DOM' };
