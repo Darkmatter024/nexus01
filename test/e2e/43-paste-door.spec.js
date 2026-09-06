@@ -217,8 +217,22 @@ test.describe('paste routing', () => {
       return { warns, toasts, pending: window._pastePending };
     });
     // Booted without entering Work, the destination box may not mount. Silence is the defect.
-    if (r.warns.length || r.toasts.length) {
-      expect(r.warns.concat(r.toasts).join(' ')).toMatch(/paste|box|not/i);
+    // ⛔ v1.14.581 — A FOREIGN WARN IS NOT THIS ROUTE SPEAKING. The first cut treated ANY captured
+    // warn as "the route said something", so a benign, unrelated `[OPS] no #bw-mount to anchor
+    // below` (dct-ios.html:21886 — the CORRECT fallback when a host-less deployment renders no
+    // rack preview) drifting into the 2.5s window flipped the guard on and then failed the match,
+    // because that message is about Build, not about a paste. The app was right and the test was
+    // measuring the wrong thing.
+    // ⭐ ATTRIBUTION IS BY THE NAMESPACE THE CODE ALREADY USES, not by guesswork: every message
+    // paste_route emits is a `[paste]`-prefixed warn (:32576, :32586, :32591, :32625) or a toast.
+    const spoke = r.warns.filter((w) => /^\[paste\]/.test(w)).concat(r.toasts);
+    const foreign = r.warns.filter((w) => !/^\[paste\]/.test(w));
+    if (spoke.length) {
+      // ⛔ THE REGEX NAMES THE ROUTE'S ACTUAL FAILURE VOCABULARY, not the `[paste]` prefix — that
+      // would match the filter above and make this assertion vacuous, which is the trap the .573
+      // test walked into (an assertion that can only pass proves nothing).
+      expect(spoke.join(' '), `the route spoke but said nothing about why it could not complete. Foreign warns in window: ${JSON.stringify(foreign)}`)
+        .toMatch(/no target|no tool|threw|declined|did not accept|unavailable/i);
     }
     expect(r.pending, 'a failed route left a stale pending handoff behind').toBeFalsy();
   });

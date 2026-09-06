@@ -36,11 +36,47 @@ const probe = (page) => page.evaluate(() => {
   };
 });
 
+// ⛔ v1.14.581 — THIS SPEC WAS ASSERTING AGAINST A RULING THAT SUPERSEDED IT, AND HAD BEEN SINCE
+// `.574`. It booted with NO Master and demanded #cs-shiftbar be reachable. `.574` GATED THE DOOR
+// ON THE MASTER (owner ruling, FIRST-DOOR Ship A row 2 — dct-ios.html:24410), so with no Master
+// the bar is deliberately 0x0 and this test failed on a correct app.
+// ⭐ 98-cmd-census.spec.js:244 asserts the OPPOSITE — that the door is HIDDEN with no Master — and
+// passes. Two specs, one ruling, and this was the one nobody updated; the `.559` sweep predates
+// `.574`, which is why the baseline triage never saw it.
+// ⛔ THE FIX IS THE PRECONDITION, NOT THE ASSERTION. Every geometry check below is unchanged and
+// still the whole point: this file exists because #cc-shiftpill and #cs-shift were each "present,
+// wired, correct and dead". Reachability is now asserted in the state where the door is SUPPOSED
+// to exist. The gated-away state is 98-cmd-census's assertion and is not duplicated here — one
+// canonical assertion per concept.
+function masterSeed() {
+  return {
+    phantom_master_v1: JSON.stringify({
+      siteCode: 'AUS-01', sourceFile: 'shift-door-fixture.xlsx',
+      savedAt: 1750000000000, ingestedAt: 1750000000000,
+      racksByCab: { 's1:001': { cabId: 's1:001', locode: 'AUS-01', rows: [] } },
+    }),
+  };
+}
+
+// Put the app in the Master-loaded STATE the same way the loader does (:34409 sets
+// window._lastPhantomMaster; master_hasMaster() reads exactly this). Not a faked measurement —
+// the probe still reads whatever the app then paints.
+async function withMaster(phantom, page) {
+  await phantom.boot({ seed: masterSeed() });
+  await page.evaluate(() => {
+    window._lastPhantomMaster = JSON.parse(localStorage.getItem('phantom_master_v1'));
+    if (typeof showMode === 'function') showMode('command');
+    if (typeof cmd_render === 'function') cmd_render();
+  });
+}
+
 test.describe('SHIFT door', () => {
 
   test('⛔ the shift control is REACHABLE on Command, not merely present', async ({ phantom, page }) => {
-    await phantom.boot();
+    await withMaster(phantom, page);
     await page.waitForTimeout(1500);
+    const has = await page.evaluate(() => (typeof master_hasMaster === 'function') ? master_hasMaster() : null);
+    expect(has, 'the fixture did not produce a loaded Master — the door is gated on it since .574, so this probe would be meaningless').toBe(true);
     const p = await probe(page);
     expect(p.exists, 'the Command Deck shift row is missing entirely').toBe(true);
     // ⭐ THE FAILURE VALUE IS 0 — exactly what #cc-shiftpill measured for as long as it was the
