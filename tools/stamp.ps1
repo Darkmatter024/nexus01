@@ -144,13 +144,50 @@ if ($Note) { $line = "$line - $Note" }
 # NEWEST FIRST. See the header - the guard reads token[0] of the whole file.
 $new = @($line) + $existing
 
-Write-Host 'VERIFIED will become:' -ForegroundColor Cyan
-$new | ForEach-Object { Write-Host "  $_" }
-Write-Host ''
-Write-Host "Gate token (must equal HEAD's version.json on the next bump): $($new[0].Split(' ')[0])" -ForegroundColor Cyan
+# ! THE PREVIEW MUST ANNOUNCE ITS MODE BEFORE IT SHOWS THE CONTENT, NEVER AFTER.
+#   This block used to print "VERIFIED will become:", then the whole resulting file, then a cyan
+#   "Gate token: phantom-v1.14.NNN" line, and ONLY THEN "DRY RUN - nothing written". Every
+#   reassuring line came first and the disclaimer came last.
+#   That happened for real on 2026-09-06: a -DryRun was run, `phantom-v1.14.581 VERIFIED` was read
+#   as line 1 of the preview, and the stamp was reported as landed. Nothing had been written, and
+#   the gate stayed shut on a version everyone believed was adjudicated.
+#   THAT IS THE THIRD STAMP-ADJACENT INSTANCE OF THIS FILE'S OWN RULE - a tool whose failure looks
+#   like success is worse than a strict one - after the parameter-binding refusal and the ship
+#   commit that rode along under a stamp's subject line.
+#   THREE THINGS FIX IT, and the third is the one that actually answers the question a reader asks:
+#     1. the banner goes FIRST, so nothing reassuring is read before the mode is known;
+#     2. every previewed line is PREFIXED, so it cannot be mistaken for the file itself;
+#     3. the run ends by printing WHAT IS ACTUALLY ON DISK - "line 1 says X" is the question, so
+#        the tool answers it rather than leaving a preview to be misread as the answer.
+if ($DryRun) {
+  Write-Host ''
+  Write-Host '  ===================================================' -ForegroundColor Yellow
+  Write-Host '   DRY RUN - NOTHING BELOW IS WRITTEN TO DISK' -ForegroundColor Yellow
+  Write-Host '  ===================================================' -ForegroundColor Yellow
+  Write-Host ''
+}
 
 if ($DryRun) {
-  Write-Host 'DRY RUN - nothing written.' -ForegroundColor Yellow
+  Write-Host 'VERIFIED WOULD become:' -ForegroundColor Cyan
+  $new | ForEach-Object { Write-Host "  [would-be] $_" }
+  Write-Host ''
+  Write-Host "Gate token WOULD BE: $($new[0].Split(' ')[0])" -ForegroundColor Cyan
+} else {
+  Write-Host 'VERIFIED will become:' -ForegroundColor Cyan
+  $new | ForEach-Object { Write-Host "  $_" }
+  Write-Host ''
+  Write-Host "Gate token (must equal HEAD's version.json on the next bump): $($new[0].Split(' ')[0])" -ForegroundColor Cyan
+}
+
+if ($DryRun) {
+  $onDisk = if ($existing.Count -gt 0) { $existing[0] } else { '(VERIFIED does not exist yet)' }
+  Write-Host ''
+  Write-Host 'DRY RUN - NOTHING WAS WRITTEN. VERIFIED on disk still reads:' -ForegroundColor Yellow
+  Write-Host "  $onDisk" -ForegroundColor Yellow
+  Write-Host ''
+  Write-Host 'Re-run WITHOUT -DryRun to stamp, then confirm against the file and the commit:' -ForegroundColor Yellow
+  Write-Host '  Get-Content .\VERIFIED -TotalCount 1' -ForegroundColor Yellow
+  Write-Host '  git log --oneline -1 -- VERIFIED' -ForegroundColor Yellow
   exit 0
 }
 
@@ -211,6 +248,20 @@ if ($committed.Count -ne 1 -or $committed[0].Trim() -ne 'VERIFIED') {
   Write-Host 'Do not push it. Unwind with:  git reset --soft HEAD~1' -ForegroundColor Red
 }
 
+# ! READ LINE 1 BACK OFF DISK AND SHOW IT. The success path used to end on a commit line, which
+#   proves a commit happened but not WHAT THE GATE WILL READ - and the gate reads token 0 of this
+#   file, nothing else. The dry-run path now states what is on disk, so the success path states it
+#   too: the same question gets the same answer in both modes, from the file rather than from a
+#   variable this script happens to be holding.
+$diskLine = @(Get-Content $VerifiedFile | Where-Object { $_.Trim().Length -gt 0 })[0]
+Write-Host ''
+Write-Host 'VERIFIED line 1 on disk is now:' -ForegroundColor Green
+Write-Host "  $diskLine" -ForegroundColor Green
+if ($diskLine.Trim().Split(' ')[0] -ne $Version) {
+  Write-Host ''
+  Write-Host "WARNING: line 1 does NOT name $Version. The gate reads token 0 of this file, so the" -ForegroundColor Red
+  Write-Host 'next version.json bump will be refused. Inspect VERIFIED by hand before pushing.' -ForegroundColor Red
+}
 Write-Host ''
 Invoke-Git @('log', '-1', '--oneline') | ForEach-Object { Write-Host "  $_" -ForegroundColor Green }
 Write-Host ''
