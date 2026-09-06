@@ -1351,6 +1351,23 @@ hook, until John verifies `.581` on `main`'s URL and stamps it.
    must rule before any build** (ghost glyph vs rendered character; ghost as fifth pillar vs SHIFT —
    ⛔ **the dock count is not to be assumed**; and what happens to the Next Action card on Build).
 
+✅ **CLOSED 2026-09-06 — `webkit-2358` IS MOOT AND NO PLAYWRIGHT BUMP IS OWED.** Board v2 recorded
+that Smart App Control blocked `webkit-2336`'s `libxslt.dll`, that *"every WebKit process dies at
+launch"*, and — the line that matters to anyone reading this session's evidence — that **until a
+devDependency bump landed, "any suite run is Chromium at 390×844 … SIGNAL, NOT THE PRIMARY GATE."**
+⭐ **MEASURED, AND IT IS NOT TRUE ANY MORE:** `@playwright/test` is still **1.62.1** and still
+launches **`webkit-2336`** (`executablePath` → `ms-playwright\webkit-2336\Playwright.exe`), and it
+runs — a full 409-test sweep plus every targeted run this session went through it. The build
+carries a `DEPENDENCIES_VALIDATED` marker dated **2026-09-04 21:48**, after the board note was
+written. ⛔ **ENGINE IDENTITY WAS PROVEN BY FEATURE FORK, NOT BY THE PROJECT NAME OR THE UA STRING**
+— `navigator.vendor` = **`Apple Computer, Inc.`**, `window.chrome` **undefined**,
+`webkitConvertPointFromNodeToPage` **defined**, `GPUAdapter` **undefined**, `browser.version()`
+**26.5**. A Chromium fallback would fail every one of those. ⭐ **SO THE `.581` SUITE EVIDENCE IS
+STRONGER THAN THE BOARD WOULD LEAD A READER TO BELIEVE, NOT WEAKER** — it is real WebKit, and a ship
+note reporting a phone-webkit run no longer has to caveat it as Chromium signal. ⚠ **UNCHANGED AND
+NOT WEAKENED BY THIS:** WebKit-on-Windows is still not iOS Safari, `playwright.config.js`' own
+header still governs, and **the physical iPhone gate stays mandatory.**
+
 ⚠ **`PHANTOM_CURRENT_STATE.md` WAS THREE SHIPS STALE WHEN THIS WAS WRITTEN** — it claimed `.578`
 with zero unverified ships while `main` carried `.581`, and its Version row read `.570` and asserted
 a promotion right that had been **revoked**. ⭐ **The file that calls itself the single source of

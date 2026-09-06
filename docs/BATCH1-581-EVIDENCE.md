@@ -199,6 +199,17 @@ calls the engine. The parameter is still passed at `:23459`. Not a bug; not wort
 388 passed · 8 failed · 13 skipped     (2.8h)
 ```
 
+⭐ **THIS RAN ON REAL WEBKIT, AND THAT NEEDED PROVING.** Board v2 records that Smart App Control
+blocked `webkit-2336`'s `libxslt.dll` and that until a Playwright bump landed, *"any suite run is
+Chromium at 390×844 — SIGNAL, NOT THE PRIMARY GATE."* **Measured 2026-09-06 and no longer true:**
+`@playwright/test` 1.62.1 launches `webkit-2336` and it runs. Engine identity proven by feature
+fork rather than by the project name or the UA string — `navigator.vendor` = `Apple Computer, Inc.`,
+`window.chrome` undefined, `webkitConvertPointFromNodeToPage` defined, `GPUAdapter` undefined,
+`browser.version()` 26.5. A Chromium fallback fails every one of those. **So these numbers carry
+the weight the board says they would not.** ⚠ **WebKit-on-Windows is still not iOS Safari and the
+physical iPhone gate is still mandatory** — that is `playwright.config.js`' standing warning and
+this closure does not touch it.
+
 **Baseline comparison: `.559` was `349 passed · 20 failed · 10 skipped` (1.1h). `.581` more than
 halves the failures.** ⛔ The handoff's line *"suite green baseline achieved"* is **not** what the
 bytes report — 8 remain. Four of the eight are flake; three reproduce; one is a stale test.
