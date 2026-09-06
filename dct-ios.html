@@ -8980,9 +8980,20 @@ body.rd #work-grid .brow-stack { display:flex; flex-direction:column; gap:12px; 
 /* v1.14.581 (Q-b) - DECLARE --tac. It was referenced by three declarations here and declared
    NOWHERE: no stylesheet, no element, no setProperty. Under Contract 15 an undefined var()
    invalidates the WHOLE declaration silently, so the cell border, the :active border and the
-   .oc-n label colour were all dead. The :8910 note asserts the opposite - that --tac is set
-   inline per cell so nothing can silently die here - and that inline write was never
-   implemented. A comment is not a declaration.
+   .oc-n label colour were all dead declarations. The :8910 note asserts the opposite - that
+   --tac is set inline per cell so nothing can silently die here - and that inline write was
+   never implemented. A comment is not a declaration.
+   ⛔ AMENDED 2026-09-05 (owner ruling) - THIS FIX MOVES NO PIXEL, AND THE FIRST CUT OF THIS NOTE
+   IMPLIED IT DID. .opswall MATCHES ZERO ELEMENTS. .464 deleted #wk-opswall with the Build banner
+   stack and left this CSS as inert bytes - :14084 says so outright - so nothing selected here has
+   rendered since. MEASURED on phone-webkit at .581, not inferred: .opswall 0, .opswall > div 0,
+   #wk-opswall 0, .oc-n 0, and wk_toggleOpsWall() finds no .opsrow host. The whole chain is dead -
+   wk_toggleOpsWall has no callers at all.
+   ⭐ WHAT THE FIX ACTUALLY DID, AND IT IS REAL: it took
+   19-design-tokens-and-picker.spec.js:24 - every token referenced in CSS is declared somewhere -
+   from RED to GREEN. That gate was failing in the .559 sweep and passes at .581. An invisible fix
+   is still a fix; naming the wrong effect for one is what this amendment corrects. Do not read
+   this note as evidence the wall renders, and do not "restore" a wall on the strength of it.
    Declared on the cell, not :root, so an inline per-cell accent still wins if one is ever
    added. Precedent: .iso .card{--rfac:var(--cyan)} at :8763. */
 .opswall > div { position:relative; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end; gap:1px;

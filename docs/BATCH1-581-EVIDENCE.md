@@ -4,6 +4,16 @@
 **Ship commit:** `f32e49a` ⚠ *(mis-titled — see Deviation 2)* · **`main` head:** `694ef3b`
 **Status:** evidence delivered. **Awaiting John:** device verify on `main`, then `stamp.ps1`, then `promote.ps1`.
 
+⚠ **ANCHOR NOTICE — every `dct-ios.html` line number in this document below `:8987` is +11 stale.**
+The Q-b note was amended in place under the owner ruling of 2026-09-05, adding 11 net lines at
+`:8980`. **The anchors below were correct at `dc8f486` and are correct against current `main` only
+after adding 11** — e.g. the app stamp reads `:12854` here and is `:12865` now,
+`cmd_masterRackCount()` reads `:23671` and is `:23682`. They are left as written rather than
+rewritten in bulk, because a snapshot re-numbered by hand is how a wrong anchor gets into the
+record. ⛔ **One is wrong independently of the shift and is corrected here, not silently:** the
+`.574` shift-door gate is cited below as `:24398`; it was **`:24399`** at that commit (`:24410`
+now). That was my miscount, not the offset.
+
 ---
 
 ## Batch header
