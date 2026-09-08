@@ -88,25 +88,63 @@ $headVersion = $null
 try { $headVersion = (Get-Content -Raw version.json | ConvertFrom-Json).version }
 catch { Stop-Promote "could not read version.json: $($_.Exception.Message)" }
 
-$verifiedFirst = $null
-if (Test-Path VERIFIED) {
-  $verifiedFirst = Get-Content VERIFIED | Where-Object { $_.Trim().Length -gt 0 } | Select-Object -First 1
-}
-if (-not $verifiedFirst) { Stop-Promote 'VERIFIED is missing or empty - nothing is adjudicated.' }
+# ! GUARD 4 AMENDED 2026-09-08 (owner ruling C). IT NOW ADJUDICATES THE VERSION THE PHONE ALREADY
+#   HAS, NOT THE ONE ARRIVING.
+#   WHAT WAS WRONG: it required the INCOMING version to be adjudicated, and that is UNEXECUTABLE.
+#   GitHub Pages serves `release`, so a version cannot be device-verified until it is promoted --
+#   and it could not be promoted until it was verified. The only compliant path was to stamp
+#   BEFORE verifying, which is exactly how .581 came to be stamped VERIFIED off a dry-run misread
+#   on 2026-09-08. A gate whose only compliant path is a false stamp is not a gate; it is a
+#   pressure to lie. The handoff's canonical order -- 'device-verify against main's live URL,
+#   then stamp, then promote' -- assumed main was served. It never was.
+#   THE PROPERTY IS UNCHANGED AND IS THE WHOLE POINT: NEVER STACK AN UNADJUDICATED SHIP. It is
+#   simply enforced where it can be: promoting .583 while .582 sits unruled on the phone is still
+#   refused. What is now permitted is the only honest order -- promote, verify on the device that
+#   actually serves it, then stamp either way.
+#   ! A FAILED SERVED VERSION DOES NOT BLOCK ITS OWN FIX. FAILED is an adjudication: the owner put
+#   it on a phone and ruled. .573 existed solely to repair .572, and a gate that traps the fix
+#   behind the defect is inverted -- that is the 2026-09-03 ruling recorded in phantom-guard.js,
+#   and this guard now honours it too.
+$verifiedLines = @()
+if (Test-Path VERIFIED) { $verifiedLines = @(Get-Content VERIFIED | Where-Object { $_.Trim().Length -gt 0 }) }
+if ($verifiedLines.Count -eq 0) { Stop-Promote 'VERIFIED is missing or empty - nothing is adjudicated.' }
 
-# Same rule the commit guard applies: the FIRST whitespace-delimited token of the newest entry.
-$verifiedFields = $verifiedFirst.Trim() -split '[ ]+'
-$verifiedTop = $verifiedFields[0]
-if ($verifiedTop -ne $headVersion) {
-  Stop-Promote "$headVersion is NOT adjudicated. VERIFIED tops out at '$verifiedTop'. Verify on device, stamp with tools/stamp.ps1, then promote."
+# The version on `release` IS the version the phone has. Read it from the branch, never from a
+# variable this script is holding -- the whole point is to ask what was actually served.
+$servedVersion = $null
+try {
+  $servedRaw = @(Invoke-Git @('show', 'release:version.json') -AllowFail) -join "`n"
+  if ($servedRaw -and $LASTEXITCODE -eq 0) { $servedVersion = ($servedRaw | ConvertFrom-Json).version }
+}
+catch { $servedVersion = $null }
+
+function Get-Ruling { param([string]$v)
+  if (-not $v) { return $null }
+  return $verifiedLines | Where-Object { ($_.Trim() -split '[ ]+')[0] -eq $v } | Select-Object -First 1
 }
 
-# A stamp is not automatically a pass. FAILED means the owner ruled against it.
-if ($verifiedFields -contains 'FAILED') {
+if (-not $servedVersion) {
+  Write-Host 'release carries no readable version.json - treating this as a first promote; nothing has been served, so there is nothing to adjudicate.' -ForegroundColor Yellow
+}
+elseif ($servedVersion -eq $headVersion) {
+  Write-Host "release already carries $servedVersion." -ForegroundColor Yellow
+}
+else {
+  $servedRuling = Get-Ruling $servedVersion
+  if (-not $servedRuling) {
+    Stop-Promote "$servedVersion IS ON THE PHONE AND HAS NOT BEEN ADJUDICATED. Verify it on device and stamp it with tools/stamp.ps1 before promoting $headVersion on top of it - that is the stacking this gate exists to prevent."
+  }
+  Write-Host "Served version adjudicated: $servedRuling" -ForegroundColor Green
+}
+
+# The INCOMING version must not itself already be ruled FAILED. Nothing stamped FAILED is ever
+# promoted, whatever the served version says.
+$headRuling = Get-Ruling $headVersion
+if ($headRuling -and ((($headRuling.Trim() -split '[ ]+')) -contains 'FAILED')) {
   Stop-Promote "$headVersion is stamped FAILED. A failed version is never promoted - the next ship is its fix."
 }
-
-Write-Host "Adjudicated: $verifiedFirst" -ForegroundColor Green
+if ($headRuling) { Write-Host "Incoming version already adjudicated: $headRuling" -ForegroundColor Green }
+else { Write-Host "$headVersion is not yet adjudicated - it becomes verifiable once served. STAMP IT AFTER THE DEVICE CHECK." -ForegroundColor Cyan }
 
 # ---- What would move ----
 $pending = Invoke-Git @('log', '--oneline', 'release..main')
