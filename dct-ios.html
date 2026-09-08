@@ -12862,7 +12862,7 @@ body.rd .pql-ctl-on{color:var(--gold)}
 <script>
 // ━━━ PHANTOM Ghost Update — Service Worker registration ━━━
 // Embedded version sentinel — must match sw.js CACHE_VERSION. Bumped together.
-const PHANTOM_APP_VERSION = 'phantom-v1.14.582';
+const PHANTOM_APP_VERSION = 'phantom-v1.14.583';
 // Immediate version check: reload if cached HTML is stale. Runs before anything else.
 (function() {
   fetch('./version.json?_=' + Date.now(), { cache: 'no-store' })
@@ -22140,7 +22140,13 @@ function bw_render() {
   } else if (typeof bw_hasPendingWrites === 'function' && bw_hasPendingWrites()) {
     execState = 'PENDING CHANGES';
   } else if (onl) {
-    execState = 'SYNCED';
+    // v1.14.583 — STATUS-HONESTY (SITE-SYNC ship 1, owner GO 2026-09-08). 'SYNCED' was written whenever
+    // navigator.onLine was not false, and it meant nothing more than that: there is no server holding
+    // site state, no sync queue (bw_hasPendingWrites is a placeholder that returns false, :21640) and
+    // no other phone to be in sync WITH. Contract B10: a label after a mechanism the app does not have.
+    // The strip now says the one thing it can prove — the work is saved on this device — and says
+    // SYNCED only when sync exists (SITE-SYNC §7.1 owns that vocabulary). Same escape as OFFLINE above.
+    execState = 'ON-DEVICE \u00b7 SAVED';
   }
   st.appendChild(E('span', null, execState));
   host.appendChild(st);
