@@ -946,10 +946,14 @@ the Blocker record. Everything else is routing, folding and relabeling of existi
 ⏳ **OPEN: `.582`.** Promoted to `release` (`2758ce9`) and served 2026-09-08; unstamped. **What is
 owed, all of it John's:** confirm SYS reads `.582` → the one device check → `tools/stamp.ps1 582
 VERIFIED` or `FAILED` from his terminal. ⚠ First device pass (2026-09-08) read *"No errors
-recorded"* with a Master loaded — **that is not a reading of the instrument**: `bw_mount3D` only runs
-when Build's RACK PREVIEW card mounts (Master + active deployment + a blocked/active/pending rack), and
-a healthy mount logs `MOUNT_LIVE` once per page load, so zero `PREVIEW/` lines means the card never
-mounted on that load (or the phone was still on `.581`). Re-check with Build's preview on screen.
+recorded"* with a Master loaded — **that is not a reading of the instrument.** Reproduced in the harness
+with real taps (`docs/BATCH1-582-EVIDENCE.md` §"Device walk", 4/4): with a live rack the launch alone
+leaves `DEFERRED_DETAIL_OWNS_SCREEN` and a BUILD tap leaves `MOUNT_LIVE`; with a deployment that has
+no racks, or no deployment at all, Build shows *Build overview* and the sheet reads *No errors
+recorded*. **An empty sheet on `.582` bytes means no active deployment with a blocked/active/pending
+rack on that device** (or the phone was still on `.581`). ⛔ `35418c3`'s message said the `.571` launch
+never runs `bw_render`; it does — the card is built behind the picker and the 3D defers. Re-check with
+Build's first card reading *Active rack*.
 ⛔ **Not "verify on `main`'s URL" — `main` is not served (owner ruling C, 2026-09-08).** The checklist
 is in `docs/BATCH1-582-EVIDENCE.md`; the one check that matters is that **SYS → DIAGNOSTICS lists a
 `PREVIEW/…` line after a Build visit and no JS-ERROR banner appears** — and if the rack preview is

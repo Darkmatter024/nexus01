@@ -93,4 +93,21 @@ or `.\tools\stamp.ps1 582 FAILED -Note "…"`. **Stamp on the instrument, not on
   4 passed (48.2s)
 ```
 
+## Device walk, reproduced with real taps — `phone-webkit`, `.582` bytes (2026-09-08, after the promote)
+
+The owner's first device pass read *"No errors recorded"* with a Master loaded. Replayed with real dock and SYS taps (session-local spec `99-582-device-walk.spec.js`, not landed — copy in the session scratchpad, offered for landing). **4 / 4 pass, 1.1 min.**
+
+| # | Device state seeded | Build's first card | `PREVIEW/` cards rendered in the ERRORS sheet | SYS row |
+|---|---|---|---|---|
+| 1 | Master + active deployment + one pending rack; **launch only**, no Build tap | `Active rack` — built behind the picker, canvas none | `DEFERRED_DETAIL_OWNS_SCREEN` | NONE |
+| 2 | same, then **tap BUILD**, wait 3 s | `Active rack`, canvas 652×640 | `MOUNT_LIVE · cvAttr=652x640 drawingBuffer=652x640 lost=false connected=true …` plus the launch's DEFERRED line | NONE · no banner · 0 caught |
+| 3 | Master + active deployment, **no racks**; tap BUILD | `Build overview`, no card | none — *"No errors recorded"* | NONE |
+| 4 | Master, **no deployment**; boot lands on Command; tap BUILD | `Build overview`, no card | none — *"No errors recorded"* | NONE |
+
+**Reading:** the sheet renders traces (rows 1–2), and a healthy mount always leaves `MOUNT_LIVE`, so *"No errors recorded"* on `.582` bytes is row 3 or row 4 — **no active deployment with a blocked, active or pending rack on that device** — or the phone was still on `.581`. ⛔ **Correction to the DEFERRED note above and to `35418c3`'s commit message:** the `.571` launch does NOT skip the instrument. With a live rack it builds the card behind the picker and leaves `DEFERRED_DETAIL_OWNS_SCREEN` with no Build tap at all (row 1). The empty sheet is a missing rack, not a missing tap.
+
+**The device check, corrected:** SYS reads `.582` → BUILD → the first card must read **Active rack** with the preview pane. If it reads *Build overview* or *Rack queue*, there is no rack to preview: open the deployment and trace a rack first. Wait ~3 s on that screen without opening a tool, the aisle or a rack detail → SYS → DIAGNOSTICS → a `TRACE · PREVIEW/MOUNT_LIVE` or `MOUNT_NOT_DRAWING` card. **Either is PASS.**
+
+Harness artifact, not app: the SYS health ping's OPTIONS request to the Worker is refused for the `127.0.0.1` origin (CORS) and logs console errors; the ring holds 0 caught errors and no banner shows, so it is environment noise and is not in the benign list.
+
 ⚠ **What this run cannot say:** WebKit-on-Windows is not iOS Safari. The harness reports `MOUNT_LIVE` because its GPU grants synchronously; **whether candidate A presents as `drawingBuffer 0` on a real iPhone is exactly what is unknown**, and only step 4 above answers it.
