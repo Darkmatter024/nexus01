@@ -65,7 +65,7 @@ Expected output includes `Served version adjudicated: phantom-v1.14.581 VERIFIED
 4. **Report the `PREVIEW/` line(s) verbatim** — a screenshot of the sheet is enough. This is the reading the ship was flown for:
    - `PREVIEW/MOUNT_NOT_DRAWING` beside a blank pane → candidate **A** (context granted, never usable). Phase 2 is Option 1 territory, and it needs a ruling because it re-opens `.394`.
    - `PREVIEW/MOUNT_LIVE` beside a blank pane → **refutes A**, sends the hunt to **D** (paused rAF loop) — just as useful.
-   - `PREVIEW/DEFERRED_*` → a guard correctly deferred; the aisle or a rack detail owned the screen.
+   - `PREVIEW/DEFERRED_*` → a guard correctly deferred; the aisle or a rack detail owned the screen. ⚠ **Expected on every BOM / OPS-tool open, not a finding:** `rd_openOpsTool` runs `bw_render` (which mounts the preview) and *then* sets `body.ops-detail`, so the rack-detail guard fires and leaves `DEFERRED_DETAIL_OWNS_SCREEN` each time — that is the P-8 duplicate-card defect (Batch 3 §4), not the iOS class. Read the line that follows a plain Build visit, not one that follows a tool open.
    - `PREVIEW/AWAITING_LAYOUT` with nothing after it → the host never got a box; the layout path, not the GPU.
 
 **Then, from the terminal only:**
