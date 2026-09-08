@@ -22616,9 +22616,21 @@ function bw_render() {
 // declared failures, and ONE health snapshot per mount. Tracing all 12 re-arms would flush the
 // operator's genuine errors out of the ring to say nothing new.
 var _pvHealthLogged = false;   // v1.14.582: the healthy snapshot is recorded ONCE per load, see below
+// ⛔ `detail` MAY BE A FUNCTION, AND AT THE RISKY SITES IT MUST BE. Passing diag() evaluates it
+// AT THE CALL SITE — OUTSIDE this try — so a throw in diag() escapes the instrument entirely.
+// That is not theoretical: the first cut of this ship called preview_trace('DEFERRED_…', diag())
+// immediately before the `return` that protects a live aisle, inside a block whose catch is
+// EMPTY. A throw there would have skipped the return, been swallowed, and fallen through into
+// rackElevation_render3D — RE-CREATING THE .405 DEFECT (Build re-acquiring and disposing the
+// live aisle) WITH THE INSTRUMENT BUILT TO DIAGNOSE IT. Caught by review before it shipped.
+// ⭐ THE GUARANTEE IS STRUCTURAL, NOT REPEATED. Three try/catch wrappers at three call sites
+// would have fixed those three and left the next reader free to add an unwrapped fourth.
+// Taking a thunk moves the evaluation inside the one try that already exists, so EVERY call
+// site — present and future — is covered by construction.
 function preview_trace(ev, detail) {
   try {
-    phantom_logErr('PREVIEW/' + ev, { message: String(ev) + (detail ? ' · ' + detail : ''), stack: '' }, { trace: true });
+    var d = (typeof detail === 'function') ? detail() : detail;
+    phantom_logErr('PREVIEW/' + ev, { message: String(ev) + (d ? ' · ' + d : ''), stack: '' }, { trace: true });
   } catch (_) {}
 }
 
@@ -22715,7 +22727,7 @@ function bw_mount3D(rack, mount) {
       var _aisle = document.getElementById('forge3d-sheet');
       if (_aisle && _aisle.classList.contains('open')) {
         console.warn('[PHANTOM] bw_mount3D: aisle owns the screen — Build re-acquisition aborted (would dispose the live aisle)');
-        preview_trace('DEFERRED_AISLE_OWNS_SCREEN', diag());   // v1.14.582: correct behaviour, previously unreadable on device
+        preview_trace('DEFERRED_AISLE_OWNS_SCREEN', diag);   // v1.14.582: correct behaviour, previously unreadable on device
         return;
       }
       // ══ v1.14.441 — THE RACK DETAIL IS THE SECOND SURFACE WITH THIS EXACT PROPERTY ═══════════
@@ -22744,7 +22756,7 @@ function bw_mount3D(rack, mount) {
       // and name a surface the technician is not looking at. Deferring IS the correct outcome.
       if (document.body.classList.contains('ops-detail')) {
         console.warn('[PHANTOM] bw_mount3D: the rack detail owns the screen — Build re-acquisition deferred');
-        preview_trace('DEFERRED_DETAIL_OWNS_SCREEN', diag());   // v1.14.582
+        preview_trace('DEFERRED_DETAIL_OWNS_SCREEN', diag);   // v1.14.582
         return;
       }
     } catch (_) {}
@@ -22776,7 +22788,7 @@ function bw_mount3D(rack, mount) {
       cv.addEventListener('webglcontextlost', function(ev) {
         try { ev.preventDefault(); } catch (_) {}
         try { console.warn('[PHANTOM] bw_mount3D: webglcontextlost - re-arming'); } catch (_) {}
-        preview_trace('CONTEXT_LOST', diag());   // v1.14.582
+        preview_trace('CONTEXT_LOST', diag);   // v1.14.582
         _armN = 0; rearm('webglcontextlost');
       }, { once: true });
       _armN = 0;                                                   // a clean mount resets the budget
@@ -22850,7 +22862,7 @@ function bw_mount3D(rack, mount) {
         });
         _ro.observe(mount);
         try { console.warn('[PHANTOM] bw_mount3D: host not measurable yet — observing for layout: ' + diag()); } catch (_) {}
-        preview_trace('AWAITING_LAYOUT', diag());   // v1.14.582: this path WAITS and declares nothing, by design
+        preview_trace('AWAITING_LAYOUT', diag);   // v1.14.582: this path WAITS and declares nothing, by design
       } catch (e) { phantom_logErr('bw:ro', e); }
     }
     if (!_ro) { say('Rack preview has no space to draw.', 'host never measured and ResizeObserver unavailable: ' + diag()); }

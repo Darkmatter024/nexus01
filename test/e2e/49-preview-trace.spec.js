@@ -99,6 +99,35 @@ test.describe('the rack preview records what it used to swallow', () => {
     expect(r.bannerShown, 'a healthy preview raised the JS-ERROR banner — the instrument became the defect').toBe(false);
   });
 
+  // ⛔ THE PROPERTY THE FIRST CUT OF THIS SHIP CLAIMED AND DID NOT HAVE. It called
+  // preview_trace('DEFERRED_…', diag()) immediately before the `return` that protects a live
+  // aisle — and an argument is evaluated AT THE CALL SITE, outside the instrument's try. Inside a
+  // block whose catch is EMPTY, a throw in diag() would have skipped that return, been swallowed,
+  // and fallen through into rackElevation_render3D: Build re-acquiring and disposing the live
+  // aisle, which is the .405 defect, re-created by the instrument built to diagnose it.
+  // ⭐ The fix is structural — preview_trace takes a THUNK and evaluates it inside its own try —
+  // so this test asserts the guarantee itself, not the three call sites that happened to need it.
+  test('⛔ a throwing detail can never escape the instrument', async ({ phantom, page }) => {
+    test.setTimeout(120000);
+    await phantom.boot({ seed: seed() });
+    const r = await page.evaluate((k) => {
+      let escaped = false;
+      try {
+        preview_trace('PROBE_THROW_TEST', function () { throw new Error('boom'); });
+      } catch (_) { escaped = true; }
+      let ringParses = true;
+      try { JSON.parse(localStorage.getItem(k) || '[]'); } catch (_) { ringParses = false; }
+      // A plain string detail must still work — the thunk support is additive, not a replacement.
+      let stringFormOk = true;
+      try { preview_trace('PROBE_STRING_TEST', 'plain detail'); } catch (_) { stringFormOk = false; }
+      return { escaped, ringParses, stringFormOk };
+    }, CRASH_KEY);
+    console.log('[49] ' + JSON.stringify(r));
+    expect(r.escaped, 'a throwing detail escaped preview_trace — the instrument can alter the flow it measures').toBe(false);
+    expect(r.ringParses, 'the ring was left unparseable').toBe(true);
+    expect(r.stringFormOk, 'the plain-string detail form broke when thunk support was added').toBe(true);
+  });
+
   test('the ring is not flooded — the healthy snapshot is recorded once, not once per visit', async ({ phantom, page }) => {
     test.setTimeout(180000);
     await openBuild(phantom, page);
