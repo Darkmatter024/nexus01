@@ -114,8 +114,27 @@ if (-not $pending) {
   Write-Host 'release is already level with main. Nothing to promote.' -ForegroundColor Green
   exit 0
 }
-Write-Host 'Commits this promote would publish:' -ForegroundColor Cyan
-$pending | ForEach-Object { Write-Host "  $_" }
+# ! THE MODE IS ANNOUNCED BEFORE THE COMMIT LIST, NEVER AFTER IT. Same trap, same fix as
+#   tools/stamp.ps1. This block printed "Commits this promote would publish:", then the pending
+#   commits, and ONLY THEN "DRY RUN - nothing moved" - so the reassuring content came first and the
+#   disclaimer came last.
+#   It fired on 2026-09-08: a -DryRun listed `f34982f stamp: phantom-v1.14.581 VERIFIED` under that
+#   heading, and the promote was reported as done. release had not moved, locally or on the remote,
+#   and Pages kept serving .580.
+#   THE SIBLING SCRIPT WAS HARDENED FOR THIS EXACT SHAPE TWO DAYS EARLIER AND THIS ONE WAS NOT
+#   CHECKED. A failure class fixed in one of two near-identical tools is not fixed.
+if ($DryRun) {
+  Write-Host ''
+  Write-Host '  ===================================================' -ForegroundColor Yellow
+  Write-Host '   DRY RUN - NOTHING BELOW IS PUBLISHED. release WILL NOT MOVE.' -ForegroundColor Yellow
+  Write-Host '  ===================================================' -ForegroundColor Yellow
+  Write-Host ''
+  Write-Host 'Commits this promote WOULD publish:' -ForegroundColor Cyan
+  $pending | ForEach-Object { Write-Host "  [would-be] $_" }
+} else {
+  Write-Host 'Commits this promote will publish:' -ForegroundColor Cyan
+  $pending | ForEach-Object { Write-Host "  $_" }
+}
 Write-Host ''
 
 # ---- Guard 5: it must be a fast-forward. release must be an ancestor of main. ----
@@ -125,7 +144,21 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if ($DryRun) {
-  Write-Host 'DRY RUN - nothing moved.' -ForegroundColor Yellow
+  # State what is actually on the remote. "Where is release" is the question a promote turns on,
+  # so the tool answers it from the remote rather than leaving a preview to be misread as the move.
+  # @() then [0] deliberately: Invoke-Git returns an ARRAY, and `-split` on an array stringifies
+  # the whole thing first, which would silently produce a wrong sha rather than fail.
+  $remoteSha = '(could not read origin)'
+  $remoteNow = @(Invoke-Git @('ls-remote', 'origin', 'refs/heads/release') -AllowFail)
+  if ($remoteNow.Count -gt 0 -and $remoteNow[0] -and $remoteNow[0].Length -ge 8) {
+    $remoteSha = $remoteNow[0].Substring(0, 8)
+  }
+  Write-Host 'DRY RUN - NOTHING MOVED. origin/release is still:' -ForegroundColor Yellow
+  Write-Host "  $remoteSha" -ForegroundColor Yellow
+  Write-Host ''
+  Write-Host 'Re-run WITHOUT -DryRun to promote, then confirm against the remote and the served bytes:' -ForegroundColor Yellow
+  Write-Host '  git ls-remote origin refs/heads/release' -ForegroundColor Yellow
+  Write-Host '  (then reload the Pages URL - the build takes a few minutes)' -ForegroundColor Yellow
   exit 0
 }
 
