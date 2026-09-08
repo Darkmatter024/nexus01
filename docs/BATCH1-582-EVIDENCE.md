@@ -110,4 +110,8 @@ The owner's first device pass read *"No errors recorded"* with a Master loaded. 
 
 Harness artifact, not app: the SYS health ping's OPTIONS request to the Worker is refused for the `127.0.0.1` origin (CORS) and logs console errors; the ring holds 0 caught errors and no banner shows, so it is environment noise and is not in the benign list.
 
+## Device result — 2026-09-08, owner's iPhone, served `.582`
+
+**PASS.** BUILD with the *Active rack* card up; SYS → DIAGNOSTICS reads **`PREVIEW/MOUNT_NOT_DRAWING`**. The instrument reaches the sheet on hardware, and where the harness reads `MOUNT_LIVE` at `652x640` the phone reads the defect: **candidate A**, a context granted but never usable. Owner stamping VERIFIED on the instrument. ⚠ Payload (`cvAttr` / `drawingBuffer` / `lost`) to be appended verbatim when reported — it decides whether Phase 2 is the never-granted shape (`drawingBuffer=0x0 lost=false`), a loss between mount and probe (`lost=true`), or the layout path (`cvAttr=0x0`).
+
 ⚠ **What this run cannot say:** WebKit-on-Windows is not iOS Safari. The harness reports `MOUNT_LIVE` because its GPU grants synchronously; **whether candidate A presents as `drawingBuffer 0` on a real iPhone is exactly what is unknown**, and only step 4 above answers it.

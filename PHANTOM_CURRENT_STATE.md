@@ -943,9 +943,10 @@ the Blocker record. Everything else is routing, folding and relabeling of existi
 
 ## 3 · Verify debt — ⏳ **ONE at `.582`.** ⛔ This heading read *"ZERO at `.557`"* for 24 versions; the debt below `.557` is the historical record
 
-⏳ **OPEN: `.582`.** Promoted to `release` (`2758ce9`) and served 2026-09-08; unstamped. **What is
-owed, all of it John's:** confirm SYS reads `.582` → the one device check → `tools/stamp.ps1 582
-VERIFIED` or `FAILED` from his terminal. ⚠ First device pass (2026-09-08) read *"No errors
+⏳ **OPEN: `.582`.** Promoted to `release` (`2758ce9`) and served 2026-09-08. ✅ **DEVICE PASS
+2026-09-08** — *Active rack* card up, DIAGNOSTICS reads `PREVIEW/MOUNT_NOT_DRAWING` (§8). **Stamp
+pending in git:** `tools/stamp.ps1 582 VERIFIED` + `git push origin main`, John's terminal. Until
+`VERIFIED` line 1 reads `.582`, the hook still refuses a `.583`. ⚠ First device pass (2026-09-08) read *"No errors
 recorded"* with a Master loaded — **that is not a reading of the instrument.** Reproduced in the harness
 with real taps (`docs/BATCH1-582-EVIDENCE.md` §"Device walk", 4/4): with a live rack the launch alone
 leaves `DEFERRED_DETAIL_OWNS_SCREEN` and a BUILD tap leaves `MOUNT_LIVE`; with a deployment that has
@@ -1266,7 +1267,16 @@ githubstatus is all-green — a transient repo-side lock, **not code**. An empty
 
 ## 8 · Last physical-iPhone verification
 
-⚠ **2026-09-08, against `v1.14.581` (served).** BUILD → RACK PREVIEW blank after a Master load
+✅ **2026-09-08, against `v1.14.582` (served, `2758ce9`).** BUILD with the *Active rack* card up; SYS →
+DIAGNOSTICS reads **`PREVIEW/MOUNT_NOT_DRAWING`**. **The instrument works on hardware, and the reading
+names candidate A** — the context object is granted, `isContextLost()` is false, and the drawing buffer
+has no backing (`docs/RACK-PREVIEW-CONTEXT-PHASE0-EVIDENCE.md` §3A) — on the same device class where the
+harness reads `MOUNT_LIVE` at `652x640`. Owner stamping VERIFIED (stamp on the instrument, not the
+preview). ⚠ **Payload still to be recorded verbatim** (`cvAttr` / `drawingBuffer` / `lost`): a
+`drawingBuffer=0x0` with `lost=false` is the never-granted state; `lost=true` is a loss between mount
+and probe; a `cvAttr=0x0` would point at the layout path instead. It decides the Phase 2 shape.
+
+*(Prior:)* ⚠ **2026-09-08, against `v1.14.581` (served).** BUILD → RACK PREVIEW blank after a Master load
 (US-SPK03), canvas present, `OPEN AISLE` and `CONTINUE` present, `0%`, nothing recorded. Owner ruled:
 the iOS-WebKit async GPU-grant class, pre-existing since `.391`, not a `.581` regression; `.581` stays
 VERIFIED. That unreadable state is what `.582` instruments. *(`.576`–`.578` each passed on device
@@ -1367,9 +1377,11 @@ ships until `.582` is ruled and each batch's contents get a GO (C-5).
 **Queue as it stands 2026-09-08** *(items 1–2 of the `.581`-era queue below are DONE: `.581` was
 stamped and promoted, and `.582`'s bump carries the corrected `version.json` note)*:
 1. ⏳ **`.582`: `promote.ps1` → device → `stamp.ps1`.** All John's. Checklist in `docs/BATCH1-582-EVIDENCE.md`.
-2. **RACK-PREVIEW-CONTEXT Phase 2 — needs an owner ruling, not built.** Phase 0 §5 recommends
-   Options 2+3 next (`webglcontextrestored` listener + drop `{ once: true }`) and Option 1 (liveness
-   re-arm, re-opens `.394`) only if the `.582` device log names candidate A. The device reading decides.
+2. **RACK-PREVIEW-CONTEXT Phase 2 — needs an owner ruling, not built.** ⭐ **The `.582` device log
+   NAMES CANDIDATE A** (`MOUNT_NOT_DRAWING`, §8), so Option 1 — a liveness probe that re-arms once,
+   hard-capped, loud on final failure — is now the candidate that closes it, and it re-opens the `.394`
+   pressure ruling; Options 2+3 remain cheap and additive but cannot see A. Phase 2 Phase 0 owes: the
+   verbatim payload, then a design that allocates at most ONE extra context, never twelve.
 3. **Batches 2–4 Phase 0 evidence** in `docs/`, each awaiting its own GO.
 4. ✅ **PREVIEW-DIAG is in `OWNER-RULINGS.md` (2026-09-08)** — Option 5, instrumentation only,
    approved by the owner in session and labelled by him; the `.581`-stays-VERIFIED disposition is
