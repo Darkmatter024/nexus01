@@ -6,6 +6,63 @@ is stale until edited. Newest first.
 
 ---
 
+## 2026-09-08 · PREVIEW-DIAG — RACK-PREVIEW-CONTEXT Option 5, INSTRUMENTATION ONLY, APPROVED
+
+**Ruling, verbatim (in session, 2026-09-08):**
+
+> Option 5 = ruling PREVIEW-DIAG, instrumentation only, approved.
+
+**The premise it rests on, also verbatim, same thread:**
+
+> Untangle .581/.582: .581 stays VERIFIED, leave the guard's refusal — do NOT stamp .581 FAILED, the
+> preview bug is pre-existing state-3, not .581's.
+
+### What it approves
+
+- **Option 5 of `docs/RACK-PREVIEW-CONTEXT-PHASE0-EVIDENCE.md` §5: make the silent states speak,
+  change nothing else.** Every silent path in `bw_mount3D` already composed a full diagnostic line
+  and handed it to the console, and there is no console in a cold aisle. The lines now go to the
+  `phantom_crash_log` ring, readable at SYS → DIAGNOSTICS, as TRACE entries excluded from
+  `phantom_crashErrors`. Plus one read-only health snapshot per mount, 1200 ms after mount.
+- **As its own version.** The ship is `v1.14.582` (`9c03aa3` + review fix `e643517`), already on
+  `main`. This entry confirms it; nothing new is built under it.
+- **Instrumentation only means:** no re-arm, no re-render, no context allocation, `getError()` not
+  called (it clears GL state). Zero pixels change. The one on-screen difference is that the ERRORS
+  sheet lists `PREVIEW/…` entries; the SYS row count and dot exclude traces and stay NONE / grey on a
+  healthy device.
+
+### What it does NOT approve
+
+- Options 1–4 of the same document. **Option 1** (liveness probe + re-arm) re-opens the `.394` ruling
+  that re-arming a starved device worsens context pressure; it needs its own ruling, and only becomes
+  a candidate if a device reading names candidate A (`MOUNT_NOT_DRAWING`). **Options 2+3**
+  (`webglcontextrestored` listener, drop `{ once: true }`) are cheap and additive but cannot see
+  candidate A — own ship, own ruling. **Option 4** touches the `.401` pause/resume contract.
+
+### Why 5 beats the others
+
+It is the only option with zero risk to a starved device, and it turns every future blank preview
+from a guess into a reading. The reading then decides whether Option 1 is justified, instead of
+taking Option 1 on a hypothesis.
+
+### Verify
+
+Promote → device: BUILD with a Master loaded → SYS → DIAGNOSTICS. **PASS** = a `PREVIEW/` entry is
+listed and no JS-ERROR banner appeared. **FAIL** = no entry after a Build visit, or a banner on a
+device that was healthy at `.581`. **A blank preview does not fail this ship** — the line it leaves
+is the finding. Stamp on the instrument, not on the preview. Checklist: `docs/BATCH1-582-EVIDENCE.md`.
+
+### Record notes
+
+- The `.582` commit message records Option 5 as *"owner-ruled 2026-09-08"*. The owner confirmed it
+  and gave it the label **PREVIEW-DIAG** in session on 2026-09-08; this entry is the register record.
+- **Same day, recorded elsewhere, not yet given its own entry here:** the promote-order ruling
+  (`30f3822`; `tools/promote.ps1` Guard 4 header — promote → device-verify on the Pages URL → stamp,
+  and the guard adjudicates the version the phone HAS). That commit calls it *"owner ruling C"*.
+  Owner to confirm whether it gets a register entry under that label.
+
+---
+
 ## 2026-09-05 · BATCH-OODA — C-1 … C-5 RULED
 
 Spec: `SHIP-HANDOFF-BATCH-OODA.md`. The owner ruled all five conflicts in one message, each

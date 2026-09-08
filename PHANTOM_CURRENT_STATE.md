@@ -1363,9 +1363,10 @@ stamped and promoted, and `.582`'s bump carries the corrected `version.json` not
    Options 2+3 next (`webglcontextrestored` listener + drop `{ once: true }`) and Option 1 (liveness
    re-arm, re-opens `.394`) only if the `.582` device log names candidate A. The device reading decides.
 3. **Batches 2–4 Phase 0 evidence** in `docs/`, each awaiting its own GO.
-4. **Three owner rulings of 2026-09-08 are not yet in `OWNER-RULINGS.md`** — `.581` stays VERIFIED;
-   RACK-PREVIEW Option 5 as its own version; ruling C on promote order. Doctrine is owner-touched
-   (handoff §5), so they are proposed, not written.
+4. ✅ **PREVIEW-DIAG is in `OWNER-RULINGS.md` (2026-09-08)** — Option 5, instrumentation only,
+   approved by the owner in session and labelled by him; the `.581`-stays-VERIFIED disposition is
+   quoted verbatim in the same entry. **Still not separately registered:** the promote-order ruling
+   recorded in `30f3822` and `tools/promote.ps1`'s header — owner to confirm it gets its own entry.
 
 *(The `.581`-era queue, kept for the record:)*
 1. ⏳ **`.581` device verify → `stamp.ps1` → `promote.ps1`.** All three are John's. Checklist in
