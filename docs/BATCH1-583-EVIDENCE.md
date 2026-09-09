@@ -1,7 +1,7 @@
 # BATCH 1 — EVIDENCE TABLE · `phantom-v1.14.583`
 
 **Written:** 2026-09-08 · **Ship commit:** `aa4d437` · **Baseline:** `.582` VERIFIED (`9a9d6db`), served on `release` (`2758ce9`)
-**Status:** evidence delivered. **Awaiting John, in this order:** `promote.ps1` → one device check → `stamp.ps1`.
+**Status:** evidence delivered. **Awaiting John, in this order:** `promote.ps1` → one device check → `verify.ps1 583 PASS` (or `FAIL "reason"`). *(Updated 2026-09-08: `tools/verify.ps1` replaces the `stamp.ps1` + `git push` pair — one command, either outcome.)*
 
 ---
 
@@ -49,11 +49,12 @@ Expected: `Served version adjudicated: phantom-v1.14.582 VERIFIED`, then the pen
    **FAIL** = SYNCED still shows, or the strip is missing or clipped at 390.
 3. Optional, not required: airplane mode, re-open Build → `LOCAL ACTIVE | ON-DEVICE · OFFLINE` (unchanged behaviour).
 
-**Then, from the terminal only:**
+**Then, from the terminal only — one command, either way:**
 ```
-.\tools\stamp.ps1 583 VERIFIED
-git push origin main
+.\tools\verify.ps1 583 PASS
+.\tools\verify.ps1 583 FAIL "what you saw"
 ```
+`verify.ps1` stamps `VERIFIED`, pushes `main`, fast-forwards `release` and ends on `SERVED: phantom-v1.14.583`. A FAIL stamps `FAILED` with the reason, pushes `main`, and leaves `release` where it is. It refuses, writing nothing, if `.583` is not what `origin/release` and Pages carry — so it runs **after** the promote, never before. *(`stamp.ps1 583 VERIFIED` + `git push origin main` still works; it is exactly what `verify.ps1` runs.)*
 
 ---
 
